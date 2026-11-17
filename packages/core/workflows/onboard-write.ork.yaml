@@ -64,14 +64,10 @@ nodes:
     tools:
       allow:
         - Read
-        - Grep
-        - Glob
         - Edit
         - Write
       only:
         - Read
-        - Grep
-        - Glob
         - Edit
         - Write
   finish:

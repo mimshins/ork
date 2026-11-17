@@ -123,6 +123,14 @@ const outsideOnly = (only: ReadonlySet<string> | undefined): Rule[] =>
         .filter(action => !only.has(action))
         .map((action): Rule => ({ action, resource: "*", effect: "deny" }));
 
+/** A node that cannot edit reads text through `extract`; images and PDFs stay. */
+const textReadRules: Rule[] = [
+  { action: "read", resource: "*", effect: "deny" },
+  ...["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "pdf"].map(
+    (ext): Rule => ({ action: "read", resource: `*.${ext}`, effect: "allow" }),
+  ),
+];
+
 /** A shell line that starts by reading files, refused (`extract` reads it). */
 const shellReadRules: Rule[] = SHELL_READ_COMMANDS.flatMap(command => [
   { action: "shell", resource: command, effect: "deny" },
@@ -174,6 +182,7 @@ export const permissionRules = (spec: SessionSpec): Rule[] => {
         }))
       : []),
     ...(spec.reading === "open" ? [] : shellReadRules),
+    ...(spec.reading === "extract-only" ? textReadRules : []),
     ...rulesOf(tools.deny, "deny", cwd),
   ];
 };

@@ -15,7 +15,7 @@ import type { HoldPort, MachinePort } from "@krapht/ork-core";
 import type { HoldHook } from "./adapter.ts";
 import { type HoldAnswer, holdAtTool } from "./hold.ts";
 import type { HoldHandler } from "./mcp-http.ts";
-import { shellReadReason } from "./tools/shell-reads.ts";
+import { shellReadReason, textReadReason } from "./tools/shell-reads.ts";
 
 export type HeavyHook = {
   /** Before a call: "go" once it may run, "defer" while its slot is not free. */
@@ -121,12 +121,26 @@ export const heavyHook = (machine: MachinePort | undefined): HeavyHook => {
   };
 };
 
-/** Why a hook's Bash call is refused as a shell read, if it is (RFC-025). */
-export const shellReadOf = (input: unknown): string | undefined => {
-  if (!isRecord(input) || input["tool_name"] !== "Bash") return undefined;
+/**
+ * Why a hook's call is refused (RFC-025): a Bash call that reads files, or,
+ * with `textReads` refused (a node that cannot edit), a Read of a text file.
+ */
+export const readRefusalOf = (
+  input: unknown,
+  textReads: boolean,
+): string | undefined => {
+  if (!isRecord(input)) return undefined;
   const call = input["tool_input"];
-  const command = isRecord(call) ? call["command"] : undefined;
-  return typeof command === "string" ? shellReadReason(command) : undefined;
+  const field = (key: string): unknown =>
+    isRecord(call) ? call[key] : undefined;
+  const command = field("command");
+  const file = field("file_path");
+  if (input["tool_name"] === "Bash" && typeof command === "string") {
+    return shellReadReason(command);
+  }
+  return textReads && input["tool_name"] === "Read" && typeof file === "string"
+    ? textReadReason(file)
+    : undefined;
 };
 
 /** A node that is never held: the hook only refuses, it never waits. */
@@ -155,13 +169,18 @@ export const toolHook =
     onDefer: () => void;
     /** Refuses a shell read before anything else (RFC-025). */
     refuse?: (reason: string) => Record<string, unknown>;
+    /** Refuses a Read of a text file too: the node cannot edit. */
+    textReads?: boolean;
   }): HoldHandler =>
   async (gone, input) => {
     if (afterCall(input)) {
       given.heavy.after();
       return {};
     }
-    const refused = given.refuse === undefined ? undefined : shellReadOf(input);
+    const refused =
+      given.refuse === undefined
+        ? undefined
+        : readRefusalOf(input, given.textReads === true);
     if (refused !== undefined && given.refuse !== undefined) {
       return given.refuse(refused);
     }

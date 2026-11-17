@@ -120,11 +120,11 @@ The most this can spend: <tokens> tokens (this driver reports no dollars, so onl
 
 ## Proposing, picking, writing
 
-- **Propose** (`ork:onboard-propose`): an agent with reading tools only (`Read`,
-  `Grep`, `Glob`) and no shell reads your repository and may ask you up to three
-  follow-up questions. For each workflow it gives why, where a person decides,
-  its caps, evidence (a file or a commit) and, optionally, the commands it would
-  run.
+- **Propose** (`ork:onboard-propose`): an agent with reading tools only (Ork's
+  `extract`, and `Read` for images) and no shell reads your repository and may
+  ask you up to three follow-up questions. For each workflow it gives why, where
+  a person decides, its caps, evidence (a file or a commit) and, optionally, the
+  commands it would run.
 - **Filter:** `ork onboard` drops a suggestion that cites a file or commit that
   does not exist, or drafts a command whose program is not on your `PATH` or
   whose package script is not in your `package.json`. Nothing the agent drafted

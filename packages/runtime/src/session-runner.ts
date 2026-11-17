@@ -155,6 +155,7 @@ export const createSessionRuntime = (
               hold: hold ?? NEVER_HELD,
               heavy,
               ...(refuse === undefined ? {} : { refuse }),
+              ...(spec.reading === "extract-only" ? { textReads: true } : {}),
               answer: hook.answer,
               windowMs: options.holdWindowMs ?? hook.windowMs,
               ended: ended.signal,

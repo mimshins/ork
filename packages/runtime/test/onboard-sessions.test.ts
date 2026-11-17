@@ -85,15 +85,14 @@ const decideOf = async (spec: SessionSpec): Promise<Decide> => {
 };
 
 describe("ork:onboard-propose's session", () => {
-  it("has the reading tools only, the project layer off", () => {
+  it("reads through extract only, the project layer off", () => {
     const spec = propose();
-    expect(spec.tools.only).toEqual(["Read", "Grep", "Glob"]);
-    expect(spec.tools.allow).toEqual(
-      expect.arrayContaining(["Read", "Grep", "Glob"]),
-    );
+    expect(spec.tools.only).toEqual(["Read"]);
+    expect(spec.tools.allow).toEqual(expect.arrayContaining(["Read"]));
     expect(spec.tools.deny).toEqual(
-      expect.arrayContaining(["Write", "Edit", "NotebookEdit"]),
+      expect.arrayContaining(["Write", "Edit", "NotebookEdit", "Grep", "Glob"]),
     );
+    expect(spec.reading).toBe("extract-only");
     expect(spec.maxTurns).toBe(40);
     expect(spec.budgetUsd).toBe(3);
     expect(spec.budgetTokens).toBe(600_000);
@@ -105,29 +104,52 @@ describe("ork:onboard-propose's session", () => {
     const args = buildCliArgs(propose(), { url: "http://x", token: "t" }, [
       "mcp__ork__ask_user",
     ]);
-    expect(args[args.indexOf("--tools") + 1]).toBe("Read,Grep,Glob");
+    expect(args[args.indexOf("--tools") + 1]).toBe("Read");
     expect(args[args.indexOf("--allowedTools") + 1]?.split(",")).toEqual(
-      expect.arrayContaining(["Read", "Grep", "Glob", "mcp__ork__ask_user"]),
+      expect.arrayContaining(["Read", "mcp__ork__ask_user"]),
+    );
+    expect(args[args.indexOf("--disallowedTools") + 1]?.split(",")).toEqual(
+      expect.arrayContaining(["Grep", "Glob"]),
     );
   });
 
-  it("reads and asks on open-code, and is refused edits and the shell", () => {
+  it("reads through extract on open-code, and is refused edits and the shell", () => {
     const rules = permissionRules(propose());
-    const answers = ["read", "grep", "glob", "ork_ask_user", "ork_report"].map(
-      action => openCodeAnswer(rules, action),
-    );
-    expect(answers).toEqual(["allow", "allow", "allow", "allow", "allow"]);
+    const answers = [
+      "ork_extract",
+      "ork_ask_user",
+      "ork_report",
+      "read",
+      "grep",
+      "glob",
+    ].map(action => openCodeAnswer(rules, action));
+    expect(answers).toEqual([
+      "allow",
+      "allow",
+      "allow",
+      "deny",
+      "deny",
+      "deny",
+    ]);
+    expect(rules).toContainEqual({
+      action: "read",
+      resource: "*.png",
+      effect: "allow",
+    });
     expect(openCodeAnswer(rules, "edit")).toBe("deny");
     expect(openCodeAnswer(rules, "shell")).toBe("deny");
   });
 
-  it("reads and asks on command-code, and is refused edits and the shell", async () => {
+  it("reads through extract on command-code, and is refused edits and the shell", async () => {
     const spec = propose();
     const decide = await decideOf(spec);
     const inside = { path: path.join(spec.cwd, "package.json") };
-    expect(decide("read_file", inside)).toBeUndefined();
-    expect(decide("grep", { pattern: "x", path: spec.cwd })).toBeUndefined();
-    expect(decide("glob", { pattern: "*", path: spec.cwd })).toBeUndefined();
+    const image = { path: path.join(spec.cwd, "shot.png") };
+    expect(decide("read_file", inside)).toBeDefined();
+    expect(decide("read_file", image)).toBeUndefined();
+    expect(decide("grep", { pattern: "x", path: spec.cwd })).toBeDefined();
+    expect(decide("glob", { pattern: "*", path: spec.cwd })).toBeDefined();
+    expect(decide("mcp__ork__extract", {})).toBeUndefined();
     expect(decide("mcp__ork__ask_user", {})).toBeUndefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
     expect(decide("edit_file", inside)).toBeDefined();
@@ -179,7 +201,8 @@ describe("the token caps of the built-ins on drivers that report no dollars", ()
 describe("ork:onboard-write's session", () => {
   it("can read and edit, with no shell", () => {
     const spec = write();
-    expect(spec.tools.only).toEqual(["Read", "Grep", "Glob", "Edit", "Write"]);
+    expect(spec.tools.only).toEqual(["Read", "Edit", "Write"]);
+    expect(spec.reading).toBe("extract");
     expect(spec.tools.only).not.toContain("Bash");
     expect(spec.budgetUsd).toBe(2);
     expect(spec.budgetTokens).toBe(400_000);

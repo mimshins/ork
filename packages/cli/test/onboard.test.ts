@@ -91,8 +91,8 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
     const flow = await fast({ driver, script: SCRIPT });
     const only = (node: string) =>
       flow.specs.find(spec => spec.nodeId === node)?.tools.only;
-    expect(only("propose")).toEqual(["Read", "Grep", "Glob"]);
-    expect(only("write")).toEqual(["Read", "Grep", "Glob", "Edit", "Write"]);
+    expect(only("propose")).toEqual(["Read"]);
+    expect(only("write")).toEqual(["Read", "Edit", "Write"]);
     const propose = flow.specs.find(spec => spec.nodeId === "propose");
     expect(propose?.prompt).toContain("slow tests");
     expect(

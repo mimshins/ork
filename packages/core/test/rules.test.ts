@@ -102,7 +102,7 @@ describe("project rules under a workflow", () => {
     );
     expect(spec.tools).toEqual({
       allow: ["Read"],
-      deny: ["Bash(git push *)", "Bash(rm *)", "WebFetch"],
+      deny: ["Bash(git push *)", "Bash(rm *)", "WebFetch", "Grep", "Glob"],
     });
   });
 
@@ -131,10 +131,17 @@ describe("project rules under a workflow", () => {
       "Bash(pnpm check)",
       "Bash(pnpm test)",
       "Bash(vitest run)",
+      "Grep",
+      "Glob",
     ]);
     expect(verified.systemAppend).toContain("Ork runs the full check");
     const plain = plan("w");
-    expect(plain.tools.deny).toEqual(["Bash(git push *)", "WebFetch"]);
+    expect(plain.tools.deny).toEqual([
+      "Bash(git push *)",
+      "WebFetch",
+      "Grep",
+      "Glob",
+    ]);
   });
 
   it("tell a verify: node to run its check when the project lets it", () => {
@@ -194,14 +201,45 @@ describe("project rules under a workflow", () => {
     const spec = specOf(
       planNodeSession(workflow, "r", { cwd: "/p", inputs: {}, inPlace: true }),
     );
-    expect(spec.tools.deny).toEqual(["Write", "Edit", "NotebookEdit"]);
+    expect(spec.tools.deny).toEqual([
+      "Write",
+      "Edit",
+      "NotebookEdit",
+      "Grep",
+      "Glob",
+    ]);
     // extract shows a diff, a commit and the log (RFC-025).
     expect(spec.tools.allow).toEqual([
       "Bash(git status)",
       "Bash(git status *)",
       "Bash(git -C * status *)",
     ]);
-    expect(spec.reading).toBe("extract");
+    expect(spec.reading).toBe("extract-only");
+  });
+
+  it("withhold Grep and Glob, and refuse a non-editing node's text Reads (RFC-025)", () => {
+    const workflow = workflowOf([
+      "nodes:",
+      "  r: { type: agent.worker, prompt: go, isolation: readonly }",
+      "  w: { type: agent.worker, prompt: go }",
+      "  g: { type: agent.worker, prompt: go, tools: { only: [Read, Grep] } }",
+    ]);
+    const plan = (id: string) =>
+      specOf(
+        planNodeSession(workflow, id, { cwd: "/p", inputs: {}, inPlace: true }),
+      );
+    expect(plan("r").tools.deny).toEqual([
+      "Write",
+      "Edit",
+      "NotebookEdit",
+      "Grep",
+      "Glob",
+    ]);
+    expect([plan("r"), plan("w"), plan("g")].map(spec => spec.reading)).toEqual(
+      ["extract-only", "extract", "extract-only"],
+    );
+    // A node that names Grep keeps it.
+    expect(plan("g").tools.deny).toEqual(["Glob"]);
   });
 
   it("let a readonly node read git through the shell under reading: open", () => {

@@ -122,7 +122,6 @@ nodes:
       allow:
         - Read
         - Edit
-        - Grep
   test:
     type: tool.shell
     script: pnpm test

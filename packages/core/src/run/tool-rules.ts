@@ -28,6 +28,37 @@ export const readOnlyCommands = (reading: "extract" | "open"): string[] =>
     ],
   );
 
+/** The built-in search tools `extract` replaces (RFC-025): withheld. */
+export const WITHHELD_TOOLS = ["Grep", "Glob"] as const;
+
+/** Whether one of the node's own rules names `tool` (`Grep`, `Grep(*.ts)`). */
+const names = (node: ClaudeNode, tool: string): boolean =>
+  [...(node.tools?.allow ?? []), ...(node.tools?.only ?? [])].some(
+    rule => rule === tool || rule.startsWith(`${tool}(`),
+  );
+
+/**
+ * How the node's session may read (RFC-025): `open` under `reading: open`;
+ * `extract-only` for a node that cannot edit (`readonly`, or a `tools.only`
+ * with no Edit or Write), so a whole-file Read of a text file is refused too;
+ * else `extract`.
+ */
+export const readingOf = (
+  node: ClaudeNode,
+  readonly: boolean,
+  rules: Workflow["rules"],
+): "extract" | "extract-only" | "open" => {
+  if (rules?.reading === "open") return "open";
+  const only = node.tools?.only;
+  const edits =
+    !readonly &&
+    (only === undefined ||
+      only.some(rule =>
+        /^(?:Edit|Write|MultiEdit|NotebookEdit)\b/u.test(rule),
+      ));
+  return edits ? "extract" : "extract-only";
+};
+
 /** The node's own tool rules, the project's and workflow's, and isolation's. */
 export const toolRules = (
   node: ClaudeNode,
@@ -50,6 +81,10 @@ export const toolRules = (
       ...(rules?.permissions?.deny ?? []),
       ...(node.tools?.deny ?? []),
       ...(readonly ? WRITE_TOOLS : []),
+      // Unless the node names one itself (its `tools.allow` or `only`).
+      ...(rules?.reading === "open"
+        ? []
+        : WITHHELD_TOOLS.filter(tool => !names(node, tool))),
     ]),
   ],
   ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),

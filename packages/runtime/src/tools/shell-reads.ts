@@ -167,3 +167,18 @@ export const SHELL_READ_COMMANDS: readonly string[] = [
   "git log",
   "git grep",
 ];
+
+/**
+ * Why Ork refuses a Read of `file` in a session that cannot edit (RFC-025,
+ * `extract-only`): a text file is read through `extract`; an image or a PDF,
+ * which `extract` cannot read, is not refused. Self-contained, as the mod
+ * embeds it too.
+ */
+export const textReadReason = (file: string): string | undefined =>
+  /\.(?:png|jpe?g|gif|webp|bmp|svg|pdf)$/iu.test(file)
+    ? undefined
+    : "Ork refuses Read of `" +
+      file +
+      '` here: this node does not edit, so it reads through the extract tool, which returns only the part it keeps: `{"steps":[{"step":"read","path":"' +
+      file +
+      '","from":1,"to":80}]}`, or a match step after it. For several files, give extract several programs in one call.';

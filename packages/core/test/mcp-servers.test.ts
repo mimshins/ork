@@ -194,7 +194,11 @@ describe("planning a node's servers", () => {
       "n",
     );
     expect(spec.tools.allow).toEqual(["mcp__chrome-devtools"]);
-    expect(spec.tools.deny).toEqual(["mcp__chrome-devtools__navigate_page"]);
+    expect(spec.tools.deny).toEqual([
+      "mcp__chrome-devtools__navigate_page",
+      "Grep",
+      "Glob",
+    ]);
   });
 
   it("writes a server name's other characters as `_` in its allow rule", () => {

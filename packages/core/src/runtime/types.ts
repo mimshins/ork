@@ -103,8 +103,8 @@ export type SessionSpec = {
   plugins?: string[];
   /** Extra Claude Code settings (`--settings`), e.g. `skillOverrides`. */
   settings?: Record<string, unknown>;
-  /** `extract` (default): shell reads are refused (RFC-025); `open`: not. */
-  reading?: "extract" | "open";
+  /** RFC-025: `extract` refuses shell reads, `extract-only` text Reads too. */
+  reading?: "extract" | "extract-only" | "open";
   /** A session id to resume. */
   resume?: string;
   /**

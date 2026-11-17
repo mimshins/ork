@@ -2,6 +2,14 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Sessions get no Grep or Glob, and read-only nodes read text only through
+  `extract`.** With `extract`'s `search` and `files` doing their work, Grep and
+  Glob are left out of every session unless the node names them in its own
+  `tools`. A node that can't edit (`readonly`, or a `tools.only` with no Edit or
+  Write) is refused a Read of a text file, with the `extract` call to make;
+  images and PDFs still read. Upgrade: `reading: open` in `.ork/project.yaml` or
+  a workflow's `rules:` turns this off
+  ([project rules](../guides/project-rules.md#a-workflows-own-rules)).
 - **Sessions read files through `extract`, not the shell.** A shell line that
   starts by reading files (`cat`, `head`, `sed -n`, `grep`, `rg`, `find`,
   `git diff`, `show` or `log`…) is now refused on every driver, and on Claude

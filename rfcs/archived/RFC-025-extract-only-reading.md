@@ -1,9 +1,10 @@
 # RFC-025 — Make `extract` the way sessions read, on every driver
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-17
 - **Supersedes:** —
 - **Superseded by:** —
+- **ADR:** [ADR-101](../../decisions/ADR-101-extract-only-reading.md)
 
 ## Context
 

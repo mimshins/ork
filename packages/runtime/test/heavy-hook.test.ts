@@ -331,3 +331,33 @@ describe("a claude-code session that reads only through extract (RFC-025)", () =
     expect(said).toContain("Use the extract tool instead");
   });
 });
+
+/** A Read call's hook input. */
+const readCall = (file: string) => ({
+  hook_event_name: "PreToolUse",
+  tool_name: "Read",
+  tool_input: { file_path: file },
+});
+
+describe("a tool hook for a node that cannot edit (RFC-025)", () => {
+  it("refuses a Read of a text file, not of an image", async () => {
+    const handler = toolHook({
+      hold: holdOf(),
+      heavy: heavyHook(portOf(ledgerOf(1), [])),
+      answer: answer => ({ answer }),
+      windowMs: 1000,
+      ended: signal,
+      onDefer: () => {
+        // Not under test.
+      },
+      refuse: reason => ({ refused: reason }),
+      textReads: true,
+    });
+    expect(
+      JSON.stringify(await handler(signal, readCall("src/a.ts"))),
+    ).toContain("Ork refuses Read of");
+    expect(await handler(signal, readCall("shot.png"))).toEqual({
+      answer: "go",
+    });
+  });
+});

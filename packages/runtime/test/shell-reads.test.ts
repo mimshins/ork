@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   SHELL_READ_COMMANDS,
   shellReadReason,
+  textReadReason,
 } from "../src/tools/shell-reads.ts";
 
 const refused = (line: string): boolean => shellReadReason(line) !== undefined;
@@ -61,5 +62,14 @@ describe("shellReadReason", () => {
     expect(
       SHELL_READ_COMMANDS.filter(command => !refused(`${command} x`)),
     ).toEqual([]);
+  });
+});
+
+describe("textReadReason", () => {
+  it("refuses a text file with the extract call, not an image or a PDF", () => {
+    expect(textReadReason("src/a.ts")).toContain('"path":"src/a.ts"');
+    expect(
+      ["shot.PNG", "a/b.jpeg", "spec.pdf"].map(file => textReadReason(file)),
+    ).toEqual([undefined, undefined, undefined]);
   });
 });

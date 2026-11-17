@@ -21,7 +21,7 @@ import path from "node:path";
 
 import type { SessionSpec } from "@krapht/ork-core";
 
-import { shellReadReason } from "../tools/shell-reads.ts";
+import { shellReadReason, textReadReason } from "../tools/shell-reads.ts";
 import { COMMAND_CODE_TOOLS } from "./command-code-events.ts";
 
 /** What the mod enforces: the node's lists, and the worktree reads stay in. */
@@ -34,6 +34,8 @@ export type ModRules = {
   yolo?: boolean;
   /** Shell reads are refused with the `extract` call to make (RFC-025). */
   refuseReads?: boolean;
+  /** A Read of a text file is refused too: the node cannot edit. */
+  refuseTextReads?: boolean;
 };
 
 /** The rules of a session: an `acceptEdits` node may edit without a rule. */
@@ -47,6 +49,7 @@ export const modRules = (spec: SessionSpec): ModRules => ({
   ...(spec.tools.only === undefined ? {} : { only: spec.tools.only }),
   ...(spec.yolo === true ? { yolo: true } : {}),
   ...(spec.reading === "open" ? {} : { refuseReads: true }),
+  ...(spec.reading === "extract-only" ? { refuseTextReads: true } : {}),
 });
 
 /**
@@ -60,6 +63,7 @@ import { realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 const RULES = ${JSON.stringify(rules)};
 const shellReadReason = ${shellReadReason.toString()};
+const textReadReason = ${textReadReason.toString()};
 // Command Code's own: loading a deferred tool's schema, Ork's report included.
 const META = new Set(["search_tools", "tool_search"]);
 // Reads a session makes in its worktree without a rule, as Claude Code does.
@@ -211,6 +215,10 @@ export const decide = (name, input) => {
   if (anyDenied(name, calls)) return "denied for this node";
   if (RULES.refuseReads === true && (TOOLS[name] ?? name) === "Bash" && typeof input?.command === "string") {
     const read = shellReadReason(input.command);
+    if (read !== undefined) return { read };
+  }
+  if (RULES.refuseTextReads === true && (TOOLS[name] ?? name) === "Read") {
+    const read = pathsOf(input).map(textReadReason).find(each => each !== undefined);
     if (read !== undefined) return { read };
   }
   if (name.startsWith("mcp__ork__") || META.has(name)) return undefined;

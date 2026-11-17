@@ -3,8 +3,8 @@
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
 Status: **Built**: the tool, its steps and programs, containment and refusals,
-and the refusal of shell reads (RFC-025; withholding Grep, Glob and Read is not
-built yet), served on `claude-code`, `open-code` and `command-code`
+the refusal of shell reads, and the withheld tools (RFC-025), served on
+`claude-code`, `open-code` and `command-code`
 ([extract.ts](../../packages/runtime/src/tools/extract.ts),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
@@ -53,7 +53,7 @@ mod; OpenCode's rules) does it, and the tool has no code for it
 ## Steps
 
 `extract({ steps, from? })` or `extract({ programs, from? })`
-([RFC-025](../../rfcs/active/RFC-025-extract-only-reading.md)). A program,
+([RFC-025](../../rfcs/archived/RFC-025-extract-only-reading.md)). A program,
 `steps`, is 1 to 6 objects, each named by its `step` field. The first is a
 **producer**; the rest are **cuts**, each taking the text before it. Anything
 else (a cut first, two producers, an unknown step or field, a value out of
@@ -76,7 +76,7 @@ without model-written code. A call gives exactly one of the two.
 
 Under `reading: extract`, the default
 ([project rules](../project-rules.md#links-and-reading),
-[RFC-025](../../rfcs/active/RFC-025-extract-only-reading.md)), a shell line in
+[RFC-025](../../rfcs/archived/RFC-025-extract-only-reading.md)), a shell line in
 which a pipeline **starts** by reading files is refused, and the refusal names
 the `extract` call to make: `cat`, `head`, `tail`, `less`, `more`, `nl`, `sed`
 (not `sed -i`), `awk`, `grep`, `egrep`, `fgrep`, `rg`, `ag`, `find` (not with
@@ -98,6 +98,19 @@ filters another command's output, which `extract` can't read, so
 
 A `readonly` node then runs only `git status` without asking; `git diff`, `log`
 and `show` come back under `reading: open`.
+
+## Withheld tools
+
+Under `reading: extract`, Ork adds `Grep` and `Glob` to every session's denied
+tools ([tool-rules.ts](../../packages/core/src/run/tool-rules.ts),
+`WITHHELD_TOOLS`), unless the node names one in its own `tools.allow` or
+`tools.only`: `extract`'s `search` and `files` do their work. A node that cannot
+edit (`readonly`, or a `tools.only` with no `Edit` or `Write`) is
+`extract-only`: a `Read` of a text file is refused too, with the `extract` call
+to make, while an image or a PDF (which `extract` cannot read) is still read. A
+node that edits keeps `Read`, which Claude Code's `Edit` needs first. On
+`claude-code` the hook refuses the Read, on `command-code` the mod does, and on
+`open-code` a `read` deny with the image and PDF types allowed after it.
 
 ## Where it may read
 

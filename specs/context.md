@@ -82,7 +82,9 @@ so nothing is loaded twice.
   denied and `git status` (also with `-C <path>`; `diff`, `log` and `show` too
   under `reading: open`) allowed, since `extract` shows the rest; any other
   command asks ([tool-rules.ts](../packages/core/src/run/tool-rules.ts),
-  `readOnlyCommands`).
+  `readOnlyCommands`). Under `reading: extract`, `Grep` and `Glob` are denied
+  unless the node names them
+  ([withheld tools](./runtime/extract-tool.md#withheld-tools)).
 - **The checkout line** of the harness says where the node works and what the
   project's git rules let it do: commit there, or not (`commit: never`), and how
   its work reaches its owner (merged, applied as a patch, or kept).

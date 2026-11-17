@@ -1318,10 +1318,11 @@ export const MILESTONES = [
         title: "`extract`: read less, carry less",
         status: "active",
         detail:
-          "Built. RFC-023, option 2a, and RFC-025 (accepted). Every session gets one read-only tool, `extract`: a `read`, `files`, `search` or `git` diff, show or log step, then `head`, `tail`, `match` (literal or regex) or `count` cuts, up to eight such programs a call, in-process with no shell and no model-written code, returning only the extract (16,000 characters, a count footer). It refuses a path outside the session's folder and secret-looking files, and Ork's notes to every node say to prefer it over `cat`, `sed`, `rg` and whole-file reads. `pnpm benchmark` now also writes `carried.json`, the carried weight (characters of a result times later turns) by role and kind, with turns and calls to `extract`. Left: RFC-025's refusal of shell reads and withholding of Grep, Glob and (for nodes that cannot edit) Read on every driver, the before and after benchmark with `carried.json`, and shorter sessions.",
+          "Built. RFC-023, option 2a, and RFC-025 (accepted). Every session gets one read-only tool, `extract`: a `read`, `files`, `search` or `git` diff, show or log step, then `head`, `tail`, `match` (literal or regex) or `count` cuts, up to eight such programs a call, in-process with no shell and no model-written code, returning only the extract (16,000 characters, a count footer). It refuses a path outside the session's folder and secret-looking files, and Ork's notes to every node say to prefer it over `cat`, `sed`, `rg` and whole-file reads. `pnpm benchmark` now also writes `carried.json`, the carried weight (characters of a result times later turns) by role and kind, with turns and calls to `extract`. RFC-025 (ADR-101) also refuses shell reads and withholds Grep, Glob and, for nodes that cannot edit, text Reads, on every driver. Left: the before and after benchmark with `carried.json`, and shorter sessions.",
         docs: [
           "rfcs/archived/RFC-023-extract-tool-for-session-reads.md",
-          "rfcs/active/RFC-025-extract-only-reading.md",
+          "rfcs/archived/RFC-025-extract-only-reading.md",
+          "decisions/ADR-101-extract-only-reading.md",
           "decisions/ADR-098-extract-tool.md",
           "specs/runtime/extract-tool.md",
           "specs/gaps/extract-limits.md",

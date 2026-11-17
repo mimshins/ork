@@ -33,7 +33,7 @@ import type {
 import { AGENT_TOOL, modelOf, renderBrief, subagentsOf } from "./brief.ts";
 import { driverContradiction, modelDriver, namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
-import { toolRules } from "./tool-rules.ts";
+import { readingOf, toolRules } from "./tool-rules.ts";
 import type { Brief, Checkout, NodeItem, NodeOutput } from "./types.ts";
 
 export type PlanOptions = {
@@ -213,7 +213,7 @@ export const planNodeSession = (
     tools: toolRules(node, isolation === "readonly", workflow.rules, mcp),
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
-    reading: workflow.rules?.reading ?? "extract",
+    reading: readingOf(node, isolation === "readonly", workflow.rules),
   };
   // A leader is long-lived and waits in `delegate`: an hour's cache keeps its
   // prefix across the wait (specs/context.md, N3).

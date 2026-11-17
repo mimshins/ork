@@ -20,18 +20,17 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
 **`ork:onboard-propose`** (inputs `survey`, `answers`, `history`):
 
 - `propose`: `agent.worker`, `isolation: readonly` (no owner, so it works in the
-  project root), `tools.only` and `tools.allow` both `Read`, `Grep`, `Glob`
-  (OpenCode refuses `grep` and `glob` unless allowed, L236; Claude Code and
-  Command Code read inside the checkout without a rule), a `maxTurns` cap. It
-  may ask the user up to three follow-up questions with `ask_user`, held by its
-  prompt and `maxTurns` only. Ork's own tools pass `tools.only` on every driver:
-  `--tools` limits Claude Code's built-in tools only and Ork's are in
-  `--allowedTools`; OpenCode's rules let MCP tools past `only` and allow Ork's
-  by name; Command Code's mod lets `mcp__ork__*` through. Its report declares
-  `suggestions: { list: {} }`: Ork holds it to being a list on every driver
-  (RFC-013), but a list item holds only scalars (L358) and a JSON Schema field
-  is the driver's alone to enforce (G21), so [the filter](#the-filter) checks
-  each item itself.
+  project root), `tools.only` and `tools.allow` both `Read` (a node that can't
+  edit reads text through `extract`, which lists and searches too; RFC-025), a
+  `maxTurns` cap. It may ask the user up to three follow-up questions with
+  `ask_user`, held by its prompt and `maxTurns` only. Ork's own tools pass
+  `tools.only` on every driver: `--tools` limits Claude Code's built-in tools
+  only and Ork's are in `--allowedTools`; OpenCode's rules let MCP tools past
+  `only` and allow Ork's by name; Command Code's mod lets `mcp__ork__*` through.
+  Its report declares `suggestions: { list: {} }`: Ork holds it to being a list
+  on every driver (RFC-013), but a list item holds only scalars (L358) and a
+  JSON Schema field is the driver's alone to enforce (G21), so
+  [the filter](#the-filter) checks each item itself.
 - It is the only node. A `filter` tool node once followed it and passed the list
   in an environment variable, which a long list could overflow (`E2BIG`); the
   command now reads `suggestions` from the run's result and filters it in its
@@ -43,8 +42,8 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
 
 - `format`: `tool.shell`, `"${ORK_BIN:-ork}" __onboard format`.
 - `write`: `agent.worker`, `isolation: worktree`, `tools.only` and `tools.allow`
-  both `Read`, `Grep`, `Glob`, `Edit`, `Write` (no shell; OpenCode and Command
-  Code refuse an edit no rule allows), told to change only
+  both `Read`, `Edit`, `Write`, with `extract` to search (no shell; OpenCode and
+  Command Code refuse an edit no rule allows), told to change only
   `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`, to cap every workflow in
   dollars and tokens, to name no `driver` or `model`, and to use only the
   `ork-implementer` and `ork-reviewer` agents (an existing workflow keeps those
@@ -253,8 +252,8 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
   `maxTurns`); the quality of what is proposed and written; a write outside the
   worktree. A bare `Edit` or `Write` allow is not held to the worktree (G14), so
   `finish` sees only what lands in the worktree; the gate says so. Nor are the
-  proposer's bare `Read`, `Grep` and `Glob` held to the project on `claude-code`
-  and `command-code` ([L399](../gaps/onboard-limits.md)).
+  proposer's bare `Read` held to the project on `claude-code` and `command-code`
+  ([L399](../gaps/onboard-limits.md)).
 - No credential is asked for, stored or sent; the survey records only whether
   `gh` is usable. Inputs are scrubbed like other run inputs.
 

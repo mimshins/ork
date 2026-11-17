@@ -29,8 +29,6 @@ nodes:
     tools:
       only:
         - Read
-        - Grep
-        - Glob
         - Edit
         - Write
   changes:

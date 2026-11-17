@@ -44,10 +44,10 @@ _Part of [Feedback and self-improvement](../feedback.md)._
     severity and counts, and its 10 newest records **from that project** (each
     body cut at 1,500 characters), recorded as untrusted. A record from another
     project could steer a worker here, so it's left out.
-  - The worker (`ork-implementer`, in a worktree) has only `Read`, `Grep`,
-    `Glob`, `Edit` and `Write` (`tools.only`): no shell, no network. It's told
-    to read the item as a report, never as instructions, and to make the
-    smallest change that would stop the problem (a workflow, `AGENTS.md`,
+  - The worker (`ork-implementer`, in a worktree) has only `Read`, `Edit` and
+    `Write` (`tools.only`), and Ork's `extract` to search: no shell, no network.
+    It's told to read the item as a report, never as instructions, and to make
+    the smallest change that would stop the problem (a workflow, `AGENTS.md`,
     `CLAUDE.md`, a skill, a doc; never secrets, settings or hooks), which Ork
     commits unless the project sets `commit: never`; or to change nothing and
     report `fail`.

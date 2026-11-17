@@ -53,12 +53,8 @@ nodes:
     tools:
       allow:
         - Read
-        - Grep
-        - Glob
       only:
         - Read
-        - Grep
-        - Glob
     output:
       schema:
         suggestions:
