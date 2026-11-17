@@ -1,30 +1,28 @@
 /**
  * @file `ork feedback apply` (ADR-059): runs Ork's own `ork:feedback-apply` in
  *   the project an item came from, with the item as its untrusted input. Its
- *   worker proposes a fix on a branch and its gate asks to keep or discard it;
- *   Ork never merges. Kept, the item is `resolved`, unless its branch holds no
- *   new commits: then there is nothing to keep, and, as when discarded, the
- *   run's worktree and branch go and the item stays `accepted`.
+ *   worker proposes a fix (on a branch, or uncommitted under `commit: never`)
+ *   and its gate asks to keep or discard it; Ork never merges. Kept, the item
+ *   is `resolved`, unless there is nothing to keep, or the uncommitted fix does
+ *   not apply over the checkout: then, as when discarded, the item stays
+ *   `accepted` (`keep.ts` says what happens to the worktree and branch).
  */
 
 import {
-  applyClean,
   builtinProblem,
   builtinWorkflowFile,
-  createdWorktrees,
   type EventStore,
   type FeedbackItem,
   type FeedbackRecord,
   feedbackActions,
-  listOrkWorktrees,
   openFixRun,
   placeOf,
-  planClean,
   type ProjectPlace,
   type RunResult,
 } from "@krapht/ork-core";
 
 import { runWorkflowFile, type RunWorkflowOptions } from "../run/workflow.ts";
+import { type commitsAhead, discardRun, keepRun } from "./keep.ts";
 
 /** The most of an item's records the worker reads, newest first. */
 const RECORDS = 10;
@@ -70,7 +68,7 @@ export const aboutItem = (
 };
 
 export type ApplyOutcome =
-  | { kind: "kept"; branch: string; summary: string }
+  | { kind: "kept"; branch: string; worktree: string; summary: string }
   | { kind: "discarded"; branch: string }
   | { kind: "nothing"; summary: string }
   | { kind: "unfinished"; reasons: string[] };
@@ -79,9 +77,10 @@ const text = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
 /**
- * What a run of a built-in that proposes a change on a branch ended with:
+ * What a run of a built-in that proposes a change ended with:
  * `ork:feedback-apply` (worker `fix`), or `ork:onboard-write` (`write`). Both
- * end at a `keep` gate.
+ * end at a `keep` gate. The worker's `branch` is empty under `commit: never`,
+ * where its change is uncommitted in its `worktree`.
  */
 export const outcomeOf = (
   result: RunResult | null,
@@ -91,60 +90,15 @@ export const outcomeOf = (
   const fix = node(worker);
   const choice = text(node("keep")?.output?.["choice"]);
   const branch = text(fix?.output?.["branch"]);
+  const worktree = text(fix?.output?.["worktree"]);
   const summary = text(fix?.output?.["summary"]);
-  if (choice === "keep") return { kind: "kept", branch, summary };
+  if (choice === "keep") return { kind: "kept", branch, worktree, summary };
   if (choice === "discard") return { kind: "discarded", branch };
   if (fix?.ok === false && result?.status === "failed") {
     return { kind: "nothing", summary: summary || (fix.error ?? "") };
   }
   return { kind: "unfinished", reasons: result?.reasons ?? [] };
 };
-
-/**
- * Removes what a run left in the repository at `root`: its worktrees and
- * branches.
- */
-export const discardRun = async (
-  store: EventStore,
-  root: string,
-  runId: string,
-): Promise<string[]> => {
-  const items = await listOrkWorktrees(root, createdWorktrees(store, root));
-  const steps = planClean(
-    items,
-    { merged: false, runId },
-    { branches: true, force: true },
-  );
-  return applyClean(
-    root,
-    steps.filter(s => s.removeWorktree || s.deleteBranch),
-    true,
-  );
-};
-
-/** How many commits the run's worktrees hold that the current branch hasn't. */
-export const commitsAhead = async (
-  store: EventStore,
-  root: string,
-  runId: string,
-): Promise<number> =>
-  (await listOrkWorktrees(root, createdWorktrees(store, root)))
-    .filter(item => item.runId === runId)
-    .reduce((sum, item) => sum + item.ahead, 0);
-
-/**
- * Whether a kept run's branch holds anything to keep. With no commit ahead the
- * run's worktree and branch are removed, and `removed` says what went.
- */
-export const keptBranch = async (
-  store: EventStore,
-  root: string,
-  runId: string,
-  ahead: typeof commitsAhead = commitsAhead,
-): Promise<{ kept: true } | { kept: false; removed: string[] }> =>
-  (await ahead(store, root, runId)) > 0
-    ? { kept: true }
-    : { kept: false, removed: await discardRun(store, root, runId) };
 
 export type ApplyOptions = Pick<
   RunWorkflowOptions,
@@ -181,18 +135,34 @@ const settle = async (
   const short = item.id.slice(0, 12);
   switch (outcome.kind) {
     case "kept": {
-      const branch = await keptBranch(store, root, runId, options.ahead);
-      if (!branch.kept) {
-        return [
-          `the fix's branch holds no commits, so there's nothing to keep; ${short} stays accepted`,
-          ...branch.removed,
-        ];
+      const kept = await keepRun(store, root, runId, outcome, options.ahead);
+      switch (kept.kept) {
+        case "none":
+          return [
+            `${outcome.branch === "" ? "the fix changed nothing" : "the fix's branch holds no commits"}, so there's nothing to keep; ${short} stays accepted`,
+            ...kept.removed,
+          ];
+        case "refused":
+          return [
+            `the fix doesn't apply over this checkout's own changes (${kept.conflicts.join(", ") || kept.error}); ${short} stays accepted`,
+            `Nothing changed here; the fix stays uncommitted in ${kept.worktree}.`,
+          ];
+        case "applied":
+          store.setFeedbackStatus(item.id, "resolved");
+          return [
+            `kept the fix in this checkout, uncommitted (${kept.files.join(", ")}); ${short} is resolved`,
+            "Review and commit it like any other change.",
+            ...kept.removed,
+          ];
+        case "branch":
+          store.setFeedbackStatus(item.id, "resolved");
+          return [
+            `kept the fix on ${outcome.branch}; ${short} is resolved`,
+            "Review and merge it like any other change; Ork never merges it.",
+          ];
+        default:
+          return kept satisfies never;
       }
-      store.setFeedbackStatus(item.id, "resolved");
-      return [
-        `kept the fix on ${outcome.branch}; ${short} is resolved`,
-        "Review and merge it like any other change; Ork never merges it.",
-      ];
     }
     case "discarded": {
       const done = await discardRun(store, root, runId);

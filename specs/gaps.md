@@ -566,11 +566,12 @@ Found closing the list QA follow-ups (list filters):
   under load because of `verify.test.ts` (largest test 511 ms to 83 ms alone,
   about 60000 shell iterations replaced by pipelines) and `onboard.test.ts`
   (89.6 s to 16.2 s alone, slowest test 5.6 s to 1.2 s; under 36 `yes` processes
-  the slowest is 3.0 s against a 15.0 s timeout before). Pre-push duration after
-  the change: not measured (the node that wrote this could not run
-  `pnpm run check`; the maintainer times it). No hook change. Still open: a
-  follow-up pushes twice to see whether 141 still happens, and sets
-  `ServerAliveInterval` ([CONTRIBUTING.md](../CONTRIBUTING.md)) if it does.
+  the slowest is 3.0 s against a 15.0 s timeout before). Measured on 2026-11-17
+  with no run active, on 12 cores: the tests 97 to 98 s (7,504), the static
+  checks 7 to 8 s, so about 1 min 45 s in all. Every push that day still exited
+  141 on the first try and went through on the second. No hook change. Still
+  open: set `ServerAliveInterval` ([CONTRIBUTING.md](../CONTRIBUTING.md)), or
+  run the check before git connects.
 - **C17 · The vitest HOME exit hook once failed with `ENOTEMPTY`.** A `.npm`
   folder appeared in the shared test `HOME` while the hook was removing it. Seen
   once while running the CLI tests, not reproduced. Look at it if it comes back.

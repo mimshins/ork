@@ -40,7 +40,7 @@ import type { ToolRunner } from "@krapht/ork-nodes";
 import { describe, expect, it } from "vitest";
 
 import { registerProject, runWorkflowFile } from "../src/index.ts";
-import { discardRun } from "../src/runs/apply.ts";
+import { discardRun } from "../src/runs/keep.ts";
 import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 import {
   checkoutNow,

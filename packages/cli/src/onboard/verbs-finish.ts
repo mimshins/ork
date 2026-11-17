@@ -1,11 +1,13 @@
 /**
  * @file `ork __onboard finish --worktree <path> --branch <branch>`: checks what
  *   the onboarding writer left in its worktree, in the project root. Scope
- *   (only `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`), caps, no
- *   `driver` or `model`, only Ork's agents, canonical form (committed in the
- *   worktree), validation under every ready driver, then the list of what a
- *   person should look at. It reads the worktree through the plain-file guards
- *   and runs nothing the model drafted (specs/cli/onboard-verbs.md#finish).
+ *   (only `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`), caps, no new
+ *   `driver`, `model` or agent beyond Ork's (one the file had at `HEAD`
+ *   passes), canonical form (committed in the worktree, unless the writer has
+ *   no branch under `commit: never`), validation under every ready driver, then
+ *   the list of what a person should look at. It reads the worktree through the
+ *   plain-file guards and runs nothing the model drafted
+ *   (specs/cli/onboard-verbs.md#finish).
  */
 
 import { lstatSync, readFileSync } from "node:fs";
@@ -105,6 +107,26 @@ const scopeOf = (
 
 type Read = { file: string; workflow: Workflow };
 
+/** The workflow at `HEAD` in `root`, or null when it was not there or broken. */
+const atHead = (root: string, file: string): Workflow | null => {
+  const old = textAtHead(root, file);
+  const parsed = old === null ? null : parseWorkflow(old);
+  return parsed?.ok === true ? parsed.workflow : null;
+};
+
+/**
+ * The problems a written file has, less a `driver`, `model` or agent the file
+ * already had at `HEAD`: an edit to an existing workflow keeps what it names.
+ * Caps are always required.
+ */
+const newProblems = (now: string[], before: Workflow | null): string[] => {
+  if (before === null) return now;
+  const had = new Set(workflowProblems(before));
+  return now.filter(
+    message => message.startsWith("limits.") || !had.has(message),
+  );
+};
+
 /** Reads and checks each workflow file: schema, caps, names. */
 const readWorkflows = (
   options: FinishOptions,
@@ -125,7 +147,10 @@ const readWorkflows = (
       }
       continue;
     }
-    for (const message of workflowProblems(parsed.workflow)) {
+    for (const message of newProblems(
+      workflowProblems(parsed.workflow),
+      atHead(options.root, file),
+    )) {
       problems.push(`${file}: ${message}`);
     }
     reads.push({ file, workflow: parsed.workflow });
@@ -133,7 +158,10 @@ const readWorkflows = (
   return reads;
 };
 
-/** Rewrites each file through the serializer and commits what changed. */
+/**
+ * Rewrites each file through the serializer and commits what changed; with no
+ * branch (`commit: never`) the rewrite stays uncommitted, like the writer's.
+ */
 const canonicalize = (
   options: FinishOptions,
   reads: readonly Read[],
@@ -149,7 +177,7 @@ const canonicalize = (
     if (written.ok) changed.push({ file, text });
     else problems.push(`${file}: ${written.error}`);
   }
-  if (changed.length === 0) return;
+  if (changed.length === 0 || options.branch === "") return;
   const run = options.run === undefined ? "" : ` (run ${options.run})`;
   const refused = commitIn(
     options.worktree,

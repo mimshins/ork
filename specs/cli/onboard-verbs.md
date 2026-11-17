@@ -47,16 +47,20 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
   Code refuse an edit no rule allows), told to change only
   `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`, to cap every workflow in
   dollars and tokens, to name no `driver` or `model`, and to use only the
-  `ork-implementer` and `ork-reviewer` agents. A later round's brief carries
-  `finish`'s problems (`## Round n`).
+  `ork-implementer` and `ork-reviewer` agents (an existing workflow keeps those
+  it already has). A later round's brief carries `finish`'s problems
+  (`## Round n`).
 - `finish`: `tool.shell`,
   `"${ORK_BIN:-ork}" __onboard finish --worktree "$WORKTREE" --branch "$BRANCH"`,
   with `WORKTREE: "{{nodes.write.output.worktree}}"` and
   `BRANCH: "{{nodes.write.output.branch}}"` in `env:` (a `script:` takes no
   templates). A tool node with no owner works in the project root
   ([worktrees](../worktrees.md)), so it reads the writer's worktree by path.
-- `changes`: `tool.git`, `diff --stat HEAD...{{nodes.write.output.branch}}`, as
-  `ork:feedback-apply` does.
+- `changes`: `tool.shell`, as `ork:feedback-apply`'s, with the same `env:`. On a
+  branch it prints `git diff --stat HEAD...$BRANCH`; with none (`commit: never`
+  leaves the worktree detached) it runs `git add -A` there (its index only) and
+  prints `git diff --cached --stat HEAD`. Either way it gives the command to
+  read the whole change.
 - `keep`: `human.gate`, options `keep` and `discard`, its question the diff
   stat, `finish`'s stdout and the G14 line.
 - Edges: `format -> write -> finish`; `finish -> write` when `exitCode == 1`
@@ -193,16 +197,19 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
 2. **Each changed workflow**, read in the worktree: it parses and passes the
    schema; it sets `limits.budgetUsd` and `limits.budgetTokens`; no `driver` or
    `model` anywhere (`defaults`, `agents`, nodes); no `agents:` of its own, and
-   every `agent:` is `ork-implementer` or `ork-reviewer`. The project file's
-   `defaults.driver` and `defaults.model` reach every workflow too, so the rule
-   covers them; today they are only listed at the gate
-   ([L402](../gaps/onboard-limits.md)).
+   every `agent:` is `ork-implementer` or `ork-reviewer`. A file that existed at
+   `HEAD` is held only to what it adds: a `driver`, `model`, agent or `agent:`
+   the file already had, in the same place, passes; the caps are always
+   required. The project file's `defaults.driver` and `defaults.model` reach
+   every workflow too, so the rule covers them; today they are only listed at
+   the gate ([L402](../gaps/onboard-limits.md)).
 3. **Canonical form.** Each one that parses is rewritten through
    `serializeWorkflow`; when any changed, they are committed in the worktree as
    `ork: canonical form (run <ORK_RUN>)`, no attribution, the repository's hooks
-   running; a refused commit is a problem. After a commit that went through,
-   each file is read again and compared with the text written: one a hook
-   rewrote is a problem,
+   running; a refused commit is a problem. With no branch (`--branch ""`, under
+   `commit: never`) the rewrite stays uncommitted, as the writer's work does.
+   After a commit that went through, each file is read again and compared with
+   the text written: one a hook rewrote is a problem,
    `<file>: rewritten by a commit hook, no longer canonical`. The writer cannot
    fix a hook, so it burns its rounds ([L404](../gaps/onboard-limits.md)).
 4. **Validation,** in this process, not by running `ork validate`: each file is

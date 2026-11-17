@@ -125,11 +125,11 @@ transcript, and it shows in `ork ps`, the Monitor and the Decisions panel.
 
 A worker reads the item and that project's records of it, makes the smallest
 change that would stop it happening, and Ork commits it on its own branch in a
-worktree. Feedback is model output, and what a repository's sessions wrote can
-try to steer the worker, so the worker can only read and edit files; it runs no
-commands.
+worktree (uncommitted, with no branch, under `commit: never`). Feedback is model
+output, and what a repository's sessions wrote can try to steer the worker, so
+the worker can only read and edit files; it runs no commands.
 
-Then you're asked: **keep** or **discard**. The question shows what the branch
+Then you're asked: **keep** or **discard**. The question shows what the fix
 changes (`git diff --stat`) and the command to read the whole of it. **Read the
 diff before you keep it**: the worker's own account of it comes last, and is
 only its claim.
@@ -137,9 +137,9 @@ only its claim.
 - **Keep:** the branch stays, and the item is resolved. Review and merge it like
   any other change: Ork never merges it. If the branch holds no new commits,
   there's nothing to keep: Ork removes it and its worktree, and the item stays
-  accepted.
-- **Discard:** the branch and its worktree are removed, and the item stays
-  accepted.
+  accepted. Under `commit: never`, keep copies the fix into your checkout,
+  uncommitted; if it clashes with your changes there, nothing is copied.
+- **Discard:** the branch and worktree go; the item stays accepted.
 
 If the worker finds nothing to change, it says why and the item stays accepted.
 Feedback about Ork itself has no fix in your project, and an item already

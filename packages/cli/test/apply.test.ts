@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -26,7 +27,7 @@ import {
   type RunResult,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   aboutItem,
@@ -62,6 +63,20 @@ const gitProject = (): string => {
   }
   return dir;
 };
+
+/** Makes the project at `root` keep a run's work uncommitted. */
+const neverCommit = (root: string): void => {
+  writeFileSync(
+    path.join(root, ".ork", "project.yaml"),
+    "schemaVersion: 1\ngit: { commit: never }\n",
+  );
+  execFileSync("git", ["add", "-A"], { cwd: root });
+  execFileSync("git", ["commit", "-q", "-m", "never"], { cwd: root });
+};
+
+/** What `git status --short` says in `root`. */
+const gitStatus = (root: string): string =>
+  execFileSync("git", ["status", "--short"], { cwd: root, encoding: "utf8" });
 
 /** An item noted on a run of `notes` in the project at `root`. */
 const noted = (
@@ -128,6 +143,13 @@ const outcome = async (applying: Promise<Applied>): Promise<string> => {
   return applied.outcome.kind;
 };
 
+/** What an apply said first, or why it refused, as an error. */
+const firstLine = async (applying: Promise<Applied>): Promise<string> => {
+  const applied = await applying;
+  if (!applied.ok) throw new Error(applied.error);
+  return applied.lines[0] ?? "";
+};
+
 const branches = (root: string): string =>
   execFileSync("git", ["branch", "--list", "ork/*"], {
     cwd: root,
@@ -187,6 +209,7 @@ describe("what a run of ork:feedback-apply ended with", () => {
     expect(outcomeOf(kept)).toEqual({
       kind: "kept",
       branch: "ork/r1/fix",
+      worktree: "",
       summary: "Added it.",
     });
   });
@@ -220,6 +243,36 @@ describe("ork feedback apply", () => {
       "kept",
     );
     expect(branches(root)).toBe("");
+    expect(statusOf(store, item)).toBe("accepted");
+  });
+
+  it("applies an uncommitted fix to the checkout under commit: never", async () => {
+    vi.stubEnv("FAKE_CLAUDE_EDIT", "FIX.md");
+    const root = gitProject();
+    neverCommit(root);
+    const { store, item } = noted(root);
+    const first = await firstLine(applyItem(options(store, item, "keep")));
+    vi.unstubAllEnvs();
+    expect(first).toMatch(
+      /^kept the fix in this checkout, uncommitted \(FIX\.md\)/u,
+    );
+    expect(gitStatus(root)).toBe("?? FIX.md\n");
+    expect(branches(root)).toBe("");
+    expect(statusOf(store, item)).toBe("resolved");
+  });
+
+  it("leaves the checkout as it was when the uncommitted fix doesn't apply", async () => {
+    vi.stubEnv("FAKE_CLAUDE_EDIT", "FIX.md");
+    const root = gitProject();
+    neverCommit(root);
+    writeFileSync(path.join(root, "FIX.md"), "mine\n");
+    const { store, item } = noted(root);
+    const first = await firstLine(applyItem(options(store, item, "keep")));
+    vi.unstubAllEnvs();
+    expect(first).toMatch(
+      /^the fix doesn't apply over this checkout's own changes/u,
+    );
+    expect(readFileSync(path.join(root, "FIX.md"), "utf8")).toBe("mine\n");
     expect(statusOf(store, item)).toBe("accepted");
   });
 

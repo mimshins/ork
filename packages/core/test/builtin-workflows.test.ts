@@ -147,7 +147,7 @@ const apply = async (fix: NodeOutput, choice = "keep") => {
     cwd: place.root,
     executors: {
       "agent.worker": executor,
-      "tool.git": executor,
+      "tool.shell": executor,
       "human.gate": executor,
     },
     human,

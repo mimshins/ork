@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: ork-feedback-apply
-description: Propose a fix for one feedback item as a change on a branch, then show what it changes and ask whether to keep it. Ork never merges it; `ork feedback apply` reads the answer.
+description: Propose a fix for one feedback item as a change (on a branch, or uncommitted where the project never lets Ork commit), then show what it changes and ask whether to keep it. Ork never merges it; `ork feedback apply` reads the answer.
 inputs:
   item:
     type: string
@@ -24,7 +24,7 @@ nodes:
 
       {{inputs.about}}
 
-      Propose the smallest change in this repository that would stop this from happening again: a workflow under .ork/workflows, AGENTS.md, CLAUDE.md, a skill, or a doc the sessions read. Change nothing else, and never touch secrets, credentials, settings or hooks. You can read and edit files but not run commands: leave the change in the files, and Ork commits it. Say in your summary what you changed and why. If nothing in this repository should change, change nothing and report fail with the reason.
+      Propose the smallest change in this repository that would stop this from happening again: a workflow under .ork/workflows, AGENTS.md, CLAUDE.md, a skill, or a doc the sessions read. Change nothing else, and never touch secrets, credentials, settings or hooks. You can read and edit files but not run commands: leave the change in the files, and Ork commits it when the project lets Ork commit. Say in your summary what you changed and why. If nothing in this repository should change, change nothing and report fail with the reason.
     isolation: worktree
     tools:
       only:
@@ -34,16 +34,28 @@ nodes:
         - Edit
         - Write
   changes:
-    type: tool.git
-    command: diff --stat HEAD...{{nodes.fix.output.branch}}
+    type: tool.shell
+    script: |-
+      if [ -n "$BRANCH" ]; then
+        echo "on $BRANCH. It changes:"
+        git diff --stat "HEAD...$BRANCH"
+        echo "Read the whole change with \`git diff HEAD...$BRANCH\` before you answer."
+      else
+        git -C "$WORKTREE" add -A
+        echo "uncommitted in $WORKTREE (the project sets commit: never); keep applies it to this checkout, uncommitted. It changes:"
+        git -C "$WORKTREE" diff --cached --stat HEAD
+        echo "Read the whole change with \`git -C $WORKTREE diff --cached HEAD\` before you answer."
+      fi
     allow:
-      - diff
+      - sh
+    env:
+      WORKTREE: "{{nodes.fix.output.worktree}}"
+      BRANCH: "{{nodes.fix.output.branch}}"
   keep:
     type: human.gate
     question: |-
-      Keep the fix for {{inputs.item}} on {{nodes.fix.output.branch}}? It changes:
-      {{nodes.changes.output.stdout}}
-      Read the whole change with `git diff HEAD...{{nodes.fix.output.branch}}` before you answer. The worker's own account of it: {{nodes.fix.output.summary}}
+      Keep the fix for {{inputs.item}}? It is {{nodes.changes.output.stdout}}
+      The worker's own account of it: {{nodes.fix.output.summary}}
     options:
       - keep
       - discard

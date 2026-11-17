@@ -35,7 +35,7 @@ A tool node runs the user's own CLI, so keep `allow` as narrow as it can be. A
 tool node's `script` takes no templates: pass values through `env:`. An agent
 node's `agent` is `ork-implementer` (changes things) or `ork-reviewer`
 (reviews), or none; never define `agents:` yourself. Do not set `driver` or
-`model`.
+`model`. An existing workflow keeps those it already has.
 
 ## Ownership and `isolation`
 

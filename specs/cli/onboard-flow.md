@@ -218,13 +218,21 @@ written, no run in the store.
    to `.ork/` by a check on the worktree, not a sandbox (G14). Its options are
    `keep` and `discard`.
 4. Settled as `ork feedback apply` is, with the code in
-   `packages/cli/src/runs/apply.ts` (`outcomeOf`, `keptBranch`, `discardRun`,
-   `commitsAhead`) shared, not copied:
-   - **keep**: the branch stays; the command prints it, `Ork never merges`, the
-     feedback item ids the kept suggestions cited (none is resolved), and to
-     commit the `.gitignore` edit with it when there is one.
+   `packages/cli/src/runs/apply.ts` (`outcomeOf`) and `runs/keep.ts` (`keepRun`,
+   `discardRun`, `commitsAhead`) shared, not copied:
+   - **keep**, on a branch: the branch stays; the command prints it,
+     `Ork never merges`, the feedback item ids the kept suggestions cited (none
+     is resolved), and to commit the `.gitignore` edit with it when there is
+     one.
+   - **keep** under the project's `commit: never` (the writer has no branch):
+     the worktree's change is applied to the checkout as uncommitted files, all
+     or nothing, and the worktree removed; the command names the files and the
+     same cited items. When it does not apply over the checkout's own changes,
+     nothing changes, the worktree stays, its path is printed, and the command
+     exits 1.
    - **discard**: the run's worktree and branch are removed.
-   - A branch with no commits ahead is nothing to keep: removed, and said.
+   - A branch with no commits ahead, or a worktree with no change, is nothing to
+     keep: removed, and said.
 
 The working tree's `.ork/` is never changed by the paid part: the writer works
 only in its worktree.

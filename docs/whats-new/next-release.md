@@ -2,6 +2,18 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Keep works when your project never lets Ork commit.** With `commit: never`
+  in `.ork/project.yaml`, `ork onboard` and `ork feedback apply` showed an empty
+  branch at their keep question, and keep kept nothing. They now show the change
+  from the worker's worktree, and keep copies it into your checkout as
+  uncommitted files for you to commit; if it clashes with your own changes,
+  nothing is copied and the worktree's path is printed
+  ([the gate](../guides/onboarding/the-gate-and-its-checks.md#the-gate)).
+- **`ork onboard` can edit a workflow that names its own agents.** Its check
+  refused any agent but `ork-implementer` and `ork-reviewer`, and any `driver`
+  or `model`, so editing an existing workflow made the writer strip them. A
+  workflow you already had keeps the ones it names; only new ones are refused
+  ([what is checked](../guides/onboarding/the-gate-and-its-checks.md#what-is-checked-and-what-is-only-asked-for)).
 - **The audit checks npm and pnpm advisories on Windows.** The scanner started
   `npm` and `pnpm` directly, which Windows refuses for their `.cmd` shims, so
   the report only noted that advisories were not checked. It now starts them

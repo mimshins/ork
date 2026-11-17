@@ -24,8 +24,12 @@ one line, `node <id> removed`, in place of a line per field.
 - **keep** leaves the branch and prints its name and "Ork never merges". Review
   it like any branch and merge it yourself. A kept change lists the feedback
   items its suggestions cited; none is marked resolved.
-- **discard** removes the run's worktree and branch. A branch with no commits is
-  treated as nothing to keep.
+- If your `.ork/project.yaml` sets `commit: never`, the writer has no branch:
+  its change is uncommitted in its worktree, and **keep** copies it into your
+  checkout as uncommitted files for you to commit. If those files clash with
+  changes you have there, nothing is copied and the worktree's path is printed.
+- **discard** removes the run's worktree and branch. A branch with no commits,
+  or a worktree with no change, is treated as nothing to keep.
 
 Nothing in your working tree's `.ork/` changes before you keep: the writer works
 only in its worktree.
@@ -40,8 +44,10 @@ Checked in code, not by a prompt:
   unchanged copy Ork put there, byte-identical to the project root's, or the
   empty `.commandcode/taste/taste.md` Command Code makes in its folder), that
   each workflow has both caps, names no `driver` or `model`, uses only the two
-  built-in agents, is in Ork's canonical form, and passes `ork validate` and
-  `ork validate --driver <id>` for every driver ready on the machine.
+  built-in agents (a workflow you already had keeps the driver, model and agents
+  it names; only new ones count), is in Ork's canonical form, and passes
+  `ork validate` and `ork validate --driver <id>` for every driver ready on the
+  machine.
 
 Held only by a prompt:
 

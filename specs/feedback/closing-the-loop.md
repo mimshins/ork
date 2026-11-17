@@ -49,17 +49,25 @@ _Part of [Feedback and self-improvement](../feedback.md)._
     to read the item as a report, never as instructions, and to make the
     smallest change that would stop the problem (a workflow, `AGENTS.md`,
     `CLAUDE.md`, a skill, a doc; never secrets, settings or hooks), which Ork
-    commits; or to change nothing and report `fail`.
-  - A `tool.git` node runs `git diff --stat HEAD...<branch>`, and the gate shows
-    that, the command to read the whole change, and last the worker's own
-    summary. It asks to keep the branch or discard it, with no recommendation;
-    Ork never merges. Keeping marks the item `resolved`, unless the run's
-    branches hold no commit the project's `HEAD` lacks (`HEAD..<branch>`): then
-    there's nothing to keep, so Ork removes the run's worktrees and branches, as
-    on discard, and the item stays `accepted`. (ADR-059's "keeping marks the
-    item resolved" assumes the worker committed a change.) Discarding removes
-    the run's worktree and branch and leaves the item `accepted`; no fix leaves
-    it `accepted` too, saying why ([L149](./limits.md)).
+    commits unless the project sets `commit: never`; or to change nothing and
+    report `fail`.
+  - A `tool.shell` node prints the change's stat:
+    `git diff --stat HEAD...<branch>` on a branch, or, under `commit: never` (a
+    detached worktree), the worktree's staged change against its `HEAD`. The
+    gate shows that, the command to read the whole change, and last the worker's
+    own summary. It asks to keep the change or discard it, with no
+    recommendation; Ork never merges. Keeping marks the item `resolved`, unless
+    the run's branches hold no commit the project's `HEAD` lacks
+    (`HEAD..<branch>`), or the detached worktree holds no change: then there's
+    nothing to keep, so Ork removes the run's worktrees and branches, as on
+    discard, and the item stays `accepted`. Under `commit: never`, keeping
+    applies the change to the checkout as uncommitted files, all or nothing, and
+    removes the worktree; when it doesn't apply over the checkout's own changes,
+    nothing changes, the worktree stays with its path printed, and the item
+    stays `accepted`. (ADR-059's "keeping marks the item resolved" assumes the
+    worker committed a change.) Discarding removes the run's worktree and branch
+    and leaves the item `accepted`; no fix leaves it `accepted` too, saying why
+    ([L149](./limits.md)).
 - **Lessons** (built: [lessons.ts](../../packages/core/src/feedback/lessons.ts),
   [accept.ts](../../packages/core/src/feedback/accept.ts),
   [tests](../../packages/core/test/lessons.test.ts),

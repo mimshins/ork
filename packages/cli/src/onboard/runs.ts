@@ -2,8 +2,8 @@
  * @file The two built-in runs of `ork onboard`, and what is said when the
  *   second ends: `ork:onboard-propose` and `ork:onboard-write` run through the
  *   same code as `ork run`, on the driver picked, with everything they take as
- *   untrusted inputs (specs/cli/onboard-flow.md). The write run's branch is
- *   settled as `ork feedback apply`'s is, with `runs/apply.ts`'s code.
+ *   untrusted inputs (specs/cli/onboard-flow.md). The write run's change is
+ *   settled as `ork feedback apply`'s is, with `runs/keep.ts`'s code.
  */
 
 import {
@@ -18,13 +18,8 @@ import type { Driver } from "@krapht/ork-schema";
 
 import { cost, plain, shortCount } from "../output.ts";
 import { runWorkflowFile, type RunWorkflowOptions } from "../run/workflow.ts";
-import {
-  type ApplyOutcome,
-  type commitsAhead,
-  discardRun,
-  keptBranch,
-  outcomeOf,
-} from "../runs/apply.ts";
+import { type ApplyOutcome, outcomeOf } from "../runs/apply.ts";
+import { type commitsAhead, discardRun, keepRun } from "../runs/keep.ts";
 import { PROPOSE, WRITE } from "./caps.ts";
 import type { Suggestion } from "./suggestion.ts";
 
@@ -190,32 +185,54 @@ export const settleWrite = async (
   const outcome: ApplyOutcome = outcomeOf(result, "write");
   switch (outcome.kind) {
     case "kept": {
-      const branch = await keptBranch(
+      const kept = await keepRun(
         store,
         place.root,
         result.runId,
+        outcome,
         options.ahead,
       );
-      if (!branch.kept) {
+      if (kept.kept === "none") {
         return {
           lines: [
-            "the branch holds no commits, so there's nothing to keep",
-            ...branch.removed,
+            outcome.branch === ""
+              ? "the writer changed nothing, so there's nothing to keep"
+              : "the branch holds no commits, so there's nothing to keep",
+            ...kept.removed,
           ],
           code: 0,
         };
       }
+      if (kept.kept === "refused") {
+        return {
+          lines: [
+            `the workflows don't apply over this checkout's own changes (${kept.conflicts.join(", ") || kept.error})`,
+            `Nothing changed here; they stay uncommitted in ${kept.worktree}.`,
+          ],
+          code: 1,
+        };
+      }
       return {
         lines: [
-          `kept the workflows on ${outcome.branch}`,
-          "Review and merge it like any other change; Ork never merges it.",
+          ...(kept.kept === "branch"
+            ? [
+                `kept the workflows on ${outcome.branch}`,
+                "Review and merge it like any other change; Ork never merges it.",
+              ]
+            : [
+                `kept the workflows in this checkout, uncommitted: ${kept.files.join(", ")}`,
+                "Review and commit them like any other change.",
+                ...kept.removed,
+              ]),
           ...(cited.length === 0
             ? []
             : [
                 `Feedback items your suggestions cited (still open, not resolved): ${cited.join(", ")}`,
               ]),
           ...(gitignored
-            ? ["Commit the .gitignore change `ork onboard` made with it."]
+            ? [
+                `Commit the .gitignore change \`ork onboard\` made with ${kept.kept === "branch" ? "it" : "them"}.`,
+              ]
             : []),
         ],
         code: 0,

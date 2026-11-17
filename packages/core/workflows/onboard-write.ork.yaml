@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: ork-onboard-write
-description: The second paid step of `ork onboard`. A writer with no shell writes the workflows the person picked in its own worktree; a step Ork wrote checks the change (only `.ork/workflows` and `.ork/project.yaml`, caps set, no driver or model, canonical, valid on every ready driver) and sends problems back for up to three rounds; a gate shows the diff and asks whether to keep the branch. Ork never merges it; `ork onboard` reads the answer.
+description: The second paid step of `ork onboard`. A writer with no shell writes the workflows the person picked in its own worktree; a step Ork wrote checks the change (only `.ork/workflows` and `.ork/project.yaml`, caps set, no new driver, model or agent, canonical, valid on every ready driver) and sends problems back for up to three rounds; a gate shows the diff and asks whether to keep the change (its branch, or, where the project never lets Ork commit, its files applied to the checkout uncommitted). Ork never merges it; `ork onboard` reads the answer.
 inputs:
   picks:
     type: string
@@ -84,18 +84,30 @@ nodes:
       WORKTREE: "{{nodes.write.output.worktree}}"
       BRANCH: "{{nodes.write.output.branch}}"
   changes:
-    type: tool.git
-    command: diff --stat HEAD...{{nodes.write.output.branch}}
+    type: tool.shell
+    script: |-
+      if [ -n "$BRANCH" ]; then
+        echo "on $BRANCH. It changes:"
+        git diff --stat "HEAD...$BRANCH"
+        echo "Read the whole change with \`git diff HEAD...$BRANCH\` before you answer."
+      else
+        git -C "$WORKTREE" add -A
+        echo "uncommitted in $WORKTREE (the project sets commit: never); keep applies it to this checkout, uncommitted. It changes:"
+        git -C "$WORKTREE" diff --cached --stat HEAD
+        echo "Read the whole change with \`git -C $WORKTREE diff --cached HEAD\` before you answer."
+      fi
     allow:
-      - diff
+      - sh
+    env:
+      WORKTREE: "{{nodes.write.output.worktree}}"
+      BRANCH: "{{nodes.write.output.branch}}"
   keep:
     type: human.gate
     question: |-
-      Keep the workflows `ork onboard` wrote on {{nodes.write.output.branch}}? It changes:
-      {{nodes.changes.output.stdout}}
+      Keep the workflows `ork onboard` wrote? They are {{nodes.changes.output.stdout}}
       What Ork checked, and what needs your eye:
       {{nodes.finish.output.stdout}}
-      The writer was held to .ork/workflows and .ork/project.yaml by a check on its worktree, not by a sandbox: a write outside the worktree is not caught. Read the whole change with `git diff HEAD...{{nodes.write.output.branch}}` before you answer. The writer's own account of it: {{nodes.write.output.summary}}
+      The writer was held to .ork/workflows and .ork/project.yaml by a check on its worktree, not by a sandbox: a write outside the worktree is not caught. The writer's own account of it: {{nodes.write.output.summary}}
     options:
       - keep
       - discard

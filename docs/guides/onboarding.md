@@ -150,6 +150,8 @@ The most this can spend: <tokens> tokens (this driver reports no dollars, so onl
 Every written workflow carries a dollar and a token cap, names no `driver` or
 `model` (the machine running it picks), and uses only the built-in
 `ork-implementer` and `ork-reviewer` agents; it writes no `.ork/agents/` file.
+An edit to a workflow you already have keeps the driver, model and agents it
+names.
 
 ## A saved proposal
 

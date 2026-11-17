@@ -349,6 +349,29 @@ describe("finish: each workflow", () => {
     );
   });
 
+  it("keeps the driver, model and agents an existing workflow had at HEAD", async () => {
+    const before = workflow(
+      "ci",
+      "defaults:\n  model: claude-code.sonnet\nagents:\n  mine:\n    instructions: be me\n",
+    ).replace("agent: ork-implementer", "agent: mine");
+    const edited = before.replace("Build it.", "Build it well.");
+    const added = edited.replace(
+      "nodes:\n",
+      "nodes:\n  lint:\n    type: agent.worker\n    agent: theirs\n    model: claude-code.opus\n    prompt: Lint it.\n",
+    );
+    const head = { ".ork/workflows/ci.ork.yaml": canonical(before) };
+    expect(
+      await problemsOf({ ".ork/workflows/ci.ork.yaml": edited }, head),
+    ).toEqual([]);
+    expect(
+      await problemsOf({ ".ork/workflows/ci.ork.yaml": added }, head),
+    ).toEqual([
+      ".ork/workflows/ci.ork.yaml: node lint sets `model`; leave it to the person running it",
+      ".ork/workflows/ci.ork.yaml: node lint uses agent `theirs`; use ork-implementer or ork-reviewer",
+      ".ork/workflows/ci.ork.yaml: agent.unknown `lint` names agent `theirs`, which is not defined; known: mine, ork-implementer, ork-reviewer",
+    ]);
+  });
+
   it("reports a file that does not parse, and leaves it alone", async () => {
     const scene = scenario();
     put(scene.worktree, { ".ork/workflows/bad.ork.yaml": "name: Bad Name\n" });
@@ -648,6 +671,24 @@ describe("finish: the canonical commit", () => {
     expect((await check(scene)).problems).toEqual([
       expect.stringContaining("canonical commit refused"),
     ]);
+  });
+
+  it("is not made when the writer has no branch (commit: never)", async () => {
+    const scene = scenario();
+    git(scene.worktree, "checkout", "-q", "--detach");
+    const draft = `# mine\n${workflow("ci")}`;
+    put(scene.worktree, { ".ork/workflows/ci.ork.yaml": draft });
+    expect(await check({ ...scene, branch: "" })).toEqual({
+      problems: [],
+      eye: [],
+    });
+    expect(git(scene.worktree, "log", "-1", "--format=%s")).toBe("first");
+    expect(
+      readFileSync(
+        path.join(scene.worktree, ".ork/workflows/ci.ork.yaml"),
+        "utf8",
+      ),
+    ).toBe(canonical(draft));
   });
 
   it("is a problem naming the file when a hook rewrites it", async () => {
