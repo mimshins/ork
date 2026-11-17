@@ -368,7 +368,9 @@ describe("ork onboard after a proposal was left at the pick", () => {
       startedOf(store, "ork-onboard-propose").inputs["survey"],
     );
     const written = startedOf(store, "ork-onboard-write").inputs;
-    expect(written["survey"]).toBe(asked);
+    // The first run left .ork/ uncommitted, so the writer's note joins it.
+    expect(written["survey"]).toContain(asked);
+    expect(written["survey"]).toContain("Not in your worktree");
     expect(keptBranch(root)).toContain("ork/");
   });
 
@@ -482,7 +484,7 @@ describe("ork onboard after a proposing run did not finish", () => {
         .map(event => event.settings?.untrusted),
     ).toEqual([asked.untrusted, asked.untrusted]);
     const written = startedOf(store, "ork-onboard-write").inputs;
-    expect(written["survey"]).toBe(String(asked.inputs["survey"]));
+    expect(written["survey"]).toContain(String(asked.inputs["survey"]));
     expect(written["answers"]).toBe(String(asked.inputs["answers"]));
     expect(keptBranch(root)).toContain("ork/");
   });

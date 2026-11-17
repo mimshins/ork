@@ -69,6 +69,9 @@ const workflowOf = (lines: string[]): Workflow => {
   return parsed.workflow;
 };
 
+const messages = (found: ReturnType<typeof contextDiagnostics>) =>
+  found.map(d => `${d.path.join(".")}: ${d.message}`);
+
 const LAYERED = [
   "layers:",
   "  skills: [./skills/beta]",
@@ -221,6 +224,45 @@ describe("the layer resolver", () => {
     });
     expect(found.map(d => d.code)).toEqual(["ref.context"]);
     expect(projectRootOf(path.join(f.root, ".ork/workflows"))).toBe(f.root);
+  });
+
+  it("holds references to `refRoot` when it is given, and to the project root otherwise", () => {
+    const f = fixture();
+    const outside = path.join(path.dirname(f.root), "elsewhere");
+    write(outside, "bundle/ok.md", "in the bundle\n");
+    write(outside, "other/x.md", "beside the bundle\n");
+    skill(outside, "bundle/skill");
+    const workflow = workflowOf([
+      "layers:",
+      "  skills: [./skill]",
+      "  context: [./ok.md, ../other/x.md, ../../x.md]",
+      "nodes:",
+      "  a: { type: agent.worker }",
+    ]);
+    const options = {
+      workflowDir: path.join(outside, "bundle"),
+      projectRoot: f.root,
+      home: f.home,
+    };
+    // Without it, a bundle outside the project root is outside the project.
+    expect(messages(contextDiagnostics(workflow, options))).toEqual([
+      "layers.skills.0: ./skill is outside the project",
+      "layers.context.0: ./ok.md is outside the project",
+      "layers.context.1: ../other/x.md is outside the project",
+      "layers.context.2: ../../x.md is outside the project",
+    ]);
+    // With it, what is inside it resolves and what leaves it is still refused.
+    expect(
+      messages(
+        contextDiagnostics(workflow, {
+          ...options,
+          refRoot: path.join(outside, "bundle"),
+        }),
+      ),
+    ).toEqual([
+      "layers.context.1: ../other/x.md is outside the project",
+      "layers.context.2: ../../x.md is outside the project",
+    ]);
   });
 });
 

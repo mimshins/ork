@@ -80,20 +80,31 @@ export const checkWorkflow = (file: string, text: string): ScannerRecord[] => {
   const lines = text.split("\n");
   const records: ScannerRecord[] = [];
 
+  // One record per `uses:` value (its fingerprint): the first line, with the count.
+  const unpinned = new Map<
+    string,
+    { reason: string; line: number; uses: number }
+  >();
   lines.forEach((raw, index) => {
     const value = USES.exec(code(raw))?.[1];
     const reason = value === undefined ? undefined : unpinnedReason(value);
     if (value === undefined || reason === undefined) return;
+    const seen = unpinned.get(value);
+    if (seen === undefined) {
+      unpinned.set(value, { reason, line: index + 1, uses: 1 });
+    } else seen.uses += 1;
+  });
+  for (const [value, { reason, line, uses }] of unpinned) {
     records.push({
       source: "scanner",
       check: "unpinned-action",
       fingerprint: fingerprintOf("scanner", "unpinned-action", file, value),
-      title: `${file} uses ${value}: ${reason}`,
+      title: `${file} uses ${value}: ${reason}${uses > 1 ? ` (${uses} uses)` : ""}`,
       severity: "moderate",
       file,
-      line: index + 1,
+      line,
     });
-  });
+  }
 
   for (const job of jobsOf(lines)) {
     if (job.permissions) continue;

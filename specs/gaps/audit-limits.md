@@ -72,12 +72,6 @@ simpler, or could not be checked:
   uncommitted changes, says they are not audited; `scope: diff:<ref>` is a diff
   of `HEAD`. Auditing the working tree needs a snapshot of it or a read grant
   (RFC-021's option A). An in-repo project audits its working tree as before.
-- **L425 · `ork validate` and `ork context` do not open the run root.** For
-  `ork:security-audit` in an attached project they still report
-  `ref.context ./security-audit/context/read-only-bash.md does not exist`,
-  because only `ork run` opens the worktree that holds the bundle. (The same
-  cause made an attached audit fail at validation, before `scan`, when the
-  refusal was meant to be the first stop.) `ork run` is unaffected.
 - **L426 · A run root's base and names see no inputs.** `git.base` and the
   worktree name templates are rendered with no inputs for the run root (a
   `shortcut:` in [run-root.ts](../../packages/cli/src/run/run-root.ts)). The

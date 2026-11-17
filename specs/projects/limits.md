@@ -57,3 +57,9 @@ the [register](../gaps.md#limits).
   fork.** Their `branch` choice pushes to `origin`, so a contributor without
   write access to it gets a failed push; the commit stays in the run's worktree
   to push by hand.
+- **L430 · The workflow builder's views map a built-in bundle's references the
+  old way.** `ork validate` and `ork context explain` resolve a built-in
+  bundle's references in an attached project against the bundle's own folder
+  (`bundleRefsOf`); the server's builder views (`builder.ts`, `builder-view.ts`,
+  `mcp-act.ts`) still call `workflowDirOf`, so a built-in's context files can
+  read as missing there. Passing `bundleRefsOf`'s result on would close it.

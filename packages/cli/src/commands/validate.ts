@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  bundleRefsOf,
   checkWorkflowText,
   type CompiledGraph,
   placeFiles,
@@ -57,6 +58,8 @@ export type LoadedWorkflow = {
   place: ProjectPlace;
   /** Where its relative paths resolve from (ADR-035). */
   workflowDir: string;
+  /** What its references may not leave, when not the project's root. */
+  refRoot?: string;
   /** The hash of the text read, which a trigger's run checks. */
   textHash?: string;
   /** Finds a diagnostic's line and column in the text. */
@@ -79,8 +82,17 @@ export const loadWorkflow = (
   const absolute = path.resolve(cwd, file);
   const place = placeFor(path.dirname(absolute), registered);
   const checked = runRoot === undefined ? place : { ...place, root: runRoot };
-  const workflowDir = workflowDirOf(checked, absolute);
-  const where = { place, workflowDir };
+  // A built-in bundle of an attached project, checked where it is: its files
+  // are beside it, not in a run worktree (a run's own check has a `runRoot`).
+  const bundle =
+    runRoot === undefined ? bundleRefsOf(place, absolute) : undefined;
+  const workflowDir = bundle?.workflowDir ?? workflowDirOf(checked, absolute);
+  const refRoot = bundle?.refRoot;
+  const where = {
+    place,
+    workflowDir,
+    ...(refRoot === undefined ? {} : { refRoot }),
+  };
   let text: string;
   try {
     text = readFileSync(path.resolve(cwd, file), "utf8");

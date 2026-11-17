@@ -20,6 +20,7 @@ import { SKILL_FILE } from "../context/skills.ts";
 import { type Explanation, explainSession } from "../run/explain.ts";
 import { checkWorkflowText } from "./check.ts";
 import {
+  bundleRefsOf,
   placeFiles,
   placeFor,
   type ProjectPlace,
@@ -97,10 +98,13 @@ export const explainWorkflowText = (
   },
 ): TextExplainResult => {
   const place = where.place ?? placeFor(path.dirname(file), where.registered);
-  const workflowDir = workflowDirOf(place, file);
+  const bundle = bundleRefsOf(place, file);
+  const workflowDir = bundle?.workflowDir ?? workflowDirOf(place, file);
+  const refRoot = bundle?.refRoot;
   const { workflow, graph, diagnostics } = checkWorkflowText(text, {
     place,
     workflowDir,
+    refRoot,
     registered: where.registered,
     home: where.home,
   });
@@ -119,6 +123,7 @@ export const explainWorkflowText = (
       root: place.root,
       orkDir: place.dir,
       workflowDir,
+      ...(refRoot === undefined ? {} : { refRoot }),
       ...(where.home === undefined ? {} : { home: where.home }),
     },
     { texts: true },

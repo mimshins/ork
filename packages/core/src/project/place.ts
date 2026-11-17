@@ -99,6 +99,31 @@ export const workflowDirOf = (place: ProjectPlace, file: string): string => {
   );
 };
 
+/**
+ * Where an attached project's built-in bundle file
+ * (`<dir>/runs/.builtin/<hash>/<name>.ork.yaml`) reads its references: from its
+ * own folder, which holds the bundle's files, and they may not leave the
+ * project's folder. Anything else: `undefined`. `ork validate` checks a
+ * built-in this way, with no run worktree to read it from.
+ */
+export const bundleRefsOf = (
+  place: ProjectPlace,
+  file: string,
+): { workflowDir: string; refRoot: string } | undefined => {
+  if (place.mode !== "attached") return undefined;
+  const folder = path.dirname(path.resolve(file));
+  const relative = path.relative(
+    path.join(real(place.dir), "runs", ".builtin"),
+    real(folder),
+  );
+  return relative === "" ||
+    relative.startsWith("..") ||
+    path.isAbsolute(relative) ||
+    relative.includes(path.sep)
+    ? undefined
+    : { workflowDir: real(folder), refRoot: real(place.dir) };
+};
+
 /** A path for messages: project-relative, `~/…`, or absolute. */
 export const shownPath = (
   file: string,

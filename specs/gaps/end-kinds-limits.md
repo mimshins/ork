@@ -45,3 +45,12 @@ was left simpler:
   session and between turns, not within an OpenCode session, and `validate`
   refuses it on Command Code, so no contract case plays an over-spend there. Add
   one when those drivers report spend as it happens.
+- **L431 · A throw after a node's own `timeout:` still ends `unknown`.** Only
+  the run's signal (`ork stop`, `limits.timeout`) turns a thrown executor error
+  into `interrupted` or `timed_out`; a node's own `timeout:` has its own signal,
+  so a session that throws once it has expired is classified as any other throw.
+  ([how a session ends](../runtime/session-ends.md))
+- **L432 · A checkout that throws is still `invalid_node`.** `workspace.prepare`
+  runs before the node has a stop signal, so a checkout torn down by `ork stop`
+  reads as a checkout that can't be made, not as `interrupted`.
+  ([how a session ends](../runtime/session-ends.md))

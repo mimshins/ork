@@ -47,7 +47,10 @@ line ([the terminal](./terminal.md)).
    uncommitted: commit it with the branch. On a first visit the runs then print
    `warning N uncommitted change(s) in this checkout are not in the worktrees`;
    that is expected, since the writer only adds files. The writer is told so, so
-   it does not look for the starter or the `.gitignore` line in its worktree.
+   it does not look for the starter or the `.gitignore` line in its worktree. It
+   is told the same of any other uncommitted file under `.ork/` (or your
+   `.gitignore`), whether `ork onboard` just made it or you did: its worktree is
+   cut from your last commit and does not hold them.
 4. **Surveys the project** with no model: package manager, scripts, the test and
    check commands, CI files, the base branch, whether `gh` is usable (never its
    output), the agent and skill folders, `AGENTS.md` and `CLAUDE.md`, what

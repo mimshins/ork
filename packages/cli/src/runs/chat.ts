@@ -92,7 +92,7 @@ export const resumeChat = async (
   if (cwd === undefined || !existsSync(cwd)) {
     return `${node}'s session ran in ${cwd ?? "a folder Ork did not record"}, which is gone (a merged worktree is removed), so it cannot be resumed.`;
   }
-  const { workflow, place, workflowDir } = loadWorkflow(
+  const { workflow, place, workflowDir, refRoot } = loadWorkflow(
     run.file,
     path.dirname(run.file),
     undefined,
@@ -111,6 +111,7 @@ export const resumeChat = async (
     outputs,
     inPlace: session.checkout === undefined,
     workflowDir,
+    ...(refRoot === undefined ? {} : { refRoot }),
     projectRoot: run.project,
     orkDir: place.dir,
     pluginDir: path.join(runDir, "plugins", node),

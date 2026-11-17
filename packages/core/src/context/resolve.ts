@@ -44,6 +44,11 @@ export type ContextOptions = {
   workflowDir: string;
   /** References may not leave it. */
   projectRoot: string;
+  /**
+   * What references may not leave, when that isn't `projectRoot`: an attached
+   * project's folder, for a built-in bundle checked in place.
+   */
+  refRoot?: string | undefined;
   /** Where the session runs: its `.claude/skills` is the project layer. */
   checkout: string;
   /** `~` for the user layer, `~/.ork/`; tests pass a folder. */
@@ -110,7 +115,7 @@ const referenced = (
       return;
     }
     const dir = path.resolve(options.workflowDir, parsed.path);
-    if (!inside(options.projectRoot, dir)) {
+    if (!inside(options.refRoot ?? options.projectRoot, dir)) {
       diagnostics.push(
         error("ref.skill", `${ref} is outside the project`, where),
       );

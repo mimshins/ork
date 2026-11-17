@@ -81,10 +81,10 @@ export const executePlaced = async (
         }),
     });
   const watch = "watch" in node ? node.watch : undefined;
-  const result =
+  const looked =
     watch === undefined
-      ? await once(context.signal, context.emit)
-      : await runWatch({
+      ? once(context.signal, context.emit)
+      : runWatch({
           id: activation.id,
           watch,
           declared: "output" in node ? node.output?.schema : undefined,
@@ -103,6 +103,12 @@ export const executePlaced = async (
           },
           everyMs: options.watchEveryMs,
         });
+  // A session torn down by a stop may throw instead of returning: the stop,
+  // below, is still its end.
+  const result = await looked.catch((error: unknown) => {
+    if (!context.signal.aborted) throw error;
+    return thrown(error, "unknown");
+  });
   // An interrupt (or the run's timeout) comes before any other end
   // (specs/runtime/session-ends.md).
   const ended =

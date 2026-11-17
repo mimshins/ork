@@ -1,10 +1,11 @@
 /**
  * @file The free steps of `ork onboard` that come before any question: the
- *   refusals, the driver, `ork init`'s file steps when `.ork/` is missing, and
- *   the overview (specs/cli/onboard-flow.md). Nothing here starts a session or
- *   spends.
+ *   refusals, the driver, `ork init`'s file steps when `.ork/` is missing, the
+ *   uncommitted files the writer's worktree will lack, and the overview
+ *   (specs/cli/onboard-flow.md). Nothing here starts a session or spends.
  */
 
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 import { placeFor, type ProjectPlace } from "@krapht/ork-core";
@@ -25,19 +26,68 @@ export type Prepared =
       /** `ork init` changed `.gitignore`, which the branch does not hold. */
       gitignored: boolean;
       /**
-       * What `ork init` made in the project root just now, which the writer's
-       * worktree (cut from `HEAD`) does not hold; empty when `.ork/` was
-       * there.
+       * The files in the project root that the writer's worktree (cut from
+       * `HEAD`) does not hold: what `ork init` made just now, and any other
+       * uncommitted file under `.ork/` or `.gitignore`; empty when none.
        */
       fromInit: string[];
     } & Overview)
   | { kind: "stop"; lines: readonly string[]; code: number };
 
-/** The line the writer is told about files `ork init` made, or "" for none. */
+/** The line the writer is told about uncommitted files, or "" for none. */
 export const initNote = (fromInit: readonly string[]): string =>
   fromInit.length === 0
     ? ""
-    : `Not in your worktree: \`ork onboard\` just set .ork/ up in the project folder and made ${fromInit.join(", ")}. They are uncommitted, so your worktree does not hold them; do not look for them or recreate them.`;
+    : `Not in your worktree: these files in the project folder are uncommitted (${fromInit.join(", ")}), so your worktree does not hold them; do not look for them or recreate them.`;
+
+/**
+ * The paths under `.ork/` and `.gitignore` of `root` that git reports modified
+ * or untracked (ignored ones, such as `.ork/runs/`, are not reported). Empty
+ * when git fails: not a repository, or no git.
+ */
+export const uncommittedFiles = (root: string): string[] => {
+  let out: string;
+  try {
+    out = execFileSync(
+      "git",
+      [
+        "status",
+        "--porcelain",
+        "-z",
+        "--untracked-files=all",
+        "--",
+        ".ork",
+        ".gitignore",
+      ],
+      { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+  } catch {
+    return [];
+  }
+  const entries = out.split("\0");
+  const files: string[] = [];
+  for (let at = 0; at < entries.length; at++) {
+    const entry = entries[at] ?? "";
+    const status = entry.slice(0, 2);
+    // A rename or copy is followed by its source path.
+    if (status.startsWith("R") || status.startsWith("C")) at++;
+    // A deleted file is still in `HEAD`, so the worktree holds it.
+    if (entry !== "" && !status.includes("D")) files.push(entry.slice(3));
+  }
+  return files;
+};
+
+/** `fromInit`'s items, then the git-reported paths no item already names. */
+export const withUncommitted = (
+  fromInit: readonly string[],
+  reported: readonly string[],
+): string[] => [
+  ...fromInit,
+  ...reported.filter(
+    file =>
+      !fromInit.some(item => item === file || item.startsWith(`${file} `)),
+  ),
+];
 
 /** Everything up to the questions, or why to stop. */
 export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
@@ -71,7 +121,7 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
     place,
     driver: picked.driver,
     gitignored,
-    fromInit,
+    fromInit: withUncommitted(fromInit, uncommittedFiles(place.root)),
     ...(await overview(store, place.root, o, out)),
   };
 };

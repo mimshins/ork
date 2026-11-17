@@ -308,11 +308,23 @@ nodes:
       command: pnpm check:changed
       timeout: 20m
       attempts: 2
+  stat:
+    type: tool.shell
+    script: |-
+      git status --short | head -n 200
+      git diff HEAD --stat | head -n 200
+    allow:
+      - sh
+    cwd: "{{nodes.build.output.worktree}}"
   review:
     type: agent.worker
     agent: reviewer
     prompt: |-
-      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved plan below, for one concern only; two other reviewers cover the rest. pnpm check already passed here; don't run it again.
+      Review the uncommitted change in this checkout against the approved plan below, for one concern only; two other reviewers cover the rest. pnpm check already passed here; don't run it again.
+
+      Its changed files and diff stat are below, computed once: read the diff of the files you choose with `extract` (git diff, base HEAD, a path), and don't run `git status` or `git diff HEAD --stat` again.
+
+      {{nodes.stat.output.stdout}}
 
       Your concern, {{item.concern}}: {{item.look}}
 
@@ -1094,7 +1106,8 @@ nodes:
     budgetUsd: 0.5
     maxTurns: 30
 edges:
-  - build -> review
+  - build -> stat
+  - stat -> review
   - from: review
     to: build
     when: "!all(statuses, 'pass')"

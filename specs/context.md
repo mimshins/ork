@@ -37,7 +37,14 @@ so nothing is loaded twice.
   skill's name is its `SKILL.md` `name`, else its folder's name. Project skills
   load by themselves and are not referenced.
 - A context reference is a path to a file, relative to the workflow file.
-- References stay inside the project (the nearest folder up with a `.git`).
+- References stay inside the project (the nearest folder up with a `.git`). The
+  one exception is a built-in's bundle file in an attached project
+  (`~/.ork/projects/<id>/runs/.builtin/<hash>/`), which `ork validate` and
+  `ork context explain` check with no run worktree: its references resolve
+  against the bundle's own folder and may stay inside the attached project's
+  folder (`bundleRefsOf`, passed as `refRoot` to the compile and the checks). A
+  `..` that leaves that folder is still `is outside the project`. A run of it
+  (`ork run`) resolves against its run root as before.
 - `ork validate` reports what resolves to nothing as `ref.skill` or
   `ref.context` errors, with the line; `ork run` refuses to start on them. Two
   skills with one name in the same layer are an error; a name in

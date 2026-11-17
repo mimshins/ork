@@ -129,8 +129,8 @@ acts:** your account. **What to do:** use another model or driver for the node
 
 You stopped the node, or the run. **Who acts:** you. **What to do:**
 `ork resume` goes on from where it stopped. A stop by you ends the nodes still
-running as interrupted; the run's own `limits.timeout` ends them as timed out.
-The run's status says why.
+running as interrupted, even one whose session threw while it was torn down; the
+run's own `limits.timeout` ends them as timed out. The run's status says why.
 
 ## Tool missing
 

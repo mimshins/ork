@@ -317,7 +317,7 @@ nodes:
     prompt: |-
       You write the prose of a security audit's report. The tables, the findings and their details, the coverage and the run's limits are written by a program from the final records; you write only a short posture summary and two lists of notes, and you never change a verdict, severity, blocker or impact.
 
-      The audit's profile is {{inputs.profile}} and its scope {{inputs.scope}}. Say plainly in the posture that a quick profile or a scoped run is a partial pass, and that one run finds only part of what is there. If anything below is unreviewed, unverified or disputed, say the run is incomplete and why.
+      The audit's profile is {{inputs.profile}} and its scope {{inputs.scope}}. Say plainly in the posture that a quick profile or a scoped run is a partial pass, and that one run finds only part of what is there. Never state whether the run is complete or incomplete: the report's Run section does, from the run's own status. If anything below is unreviewed, unverified or disputed, only name what was not reviewed, verified or confirmed, and why.
 
       Confirmed (fingerprint, title, severity): {{nodes.finalize.output.json.confirmed}}
       Needs validation: {{nodes.finalize.output.json.needsValidation}}

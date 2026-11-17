@@ -80,6 +80,8 @@ export type PlanOptions = {
   workflowDir?: string;
   /** The project's root; references may not leave it. Default: `cwd`. */
   projectRoot?: string;
+  /** What references may not leave instead, when set (`ContextOptions`). */
+  refRoot?: string | undefined;
   /** Ork's folder for the project, which lessons are read from. */
   orkDir?: string;
   /** Where to write the node's plugin; without it, no plugin is written. */
@@ -214,13 +216,13 @@ export const planNodeSession = (
   ]
     .filter(part => part !== "")
     .join("\n\n");
-
   const projectRoot = options.projectRoot ?? options.cwd;
   const context = resolveContext({
     workflow,
     nodeId: declared,
     workflowDir: options.workflowDir ?? projectRoot,
     projectRoot,
+    refRoot: options.refRoot,
     checkout: options.cwd,
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.orkDir === undefined ? {} : { orkDir: options.orkDir }),
@@ -228,7 +230,6 @@ export const planNodeSession = (
   const problem = context.diagnostics.find(d => d.severity === "error");
   if (problem !== undefined) return { ok: false, error: problem.message };
   warnings.push(...context.diagnostics.map(d => d.message));
-
   const spec: SessionSpec = {
     nodeId: id,
     cwd: options.cwd,
@@ -287,7 +288,6 @@ export const planNodeSession = (
   if (plugin !== null) spec.plugins = [plugin];
   const settings = sessionSettings(context, options.cwd);
   if (settings !== undefined) spec.settings = settings;
-
   return {
     ok: true,
     spec,

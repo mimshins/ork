@@ -47,8 +47,9 @@ run could not do, such as leads left unreviewed past the cap.
 ## What it does
 
 1. **Free scanners (no tokens).** Known advisories in your dependencies, your
-   GitHub workflow files (actions pinned by SHA, `permissions` on each job), and
-   a scan of tracked files for credential formats (file, line and pattern name,
+   GitHub workflow files (actions pinned by SHA, `permissions` on each job; an
+   unpinned action used in several jobs is listed once, with its count), and a
+   scan of tracked files for credential formats (file, line and pattern name,
    never the value). It also reads your previous audit, so runs build on each
    other.
 2. **Agents, all read-only.** One agent maps the project and lists the parts to
@@ -91,9 +92,11 @@ stays clean (`<project>` is the main checkout's folder name):
 | `coverage-ledger.json` | The parts looked at, and whether each was hunted or deferred                                             |
 | `run-metadata.json`    | Profile, scope, source ref, why a run is incomplete, and the previous audit's folder (`prior_run_paths`) |
 
-Read `REPORT.md` first. **The report may be sensitive: do not commit or post
-it.** It describes weaknesses in your code. A real finding belongs in a private
-channel, such as your repository's private security advisories.
+Read `REPORT.md` first. Its Run section says whether the run is complete; the
+posture text names only what was not reviewed, verified or confirmed, so the two
+never disagree. **The report may be sensitive: do not commit or post it.** It
+describes weaknesses in your code. A real finding belongs in a private channel,
+such as your repository's private security advisories.
 
 ## In a project attached with `ork register`
 
@@ -119,9 +122,9 @@ the run works in a temporary copy instead:
   lists it by the run and `ork worktrees clean` removes it
   ([worktrees](./worktrees.md)). A `post-checkout` hook in your repository runs
   when the copy is made, as for any worktree a run makes.
-- `ork validate ork:security-audit` in an attached project still reports a
-  missing `read-only-bash.md` file, because only `ork run` makes the copy; the
-  run itself is not affected.
+- `ork validate ork:security-audit` and `ork context explain` pass here too:
+  they read the audit's context files from the audit's own folder, with no copy
+  made.
 
 An `ork init` project is unchanged: the audit runs in your checkout and reads
 your working tree, uncommitted changes included.

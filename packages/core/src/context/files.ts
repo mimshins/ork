@@ -48,13 +48,17 @@ export const contextFiles = (
   refs: readonly string[],
   layer: ContextLayer,
   at: DiagnosticPath,
-  options: { workflowDir: string; projectRoot: string },
+  options: {
+    workflowDir: string;
+    projectRoot: string;
+    refRoot?: string | undefined;
+  },
   diagnostics: Diagnostic[],
 ): ContextFile[] =>
   refs.flatMap((ref, index) => {
     const file = path.resolve(options.workflowDir, ref);
     const where = [...at, index];
-    if (!inside(options.projectRoot, file)) {
+    if (!inside(options.refRoot ?? options.projectRoot, file)) {
       diagnostics.push(
         error("ref.context", `${ref} is outside the project`, where),
       );

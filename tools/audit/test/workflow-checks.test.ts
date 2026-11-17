@@ -30,6 +30,19 @@ const workflow = (on: string, uses: string, jobPermissions: string): string =>
 const checks = (text: string): string[] =>
   checkWorkflow(".github/workflows/t.yml", text).map(record => record.check);
 
+/** One permissioned job per `uses:` value. */
+const jobsFor = (uses: string[]): string =>
+  [
+    "on: push",
+    "jobs:",
+    ...uses.flatMap((value, index) => [
+      `  j${index}:`,
+      "    permissions: {}",
+      "    steps:",
+      `      - uses: ${value}`,
+    ]),
+  ].join("\n");
+
 describe("checkWorkflow", () => {
   it("flags an action pinned to a tag, with its line", () => {
     const records = checkWorkflow(
@@ -59,6 +72,43 @@ describe("checkWorkflow", () => {
     );
     expect(records).toMatchObject([{ check: "missing-permissions" }]);
     expect(records[0]?.title).toContain("job build");
+  });
+
+  it("collapses the same unpinned action in several jobs to one record", () => {
+    const same = checkWorkflow(
+      ".github/workflows/t.yml",
+      jobsFor([
+        "actions/checkout@v4",
+        "actions/checkout@v4",
+        "actions/checkout@v4",
+      ]),
+    );
+    expect(same).toMatchObject([{ check: "unpinned-action", line: 6 }]);
+    expect(same[0]?.title).toContain("(3 uses)");
+    const different = checkWorkflow(
+      ".github/workflows/t.yml",
+      jobsFor(["actions/checkout@v4", "actions/cache@v4"]),
+    );
+    expect(different.map(record => record.check)).toEqual([
+      "unpinned-action",
+      "unpinned-action",
+    ]);
+    expect(different[0]?.title).not.toContain("uses)");
+  });
+
+  it("keeps one missing-permissions record per job", () => {
+    const text = [
+      "on: push",
+      "jobs:",
+      "  a:",
+      "    runs-on: x",
+      "  b:",
+      "    runs-on: x",
+    ].join("\n");
+    expect(checks(text)).toEqual([
+      "missing-permissions",
+      "missing-permissions",
+    ]);
   });
 
   it("flags pull_request_target with a checkout", () => {

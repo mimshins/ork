@@ -59,12 +59,18 @@ runs prints
 is expected: the writer's worktree branches from `HEAD`, lacks the starter, and
 only adds files ([L400](../gaps/onboard-limits.md)).
 
-When this command set `.ork/` up, `prepare` keeps what `ork init` made in
-`Prepared.fromInit` (the starter file and the `.gitignore` line), and `runWrite`
-adds one note to the writer's `survey` input (`initNote`): those files are
-uncommitted, so they are not in its worktree, and it should neither look for nor
-recreate them. With an `.ork/` already there `fromInit` is empty and the survey
-is sent as it is.
+`prepare` keeps in `Prepared.fromInit` the files of the project root that the
+writer's worktree (cut from `HEAD`) lacks: what `ork init` made when this
+command set `.ork/` up (the starter file and the `.gitignore` line), and,
+always, the paths under `.ork/` and `.gitignore` that
+`git status --porcelain --untracked-files=all` reports (modified or untracked;
+ignored ones such as `.ork/runs/` and deleted ones are left out), merged with no
+duplicates (`uncommittedFiles`, `withUncommitted`). A failing `git status` (not
+a repository, no git) adds nothing and is never an error. `runWrite` adds one
+note to the writer's `survey` input (`initNote`): "Not in your worktree: these
+files in the project folder are uncommitted (…), so your worktree does not hold
+them; do not look for them or recreate them." With none, `fromInit` is empty and
+the survey is sent as it is.
 
 ## The survey
 

@@ -119,6 +119,15 @@ describe("security-audit.ork.yaml", () => {
     }
   });
 
+  it("tells the report agent not to state whether the run is complete", () => {
+    const prompt = String(field("report", "prompt"));
+    expect(prompt).toContain(
+      "Never state whether the run is complete or incomplete",
+    );
+    expect(prompt).not.toContain("say the run is incomplete");
+    expect(prompt).toContain("partial pass");
+  });
+
   it("uses the budgets profiles.ts sums", () => {
     for (const [name, usd] of Object.entries(NODE_BUDGETS_USD)) {
       expect(budgetOf(name)).toBe(usd);

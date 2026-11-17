@@ -175,24 +175,36 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 });
 
-describe("ork onboard, the writer's note about `ork init`", () => {
-  it("is not sent when .ork/ was there before", async () => {
-    const first = await onboard({
-      driver: "claude-code",
-      script: SCRIPT,
-      gate: "discard",
-    });
-    const second = await onboard({
-      driver: "claude-code",
-      script: SCRIPT,
-      root: first.root,
-    });
-    const survey = String(
-      startedOf(second.store, "ork-onboard-write").inputs["survey"],
-    );
-    expect(second.code).toBe(0);
+const secondSurvey = async (commit: boolean): Promise<string> => {
+  const first = await onboard({
+    driver: "claude-code",
+    script: SCRIPT,
+    gate: "discard",
+  });
+  if (commit) {
+    git(first.root, "add", "-A");
+    git(first.root, "commit", "-q", "-m", "keep .ork");
+  }
+  const second = await onboard({
+    driver: "claude-code",
+    script: SCRIPT,
+    root: first.root,
+  });
+  expect(second.code).toBe(0);
+  return String(startedOf(second.store, "ork-onboard-write").inputs["survey"]);
+};
+
+describe("ork onboard, the writer's note about uncommitted files", () => {
+  it("is not sent when .ork/ was there and is committed", async () => {
+    const survey = await secondSurvey(true);
     expect(survey).toContain(".ork/:");
     expect(survey).not.toContain("Not in your worktree");
+  });
+
+  it("names the files of .ork/ and .gitignore that are still uncommitted", async () => {
+    const survey = await secondSurvey(false);
+    expect(survey).toContain("Not in your worktree");
+    expect(survey).toContain(".ork/workflows/hello.ork.yaml");
   });
 });
 

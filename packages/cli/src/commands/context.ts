@@ -33,7 +33,7 @@ export const explainNode = (
   cwd: string,
   home?: string,
 ): ExplainResult => {
-  const { report, workflow, graph, place, workflowDir } = loadWorkflow(
+  const { report, workflow, graph, place, workflowDir, refRoot } = loadWorkflow(
     file,
     cwd,
     home,
@@ -43,6 +43,7 @@ export const explainNode = (
     root: place.root,
     orkDir: place.dir,
     workflowDir,
+    ...(refRoot === undefined ? {} : { refRoot }),
     ...(home === undefined ? {} : { home }),
   });
   return result.ok ? result : { ok: false, lines: [result.error] };

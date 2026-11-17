@@ -110,7 +110,7 @@ export const runNode = async (
     return { exitCode: 1, outcome: null };
   };
 
-  const { report, workflow, graph, place, workflowDir } = loadWorkflow(
+  const { report, workflow, graph, place, workflowDir, refRoot } = loadWorkflow(
     options.file,
     options.cwd,
     options.home,
@@ -143,6 +143,7 @@ export const runNode = async (
     inputs: inputs.inputs,
     inPlace: options.inPlace,
     workflowDir,
+    ...(refRoot === undefined ? {} : { refRoot }),
     projectRoot,
     orkDir: place.dir,
     pluginDir: path.join(runDir, "plugins", options.nodeId),

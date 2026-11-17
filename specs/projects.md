@@ -79,7 +79,11 @@ current folder's project's `workflows/`.
 - **Paths** (skills, context) resolve as if the workflow were in
   `<root>/.ork/workflows/`, and stay inside the repository; `ork migrate` can
   move it there unchanged. `../../docs/process.md` is the repository's
-  `docs/process.md`.
+  `docs/process.md`. A built-in's bundle (`runs/.builtin/<hash>/` in the
+  attached folder) is the exception: `ork validate` and `ork context explain`
+  resolve its references against the bundle's own folder, inside the attached
+  folder, since no run worktree holds it then
+  ([references](./context.md#references)).
 - **Runs** are recorded under the repository's root, like any run, and their
   folder is `~/.ork/projects/<id>/runs/<run>/`. A run started from anywhere
   works in the project: worktree nodes in worktrees beside the clone, the others

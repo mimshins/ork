@@ -11,6 +11,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  bundleRefsOf,
   inRepoPlace,
   lessons,
   loadAgents,
@@ -56,6 +57,31 @@ describe("project places", () => {
     );
     const elsewhere = path.join(root, "flows", "x.ork.yaml");
     expect(workflowDirOf(place, elsewhere)).toBe(path.join(root, "flows"));
+  });
+
+  it("read an attached built-in bundle's references from its own folder, held to the project's folder", () => {
+    const place = attached(repo());
+    const folder = path.join(place.dir, "runs", ".builtin", "0123456789ab");
+    const file = path.join(folder, "audit.ork.yaml");
+    expect(bundleRefsOf(place, file)).toEqual({
+      workflowDir: folder,
+      refRoot: place.dir,
+    });
+    for (const other of [
+      path.join(place.dir, "workflows", "audit.ork.yaml"),
+      path.join(place.dir, "runs", ".builtin", "audit.ork.yaml"),
+      path.join(folder, "nested", "audit.ork.yaml"),
+      path.join(place.root, "audit.ork.yaml"),
+    ]) {
+      expect(bundleRefsOf(place, other)).toBeUndefined();
+    }
+    const inRepo = inRepoPlace(place.root);
+    expect(
+      bundleRefsOf(
+        inRepo,
+        path.join(inRepo.dir, "runs", ".builtin", "0123456789ab", "a.ork.yaml"),
+      ),
+    ).toBeUndefined();
   });
 
   it("read lessons and agents from the attached project's folder", () => {

@@ -115,13 +115,18 @@ integration says a failed command was a missing sign-in, so the node ends `auth`
 The scheduler ends nodes too, in its own code
 ([execute.ts](../../packages/core/src/run/execute.ts)): a node's own `timeout`
 is `timed_out`, an abort comes before any other end (`interrupted`), and a run's
-`limits.timeout` that expires ends the nodes still running `timed_out`. A node
-that could not start is `invalid_node`, whose sources are a `watch.until` that
-does not read, a `forEach` list that can't be built, an over-`maxItems` list no
-one let run (declined, or asked with no one to answer), a checkout that can't be
-made (a branch rule), an `mcp.call` or tool node's own definition, and a
-`workflow.call` in a run that can't call workflows. A graph with no node or no
-executor for a type is Ork's own bug, so `unknown`.
+`limits.timeout` that expires ends the nodes still running `timed_out`. That
+holds when the node's executor throws after the abort too (a session torn down
+by `ork stop` while it starts or runs): the node ends `interrupted` ("was
+stopped"), not `unknown`, and its workspace is finished like any other failed
+end; a throw with no abort ends as classified
+([L431](../gaps/end-kinds-limits.md)). A node that could not start is
+`invalid_node`, whose sources are a `watch.until` that does not read, a
+`forEach` list that can't be built, an over-`maxItems` list no one let run
+(declined, or asked with no one to answer), a checkout that can't be made (a
+branch rule), an `mcp.call` or tool node's own definition, and a `workflow.call`
+in a run that can't call workflows. A graph with no node or no executor for a
+type is Ork's own bug, so `unknown`.
 
 The classifier and the mappings are tested with fixtures that follow the
 providers' documented error formats (Anthropic, OpenAI-style, the `commandcode`

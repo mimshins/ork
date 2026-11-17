@@ -267,7 +267,44 @@ describe("a node whose executor threw", () => {
     await handle.done;
     expect(endKinds(events)).toEqual({ a: "tool_missing", b: "unknown" });
   });
+
+  it("ends as stopped when it threw after its node was stopped", async () => {
+    const { handle, events } = start(twoWorkers(false), stoppedThrows);
+    await tick();
+    expect(handle.stopNode("a")).toBe(true);
+    await handle.done;
+    expect(endKinds(events)).toEqual({ a: "interrupted", b: "unknown" });
+    expect(endMessage(events, "a")).toBe("was stopped");
+  });
+
+  it("ends as stopped when it threw after its run was stopped", async () => {
+    const { handle, events } = start(twoWorkers(true), stoppedThrows);
+    await tick();
+    handle.interrupt();
+    await handle.done;
+    expect(endKinds(events)).toEqual({ a: "interrupted" });
+    expect(endMessage(events, "a")).toBe("was stopped");
+  });
 });
+
+/**
+ * `a` waits for its stop, then throws as a session torn down while starting
+ * does; `b` throws at once.
+ */
+const stoppedThrows: NodeExecutor = async context => {
+  if (context.id === "a") {
+    await new Promise(resolve => {
+      context.signal.addEventListener("abort", resolve);
+    });
+  }
+  throw new Error("session closed before it started");
+};
+
+/** The message of `id`'s end. */
+const endMessage = (events: readonly RunEvent[], id: string) =>
+  events.flatMap(e =>
+    e.type === "node.finished" && e.id === id ? [e.end?.message] : [],
+  )[0];
 
 describe("a gate's timer", () => {
   afterEach(() => {

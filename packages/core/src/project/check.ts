@@ -47,6 +47,8 @@ export type CheckWhere = {
   place: ProjectPlace;
   /** Where its relative paths resolve from. */
   workflowDir: string;
+  /** What its references may not leave, when not the project's root. */
+  refRoot?: string | undefined;
   /** The registered projects, for call targets. */
   registered: readonly ProjectPlace[];
   /** The user's `~`; tests pass a folder. */
@@ -56,7 +58,7 @@ export type CheckWhere = {
 /** Every check on a workflow's text, with each diagnostic's line and column. */
 export const checkWorkflowText = (
   text: string,
-  { place, workflowDir, registered, home }: CheckWhere,
+  { place, workflowDir, refRoot, registered, home }: CheckWhere,
 ): WorkflowChecks => {
   const parsed = parseWorkflow(text);
   if (!parsed.ok) {
@@ -90,7 +92,11 @@ export const checkWorkflowText = (
     ...checkCallTargets(parsed.workflow, place, registered),
     ...(graph === null
       ? []
-      : contextDiagnostics(graph.workflow, { workflowDir, projectRoot })),
+      : contextDiagnostics(graph.workflow, {
+          workflowDir,
+          projectRoot,
+          ...(refRoot === undefined ? {} : { refRoot }),
+        })),
   ]) {
     // One in another file (the project's) is located there already.
     const position =

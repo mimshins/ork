@@ -75,10 +75,12 @@ as `needs_validation` with the skill's safe plan.
 
 1. `scan` (free): `pnpm audit` or `npm audit` by lockfile (needs the network),
    every workflow under `.github/workflows` (actions pinned by SHA,
-   `permissions` per job, no `pull_request_target` with a checkout), and a
-   secret-pattern scan of tracked files (file, line and pattern name, never the
-   value; a test's placeholder, such as an alphabet run or a key block's header
-   with no key, is left out). It also reads the previous audit.
+   `permissions` per job, no `pull_request_target` with a checkout; one record
+   per unpinned `uses:` value in a file, at its first line, with the count of
+   uses in its title), and a secret-pattern scan of tracked files (file, line
+   and pattern name, never the value; a test's placeholder, such as an alphabet
+   run or a key block's header with no key, is left out). It also reads the
+   previous audit.
 2. `recon` maps the architecture and lists coverage-ledger units, most important
    first. `ledger` writes the ledger and runs `validate-coverage-ledger.cjs`:
    the first 8 (`quick`) or 20 (`standard`) units are hunted, the rest are
@@ -111,7 +113,8 @@ as `needs_validation` with the skill's safe plan.
    already did this check.
 8. `finalize` applies that (a rerun unions the existing `disputed.json`, so it
    gives the same counts and never marks the audit `complete`), `report` writes
-   the posture and notes, and `write` writes the three reports.
+   the posture and notes (never saying whether the run is complete: the Run
+   section does, from `run_status`), and `write` writes the three reports.
 9. `review`, a gate: `done` keeps the folder, `discard` deletes it.
 
 A run stops if a validator fails, with its message. `ork resume` goes on from

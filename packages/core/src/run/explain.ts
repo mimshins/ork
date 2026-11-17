@@ -78,6 +78,8 @@ export type ExplainPlace = {
   /** The project's `.ork` folder. */
   orkDir: string;
   workflowDir: string;
+  /** What its references may not leave, when not `root`. */
+  refRoot?: string;
   home?: string;
 };
 
@@ -174,6 +176,7 @@ export const explainSession = (
     inPlace: true,
     workflowDir: place.workflowDir,
     projectRoot: root,
+    ...(place.refRoot === undefined ? {} : { refRoot: place.refRoot }),
     orkDir: place.orkDir,
     ...(place.home === undefined ? {} : { home: place.home }),
   });

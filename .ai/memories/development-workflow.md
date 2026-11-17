@@ -67,3 +67,10 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   cannot tell a copy from a writer's identical rewrite, which changes nothing.
   `readFileSync` follows links, so a link to the identical root file is exempt
   too; harmless.
+- Path traps in tests and checks: on macOS a temp dir is `/var/...` but its real
+  path is `/private/var/...`, so resolve both sides the same way before an
+  `inside()` comparison. `git status --porcelain` paths are relative to the repo
+  root, not the cwd.
+- The stop-end fix lives in `executePlaced`, which holds the node's own signal.
+  `stops.signalFor` registers a fresh AbortController per call, so calling it
+  from `executeOne`'s catch would leave stale entries in the stop table.
