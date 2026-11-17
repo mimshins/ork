@@ -45,7 +45,7 @@ nodes:
 
       {{inputs.history}}
 
-      Read the files the survey names before you rely on them, and cite only paths and commits you read. Ask the person at most three follow-up questions with `ask_user`, and none when nothing is left open. Report `suggestions`, best first, at most five; an empty list when nothing fits, with the reason in your summary.
+      Look at the files the survey names before you rely on them, and cite only paths and commits you looked at. Ask the person at most three follow-up questions with `ask_user`, and none when nothing is left open. Report `suggestions`, best first, at most five; an empty list when nothing fits, with the reason in your summary.
     context:
       - ./onboard-propose/context/suggestions.md
     isolation: readonly

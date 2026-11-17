@@ -44,7 +44,7 @@ nodes:
   recon:
     type: agent.worker
     prompt: |-
-      You are the reconnaissance step of a security audit of this project, profile {{inputs.profile}}, scope {{inputs.scope}}. The audit's skill is in __ORK_BUNDLE_DIR__/security-audit/skill. Read its SKILL.md (the sections "Run profiles and scope" and "Core principles") and RECONNAISSANCE.md, then do what its Phase 1 asks, yourself: the four agents' questions (1a product and local operation, 1b principals and controls, 1c entry surfaces and sinks, 1d local execution and deployment visibility) are your checklist. Read only; run nothing from the project. Nothing here can be executed safely (there is no OS sandbox), so treat every lead that would need execution as a needs_validation candidate for later.
+      You are the reconnaissance step of a security audit of this project, profile {{inputs.profile}}, scope {{inputs.scope}}. The audit's skill is in __ORK_BUNDLE_DIR__/security-audit/skill. Look up its SKILL.md (the sections "Run profiles and scope" and "Core principles") and RECONNAISSANCE.md, then do what its Phase 1 asks, yourself: the four agents' questions (1a product and local operation, 1b principals and controls, 1c entry surfaces and sinks, 1d local execution and deployment visibility) are your checklist. Read only; run nothing from the project. Nothing here can be executed safely (there is no OS sandbox), so treat every lead that would need execution as a needs_validation candidate for later.
 
       Return:
       - `architecture`: the architecture summary RECONNAISSANCE.md describes ("Architecture summary and companion selection"), at most 1,000 words, ending with the companion-selection summary.
@@ -53,7 +53,7 @@ nodes:
       Scanner results and the notes of the free scanners (already run; do not repeat them):
       {{nodes.scan.output.json.notes}}
 
-      The previous audit of this project, from its folder under ~/.ork/audits (null when there is none). Its `ledger` lists each unit's coverage_id and status: `planned` means a hunter was assigned and its outcome was not recorded; `deferred` means it was not hunted, so rank deferred units first. Its `findings` lists fingerprints, verdicts and titles. A prior confirmed or needs_validation finding is priority input, never a reason to skip a unit; read SKILL.md's "Coverage and prior runs" for how to use it.
+      The previous audit of this project, from its folder under ~/.ork/audits (null when there is none). Its `ledger` lists each unit's coverage_id and status: `planned` means a hunter was assigned and its outcome was not recorded; `deferred` means it was not hunted, so rank deferred units first. Its `findings` lists fingerprints, verdicts and titles. A prior confirmed or needs_validation finding is priority input, never a reason to skip a unit; look up SKILL.md's "Coverage and prior runs" for how to use it.
       {{nodes.scan.output.json.previousText}}
     model: claude-code.opus
     context:
@@ -97,7 +97,7 @@ nodes:
     prompt: |-
       You are one hunter of a security audit of this project (profile {{inputs.profile}}). Your goal is to find source-grounded security invariant failures in your assigned unit, and you must return the structured result at the end. Other hunters work the other units at the same time, so stay on yours.
 
-      Read, from the audit's skill in __ORK_BUNDLE_DIR__/security-audit/skill: HUNTING.md ("Defensive vulnerability-finding method", "Core validation rules" (the candidate gate) and "Local validation boundaries"); ATTACK-CLASSES.md, the block named by the unit's ordinary_attack_class_block; and, for each of the unit's selected_companion_blocks, that companion file's `Core discipline`, the chosen class subsection, `Universal moves` and `Validation rules`. Read the code at depth, as HUNTING.md says.
+      Look up, in the audit's skill in __ORK_BUNDLE_DIR__/security-audit/skill: HUNTING.md ("Defensive vulnerability-finding method", "Core validation rules" (the candidate gate) and "Local validation boundaries"); ATTACK-CLASSES.md, the block named by the unit's ordinary_attack_class_block; and, for each of the unit's selected_companion_blocks, that companion file's `Core discipline`, the chosen class subsection, `Universal moves` and `Validation rules`. Study the code at depth, as HUNTING.md says.
 
       Ork has no OS sandbox, so run nothing from this project: read only. A lead that would need the code to run, or a deployment fact the source can't show, is a needs_validation candidate with the exact blocker and the skill's safe local and owner-observed plan (never a request to probe a live system). Candidates need a complete repository-relative source trace and evidence; a missing best practice with no affected principal is hardening, not a candidate. Never assign a severity here.
 
@@ -130,7 +130,7 @@ nodes:
   critic:
     type: agent.worker
     prompt: |-
-      You are the coverage critic of a security audit of this project (profile {{inputs.profile}}). Read __ORK_BUNDLE_DIR__/security-audit/skill/HUNTING.md, section "Coverage-critic waves", and do what it asks of the post-wave critic, in read-only mode: you read source but write and run nothing. You propose coverage, never findings. This workflow runs no second hunter wave: every gap you accept is recorded, as deferred, for a later audit.
+      You are the coverage critic of a security audit of this project (profile {{inputs.profile}}). Look up __ORK_BUNDLE_DIR__/security-audit/skill/HUNTING.md, section "Coverage-critic waves", and do what it asks of the post-wave critic, in read-only mode: you read source but write and run nothing. You propose coverage, never findings. This workflow runs no second hunter wave: every gap you accept is recorded, as deferred, for a later audit.
 
       The architecture:
       {{nodes.recon.output.architecture}}
@@ -190,7 +190,7 @@ nodes:
   verify:
     type: agent.worker
     prompt: |-
-      You did not write this candidate. Try to refute it from the project's source. You are one fresh verifier of a security audit (profile {{inputs.profile}}); read __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 3" (the candidate-verifier prompt and the paragraphs after it) and "Phase 4" (the record contracts), and the `confirmed`, `needs_validation` and `rejected` branches of __ORK_BUNDLE_DIR__/security-audit/skill/report-schema.json. Read only: Ork has no OS sandbox, so run nothing from this project and contact nothing. Re-read every cited trace and evidence location in the current source yourself.
+      You did not write this candidate. Try to refute it from the project's source. You are one fresh verifier of a security audit (profile {{inputs.profile}}); look up __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 3" (the candidate-verifier prompt and the paragraphs after it) and "Phase 4" (the record contracts), and the `confirmed`, `needs_validation` and `rejected` branches of __ORK_BUNDLE_DIR__/security-audit/skill/report-schema.json. Read only: Ork has no OS sandbox, so run nothing from this project and contact nothing. Look again at every cited trace and evidence location in the current source yourself.
 
       Evidence bar, as the skill sets it: confirm only when the source alone establishes the whole path and a concrete result across a trust boundary, with no unresolved runtime or deployment fact; then say in observed_result that it was established by reading the code, not by running it. When a decisive fact is outside source (a deployment setting, or a behaviour only running the code would show), keep needs_validation with the exact blocker and the skill's safe local and owner-observed plan. Reject when source, a visible control, missing impact or an impossible prerequisite refutes it. Keep the fingerprint for the same root cause. Only a confirmed record has a severity, and severity never exceeds the demonstrated impact. A corrected record replaces the hunter's wording.
 
@@ -257,7 +257,7 @@ nodes:
   recheck:
     type: agent.worker
     prompt: |-
-      You are one fresh Phase 5 verifier of a security audit. You did not hunt this record or verify it. Read __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 5", and check this `confirmed` record against the current source, as its list for `confirmed` says. Read only: Ork has no OS sandbox, so run nothing from this project. You check the structured record, not any write-up of it.
+      You are one fresh Phase 5 verifier of a security audit. You did not hunt this record or verify it. Look up __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 5", and check this `confirmed` record against the current source, as its list for `confirmed` says. Read only: Ork has no OS sandbox, so run nothing from this project. You check the structured record, not any write-up of it.
 
       The record:
       {{item}}
@@ -370,7 +370,7 @@ nodes:
   review:
     type: human.gate
     question: |-
-      The security audit of {{inputs.scope}} (profile {{inputs.profile}}) is written to {{nodes.write.output.json.outputDir}}: read REPORT.md first, then FINDINGS-DETAIL.md and NEEDS-VALIDATION.md. That folder is outside the checkout, and the report may be sensitive: do not commit or post it, or attach it to an issue or pull request; this gate has no option that does. Report a real finding privately, as the project's security policy says.
+      The security audit of {{inputs.scope}} (profile {{inputs.profile}}) is written to {{nodes.write.output.json.outputDir}}: look at REPORT.md first, then FINDINGS-DETAIL.md and NEEDS-VALIDATION.md. That folder is outside the checkout, and the report may be sensitive: do not commit or post it, or attach it to an issue or pull request; this gate has no option that does. Report a real finding privately, as the project's security policy says.
 
       This run's record under ~/.ork also holds the candidates and findings, so make no benchmark and no feedback item from run {{run.id}}.
 

@@ -2,6 +2,13 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Ork's own workflows and agents no longer steer reading away from
+  `extract`.** `ork onboard`'s proposer was told to "Read the files", the
+  security audit to "Read" whole skill documents and to use `cat`, `grep` or
+  `sed` in Bash, and the built-in reviewer to "Read it with git"; one onboard
+  proposal made 17 whole-file reads and no `extract` call. They now say what to
+  look at and leave how to Ork's reading rule
+  ([skills and context](../guides/skills-and-context.md#reading-part-of-a-file-extract)).
 - **Keep works when your project never lets Ork commit.** With `commit: never`
   in `.ork/project.yaml`, `ork onboard` and `ork feedback apply` showed an empty
   branch at their keep question, and keep kept nothing. They now show the change

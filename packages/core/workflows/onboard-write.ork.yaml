@@ -55,7 +55,7 @@ nodes:
 
       {{nodes.format.output.stdout}}
 
-      Read .ork/workflows and .ork/project.yaml first. Write each pick as .ork/workflows/<workflow>.ork.yaml and change nothing else. You can read and edit files but not run commands: leave the change in the files, and Ork commits and checks it. Say in your summary what you wrote and why.
+      Look at .ork/workflows and .ork/project.yaml first. Write each pick as .ork/workflows/<workflow>.ork.yaml and change nothing else. You can read and edit files but not run commands: leave the change in the files, and Ork commits and checks it. Say in your summary what you wrote and why.
     context:
       - ./onboard-write/context/writing.md
       - ./onboard-write/context/format.md
