@@ -81,7 +81,9 @@ counts.
   It resolves `{ kind: "chosen", id, note? }`, `{ kind: "later" }` or
   `{ kind: "interrupted" }`. An option with a label shows it first and its id
   after it in parentheses, dimmed (`Allow (allow)`); one without shows its id.
-  In a terminal too short for all of it, only the chosen option keeps its
+  The name, its id and the `(recommended)` mark wrap onto lines indented under
+  the label (`nameLines`), never cut, in `select` and `multiselect` alike. In a
+  terminal too short for all of it, only the chosen option keeps its
   description, the options show as a window around it with `↑ N more` and
   `↓ N more`, and the card is cut from the end with "… N more lines" (and `(d)`
   when `d` shows them), its blank first line going first; the key line always

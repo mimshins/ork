@@ -206,9 +206,43 @@ describe("select, on a terminal", () => {
       options: [{ id: "a-long-option-id", label: "with a long label here" }],
     });
     await term.press();
-    expect(term.screen()[1]).toBe("▌❯ 1. with a long label here (a-long-o…");
-    term.resize(24);
-    expect(term.screen()[1]).toBe("▌❯ 1. with a long labe…");
+    expect(term.screen().slice(1, 3)).toEqual([
+      "▌❯ 1. with a long label here",
+      "▌     (a-long-option-id)",
+    ]);
+    term.resize(28);
+    expect(term.screen().slice(1, 4)).toEqual([
+      "▌❯ 1. with a long label",
+      "▌     here",
+      "▌     (a-long-option-id)",
+    ]);
+    await term.press(KEY.enter);
+    await result;
+  });
+
+  it("wraps a long option name and its mark instead of cutting them", async () => {
+    const term = fakeTerm({ columns: 40 });
+    const label =
+      "Option 1: run-root worktree for built-ins in attached projects";
+    const result = open(term, {
+      options: [
+        { id: "one", label, description: "No workflow-format change" },
+        { id: "two", label: "Option 2" },
+      ],
+      recommended: "one",
+    });
+    await term.press();
+    const screen = term.screen();
+    expect(screen.join("\n")).not.toContain("…");
+    expect(screen.slice(1, 5)).toEqual([
+      "▌❯ 1. Option 1: run-root worktree for",
+      "▌     built-ins in attached projects",
+      "▌     (one) (recommended)",
+      "▌     No workflow-format change",
+    ]);
+    expect(
+      Math.max(...screen.map(line => Array.from(line).length)),
+    ).toBeLessThanOrEqual(40);
     await term.press(KEY.enter);
     await result;
   });

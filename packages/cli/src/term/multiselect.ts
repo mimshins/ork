@@ -18,7 +18,7 @@ import { canKey, type PromptIO, type Term, termOf } from "./mode.ts";
 import {
   asIs,
   type Look,
-  nameOf,
+  nameLines,
   pickOption,
   plainOptions,
   type SelectOption,
@@ -153,14 +153,13 @@ export const multiselect = (
           ? text => apply(t, ["bold", "cyan"], text)
           : asIs;
         const prefix = cut(`${box} ${number} `, t.width - 4);
-        const text = `${look(prefix)}${nameOf(
-          t,
-          option,
-          t.width - 4 - widthOf(prefix),
-          look,
-        )}`;
+        const indent = " ".repeat(3 + widthOf(prefix));
+        const names = nameLines(t, option, t.width - 4 - widthOf(prefix), look);
         const pointer = selected ? paint(t, "accent", "❯") : " ";
-        const lines = [` ${pointer} ${text}`];
+        // The name wraps, never cut: it is what the person picks.
+        const lines = names.map((name, k) =>
+          k === 0 ? ` ${pointer} ${look(prefix)}${name}` : `${indent}${name}`,
+        );
         if (compact && !selected) return lines;
         for (const line of wrap(option.description ?? "", t.width - 11)) {
           if (line !== "") lines.push(paint(t, "muted", `          ${line}`));

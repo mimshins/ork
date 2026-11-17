@@ -2,6 +2,11 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **A question's options wrap instead of being cut.** In the terminal card of
+  `ork run`, `ork attach` and `ork decide`, and in `ork onboard`'s pick list, a
+  long option name, its id and `(recommended)` continue on the next lines under
+  the label; before, they were cut with `…` at the terminal's edge
+  ([terminal](../guides/terminal.md)).
 - **An attached project is told to run `ork migrate`, not `ork init`.**
   `ork onboard` and `ork:security-audit` refuse a project attached with
   `ork register`; their refusals named `ork init`, which refuses an attached

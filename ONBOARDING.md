@@ -76,7 +76,7 @@ journeys, which walk a flow step by step. **Why now:** it shows the whole
 cheaply, and its cards link to the specs and code you read next. Read the maps
 in this order, with these journeys:
 
-1. **Architecture:** "Validate a workflow file", "Run one Claude node".
+1. **Architecture:** "Validate a workflow file", "Run one agent node".
 2. **Run lifecycle:** "Run software-factory end to end".
 3. **Node roles:** "From the entries to the leaves".
 4. **Context and skills:** "Compile the security reviewer's session".
@@ -146,6 +146,13 @@ reaches them. **Why now:** this is the engine, and it runs without Claude.
   Ork starts an agent session by running that tool's own CLI headless: `claude`
   (`claude-code`), `opencode` (`open-code`) or `cmd` (`command-code`).
 - `context/resolve.ts`, `store/recorder.ts` and `worktree/manager.ts`.
+- The built-in workflows (`ork:security-audit`, `ork:onboard-propose`,
+  `ork:onboard-write`) live in
+  [packages/core/workflows/](./packages/core/workflows/), each with its
+  companion files in a folder of its name. `project/builtin-workflows.ts` and
+  `builtin-bundles.ts` are generated from them: after editing one, run
+  `node tools/release/builtin-workflows.ts`
+  ([built-in workflows](./specs/cli/built-in-workflows.md)).
 
 **You can answer:** What does the compiler give the scheduler? What decides
 which edges are taken? What does `core` know about Claude, and through what?
@@ -201,7 +208,8 @@ come from? How does `second` get the output of `first`?
 **Read** the [ADR](./decisions/README.md) and [RFC](./rfcs/README.md) indexes,
 then ADRs [004](./decisions/ADR-004-no-credentials.md) (credentials),
 [005](./decisions/ADR-005-one-runtime-port-two-drivers.md) (the port),
-[008](./decisions/ADR-008-ownership-hierarchy.md) (ownership),
+[076](./decisions/ADR-076-cli-drivers-only.md) (drivers run each tool's own
+CLI), [008](./decisions/ADR-008-ownership-hierarchy.md) (ownership),
 [016](./decisions/ADR-016-scheduler-semantics.md) (how a workflow runs),
 [022](./decisions/ADR-022-integration-registry.md) (adapters) and
 [024](./decisions/ADR-024-event-store.md) (the store). Afterwards, look up the
@@ -221,6 +229,15 @@ agents, read [.ai/README.md](./.ai/README.md): it indexes the
 Ork, and says which source wins when two disagree (the code over the specs, the
 specs over the map and docs). **Why now:** you can now tell which documents a
 change touches.
+
+Ork is built with Ork: a feature here goes through this repository's own
+workflows in [.ork/workflows/](./.ork/workflows/), entered by `ork run start`,
+which routes a brief to an RFC, a plan or a build and asks you at each gate.
+[benchmarks/](./benchmarks/README.md) measures those runs against plain Claude
+Code sessions. Repository scripts live in `tools/`, among them the lint rules
+(`tools/lint/`), release and the built-in bundle generator (`tools/release/`),
+the audit's scripts (`tools/audit/`) and the benchmark tools
+(`tools/benchmark/`).
 
 **You can answer:** Does your change need an RFC, an ADR or neither? What must
 change with it (test, spec, guide, map, roadmap, gaps, changeset)? What does

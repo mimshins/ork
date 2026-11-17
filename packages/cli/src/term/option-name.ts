@@ -5,7 +5,7 @@
  *   a typed answer names.
  */
 
-import { cut, widthOf } from "./layout.ts";
+import { cut, widthOf, wrap } from "./layout.ts";
 import type { Term } from "./mode.ts";
 import { paint } from "./theme.ts";
 
@@ -38,6 +38,50 @@ export const nameOf = (
   return room <= 1
     ? look(head)
     : `${look(head)}${paint(t, "muted", cut(` (${option.id})`, room))}`;
+};
+
+/**
+ * An option's name wrapped into lines of at most `width` columns, never cut:
+ * its label (or its id alone) word by word in `look`, then its id dimmed in
+ * parentheses and `mark` (such as ` (recommended)`) in green, each kept whole
+ * where it fits. A decision's options are what a person decides on, so they are
+ * shown in full.
+ */
+export const nameLines = (
+  t: Term,
+  option: SelectOption,
+  width: number,
+  look: Look = asIs,
+  mark = "",
+): string[] => {
+  if (width < 1) return [];
+  const words = (text: string, style: Look) =>
+    text
+      .split(/ +/u)
+      .filter(word => word !== "")
+      .flatMap(word => wrap(word, width).map(piece => ({ piece, style })));
+  const muted: Look = text => paint(t, "muted", text);
+  const ok: Look = text => paint(t, "ok", text);
+  const tokens = [
+    ...words(option.label ?? option.id, look),
+    ...(option.label === undefined ? [] : words(`(${option.id})`, muted)),
+    ...words(mark, ok),
+  ];
+  const lines: string[] = [];
+  let line = "";
+  let used = 0;
+  for (const { piece, style } of tokens) {
+    const size = widthOf(piece);
+    if (used > 0 && used + 1 + size > width) {
+      lines.push(line);
+      line = "";
+      used = 0;
+    }
+    line = used === 0 ? style(piece) : `${line} ${style(piece)}`;
+    used += (used === 0 ? 0 : 1) + size;
+  }
+  if (used > 0) lines.push(line);
+  return lines;
 };
 
 /** The numbered option lines of a plain prompt: ` 1) label (id) - description`. */

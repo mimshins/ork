@@ -19,6 +19,7 @@ import { canKey, type PromptIO, type Term, termOf } from "./mode.ts";
 import {
   asIs,
   type Look,
+  nameLines,
   nameOf,
   pickOption,
   plainOptions,
@@ -150,18 +151,20 @@ export const select = (
         const look: Look = selected
           ? text => apply(t, ["bold", "cyan"], text)
           : asIs;
-        const room = t.width - 4 - mark.length;
-        const prefix = cut(`${number} `, room);
-        const text = `${look(prefix)}${nameOf(
+        const prefix = cut(`${number} `, t.width - 4);
+        const indent = " ".repeat(3 + widthOf(prefix));
+        const names = nameLines(
           t,
           option,
-          room - widthOf(prefix),
+          t.width - 4 - widthOf(prefix),
           look,
-        )}`;
+          mark.trim(),
+        );
         const pointer = selected ? paint(t, "accent", "❯") : " ";
-        const lines = [
-          ` ${pointer} ${text}${mark === "" ? "" : paint(t, "ok", mark)}`,
-        ];
+        // The name wraps, never cut: it is what the person decides on.
+        const lines = names.map((name, k) =>
+          k === 0 ? ` ${pointer} ${look(prefix)}${name}` : `${indent}${name}`,
+        );
         if (compact && !selected) return lines;
         for (const line of wrap(option.description ?? "", t.width - 7)) {
           if (line !== "") lines.push(paint(t, "muted", `      ${line}`));

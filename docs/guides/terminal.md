@@ -26,9 +26,11 @@ same green, so a question stands out among a run's output. The card has the
 node's chip, the run and "n of m", the question in bold and wrapped, and the
 context dimmed and indented. An option shows its label, then its id dimmed in
 parentheses (the id is what `ork decide --choose` takes), or only its id when it
-has no label. A long context is cut to a few lines; `d` shows all of it (or a
-gate's document), `d` again hides it, and `ork decide --verbose` always shows it
-all. The recommended option is marked and chosen to start.
+has no label. A long option name wraps onto the next lines, under its number; an
+option is never cut, since it is what you decide on. A long context is cut to a
+few lines; `d` shows all of it (or a gate's document), `d` again hides it, and
+`ork decide --verbose` always shows it all. The recommended option is marked and
+chosen to start.
 
 In a short terminal (a tmux pane, say) the question still fits: only the
 highlighted option keeps its description, the list scrolls with `↑ N more` and
