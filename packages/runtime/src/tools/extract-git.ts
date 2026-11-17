@@ -45,7 +45,7 @@ export const REF = /^[A-Za-z0-9_][A-Za-z0-9_./~^@{}-]*$/u;
 /** A step that failed; the message is one short line. */
 export class StepError extends Error {}
 
-type GitResult = { out: string; cut: boolean; code: number };
+export type GitResult = { out: string; cut: boolean; code: number };
 
 export const linesOf = (value: string): string[] =>
   value === "" ? [] : value.replace(/\n$/u, "").split("\n");
@@ -100,6 +100,8 @@ const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
     );
   });
 
+/** The same runner, for the `files` producer and the `regex` cut. */
+export const runGit = git;
 /** Git's output without the trailing newline, saying when it was cut. */
 const noted = ({ out, cut }: GitResult): string =>
   cut

@@ -134,7 +134,7 @@ describe("extract refuses", () => {
     });
     const unknown = await call(cwd, { steps: [{ step: "cat", path: "a.ts" }] });
     expect(cutFirst.said).toContain(
-      "the first step must be read, search or git",
+      "the first step must be read, files, search or git",
     );
     expect(twoProducers.said).toContain("only the first step");
     expect(seven.said).toBe("steps: Too big: expected array to have <=6 items");
@@ -201,5 +201,51 @@ describe("extract returns", () => {
       said: "[extract: read 22 characters, returned 0]",
       isError: false,
     });
+  });
+});
+
+describe("extract runs several programs in one call (RFC-025)", () => {
+  it("returns each program's result under its own header, with one footer", async () => {
+    const cwd = repo();
+    const result = await call(cwd, {
+      programs: [
+        [read("a.ts", 2, 2)],
+        [{ step: "files" }, { step: "count" }],
+        [read("nope.ts")],
+      ],
+    });
+    expect(result.said.split("\n")).toEqual([
+      "### 1. read a.ts:2-2",
+      "2: two",
+      "",
+      "### 2. files .",
+      "1 lines",
+      "",
+      "### 3. read nope.ts",
+      "[error: no such file: nope.ts]",
+      expect.stringMatching(
+        /^\[extract: read \d+ characters, returned \d+\]$/u,
+      ),
+    ]);
+    expect(result.isError).toBe(false);
+  });
+
+  it("refuses both steps and programs, and neither", async () => {
+    const cwd = repo();
+    const both = await call(cwd, {
+      steps: [read("a.ts")],
+      programs: [[read("a.ts")]],
+    });
+    const neither = await call(cwd, {});
+    expect([both, neither]).toEqual([
+      {
+        said: "give either steps (one program) or programs, not both",
+        isError: true,
+      },
+      {
+        said: "give either steps (one program) or programs, not both",
+        isError: true,
+      },
+    ]);
   });
 });

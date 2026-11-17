@@ -139,22 +139,22 @@ follows the Builder as you edit
 
 ## Reading part of a file: `extract`
 
-Everything a tool returns stays in a session's conversation, and every later
-turn reads it again. Every session gets an `extract` tool (loaded from the first
-turn, not behind Claude Code's tool search) that returns only the part it asks
-for, and Ork's notes to a node tell it to use it instead of the shell or a
-whole-file read, with several calls in one turn.
-
-A call is one to six steps: first a step that produces text, then cuts that take
-the text before them.
+What a tool returns stays in the conversation and is read again every turn.
+Every session gets an `extract` tool, loaded from the first turn, that returns
+only the part asked for; Ork's notes tell nodes to read through it. A program is
+one to six steps: a step that produces text, then cuts of the text before them.
+A call runs one program (`steps`) or up to eight (`programs`, each result under
+its own header), so several files or searches cost one turn.
 
 | Step           | What it does                                                                                                |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
 | `read`         | A file's lines `from` to `to` (1-based, inclusive), each with its number                                    |
+| `files`        | The folder's files, tracked and untracked, not ignored; a `glob` such as `**/*.test.ts` narrows them        |
 | `search`       | A `pattern` (POSIX extended regex) in a file or folder; up to `maxMatches` hits, 50 unless set              |
 | `git`          | `diff` (with `base`, `staged` or `path`), `show` (a `ref`) or `log` (up to 50 commits); no patches in `log` |
 | `head`, `tail` | The first or last `lines` lines of the text before it                                                       |
-| `match`        | The lines holding a literal `text`, with `context` lines around each                                        |
+| `match`        | The lines holding a literal `text` (a POSIX regex with `regex: true`), with `context` lines around each     |
+| `count`        | How many lines the text before it has                                                                       |
 
 For example, the lines of a diff that mention `harness`, with three lines around
 each:
@@ -184,9 +184,8 @@ each:
   where, and to add a `head`, `tail` or `match` step, or to call again with
   `from` (a character of the result to start at): the steps run again each time,
   and nothing is stored. A binary file, or one over 8 MiB, is refused by `read`.
-- **A footer.** Every result ends with
-  `[extract: read N characters, returned M]`: what the first step produced, and
-  what came back. `pnpm benchmark` counts calls from it
+- **A footer**, `[extract: read N characters, returned M]`, ends every result;
+  `pnpm benchmark` counts from it
   ([carried weight](../../benchmarks/method.md#carried-weight)).
 
 ## Order, and why it saves tokens

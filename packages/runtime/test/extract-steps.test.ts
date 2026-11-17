@@ -376,3 +376,67 @@ describe("refusals git and the disk can't get around", () => {
     );
   });
 });
+
+describe("files (RFC-025)", () => {
+  it("lists tracked and untracked files, not ignored or denied ones", async () => {
+    const cwd = repo();
+    write(cwd, ".gitignore", "*.log\n");
+    write(cwd, "new.ts", "x\n");
+    write(cwd, "debug.log", "x\n");
+    const listed = await said(cwd, [{ step: "files" }]);
+    expect(listed.split("\n").toSorted()).toEqual([
+      ".gitignore",
+      "a.ts",
+      "new.ts",
+      "sub/b.txt",
+    ]);
+  });
+
+  it("keeps the paths a glob matches, and says how many more there were", async () => {
+    const cwd = repo();
+    write(cwd, "sub/deeper/c.txt", "x\n");
+    expect(await said(cwd, [{ step: "files", glob: "**/*.txt" }])).toBe(
+      "sub/b.txt\nsub/deeper/c.txt",
+    );
+    expect(await said(cwd, [{ step: "files", glob: "*.md" }])).toBe(
+      "[no files]",
+    );
+    expect(await said(cwd, [{ step: "files", path: "sub", max: 1 }])).toBe(
+      "sub/b.txt\n[1 more files: narrow the glob or path]",
+    );
+  });
+});
+
+describe("the regex and count cuts (RFC-025)", () => {
+  it("keeps lines a POSIX extended expression matches, with context", async () => {
+    const cwd = repo();
+    const read: ProducerStep = { step: "read", path: "a.ts" };
+    expect(
+      await said(cwd, [
+        read,
+        { step: "match", text: "^[0-9]+: (two|four)$", regex: true },
+      ]),
+    ).toBe("2: two\n4: four");
+    expect(
+      await said(cwd, [
+        read,
+        {
+          step: "match",
+          text: "HELLO",
+          regex: true,
+          ignoreCase: true,
+          context: 1,
+        },
+      ]),
+    ).toBe("2: two\n3: hello three\n4: four");
+  });
+
+  it("fails a pattern git can't read, and counts lines", async () => {
+    const cwd = repo();
+    const read: ProducerStep = { step: "read", path: "a.ts" };
+    expect(
+      await said(cwd, [read, { step: "match", text: "(", regex: true }]),
+    ).toMatch(/^error: git failed/u);
+    expect(await said(cwd, [read, { step: "count" }])).toBe("5 lines");
+  });
+});

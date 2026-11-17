@@ -1,12 +1,14 @@
 /**
- * @file `extract` (RFC-023, ADR-098): reads part of a file, searches, or shows
- *   a diff in the session's folder, and returns only the extract, so a whole
- *   file or a long diff never enters the conversation. A call is 1 to 6 steps:
- *   a producer (`read`, `search`, `git`), then cuts (`head`, `tail`, `match`)
- *   that take the text before them (`extract-steps.ts`). The result is capped;
- *   `from` pages through it by rerunning the steps (nothing is stored). Every
- *   result ends with a footer counting what the producer read and what came
- *   back, which the benchmark reads from the transcript.
+ * @file `extract` (RFC-023, ADR-098; RFC-025): reads part of a file, lists
+ *   files, searches, or shows a diff in the session's folder, and returns only
+ *   the extract, so a whole file or a long diff never enters the conversation.
+ *   A program is 1 to 6 steps: a producer (`read`, `files`, `search`, `git`),
+ *   then cuts (`head`, `tail`, `match`, `count`) that take the text before them
+ *   (`extract-steps.ts`). A call runs one program (`steps`) or up to 8
+ *   (`programs`), each result under its own header: Code Mode without code. The
+ *   result is capped; `from` pages through it by rerunning the steps (nothing
+ *   is stored). Every result ends with a footer counting what the producer read
+ *   and what came back, which the benchmark reads from the transcript.
  */
 
 import { z } from "zod";
@@ -17,6 +19,7 @@ import { defineTool, text, type ToolText } from "./tool.ts";
 /** The characters one call returns. */
 export const EXTRACT_CAP = 16_000;
 export const MAX_STEPS = 6;
+export const MAX_PROGRAMS = 8;
 
 const lines = z.number().int().positive();
 const count = z.number().int().nonnegative();
@@ -37,6 +40,19 @@ const SearchStepSchema = z.strictObject({
   path: z.string().min(1).optional().describe("A file or folder. Default: ."),
   ignoreCase: z.boolean().optional(),
   maxMatches: lines.max(200).optional().describe("Default: 50."),
+});
+
+const FilesStepSchema = z.strictObject({
+  step: z.literal("files"),
+  path: z.string().min(1).optional().describe("A folder. Default: ."),
+  glob: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Matched against the whole path from your folder: **/*.ts, src/**/test/*.ts.",
+    ),
+  max: lines.max(1000).optional().describe("Default: 200."),
 });
 
 const GitStepSchema = z.strictObject({
@@ -65,13 +81,21 @@ const TailStepSchema = z.strictObject({
 
 const MatchStepSchema = z.strictObject({
   step: z.literal("match"),
-  text: z.string().min(1).describe("A literal substring."),
+  text: z
+    .string()
+    .min(1)
+    .describe("A literal substring, or with regex: true a POSIX ERE."),
+  regex: z.boolean().optional(),
   ignoreCase: z.boolean().optional(),
   context: count.optional().describe("Lines around each match. Default: 0."),
 });
 
+const CountStepSchema = z.strictObject({ step: z.literal("count") });
+
 const StepSchema = z.discriminatedUnion("step", [
   ReadStepSchema,
+  FilesStepSchema,
+  CountStepSchema,
   SearchStepSchema,
   GitStepSchema,
   HeadStepSchema,
@@ -81,7 +105,7 @@ const StepSchema = z.discriminatedUnion("step", [
 
 type Step = z.infer<typeof StepSchema>;
 
-const PRODUCERS = new Set(["read", "search", "git"]);
+const PRODUCERS = new Set(["read", "files", "search", "git"]);
 
 const isProducer = (step: Step): step is ProducerStep =>
   PRODUCERS.has(step.step);
@@ -100,8 +124,8 @@ const StepsSchema = z
         path: [index, "step"],
         message:
           index === 0
-            ? "the first step must be read, search or git"
-            : "only the first step can be read, search or git; the rest are head, tail or match",
+            ? "the first step must be read, files, search or git"
+            : "only the first step can be read, files, search or git; the rest are head, tail, match or count",
       });
     });
   });
@@ -128,11 +152,51 @@ const paged = (whole: string, from: number, read: number): string => {
   return [...(page === "" ? [] : [page]), ...notes].join("\n");
 };
 
+type Program = [ProducerStep, ...CutStep[]];
+
+/** The steps as a program: a producer, then only cuts. */
+const programOf = (steps: readonly Step[]): Program | undefined => {
+  const [first, ...rest] = steps;
+  const cuts = rest.filter(step => isCut(step));
+  return first !== undefined && isProducer(first) && cuts.length === rest.length
+    ? [first, ...cuts]
+    : undefined;
+};
+
+/** A program's header in a `programs` result: its producer in a few words. */
+const label = (step: ProducerStep): string => {
+  switch (step.step) {
+    case "read":
+      return step.from === undefined && step.to === undefined
+        ? `read ${step.path}`
+        : `read ${step.path}:${String(step.from ?? 1)}-${step.to === undefined ? "end" : String(step.to)}`;
+    case "files":
+      return `files ${step.glob ?? step.path ?? "."}`;
+    case "search":
+      return `search ${step.pattern}${step.path === undefined ? "" : ` in ${step.path}`}`;
+    case "git":
+      return `git ${step.op}${step.path === undefined ? "" : ` ${step.path}`}`;
+    default:
+      return step satisfies never;
+  }
+};
+
+const failed = (message: string): ToolText => ({
+  ...text(message),
+  isError: true,
+});
+
 export const extractTool = defineTool({
   name: "extract",
-  description: `Use instead of Read, cat, sed, grep or rg to read part of a file, search, or see a git diff in your folder: only what you keep enters the conversation and is reread on every later turn. Steps run in order: first one producer (read: numbered lines from–to; search: git grep -E; git: diff, show or log), then up to ${String(MAX_STEPS - 1)} cuts of its output (head, tail: lines; match: lines with a literal substring). Cut to what you need: a match or a line range, not a whole file. Returns up to ${EXTRACT_CAP.toLocaleString("en-US")} characters from \`from\`.`,
+  description: `Use instead of Read, Glob, Grep, cat, sed, grep, rg, find or git in the shell to read part of a file, list files, search, or see git output in your folder: only what you keep enters the conversation and is reread on every later turn. A program is steps run in order: first one producer (read: numbered lines from–to; files: the folder's files, filtered by a glob; search: git grep -E; git: diff, show or log), then up to ${String(MAX_STEPS - 1)} cuts of its output (head, tail: lines; match: lines with a literal substring, or a POSIX ERE with regex: true, and context lines around; count: how many lines). Pass one program as steps, or up to ${String(MAX_PROGRAMS)} as programs to read several files or run several searches in one call. Cut to what you need: a match or a line range, not a whole file. Returns up to ${EXTRACT_CAP.toLocaleString("en-US")} characters from \`from\`.`,
   shape: {
-    steps: StepsSchema,
+    steps: StepsSchema.optional().describe("One program."),
+    programs: z
+      .array(StepsSchema)
+      .min(1)
+      .max(MAX_PROGRAMS)
+      .optional()
+      .describe("Several programs, each result under its own header."),
     from: count
       .optional()
       .describe("The character of the result to start at. Default: 0."),
@@ -141,24 +205,47 @@ export const extractTool = defineTool({
   // Deferred, sessions read with their built-in tools instead (0 calls in 7
   // of 8 sessions measured on 2026-11-17).
   alwaysLoad: true,
-  run: async ({ cwd = "", denyRead }, { steps, from }): Promise<ToolText> => {
-    const [first, ...cuts] = steps;
-    if (
-      first === undefined ||
-      !isProducer(first) ||
-      !cuts.every(step => isCut(step))
-    ) {
-      return {
-        ...text("the first step must be read, search or git"),
-        isError: true,
-      };
+  run: async (
+    { cwd = "", denyRead },
+    { steps, programs, from },
+  ): Promise<ToolText> => {
+    if ((steps === undefined) === (programs === undefined)) {
+      return failed("give either steps (one program) or programs, not both");
     }
-    const result = await runSteps(
-      { cwd, ...(denyRead === undefined ? {} : { denyRead }) },
-      [first, ...cuts],
+    const parsed = (programs ?? [steps ?? []]).map(program =>
+      programOf(program),
     );
-    return result.ok
-      ? text(paged(result.text, from ?? 0, result.read))
-      : { ...text(result.error), isError: true };
+    const valid = parsed.filter(program => program !== undefined);
+    if (valid.length !== parsed.length) {
+      return failed("the first step must be read, files, search or git");
+    }
+    const context = { cwd, ...(denyRead === undefined ? {} : { denyRead }) };
+    const results = await Promise.all(
+      valid.map(program => runSteps(context, program)),
+    );
+    const [only] = results;
+    if (programs === undefined && only !== undefined) {
+      return only.ok
+        ? text(paged(only.text, from ?? 0, only.read))
+        : failed(only.error);
+    }
+    const whole = results
+      .map((result, index) => {
+        const head = `### ${String(index + 1)}. ${label(valid[index]?.[0] ?? { step: "files" })}`;
+        const body = result.ok
+          ? result.text === ""
+            ? "[nothing]"
+            : result.text
+          : `[error: ${result.error}]`;
+        return `${head}\n${body}`;
+      })
+      .join("\n\n");
+    const read = results.reduce(
+      (sum, result) => sum + (result.ok ? result.read : 0),
+      0,
+    );
+    return results.some(result => result.ok)
+      ? text(paged(whole, from ?? 0, read))
+      : failed(whole);
   },
 });

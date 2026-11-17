@@ -1,14 +1,16 @@
 /**
- * @file The step engine of the `extract` tool (RFC-023, option 2a): a producer
- *   step (`read`, or the git producers `search` and `git` in `extract-git.ts`)
- *   yields text, and each cut after it (`head`, `tail`, `match`) narrows the
- *   text before it. Every path is contained and checked against the deny list
- *   (`contain.ts`). Paging, the result cap and the footer are the tool's.
+ * @file The step engine of the `extract` tool (RFC-023, option 2a; RFC-025): a
+ *   producer step (`read`, the git producers `search` and `git` in
+ *   `extract-git.ts`, or `files` in `extract-files.ts`) yields text, and each
+ *   cut after it (`head`, `tail`, `match`, `count`) narrows the text before it.
+ *   Every path is contained and checked against the deny list (`contain.ts`).
+ *   Paging, the result cap and the footer are the tool's.
  */
 
 import { readFileSync, statSync } from "node:fs";
 
 import { type Denied, deniedRead, readable, Refused } from "./contain.ts";
+import { type FilesStep, filesStep, regexLines } from "./extract-files.ts";
 import {
   type GitStep,
   gitStep,
@@ -26,12 +28,13 @@ export type ReadStep = {
   to?: number;
 };
 
-export type ProducerStep = ReadStep | SearchStep | GitStep;
+export type ProducerStep = ReadStep | SearchStep | GitStep | FilesStep;
 
 export type MatchStep = {
   step: "match";
-  /** A literal substring. */
+  /** A literal substring, or with `regex` a POSIX extended expression. */
   text: string;
+  regex?: boolean;
   ignoreCase?: boolean;
   context?: number;
 };
@@ -39,6 +42,7 @@ export type MatchStep = {
 export type CutStep =
   | { step: "head"; lines: number }
   | { step: "tail"; lines: number }
+  | { step: "count" }
   | MatchStep;
 
 export type StepContext = {
@@ -91,6 +95,7 @@ const produce = (
 ): Promise<string> => {
   if (step.step === "read") return Promise.resolve(readStep(cwd, step, denied));
   if (step.step === "search") return searchStep(cwd, step, denied);
+  if (step.step === "files") return filesStep(cwd, step, denied);
   return gitStep(cwd, step, denied);
 };
 
@@ -118,9 +123,9 @@ const matchLines = (lines: readonly string[], step: MatchStep): string => {
     .join("\n");
 };
 
-/** One cut applied to the text before it. */
-export const cut = (value: string, step: CutStep): string => {
-  const lines = linesOf(value);
+/** One cut that needs no process, applied to the text before it. */
+const cutText = (lines: readonly string[], step: CutStep): string => {
+  if (step.step === "count") return `${String(lines.length)} lines`;
   if (step.step === "head") {
     return lines.slice(0, Math.max(step.lines, 0)).join("\n");
   }
@@ -129,6 +134,12 @@ export const cut = (value: string, step: CutStep): string => {
   }
   return matchLines(lines, step);
 };
+
+/** One cut applied to the text before it; `regex` runs git. */
+export const cut = (value: string, step: CutStep): Promise<string> =>
+  step.step === "match" && step.regex === true
+    ? regexLines(value, step.text, step)
+    : Promise.resolve(cutText(linesOf(value), step));
 
 /**
  * Runs a producer and its cuts in `context.cwd`. A refusal or a failure is an
@@ -142,11 +153,12 @@ export const runSteps = async (
     const denied = deniedRead(context.cwd, context.denyRead);
     const [first, ...cuts] = steps;
     const produced = await produce(context.cwd, first, denied);
-    return {
-      ok: true,
-      read: produced.length,
-      text: cuts.reduce((text, step) => cut(text, step), produced),
-    };
+    // Each cut takes the text the one before it left.
+    const text = await cuts.reduce<Promise<string>>(
+      (before, step) => before.then(value => cut(value, step)),
+      Promise.resolve(produced),
+    );
+    return { ok: true, read: produced.length, text };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return {

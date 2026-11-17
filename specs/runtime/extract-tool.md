@@ -51,19 +51,25 @@ mod; OpenCode's rules) does it, and the tool has no code for it
 
 ## Steps
 
-`extract({ steps, from? })`. `steps` is 1 to 6 objects, each named by its `step`
-field. The first is a **producer**; the rest are **cuts**, each taking the text
-before it. Anything else (a cut first, two producers, an unknown step or field,
-a value out of range) is a Zod error with Ork's readable issues.
+`extract({ steps, from? })` or `extract({ programs, from? })`
+([RFC-025](../../rfcs/active/RFC-025-extract-only-reading.md)). A program,
+`steps`, is 1 to 6 objects, each named by its `step` field. The first is a
+**producer**; the rest are **cuts**, each taking the text before it. Anything
+else (a cut first, two producers, an unknown step or field, a value out of
+range) is a Zod error with Ork's readable issues. `programs` is 1 to 8 programs
+run in one call (at once), so several files or searches cost one turn: Code Mode
+without model-written code. A call gives exactly one of the two.
 
-| Step     | Fields                                                                                                                             | Yields                                                                                                             |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `read`   | `path`, `from?`, `to?` (lines, 1-based, inclusive)                                                                                 | the lines as `12: text`, so an edit can anchor on them; a binary file (a NUL in the first 8 KiB) is refused        |
-| `search` | `pattern` (POSIX ERE), `path?` (default `.`), `ignoreCase?`, `maxMatches?` (50, at most 200)                                       | `git grep -E -n -I --untracked` hits as `file:line: text`, then `[N more matches: …]` past the cap; `[no matches]` |
-| `git`    | `op`: `diff` (`base?`, `staged?`, `path?`), `show` (`ref?`, default `HEAD`, `path?`), `log` (`ref?`, `n?` 20, at most 50, `path?`) | the diff, the commit, or `log --oneline`, which never prints a patch                                               |
-| `head`   | `lines`                                                                                                                            | the first lines                                                                                                    |
-| `tail`   | `lines`                                                                                                                            | the last lines                                                                                                     |
-| `match`  | `text` (a literal substring), `ignoreCase?`, `context?`                                                                            | the lines holding it, with `context` lines around, `--` between runs                                               |
+| Step     | Fields                                                                                                                             | Yields                                                                                                                                                                                                                                                |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read`   | `path`, `from?`, `to?` (lines, 1-based, inclusive)                                                                                 | the lines as `12: text`, so an edit can anchor on them; a binary file (a NUL in the first 8 KiB) is refused                                                                                                                                           |
+| `files`  | `path?` (a folder, default `.`), `glob?`, `max?` (200, at most 1,000)                                                              | `git ls-files --cached --others --exclude-standard` (tracked and untracked, not ignored, not denied), sorted, each path matched whole against `glob` by `path.posix.matchesGlob` (`**` crosses folders); `[N more files: …]` past `max`; `[no files]` |
+| `search` | `pattern` (POSIX ERE), `path?` (default `.`), `ignoreCase?`, `maxMatches?` (50, at most 200)                                       | `git grep -E -n -I --untracked` hits as `file:line: text`, then `[N more matches: …]` past the cap; `[no matches]`                                                                                                                                    |
+| `git`    | `op`: `diff` (`base?`, `staged?`, `path?`), `show` (`ref?`, default `HEAD`, `path?`), `log` (`ref?`, `n?` 20, at most 50, `path?`) | the diff, the commit, or `log --oneline`, which never prints a patch                                                                                                                                                                                  |
+| `head`   | `lines`                                                                                                                            | the first lines                                                                                                                                                                                                                                       |
+| `tail`   | `lines`                                                                                                                            | the last lines                                                                                                                                                                                                                                        |
+| `match`  | `text` (a literal substring, or with `regex: true` a POSIX ERE), `ignoreCase?`, `context?`                                         | the lines holding it, with `context` lines around, `--` between runs                                                                                                                                                                                  |
+| `count`  | none                                                                                                                               | `N lines`: how many lines the text before it has                                                                                                                                                                                                      |
 
 ## Where it may read
 
@@ -126,7 +132,11 @@ No value from a call goes in a flag position:
 
 `git grep -E` keeps a model-written pattern out of Ork's own regular
 expressions, so it cannot backtrack in Ork's process. The cut `match` is a
-literal substring.
+literal substring, unless `regex: true`: then the text before it is written to a
+file in a new temporary folder and matched by
+`git grep --no-index -h -a -E [-i] [-C n] -e <pattern> -- text` there, with the
+same timeout, and the folder is removed. A glob of `files` is matched in Ork's
+process by Node's `path.posix.matchesGlob`, which does not backtrack.
 
 **A hostile checkout.** The repository's own `.git/config` can name programs git
 runs. The tool turns off textconv, external diff and fsmonitor; other settings
@@ -136,7 +146,11 @@ are the same risk as Ork's other git calls in that checkout. A user's
 ## The result
 
 The last step's output, from character `from` (default 0), at most 16,000
-characters. When it is cut, a line says where, and tells the session to add a
+characters. With `programs`, the output is each program's under a header
+(`### 2. search <pattern> in <path>`), `[nothing]` for an empty one and
+`[error: …]` for a failed one, joined and paged as one text; the footer's N is
+the sum of the producers' output. The call is an error only when every program
+failed. When it is cut, a line says where, and tells the session to add a
 `head`, `tail` or `match` step or call again with `from`: the steps rerun and
 nothing is stored. `from` counts UTF-16 units, so a page boundary can split a
 surrogate pair. A page after the first that reaches the end says so.

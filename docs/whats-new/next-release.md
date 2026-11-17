@@ -2,6 +2,13 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **`extract` does more in one call.** A call can run up to eight programs
+  (`programs`), each result under its own header, so several files or searches
+  cost one turn. A new `files` step lists the folder's files, filtered by a glob
+  such as `**/*.test.ts`; `match` takes a POSIX regex with `regex: true`; and
+  `count` says how many lines there are. Sessions no longer need Glob, `find` or
+  a shell pipeline for these
+  ([reading part of a file](../guides/skills-and-context.md#reading-part-of-a-file-extract)).
 - **An audit started before an Ork upgrade resumes.** In an attached project,
   `ork resume` of a security audit an older Ork started failed at once with
   "read-only-bash.md does not exist": the run's worktree got the new Ork's
