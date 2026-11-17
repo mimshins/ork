@@ -72,6 +72,8 @@ simpler, or could not be checked:
   uncommitted changes, says they are not audited; `scope: diff:<ref>` is a diff
   of `HEAD`. Auditing the working tree needs a snapshot of it or a read grant
   (RFC-021's option A). An in-repo project audits its working tree as before.
+  **Revisit when** attached users ask to audit uncommitted changes: then add an
+  option for it, from a snapshot of the working tree or RFC-021's option A.
 - **L426 · A run root's base and names see no inputs.** `git.base` and the
   worktree name templates are rendered with no inputs for the run root (a
   `shortcut:` in [run-root.ts](../../packages/cli/src/run/run-root.ts)). The

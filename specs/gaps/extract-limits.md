@@ -53,6 +53,13 @@ was left simpler, or could not be checked:
   textconv, external diff and fsmonitor, but other settings in the checkout's
   `.git/config` that name a program are the same risk as Ork's other git calls
   there.
+- **L433 · Claude Code's own Code Mode is not used.** Claude Code's Code Mode
+  (the model writes a script that makes the tool calls) works only in an
+  interactive terminal, not with `-p`, which the `claude-code` driver runs, so
+  Ork's sessions cannot turn it on; `extract` is RFC-023's answer for every
+  driver meanwhile (its option 1). **Revisit when** Claude Code supports Code
+  Mode in `-p`: then weigh passing it through per node or project, against
+  `extract` and the events Ork's permission, heavy-slot and pause hooks act on.
 - **C18 · `benchmarks/method.md` is over 200 lines.** It is 207 with the
   carried-weight section, and `benchmarks/` is outside `pnpm docs:check`'s
   hub-and-chunk rule. Splitting it would move anchors that specs and benchmark
