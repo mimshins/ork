@@ -39,7 +39,7 @@ import {
 } from "./handoff.ts";
 import type { NameInputs } from "./names.ts";
 import { type AdoptedWorktree, seedResumed } from "./resumed.ts";
-import { upstreamPlace } from "./upstream.ts";
+import { placeTool, seedToolPlaces, upstreamPlace } from "./upstream.ts";
 
 export type WorkspaceOptions = {
   graph: CompiledGraph;
@@ -56,6 +56,8 @@ export type WorkspaceOptions = {
   places?: ReadonlyMap<string, string>;
   /** Branches this run created before (a resumed run), which it may reuse. */
   known?: readonly string[];
+  /** A resumed run's replayed outputs, for where its tool nodes worked. */
+  replayed?: ReadonlyMap<string, NodeOutput>;
 };
 
 type Isolation = "worktree" | "continue" | "shared" | "readonly";
@@ -81,6 +83,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     placeOf,
     merged,
   });
+  const tracked = () => [...worktrees.values()].map(w => w.path);
+  seedToolPlaces(graph, options, tracked(), placeOf);
   const nodeOf = (id: string) =>
     graph.nodes.get(templateOf.get(id) ?? id)?.node;
   const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
@@ -288,5 +292,9 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       },
     });
 
-  return { prepare, checkpoint, finish, close };
+  const placeAt = (id: string, cwd: string): void => {
+    placeTool(id, cwd, tracked(), placeOf);
+  };
+
+  return { prepare, placeAt, checkpoint, finish, close };
 };

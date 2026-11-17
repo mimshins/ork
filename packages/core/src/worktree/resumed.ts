@@ -7,6 +7,7 @@
 
 import { existsSync } from "node:fs";
 
+import type { NodeOutput, NodeResult } from "../run/types.ts";
 import type { Tracked } from "./handoff.ts";
 
 /** A worktree a resumed run left. */
@@ -52,6 +53,8 @@ export type ResumedPlaces = {
   worktrees: readonly AdoptedWorktree[];
   places: ReadonlyMap<string, string>;
   branches: readonly string[];
+  /** Each node's results so far; the last one's output is what it replays. */
+  history?: ReadonlyMap<string, readonly NodeResult[]>;
 };
 
 /** The workspace options for a resumed run; none for a new one. */
@@ -61,6 +64,7 @@ export const resumedOptions = (
   adopt?: readonly AdoptedWorktree[];
   places?: ReadonlyMap<string, string>;
   known?: readonly string[];
+  replayed?: ReadonlyMap<string, NodeOutput>;
 } =>
   resume === undefined
     ? {}
@@ -68,4 +72,15 @@ export const resumedOptions = (
         adopt: resume.worktrees,
         places: resume.places,
         known: resume.branches,
+        replayed: lastOutputs(resume.history ?? new Map()),
       };
+
+const lastOutputs = (
+  history: ReadonlyMap<string, readonly NodeResult[]>,
+): Map<string, NodeOutput> =>
+  new Map(
+    [...history].flatMap(([id, results]) => {
+      const last = results.at(-1);
+      return last === undefined ? [] : [[id, last.output] as const];
+    }),
+  );

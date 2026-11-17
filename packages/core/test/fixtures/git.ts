@@ -29,6 +29,7 @@ import {
   type NodeExecutor,
   type RunEvent,
   resolveBase,
+  resumedOptions,
   resumeState,
   startRun,
 } from "../../src/index.ts";
@@ -137,7 +138,11 @@ export const runIn = async (
     runId: "r1",
     inputs,
     cwd: root,
-    executors: { "agent.leader": executor, "agent.worker": executor },
+    executors: {
+      "agent.leader": executor,
+      "agent.worker": executor,
+      "tool.shell": executor,
+    },
     human: {
       ask: () => Promise.resolve("stop"),
       permit: () => Promise.resolve({ allow: true }),
@@ -150,13 +155,7 @@ export const runIn = async (
       head: await resolveBase(root, gitRulesOf(graph.workflow), inputs),
       inputs,
       onEvent,
-      ...(state === undefined
-        ? {}
-        : {
-            adopt: state.worktrees,
-            places: state.places,
-            known: state.branches,
-          }),
+      ...resumedOptions(state),
     }),
     ...(state === undefined ? {} : { replay: createReplay(state.history) }),
   });

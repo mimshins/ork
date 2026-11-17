@@ -52,7 +52,8 @@ receives their reports. Leave `parent` off unless a leader really delegates.
 - `continue`: writes in the worktree its input came from (no owner, no
   children).
 
-Tool nodes and gates work like `shared`.
+Tool nodes and gates work like `shared`; a tool node whose `cwd` is a worktree
+counts as working there, for the node after it.
 
 ## Edges, loops and `maxRounds`
 

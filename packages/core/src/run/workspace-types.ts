@@ -27,6 +27,12 @@ export type Workspace = {
     template?: string,
   ) => Promise<{ cwd: string; checkout?: Checkout }>;
   /**
+   * A tool node runs in `cwd` (its rendered `cwd:`): when that is inside one of
+   * the run's worktrees, it counts as working there, so a `readonly` or
+   * `continue` node after it follows it (specs/worktrees.md).
+   */
+  placeAt?: (id: string, cwd: string) => void;
+  /**
    * Before a leader delegates: commits its work so far, so children branch from
    * it. Returns why it could not, or `null`.
    */

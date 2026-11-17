@@ -38,13 +38,13 @@ reaches Ork's git either.
 
 ## Where each node works
 
-| Node                                     | Works in                                          |
-| ---------------------------------------- | ------------------------------------------------- |
-| an agent node with `isolation: worktree` | its own worktree (kept across loop rounds)        |
-| `shared` or `readonly`                   | its nearest owner's worktree, or the project root |
-| `readonly` with no owner                 | the worktree its input came from, or the root     |
-| `continue` (no owner, no children)       | the worktree its input came from, or its own      |
-| tool and gate nodes                      | the same as `shared`                              |
+| Node                                     | Works in                                           |
+| ---------------------------------------- | -------------------------------------------------- |
+| an agent node with `isolation: worktree` | its own worktree (kept across loop rounds)         |
+| `shared` or `readonly`                   | its nearest owner's worktree, or the project root  |
+| `readonly` with no owner                 | the worktree its input came from, or the root      |
+| `continue` (no owner, no children)       | the worktree its input came from, or its own       |
+| tool and gate nodes                      | the same as `shared`, or the worktree of its `cwd` |
 
 - **A readonly node with no owner follows its input**
   ([upstream.ts](../packages/core/src/worktree/upstream.ts),
@@ -53,8 +53,10 @@ reaches Ork's git either.
   ([ADR-036](../decisions/ADR-036-ork-migrate.md)) to the nodes that ran, and
   when they all worked in one worktree, it works there too. So a reviewer or
   approver after a leader sees the leader's branch. A node with `forEach` counts
-  as where its items worked. Upstream nodes in different worktrees, or none,
-  leave it in the project root.
+  as where its items worked, and a tool node whose rendered `cwd` is inside one
+  of the run's worktrees counts as working in that worktree (a resumed run
+  renders a replayed tool node's `cwd` from the replayed outputs). Upstream
+  nodes in different worktrees, or none, leave it in the project root.
 
 - **A `continue` node writes where its input was**
   ([ADR-037](../decisions/ADR-037-isolation-continue.md)): found as for a

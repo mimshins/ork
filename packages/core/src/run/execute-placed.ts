@@ -6,6 +6,7 @@
 
 import type { Node } from "@krapht/ork-schema";
 
+import { toolCwdOf } from "../worktree/upstream.ts";
 import { type ContextDeps, nodeContext } from "./context.ts";
 import type { Activation, NodeResult, RunOptions } from "./handle.ts";
 import {
@@ -62,6 +63,13 @@ export const executePlaced = async (
   ).catch((error: unknown) => thrown(error, "invalid_node"));
   if ("ok" in place) return place;
   const context = nodeContext(contextDeps, activation, place.cwd, round, clock);
+  // A tool node whose `cwd` is in a run worktree counts as working there.
+  const toolCwd = toolCwdOf(
+    node,
+    runScope(context.inputs, context.outputs, context.runId, context.item),
+    place.cwd,
+  );
+  if (toolCwd !== undefined) workspace?.placeAt?.(activation.id, toolCwd);
   const once = (
     signal: AbortSignal,
     emit: ExecuteContext["emit"],

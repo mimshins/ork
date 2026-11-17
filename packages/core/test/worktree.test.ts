@@ -343,6 +343,63 @@ describe("worktrees", () => {
     expect(cwds).toEqual({ review: worktreePath(root, "r1", "lead") });
   });
 
+  it("puts a readonly node after a tool node in the worktree that tool ran in", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: agent.leader }",
+        "  stat: { type: tool.shell, script: 'true', allow: [sh], cwd: '{{nodes.lead.output.worktree}}' }",
+        "  review: { type: agent.worker, isolation: readonly }",
+        "  here: { type: tool.shell, script: 'true', allow: [sh], cwd: '.' }",
+        "  judge: { type: agent.worker, isolation: readonly }",
+        "edges:",
+        "  - lead -> stat",
+        "  - stat -> review",
+        "  - lead -> here",
+        "  - here -> judge",
+      ].join("\n"),
+    );
+    const { executor, cwds } = working({
+      lead: { files: { "src/a.ts": "a\n" } },
+    });
+    const { result } = await runIn(root, graph, executor);
+    expect(result.status).toBe("succeeded");
+    // A tool node in the project root leaves the readonly node there.
+    expect(cwds).toMatchObject({
+      review: worktreePath(root, "r1", "lead"),
+      judge: root,
+    });
+  });
+
+  it("resumes a readonly node after a replayed tool node in its worktree", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: agent.leader }",
+        "  stat: { type: tool.shell, script: 'true', allow: [sh], cwd: '{{nodes.lead.output.worktree}}' }",
+        "  review: { type: agent.worker, isolation: readonly }",
+        "edges:",
+        "  - lead -> stat",
+        "  - stat -> review",
+      ].join("\n"),
+    );
+    const { executor } = working({ lead: { files: { "src/a.ts": "a\n" } } });
+    const first = await runIn(root, graph, failingNode("review", executor));
+    expect(first.result.status).toBe("failed");
+
+    const { executor: second, cwds } = working({});
+    const again = await runIn(root, graph, second, first.events);
+    expect(again.result.status).toBe("succeeded");
+    // stat was replayed, not run again: its place comes from its declared cwd.
+    expect(cwds).toEqual({ review: worktreePath(root, "r1", "lead") });
+  });
+
   it("resumes a fanned readonly node in the worktree its replayed input left", async () => {
     const root = repo();
     const graph = compile(

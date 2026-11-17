@@ -19,8 +19,9 @@ changes handed over uncommitted): see [project rules](./project-rules.md).
 | `shared`             | its owner's worktree, or your project's checkout when it has no owner |
 | `readonly`           | like `shared`; file writes denied, read-only git allowed, else asks   |
 
-Tool and gate nodes work like `shared`. Set a default for the workflow with
-`defaults.isolation`, and override it per node.
+Tool and gate nodes work like `shared`; a tool node whose `cwd:` is inside one
+of the run's worktrees counts as working there, for the nodes after it. Set a
+default for the workflow with `defaults.isolation`, and override it per node.
 
 Good fits:
 
@@ -32,7 +33,8 @@ Good fits:
 - `readonly` for reviewers: they see the work in their owner's checkout and
   cannot change it. A readonly node with no owner works in the worktree its
   input came from (through joins, routers and gates), so an approver after a
-  leader reads the leader's branch.
+  leader reads the leader's branch, and a reviewer after a tool step that ran in
+  the leader's worktree (`cwd: "{{nodes.lead.output.worktree}}"`) reads it too.
 - `shared` for a step whose output you want in your checkout, such as a spec
   written to `spec.md`.
 

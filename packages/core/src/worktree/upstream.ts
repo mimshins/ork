@@ -4,10 +4,22 @@
  *   node's incoming edges are followed back through control nodes (joins,
  *   splits, routers) and human gates, which work nowhere, to the nodes that
  *   ran; when they all worked in one worktree, that is the place, and otherwise
- *   the project root. A node with `forEach` worked where its items did.
+ *   the project root. A node with `forEach` worked where its items did. A tool
+ *   node works like `shared`, but one whose `cwd` is inside one of the run's
+ *   worktrees counts as working there (`build -> stat -> review`); a resumed
+ *   run recovers that from the tool node's declared `cwd` and the replayed
+ *   outputs, so it needs nothing the run's events did not already record.
  */
 
+import path from "node:path";
+
+import type { Node } from "@krapht/ork-schema";
+
+import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
+import { runScope } from "../run/scope.ts";
+import type { Inputs, NodeOutput } from "../run/types.ts";
+import type { NameInputs } from "./names.ts";
 
 /** Where `id` worked: its own place, or for a fanned node each item's. */
 const placesOf = (
@@ -51,4 +63,75 @@ export const upstreamPlace = (
   }
   const [only, other] = places;
   return other === undefined ? only : undefined;
+};
+
+/**
+ * A tool node's `cwd`, rendered and made absolute from `base`; none without
+ * one.
+ */
+export const toolCwdOf = (
+  node: Node | undefined,
+  scope: Scope,
+  base: string,
+): string | undefined => {
+  if (node === undefined || !node.type.startsWith("tool.")) return undefined;
+  if (!("cwd" in node) || node.cwd === undefined) return undefined;
+  const template = parseTemplate(node.cwd);
+  if (!template.ok) return undefined;
+  try {
+    const rendered = renderTemplate(template.parts, scope);
+    return rendered === "" ? undefined : path.resolve(base, rendered);
+  } catch {
+    // An output it names is missing: the node did not run there.
+    return undefined;
+  }
+};
+
+/**
+ * A tool node that ran in `cwd`: when one of `paths` (the run's worktrees)
+ * holds it, `id` counts as working there.
+ */
+export const placeTool = (
+  id: string,
+  cwd: string,
+  paths: readonly string[],
+  placeOf: Map<string, string>,
+): void => {
+  const held = paths.find(
+    place => cwd === place || cwd.startsWith(`${place}${path.sep}`),
+  );
+  if (held !== undefined) placeOf.set(id, held);
+};
+
+const definedInputs = (inputs: NameInputs | undefined): Inputs =>
+  Object.fromEntries(
+    Object.entries(inputs ?? {}).filter(
+      (entry): entry is [string, string | number | boolean] =>
+        entry[1] !== undefined,
+    ),
+  );
+
+/**
+ * For a resumed run: where each replayed tool node with a `cwd` worked, when
+ * that is one of `worktrees` (the adopted ones), set in `placeOf`.
+ */
+export const seedToolPlaces = (
+  graph: CompiledGraph,
+  run: {
+    replayed?: ReadonlyMap<string, NodeOutput>;
+    inputs?: NameInputs;
+    root: string;
+  },
+  paths: readonly string[],
+  placeOf: Map<string, string>,
+): void => {
+  const replayed = run.replayed ?? new Map<string, NodeOutput>();
+  const scope = runScope(
+    definedInputs(run.inputs),
+    Object.fromEntries(replayed),
+  );
+  for (const id of replayed.keys()) {
+    const cwd = toolCwdOf(graph.nodes.get(id)?.node, scope, run.root);
+    if (cwd !== undefined) placeTool(id, cwd, paths, placeOf);
+  }
 };

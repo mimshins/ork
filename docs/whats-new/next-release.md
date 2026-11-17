@@ -2,6 +2,13 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **A reviewer after a tool step reads the right worktree.** A `readonly` node
+  with no owner works where its input came from, but a tool node in between
+  (`build -> stat -> review`, with `stat` running in the build's worktree
+  through `cwd:`) counted as working in the project root, so the reviewer read
+  an unchanged checkout. A tool node whose `cwd` is inside one of the run's
+  worktrees now counts as working there, also when a run is resumed
+  ([worktrees](../guides/worktrees.md#choosing-a-nodes-isolation)).
 - **`ork validate ork:security-audit` passes in an attached project.** A project
   attached with `ork register` no longer gets six false
   `ref.context ... does not exist` errors; `ork context explain` lists the
