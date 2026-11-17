@@ -1,5 +1,63 @@
 # @krapht/ork
 
+## 1.0.0-alpha.24
+
+### Patch Changes
+
+- [`6713b43`](https://github.com/mimshins/ork/commit/6713b43c62a76d1aa32d41403d3d4cdd79761e93) Thanks [@mimshins](https://github.com/mimshins)! - Ork's note to every session on `extract` covers grep and git output, asks for
+  several calls in one turn instead of a chained shell command, and the security
+  audit no longer tells its agents to search with Grep.
+
+- [`b62713b`](https://github.com/mimshins/ork/commit/b62713b9a28fd70cc991af8a9edf27a8b277263d) Thanks [@mimshins](https://github.com/mimshins)! - The security audit's advisory scanner runs `npm audit` and `pnpm audit` on
+  Windows, through a shell as their `.cmd` shims need.
+
+- [`03b4904`](https://github.com/mimshins/ork/commit/03b49049beff1d01530bdf45a6db5167bcc70510) Thanks [@mimshins](https://github.com/mimshins)! - Ork's built-in workflows and agents no longer tell sessions to read whole files,
+  or to read with `cat`, `grep`, `sed` or git in Bash, against Ork's `extract`
+  rule.
+
+- [`9607eeb`](https://github.com/mimshins/ork/commit/9607eebeb80f363b4b74fdda78b283768bffced5) Thanks [@mimshins](https://github.com/mimshins)! - Sessions on Claude Code see the `extract` tool from their first turn instead of
+  behind a tool search.
+
+- [`5625b0e`](https://github.com/mimshins/ork/commit/5625b0e0a26edaa4213089d5d09e58a8c81087b3) Thanks [@mimshins](https://github.com/mimshins)! - `extract` runs up to eight programs in one call, lists files with a glob
+  (`files`), matches a POSIX regex (`match` with `regex: true`) and counts lines
+  (`count`).
+
+- [`d8dac4a`](https://github.com/mimshins/ork/commit/d8dac4aa009a365551fbaac2cda5ded46bf48d8b) Thanks [@mimshins](https://github.com/mimshins)! - `ork logs -f --all`, `ork decide --follow` and `ork attach` follow a called run
+  again when resuming its caller brings it back after it had ended.
+
+- [`bd1be4a`](https://github.com/mimshins/ork/commit/bd1be4adcc61872ab6c6ac02154d5fe1ce597d39) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` and `ork feedback apply` keep a change under `commit: never` by
+  applying it to the checkout uncommitted, and onboard's check lets an existing
+  workflow keep the driver, model and agents it already names.
+
+- [`db865ef`](https://github.com/mimshins/ork/commit/db865ef8a90ddfa8707474a90c3cf24e5d4d28d0) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard`'s note about files not in your worktree lists project-relative
+  paths in a project that is a subfolder of its git repository, and no longer
+  repeats `ork init`'s starter file.
+
+- [`5c3919a`](https://github.com/mimshins/ork/commit/5c3919a36261cbd0728e8093cfd88f0f6c0a44cc) Thanks [@mimshins](https://github.com/mimshins)! - Sessions on every driver are refused a shell line that starts by reading files,
+  with the `extract` call to make instead; `reading: open` in the project or a
+  workflow's rules turns it off. Read-only nodes run only `git status` without
+  asking.
+
+- [`d6cec60`](https://github.com/mimshins/ork/commit/d6cec601cd0809b45791a6278d3f6aa57473e19f) Thanks [@mimshins](https://github.com/mimshins)! - An attached project's security audit started by an older Ork resumes with the
+  bundle it started with, instead of failing on files the newer Ork's bundle keeps
+  under another folder.
+
+- [`f045038`](https://github.com/mimshins/ork/commit/f045038b74136e0af5b7a7729b3bf4a87c45551d) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate ork:security-audit` and `ork context explain` work in a project
+  attached with `ork register`, with no false `ref.context ... does not exist`
+  errors. A node whose session throws after `ork stop` now reads "was stopped",
+  not "ended for a reason Ork doesn't recognize". The audit scanner lists an
+  unpinned action once, however many jobs use it, and the audit report no longer
+  says whether the run is complete (its Run section does). `ork onboard` tells the
+  writer about every uncommitted file under `.ork/` and `.gitignore` that its
+  worktree lacks, not only the ones `ork init` just made.
+
+- [`aa7ccb4`](https://github.com/mimshins/ork/commit/aa7ccb48f7c0290a6df1c357f72c615ce5246b6b) Thanks [@mimshins](https://github.com/mimshins)! - A `readonly` or `continue` node after a tool node whose `cwd` is in one of the
+  run's worktrees works in that worktree, not the project root, also on resume.
+
+- [`ac86476`](https://github.com/mimshins/ork/commit/ac864764cafc98d698e110731fd7969a424a3abd) Thanks [@mimshins](https://github.com/mimshins)! - Sessions get no Grep or Glob unless their node names them, and a node that can't
+  edit is refused a Read of a text file, with the `extract` call to make;
+  `reading: open` turns both off.
+
 ## 1.0.0-alpha.23
 
 ### Minor Changes
