@@ -5,7 +5,10 @@
  *   (specs/cli/onboard-flow.md). Nothing here starts a session or spends.
  */
 
-import { execFileSync } from "node:child_process";
+import {
+  type ExecFileSyncOptionsWithStringEncoding,
+  execFileSync,
+} from "node:child_process";
 import { existsSync } from "node:fs";
 
 import { placeFor, type ProjectPlace } from "@krapht/ork-core";
@@ -46,8 +49,21 @@ export const initNote = (fromInit: readonly string[]): string =>
  * when git fails: not a repository, or no git.
  */
 export const uncommittedFiles = (root: string): string[] => {
+  const options: ExecFileSyncOptionsWithStringEncoding = {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  };
   let out: string;
+  let prefix: string;
   try {
+    // Porcelain paths are relative to the repository, not to `root`; git has
+    // no flag to change that, so strip the project's folder ("" or "sub/").
+    prefix = execFileSync(
+      "git",
+      ["rev-parse", "--show-prefix"],
+      options,
+    ).trim();
     out = execFileSync(
       "git",
       [
@@ -59,7 +75,7 @@ export const uncommittedFiles = (root: string): string[] => {
         ".ork",
         ".gitignore",
       ],
-      { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+      options,
     );
   } catch {
     return [];
@@ -72,7 +88,9 @@ export const uncommittedFiles = (root: string): string[] => {
     // A rename or copy is followed by its source path.
     if (status.startsWith("R") || status.startsWith("C")) at++;
     // A deleted file is still in `HEAD`, so the worktree holds it.
-    if (entry !== "" && !status.includes("D")) files.push(entry.slice(3));
+    if (entry === "" || status.includes("D")) continue;
+    const file = entry.slice(3);
+    files.push(file.startsWith(prefix) ? file.slice(prefix.length) : file);
   }
   return files;
 };

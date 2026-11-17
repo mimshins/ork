@@ -5,7 +5,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -73,6 +73,47 @@ describe("uncommittedFiles", () => {
     ]);
     expect(initNote(files)).toContain("uncommitted");
     expect(initNote(files)).not.toContain("just");
+  });
+
+  it("names paths relative to a project folder that is a subfolder of its repo", () => {
+    const repo = mkdtempSync(path.join(tmpdir(), "ork-uncommitted-sub-"));
+    const sub = path.join(repo, "sub");
+    put(sub, ".ork/project.yaml", "a: 1\n");
+    gitIn(repo, "init", "--quiet");
+    gitIn(repo, "add", "-A");
+    gitIn(repo, "commit", "--quiet", "-m", "base");
+    put(sub, ".ork/project.yaml", "a: 2\n");
+    put(sub, ".ork/workflows/x.ork.yaml", "x\n");
+    expect(uncommittedFiles(sub).toSorted()).toEqual([
+      ".ork/project.yaml",
+      ".ork/workflows/x.ork.yaml",
+    ]);
+    // What `ork init` just made is untracked too, and is named once.
+    put(sub, ".ork/workflows/hello.ork.yaml", "h\n");
+    expect(
+      withUncommitted(
+        [".ork/workflows/hello.ork.yaml"],
+        uncommittedFiles(sub).toSorted(),
+      ),
+    ).toEqual([
+      ".ork/workflows/hello.ork.yaml",
+      ".ork/project.yaml",
+      ".ork/workflows/x.ork.yaml",
+    ]);
+  });
+
+  it("names a staged rename by its new path only", () => {
+    const root = committed();
+    gitIn(root, "mv", ".ork/project.yaml", ".ork/renamed.yaml");
+    expect(uncommittedFiles(root)).toEqual([".ork/renamed.yaml"]);
+  });
+
+  it("does not name a tracked file deleted under .ork/, staged or not", () => {
+    const root = committed();
+    rmSync(path.join(root, ".ork/project.yaml"));
+    expect(uncommittedFiles(root)).toEqual([]);
+    gitIn(root, "rm", "--quiet", "--cached", ".ork/project.yaml");
+    expect(uncommittedFiles(root)).toEqual([]);
   });
 
   it("is empty, not an error, outside a git repository", () => {

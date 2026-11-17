@@ -132,3 +132,10 @@ could not be checked:
   pattern-based scrubber (ADR-091), so a secret that matches no pattern in a
   subject still goes to the model provider. It is the first thing cut at the
   survey's 6,000-character bound (L407).
+- **L434 · `finish-git.ts` may list wrong paths in a subfolder project.**
+  `changesOf` (`packages/cli/src/onboard/finish-git.ts`) runs
+  `git diff --name-status -z` in the project root and
+  `git status --porcelain=v1 -z` in the worktree, and does not strip the repo
+  prefix the way `uncommittedFiles` does. In a project that is a subfolder of
+  its git repository it may list paths relative to the repository, not to the
+  project. Not checked, not fixed.

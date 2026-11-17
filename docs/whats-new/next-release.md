@@ -7,6 +7,12 @@ _Part of [What's new](../whats-new.md)._
   the report only noted that advisories were not checked. It now starts them
   through a shell there
   ([the audit](../guides/security-audit.md#which-scanner-checks-dependencies)).
+- **`ork onboard` lists the right files in a subfolder project.** When your
+  project is a subfolder of its git repository, the note telling the writer
+  which files are not in its worktree named paths from the repository's top
+  (`sub/.ork/project.yaml`); it now lists them from the project folder
+  (`.ork/project.yaml`), and no longer repeats the starter file `ork init` made
+  ([what it does, in order](../guides/onboarding.md#what-it-does-in-order)).
 - **`ork logs -f --all`, `ork decide --follow` and `ork attach` see a resumed
   called run.** Resuming a run whose called run had ended brought that run back
   under its id, but a follower already watching had stopped at its old end, so

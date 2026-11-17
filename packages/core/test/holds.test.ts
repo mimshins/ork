@@ -31,6 +31,7 @@ import {
   runTree,
   startControl,
   startRun,
+  type Workspace,
 } from "../src/index.ts";
 
 const compile = (yaml: string): CompiledGraph => {
@@ -98,7 +99,11 @@ const sessions = () => {
   };
 };
 
-const start = (graph: CompiledGraph, executor: NodeExecutor) => {
+const start = (
+  graph: CompiledGraph,
+  executor: NodeExecutor,
+  workspace?: Workspace,
+) => {
   const events: RunEvent[] = [];
   const handle = startRun({
     graph,
@@ -109,6 +114,7 @@ const start = (graph: CompiledGraph, executor: NodeExecutor) => {
     onEvent: event => {
       events.push(event);
     },
+    ...(workspace === undefined ? {} : { workspace }),
   });
   const types = () => events.map(e => e.type);
   return { handle, events, types };
@@ -268,13 +274,20 @@ describe("a node whose executor threw", () => {
     expect(endKinds(events)).toEqual({ a: "tool_missing", b: "unknown" });
   });
 
-  it("ends as stopped when it threw after its node was stopped", async () => {
-    const { handle, events } = start(twoWorkers(false), stoppedThrows);
+  it("ends as stopped when it threw after its node was stopped, through its workspace", async () => {
+    const { workspace, finished } = recordingWorkspace();
+    const { handle, events } = start(
+      twoWorkers(false),
+      stoppedThrows,
+      workspace,
+    );
     await tick();
     expect(handle.stopNode("a")).toBe(true);
     await handle.done;
     expect(endKinds(events)).toEqual({ a: "interrupted", b: "unknown" });
     expect(endMessage(events, "a")).toBe("was stopped");
+    // The stopped node's throw still ends through `workspace.finish`.
+    expect(finished).toContain("a");
   });
 
   it("ends as stopped when it threw after its run was stopped", async () => {
@@ -298,6 +311,22 @@ const stoppedThrows: NodeExecutor = async context => {
     });
   }
   throw new Error("session closed before it started");
+};
+
+/** A workspace that changes nothing and records the nodes it finished. */
+const recordingWorkspace = () => {
+  const finished: string[] = [];
+  const cwd = mkdtempSync(path.join(tmpdir(), "ork-hold-"));
+  const workspace: Workspace = {
+    prepare: () => Promise.resolve({ cwd }),
+    checkpoint: () => Promise.resolve(null),
+    finish: (id, result) => {
+      finished.push(id);
+      return Promise.resolve(result);
+    },
+    close: () => Promise.resolve([]),
+  };
+  return { workspace, finished };
 };
 
 /** The message of `id`'s end. */

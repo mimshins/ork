@@ -17,6 +17,7 @@ import {
   explainSession,
   explainWorkflowText,
   placeFor,
+  type ProjectPlace,
   workflowDirOf,
 } from "../src/index.ts";
 
@@ -64,6 +65,45 @@ const project = () => {
     home: path.join(base, "home"),
   };
 };
+
+/** An attached project (ADR-035): its repository, its folder under a home. */
+const attachedPlace = () => {
+  const home = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-explain-")));
+  const root = path.join(home, "app");
+  mkdirSync(path.join(root, ".git"), { recursive: true });
+  const dir = path.join(home, ".ork", "projects", "app");
+  mkdirSync(path.join(dir, "workflows"), { recursive: true });
+  const place: ProjectPlace = { id: "app", root, mode: "attached", dir };
+  return { place, home };
+};
+
+/** A workflow whose only reference is a context file beside it. */
+const BUNDLED = [
+  "schemaVersion: 1",
+  "name: x",
+  "layers:",
+  "  context: [./style.md]",
+  "nodes:",
+  "  fix:",
+  "    type: agent.worker",
+  "",
+].join("\n");
+
+/** `fix` of `BUNDLED` explained as the file `<place.dir>/<relative>`. */
+const explainedAt = (place: ProjectPlace, home: string, relative: string) => {
+  const file = path.join(place.dir, relative);
+  write(place.dir, relative, BUNDLED);
+  return explainWorkflowText(BUNDLED, file, "fix", {
+    registered: [place],
+    home,
+  });
+};
+
+/** A result's sources and refusal, empty where it has none. */
+const said = (result: ReturnType<typeof explainWorkflowText>) =>
+  result.ok
+    ? { sources: result.sources, error: "" }
+    : { sources: [], error: result.error };
 
 /** The explanation of `node` in `text`, or the refusal as an error. */
 const explained = (text: string, node = "fix") => {
@@ -215,6 +255,34 @@ describe("what a node's session loads", () => {
       template: "fix",
       type: "agent.worker",
     });
+  });
+
+  it("reads an attached built-in bundle's references from its own folder", () => {
+    const { place, home } = attachedPlace();
+    const folder = path.join(place.dir, "runs", ".builtin", "0123456789ab");
+    write(folder, "style.md", "Be brief.\n");
+    const result = explainedAt(
+      place,
+      home,
+      "runs/.builtin/0123456789ab/x.ork.yaml",
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      explanation: { files: [{ layer: "workflow", text: "Be brief.\n" }] },
+    });
+    expect(said(result).sources).toContain(path.join(folder, "style.md"));
+  });
+
+  it("refuses the same file outside the bundle folder, where its reference is missing", () => {
+    const { place, home } = attachedPlace();
+    write(
+      path.join(place.dir, "runs", ".builtin", "0123456789ab"),
+      "style.md",
+      "Be brief.\n",
+    );
+    const result = explainedAt(place, home, "workflows/x.ork.yaml");
+    expect(result.ok).toBe(false);
+    expect(said(result).error).toMatch(/\.\/style\.md does not exist$/u);
   });
 
   it("says why a node can't be planned", () => {

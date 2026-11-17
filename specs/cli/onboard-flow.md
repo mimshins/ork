@@ -63,14 +63,19 @@ only adds files ([L400](../gaps/onboard-limits.md)).
 writer's worktree (cut from `HEAD`) lacks: what `ork init` made when this
 command set `.ork/` up (the starter file and the `.gitignore` line), and,
 always, the paths under `.ork/` and `.gitignore` that
-`git status --porcelain --untracked-files=all` reports (modified or untracked;
-ignored ones such as `.ork/runs/` and deleted ones are left out), merged with no
-duplicates (`uncommittedFiles`, `withUncommitted`). A failing `git status` (not
-a repository, no git) adds nothing and is never an error. `runWrite` adds one
-note to the writer's `survey` input (`initNote`): "Not in your worktree: these
-files in the project folder are uncommitted (…), so your worktree does not hold
-them; do not look for them or recreate them." With none, `fromInit` is empty and
-the survey is sent as it is.
+`git status --porcelain -z --untracked-files=all` reports (modified or
+untracked; ignored ones such as `.ork/runs/` and deleted ones are left out; a
+rename lists its new path only), merged with no duplicates (`uncommittedFiles`,
+`withUncommitted`). Git reports paths from the repository's top, so
+`uncommittedFiles` runs `git rev-parse --show-prefix` in the project root and
+strips that prefix from each path: a project that is a subfolder of its
+repository lists `.ork/project.yaml`, not `sub/.ork/project.yaml`. A path that
+does not start with the prefix is kept as it is. A failing `git` (not a
+repository, no git) adds nothing and is never an error. `runWrite` adds one note
+to the writer's `survey` input (`initNote`): "Not in your worktree: these files
+in the project folder are uncommitted (…), so your worktree does not hold them;
+do not look for them or recreate them." With none, `fromInit` is empty and the
+survey is sent as it is.
 
 ## The survey
 
