@@ -631,7 +631,8 @@ describe("what a session is told", () => {
       .split("\n")
       .filter(l => l.includes("`extract`"));
     expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("instead of `cat`, `sed`, `rg`");
+    expect(lines[0]).toContain("instead of `cat`, `sed`, `grep`, `rg`");
+    expect(lines[0]).toContain("several `extract` calls in one turn");
   });
 
   it("names read_inbox when it has no one to write to, and says what via is", () => {

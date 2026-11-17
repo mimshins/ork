@@ -25,7 +25,7 @@ const CLAIMS_LINE =
 
 // The tool lives in the runtime package, which core must not import: named by string.
 const EXTRACT_LINE =
-  "- To read part of a file, search, or see a diff, call `extract` with steps instead of `cat`, `sed`, `rg` or reading a whole file: only the extract enters the conversation.";
+  "- Read part of a file, search, or see a git diff, show or log through `extract` instead of `cat`, `sed`, `grep`, `rg`, `git` or a whole-file Read: only what you keep enters the conversation, and every later turn rereads it. For several files or searches, make several `extract` calls in one turn, not one chained shell command. Read a whole file only to edit it.";
 
 const HANDOFF: Record<NonNullable<Checkout["merge"]>, string> = {
   auto: "Ork merges your branch when you pass",

@@ -142,8 +142,8 @@ follows the Builder as you edit
 Everything a tool returns stays in a session's conversation, and every later
 turn reads it again. Every session gets an `extract` tool (loaded from the first
 turn, not behind Claude Code's tool search) that returns only the part it asks
-for, and Ork's notes to a node tell it to use it instead of `cat`, `sed`, `rg`
-or reading a whole file.
+for, and Ork's notes to a node tell it to use it instead of the shell or a
+whole-file read, with several calls in one turn.
 
 A call is one to six steps: first a step that produces text, then cuts that take
 the text before them.
