@@ -567,6 +567,25 @@ defaults:
     ]);
   });
 
+  it("lists a deleted node once, not once per field it had", async () => {
+    const extra = `  extra:
+    type: agent.worker
+    agent: ork-implementer
+    prompt: Check it.
+    isolation: readonly
+    tools:
+      only:
+        - Read
+`;
+    const scene = scenario({
+      ".ork/workflows/ci.ork.yaml": canonical(workflow("ci", "", extra)),
+    });
+    put(scene.worktree, { ".ork/workflows/ci.ork.yaml": workflow("ci") });
+    expect((await check(scene)).eye).toEqual([
+      ".ork/workflows/ci.ork.yaml: node extra removed",
+    ]);
+  });
+
   it("does not list a removed allow rule or env entry (it narrows rights)", async () => {
     const node = `    tools:
       allow:

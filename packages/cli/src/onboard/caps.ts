@@ -40,11 +40,21 @@ export const capsOfOnboard = (): Caps => {
 const usd = (n: number): string => `$${String(n)}`;
 const count = (n: number): string => n.toLocaleString("en-US");
 
+const capLine = (cap: Cap, priced: boolean): string =>
+  priced
+    ? `${usd(cap.usd)} or ${count(cap.tokens)} tokens`
+    : `${count(cap.tokens)} tokens (this driver reports no dollars)`;
+
 /** The most the write run alone can spend, for a saved proposal's question. */
 export const writeCap = (caps: Caps, priced: boolean): string =>
-  priced
-    ? `${usd(caps.write.usd)} or ${count(caps.write.tokens)} tokens`
-    : `${count(caps.write.tokens)} tokens (this driver reports no dollars)`;
+  capLine(caps.write, priced);
+
+/**
+ * The most a resumed propose run can spend, for an unfinished proposal's
+ * question.
+ */
+export const proposeCap = (caps: Caps, priced: boolean): string =>
+  capLine(caps.propose, priced);
 
 /**
  * The preview's line, as the spec words it. A driver that reports no dollars

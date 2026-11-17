@@ -18,7 +18,8 @@ in a workflow `context`, `rules.git`, `rules.links` and `defaults.isolation`;
 and in `.ork/project.yaml` `context`, `heavy`, `calls.accept`, `followUps.file`,
 `git`, `links` and `defaults.isolation`. Each reads
 `<where> changes <field> to <value>`; a field the committed file set and the
-writer removed reads `<where> removes <field>`.
+writer removed reads `<where> removes <field>`. A node the writer deleted gives
+one line, `node <id> removed`, in place of a line per field.
 
 - **keep** leaves the branch and prints its name and "Ork never merges". Review
   it like any branch and merge it yourself. A kept change lists the feedback
@@ -76,9 +77,9 @@ whether `gh` is usable. Each driver uses its own login.
 ## Limits
 
 - An attached project is refused.
-- A flow that crashed before the propose run ended starts over;
-  `ork resume <run>` resumes that run, not the steps around it. A proposal you
-  left at the pick is not lost: the next `ork onboard` offers it.
+- A crash inside the survey or the three questions starts over. A proposal you
+  left at the pick, and a proposing run that failed, stopped or crashed, are not
+  lost: the next `ork onboard` offers them.
 - Onboarding is not in `ork ui` or the MCP server.
 
 Details: [the spec](../../../specs/cli/onboard.md).

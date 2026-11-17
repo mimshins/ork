@@ -73,6 +73,8 @@ export type Script = {
   suggestions: unknown[];
   /** The files the writer leaves in its worktree, one set per round; the last repeats. */
   rounds: Record<string, string>[];
+  /** The propose session reports `fail`, so the propose run fails. */
+  failPropose?: true;
 };
 
 /** A scripted runtime and the specs of the sessions it was asked to start. */
@@ -130,7 +132,10 @@ export const scriptedRuntime = (driver: DriverId, script: Script): Scripted => {
             subtype: "success",
             sessionId: `fake-${String(specs.length)}`,
             report: {
-              status: "pass",
+              status:
+                spec.nodeId === "propose" && script.failPropose === true
+                  ? "fail"
+                  : "pass",
               summary: "done",
               artifacts: {},
               fields: REPORT_SCHEMA_FIELDS(script, spec),

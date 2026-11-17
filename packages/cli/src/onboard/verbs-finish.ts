@@ -23,6 +23,7 @@ import { loadWorkflow, walkLoaded } from "../commands/validate.ts";
 import { driverDiagnostics } from "../run/driver-check.ts";
 import { checksHere, type DriverChecks } from "../run/ready-driver.ts";
 import {
+  collapseRemovedNodes,
   eyeOfProject,
   eyeOfWorkflow,
   newItems,
@@ -209,9 +210,13 @@ const eyeList = (
     const parsed = old === null ? null : parseWorkflow(old);
     const before = parsed?.ok === true ? eyeOfWorkflow(parsed.workflow) : [];
     const now = eyeOfWorkflow(workflow);
-    return [...newItems(now, before), ...removedItems(now, before)].map(
-      item => `${file}: ${item}`,
-    );
+    const deleted = Object.keys(
+      parsed?.ok === true ? parsed.workflow.nodes : {},
+    ).filter(id => !(id in workflow.nodes));
+    return [
+      ...newItems(now, before),
+      ...collapseRemovedNodes(removedItems(now, before), deleted),
+    ].map(item => `${file}: ${item}`);
   });
   if (!project) return items;
   const read = readInWorktree(options.worktree, PROJECT_FILE);

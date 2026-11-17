@@ -3,7 +3,9 @@
  *   run is offered (the newest succeeded propose run of this project that no
  *   write run followed, nobody else's), what is said on Ctrl-C at the pick, and
  *   that a next `ork onboard` takes the proposal without the questions or a
- *   second paid propose run, or starts as before on "no" and `--fresh`.
+ *   second paid propose run, or starts as before on "no" and `--fresh`; and
+ *   that an unfinished propose run, when it is the newest, is offered and
+ *   resumed under its own id instead.
  */
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -16,7 +18,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type * as PickModule from "../src/onboard/pick.ts";
 import { pickSuggestions } from "../src/onboard/pick.ts";
 import { interruptedLines, spentLine } from "../src/onboard/runs.ts";
-import { findSavedProposal } from "../src/onboard/saved.ts";
+import {
+  findSavedProposal,
+  findUnfinishedPropose,
+} from "../src/onboard/saved.ts";
+import type * as ConfirmModule from "../src/term/confirm.ts";
+import { confirmOrStop } from "../src/term/confirm.ts";
 import {
   branches,
   git,
@@ -34,6 +41,14 @@ vi.mock("../src/onboard/pick.ts", async importActual => {
     pickSuggestions: vi.fn<typeof actual.pickSuggestions>(
       actual.pickSuggestions,
     ),
+  };
+});
+
+vi.mock("../src/term/confirm.ts", async importActual => {
+  const actual = await importActual<typeof ConfirmModule>();
+  return {
+    ...actual,
+    confirmOrStop: vi.fn<typeof actual.confirmOrStop>(actual.confirmOrStop),
   };
 });
 
@@ -62,6 +77,8 @@ type Recorded = {
   suggestions?: unknown[];
   survey?: string;
   file?: string;
+  /** `false` leaves the run running, in this live process. */
+  finished?: false;
 };
 
 /** Stores a built-in run the way a run leaves it: started, then finished. */
@@ -88,6 +105,7 @@ const record = (
     nodes: [],
     inputs: { survey: o.survey ?? "the survey", answers: "Q: x\nA: y" },
   });
+  if (o.finished === false) return;
   store.append(id, {
     type: "run.finished",
     result: {
@@ -130,7 +148,7 @@ describe("findSavedProposal", () => {
     expect(findSavedProposal(store, root)).toBeNull();
   });
 
-  it("takes the newest succeeded propose run, and skips one that did not succeed", () => {
+  it("takes the newest propose run: succeeded it is saved, unfinished it is not", () => {
     const root = project();
     const store = openStore(":memory:");
     record(store, "old", "ork-onboard-propose", root, {
@@ -139,11 +157,12 @@ describe("findSavedProposal", () => {
     record(store, "new", "ork-onboard-propose", root, {
       at: "2026-11-16T10:00:00Z",
     });
+    expect(findSavedProposal(store, root)?.run.id).toBe("new");
     record(store, "bad", "ork-onboard-propose", root, {
       at: "2026-11-16T11:00:00Z",
       status: "failed",
     });
-    expect(findSavedProposal(store, root)?.run.id).toBe("new");
+    expect(findSavedProposal(store, root)).toBeNull();
   });
 
   it("is none once a write run followed it, and back for a later propose run", () => {
@@ -202,6 +221,99 @@ describe("findSavedProposal", () => {
       inputs: { survey: 1 },
     });
     expect(findSavedProposal(store, root)).toBeNull();
+  });
+});
+
+describe("findUnfinishedPropose", () => {
+  it("finds the newest propose run that did not succeed, with its stored inputs", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "old", "ork-onboard-propose", root, {
+      at: "2026-11-15T10:00:00Z",
+    });
+    record(store, "bad", "ork-onboard-propose", root, {
+      at: "2026-11-16T11:00:00Z",
+      status: "failed",
+    });
+    const unfinished = findUnfinishedPropose(store, root);
+    expect(unfinished?.run.id).toBe("bad");
+    expect(unfinished?.status).toBe("failed");
+    expect(unfinished?.at).toBe("2026-11-16T11:00:00.000Z");
+    expect(unfinished?.survey).toBe("the survey");
+    expect(unfinished?.answers).toBe("Q: x\nA: y");
+    expect(unfinished?.resume.succeeded).toBe(false);
+  });
+
+  it("is none when the newest propose run succeeded, even after an older one failed", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "bad", "ork-onboard-propose", root, {
+      at: "2026-11-15T10:00:00Z",
+      status: "failed",
+    });
+    record(store, "good", "ork-onboard-propose", root, {
+      at: "2026-11-16T10:00:00Z",
+    });
+    expect(findUnfinishedPropose(store, root)).toBeNull();
+    expect(findSavedProposal(store, root)?.run.id).toBe("good");
+  });
+
+  it("is none for a run that used its budget, and nothing older is offered", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "good", "ork-onboard-propose", root, {
+      at: "2026-11-15T10:00:00Z",
+    });
+    record(store, "spent", "ork-onboard-propose", root, {
+      at: "2026-11-16T10:00:00Z",
+      status: "budget_exhausted",
+    });
+    expect(findUnfinishedPropose(store, root)).toBeNull();
+    expect(findSavedProposal(store, root)).toBeNull();
+  });
+
+  it("finds a run whose process is gone, as crashed", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "dead", "ork-onboard-propose", root, { finished: false });
+    const gone = Object.assign(new Error("gone"), { code: "ESRCH" });
+    const kill = vi.spyOn(process, "kill").mockImplementation(() => {
+      throw gone;
+    });
+    const unfinished = findUnfinishedPropose(store, root);
+    kill.mockRestore();
+    expect(unfinished?.run.id).toBe("dead");
+    expect(unfinished?.status).toBe("crashed");
+  });
+
+  it("is none for a run still running", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "live", "ork-onboard-propose", root, { finished: false });
+    expect(findUnfinishedPropose(store, root)).toBeNull();
+  });
+
+  it("is none once a write run followed it", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "bad", "ork-onboard-propose", root, { status: "failed" });
+    record(store, "w1", "ork-onboard-write", root, {
+      at: "2026-11-16T10:30:00Z",
+    });
+    expect(findUnfinishedPropose(store, root)).toBeNull();
+  });
+
+  it("is none for another project's run, or a user's own workflow of that name", () => {
+    const root = project();
+    const store = openStore(":memory:");
+    record(store, "theirs", "ork-onboard-propose", project(), {
+      status: "failed",
+    });
+    record(store, "mine", "ork-onboard-propose", root, {
+      status: "failed",
+      file: `${root}/.ork/workflows/ork-onboard-propose.ork.yaml`,
+    });
+    expect(findUnfinishedPropose(store, root)).toBeNull();
   });
 });
 
@@ -318,6 +430,128 @@ describe("ork onboard after a proposal was left at the pick", () => {
       answers: ["a", "b", "c", "n"],
     });
     expect(other.out).not.toContain("is saved");
+    expect(other.out).toContain("Nothing started, nothing written.");
+  });
+});
+
+/** The propose session fails, so the propose run ends `failed`. */
+const FAILING = { ...SCRIPT, failPropose: true as const };
+
+/** Answers the questions and starts a propose run that fails. */
+const failToPropose = () =>
+  onboard({
+    driver: "claude-code",
+    script: FAILING,
+    answers: ["a", "b", "c", "y"],
+  });
+
+const proposeRuns = (store: EventStore): string[] =>
+  store
+    .runs()
+    .filter(run => run.workflow === "ork-onboard-propose")
+    .map(run => run.id);
+
+describe("ork onboard after a proposing run did not finish", () => {
+  it("offers it, and on yes resumes that same run, then picks and writes", async () => {
+    const first = await failToPropose();
+    const { root, store } = first;
+    const id = runIdOf(store, "ork-onboard-propose");
+    expect(first.code).toBe(1);
+    expect(first.err).toContain(`\`ork resume ${id}\``);
+
+    const second = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      answers: ["y", "1"],
+    });
+    expect(second.code).toBe(0);
+    expect(second.out).toMatch(
+      new RegExp(`An unfinished proposal from .+ \\(run ${id}, failed\\)`, "u"),
+    );
+    expect(second.out).not.toContain("is saved");
+    expect(proposeRuns(store)).toEqual([id]);
+    const asked = startedOf(store, "ork-onboard-propose");
+    expect(asked.untrusted).toEqual(["survey", "answers", "history"]);
+    expect(
+      store
+        .events(id)
+        .map(({ event }) => event)
+        .filter(event => event.type === "run.started")
+        .map(event => event.settings?.untrusted),
+    ).toEqual([asked.untrusted, asked.untrusted]);
+    const written = startedOf(store, "ork-onboard-write").inputs;
+    expect(written["survey"]).toBe(String(asked.inputs["survey"]));
+    expect(written["answers"]).toBe(String(asked.inputs["answers"]));
+    expect(keptBranch(root)).toContain("ork/");
+  });
+
+  it("starts as before on no, with the questions and a new propose run", async () => {
+    const { root, store } = await failToPropose();
+    const second = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      answers: ["n", ...LEAVE],
+    });
+    expect(second.out).toContain("can be resumed");
+    expect(second.out).toContain("▸ proposing workflows");
+    expect(proposeRuns(store)).toHaveLength(2);
+  });
+
+  it("is not offered with --fresh", async () => {
+    const { root, store } = await failToPropose();
+    const second = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      fresh: true,
+      answers: LEAVE,
+    });
+    expect(second.out).not.toContain("can be resumed");
+    expect(proposeRuns(store)).toHaveLength(2);
+  });
+
+  it("exits 130 on Ctrl-C at the offer, and resumes nothing", async () => {
+    const { root, store } = await failToPropose();
+    vi.mocked(confirmOrStop).mockResolvedValueOnce(null);
+    const second = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+    });
+    expect(second.code).toBe(130);
+    expect(second.specs).toEqual([]);
+  });
+
+  it("stops with the way to resume and exit 1 when the resumed run fails again", async () => {
+    const { root, store } = await failToPropose();
+    const id = runIdOf(store, "ork-onboard-propose");
+    const second = await onboard({
+      driver: "claude-code",
+      script: FAILING,
+      root,
+      store,
+      answers: ["y"],
+    });
+    expect(second.code).toBe(1);
+    expect(second.err).toContain(`\`ork resume ${id}\``);
+    expect(proposeRuns(store)).toEqual([id]);
+  });
+
+  it("offers nothing from another project's store records", async () => {
+    const first = await failToPropose();
+    const other = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      store: first.store,
+      answers: ["a", "b", "c", "n"],
+    });
+    expect(other.out).not.toContain("can be resumed");
     expect(other.out).toContain("Nothing started, nothing written.");
   });
 });

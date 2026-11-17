@@ -133,6 +133,7 @@ ork completion zsh|bash|fish     # print a tab-completion script; the script run
   - [Bundles](./cli/built-in-workflows.md#bundles)
 - [`ork onboard`](./cli/onboard.md)
   - [The flow](./cli/onboard-flow.md)
+  - [A saved proposal](./cli/onboard-saved.md)
   - [Built-ins, verbs and trust](./cli/onboard-verbs.md)
 - [Decisions and stopping](./cli/decisions-and-stopping.md)
 - [The terminal kit and `--plain`](./cli/terminal.md)

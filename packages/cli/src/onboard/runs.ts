@@ -11,6 +11,7 @@ import {
   builtinWorkflowFile,
   type EventStore,
   type ProjectPlace,
+  type ResumeState,
   type RunResult,
 } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
@@ -84,11 +85,15 @@ export const interruptedLines = (run: {
   "Run `ork onboard` again to pick from it.",
 ];
 
+/** A stored run to continue, as `ork resume` passes it. */
+export type Resumed = { runId: string; resume: ResumeState };
+
 const runBuiltin = async (
   options: RunOptions,
   name: string,
   inputs: readonly string[],
   untrusted: string[],
+  resumed?: Resumed,
 ): Promise<Ran> => {
   const { place } = options;
   const problem = builtinProblem(place, name);
@@ -105,26 +110,33 @@ const runBuiltin = async (
     inPlace: false,
     json: false,
     driver: options.driver,
+    ...resumed,
   });
   return result === null
     ? { ok: false, lines: [`${name} didn't start.`] }
     : { ok: true, result };
 };
 
-/** Runs `ork:onboard-propose`; `history` is empty on a first visit. */
+/**
+ * Runs `ork:onboard-propose`; `history` is empty on a first visit. Given a
+ * stored run, it continues that run with the inputs it recorded instead.
+ */
 export const runPropose = (
   options: RunOptions,
-  input: { survey: string; answers: string; history: string },
+  input: { survey: string; answers: string; history: string } | Resumed,
 ): Promise<Ran> =>
   runBuiltin(
     options,
     PROPOSE,
-    [
-      `survey=${input.survey}`,
-      `answers=${input.answers}`,
-      ...(input.history === "" ? [] : [`history=${input.history}`]),
-    ],
+    "resume" in input
+      ? []
+      : [
+          `survey=${input.survey}`,
+          `answers=${input.answers}`,
+          ...(input.history === "" ? [] : [`history=${input.history}`]),
+        ],
     ["survey", "answers", "history"],
+    "resume" in input ? input : undefined,
   );
 
 /** Runs `ork:onboard-write` for the picks; `note` joins the survey when set. */

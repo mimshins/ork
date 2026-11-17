@@ -15,7 +15,7 @@ It needs a terminal, git with at least one commit, and one ready agent driver
 ork onboard                       # asks which driver when several are ready
 ork onboard --driver open-code    # skips that question
 ork onboard --review              # review mode, even with nothing to review
-ork onboard --fresh               # first-visit mode, and no saved proposal
+ork onboard --fresh               # first-visit mode, no saved or unfinished proposal
 ```
 
 `--review` and `--fresh` together are refused. The global `--plain` asks line by
@@ -68,8 +68,8 @@ the newest 10 release tags and the 10 paths changed most in the last 200
 commits: no author names, emails or hashes. Ork masks anything in them that
 looks like a secret (tokens and keys in common formats) before they leave, but a
 secret in a commit subject that matches no pattern would still go, so look at
-the survey it prints. If `git` cannot read the history, the line says
-`unavailable`.
+the survey it prints. A repository with no commits says `no commits`; if `git`
+cannot read the history, the line says `unavailable`.
 
 ## First visit and review
 
@@ -162,6 +162,20 @@ Use it, and skip the questions and the proposing run? Writing then costs at most
 Yes skips the questions, the preview and the paid proposing run, and goes to the
 pick with the survey and answers of that run. Its suggestions are checked again
 against your files as they are now, so one whose evidence is gone is dropped and
-shown with why. No, or `--fresh`, starts as before. A proposing run that did not
-finish is not offered; `ork resume <run>` continues it. Nothing new is written
-to disk for this: Ork reads its own record of the run.
+shown with why. No, or `--fresh`, starts as before. Nothing new is written to
+disk for this: Ork reads its own record of the run.
+
+If the newest proposing run did not finish (it failed, was stopped or crashed),
+the next `ork onboard` offers to resume it instead, when `ork resume` could
+continue it:
+
+```
+An unfinished proposal from 3h ago (run <id>, failed) can be resumed.
+Resume it, and skip the questions? Spent so far <spent>; it can spend up to <the propose cap> in total.
+```
+
+Yes continues that same run, with the survey and answers it started with, on the
+driver picked now, and goes to the pick when it succeeds. No, or `--fresh`,
+starts as before, with a new run. A run that is still running is never offered,
+nor one that used its budget: resumed, it would stop at once, since its budget
+counts what it already spent.

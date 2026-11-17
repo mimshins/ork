@@ -2,6 +2,20 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **`ork onboard` offers to resume a proposing run that did not finish.** When
+  the newest proposing run in the project failed, was stopped or crashed, and
+  `ork resume` could continue it, the next `ork onboard` shows its age, id,
+  status and what it spent, and asks to resume it: yes continues that same run
+  and skips the questions, no or `--fresh` starts as before
+  ([guide](../guides/onboarding.md#a-saved-proposal)).
+- **`ork onboard`'s gate lists a deleted node once.** A node the writer removed
+  reads `node <id> removed` instead of a `removes` line per field, and a field's
+  value that contains the words "changes … to" no longer hides a real change
+  ([guide](../guides/onboarding/the-gate-and-its-checks.md#the-gate)).
+- **`ork onboard`'s survey says `no commits` for a repository with none.** It
+  used to say `unavailable`, which is now only for a folder git cannot read
+  ([guide](../guides/onboarding.md#what-it-does-in-order)).
+
 - **`ork onboard`'s gate lists less, and more of what matters.** The "needs your
   eye" list no longer names plain reads (`Read`, `Glob`, `Grep`, `LS`,
   `NotebookRead`); any other tool name is listed, and so is a rule Ork cannot

@@ -186,10 +186,31 @@ export const removedItems = (
 ): string[] => [
   ...new Set(
     before.flatMap(item => {
-      const head = /^(.* changes `[^`]+`) to /u.exec(item)?.[1];
+      // The prefix has no backtick, so it cannot reach into a JSON value.
+      const head = /^([^`]*? changes `[^`]+`) to /u.exec(item)?.[1];
       return head === undefined || now.some(i => i.startsWith(`${head} to `))
         ? []
         : [head.replace(" changes ", " removes ")];
     }),
   ),
 ];
+
+/**
+ * `removed` (the `removes` items of `removedItems`) with the items of a deleted
+ * node replaced by one `node <id> removed` line; a deleted node with no listed
+ * field gives none.
+ */
+export const collapseRemovedNodes = (
+  removed: readonly string[],
+  deletedNodes: readonly string[],
+): string[] => {
+  const gone = deletedNodes.filter(id =>
+    removed.some(item => item.startsWith(`node ${id} removes `)),
+  );
+  return [
+    ...removed.filter(
+      item => !gone.some(id => item.startsWith(`node ${id} removes `)),
+    ),
+    ...gone.map(id => `node ${id} removed`),
+  ];
+};

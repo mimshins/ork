@@ -12,13 +12,14 @@ could not be checked:
   `ork register` attached and names `ork init`, since its writer works on a
   branch of the repository and attached workflows live outside it. Supporting
   them needs another way to write into the attached folder and show the diff.
-- **L391 · A flow that crashed before the propose run ended starts over.** A
-  proposal left at the pick is found again in the store
-  ([a saved proposal](../cli/onboard-flow.md#a-saved-proposal)), but nothing is
-  kept before the propose run succeeds. `ork resume <run>` resumes that one
-  built-in run; the command's own steps around it (the survey, the questions)
-  start again. Closing it needs a state file or an event type, which were ruled
-  out for now.
+- **L391 · A crash inside the survey or the three questions starts over.** A
+  proposal left at the pick, and a propose run that failed, stopped or crashed,
+  are found again in the store
+  ([a saved proposal](../cli/onboard-saved.md#a-saved-proposal),
+  [an unfinished proposal](../cli/onboard-saved.md#an-unfinished-proposal)), but
+  the survey and the questions run before any run exists and nothing is kept of
+  them, so a crash there asks again. Closing it needs a state file or an event
+  type, which were ruled out for now.
 - **L392 · The follow-up question cap is a prompt.** `ork:onboard-propose`'s
   prompt asks for at most three `ask_user` questions, and `maxTurns` bounds it;
   the format has no field that counts a node's questions.
@@ -122,7 +123,10 @@ could not be checked:
   the last 20 commit subjects, the newest 10 release tags and the 10 most
   changed paths over the last 200 commits, each cut to 60 or 100 characters; no
   author, email or hash. The proposer cannot see a commit's body, its authors or
-  what changed in it, and a repository with fewer than 20 commits or no tags
-  says `none`. Secrets are masked by the pattern-based scrubber (ADR-091), so a
-  secret that matches no pattern in a subject still goes to the model provider.
-  It is the first thing cut at the survey's 6,000-character bound (L407).
+  what changed in it, a repository with fewer than 20 commits or no tags says
+  `none`, and one with no commits says `no commits` (only where the survey runs
+  on such a repository, as `readSurvey` called directly; `ork onboard` itself
+  refuses a repository with no commit earlier). Secrets are masked by the
+  pattern-based scrubber (ADR-091), so a secret that matches no pattern in a
+  subject still goes to the model provider. It is the first thing cut at the
+  survey's 6,000-character bound (L407).

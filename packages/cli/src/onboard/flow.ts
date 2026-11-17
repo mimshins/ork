@@ -2,8 +2,9 @@
  * @file `ork onboard`'s steps in order (specs/cli/onboard-flow.md): the free
  *   steps in `setup.ts`, then the questions, the cost preview and the two
  *   built-in runs with the picks between them; or, when a proposal was left at
- *   the pick, the offer to start from it. A "no" or no pick ends with exit 0
- *   and nothing written. It returns the exit code and prints through `out` and
+ *   the pick, the offer to start from it, and when the newest propose run did
+ *   not finish, the offer to resume it. A "no" or no pick ends with exit 0 and
+ *   nothing written. It returns the exit code and prints through `out` and
  *   `err`.
  */
 
@@ -30,10 +31,37 @@ import {
   savedProposal,
   type Step,
   stopWith,
+  type ToResume,
 } from "./saved-offer.ts";
 import { initNote, type Prepared, prepare } from "./setup.ts";
 
 type Ready = Extract<Prepared, { kind: "ready" }>;
+
+/** The paid propose run, new or resumed, and the proposal it left. */
+const proposing = async (
+  ready: Ready,
+  run: RunOptions,
+  input: ToResume | { survey: string; answers: string },
+  out: (line: string) => void,
+): Promise<Step<Proposal>> => {
+  out(style("bold", "▸ proposing workflows"));
+  const { survey, answers } = input;
+  const proposed = await runPropose(
+    run,
+    "resume" in input ? input.resume : { ...input, history: ready.history },
+  );
+  if (!proposed.ok) return stopWith(proposed.lines, 1);
+  const { result } = proposed;
+  if (result.status !== "succeeded") {
+    return stopWith(failedLines("the proposing run", result), 1);
+  }
+  return {
+    survey,
+    answers,
+    proposed: proposedOf(result, ready.place.root),
+    run: { id: result.runId, spent: spentLine(result) },
+  };
+};
 
 /** The questions, the preview and the paid propose run. */
 const newProposal = async (
@@ -49,21 +77,7 @@ const newProposal = async (
   const go = await confirmOrStop(o.io, { question: "Start?" });
   if (go === null) return stopWith([], INTERRUPTED);
   if (!go) return stopWith(["Nothing started, nothing written."], 0);
-
-  out(style("bold", "▸ proposing workflows"));
-  const { survey, history } = ready;
-  const proposed = await runPropose(run, { survey, answers, history });
-  if (!proposed.ok) return stopWith(proposed.lines, 1);
-  const { result } = proposed;
-  if (result.status !== "succeeded") {
-    return stopWith(failedLines("the proposing run", result), 1);
-  }
-  return {
-    survey,
-    answers,
-    proposed: proposedOf(result, ready.place.root),
-    run: { id: result.runId, spent: spentLine(result) },
-  };
+  return proposing(ready, run, { survey: ready.survey, answers }, out);
 };
 
 /** Runs the command; the exit code. */
@@ -79,9 +93,11 @@ export const runOnboard = async (o: OnboardOptions): Promise<number> => {
   const priced =
     AGENT_DRIVERS.find(d => d.id === ready.driver)?.capabilities.price ?? true;
 
+  const offered = await savedProposal(o, ready.place.root, priced, out);
   const step =
-    (await savedProposal(o, ready.place.root, priced, out)) ??
-    (await newProposal(o, ready, run, priced, out));
+    offered !== null && "resume" in offered
+      ? await proposing(ready, run, offered, out)
+      : (offered ?? (await newProposal(o, ready, run, priced, out)));
   if ("stop" in step) return stop(step.stop.lines, step.stop.code);
   const { survey, answers, proposed: suggestions } = step;
 

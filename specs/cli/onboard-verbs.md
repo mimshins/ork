@@ -222,7 +222,9 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    change to one of these fields is listed as
    `<where> changes <field> to <value>` when its value is new or differs from
    `HEAD` (a field `HEAD` set and the file no longer does reads
-   `<where> removes <field>`): on a node `context`, `isolation` and
+   `<where> removes <field>`; a node `HEAD` had and the file no longer has gives
+   one line, `node <id> removed`, and none of its `removes` lines, or no line
+   when it had no listed field): on a node `context`, `isolation` and
    `tools.only`; in a workflow `context` (`layers.context`), `rules.git`,
    `rules.links` and `defaults.isolation`; in `.ork/project.yaml` `context`,
    `heavy`, `calls.accept`, `followUps.file`, `git`, `links` and

@@ -532,10 +532,14 @@ describe("the git digest", () => {
     );
   });
 
-  it("reads a repository with no commits as empty lists", async () => {
-    expect(await historyLine({ [LOG]: "" })).toBe(
-      "Recent history: commits: none; tags: none; most-changed paths: none",
+  it("says no commits when git log fails in a repository", async () => {
+    expect(await historyLine({ "rev-parse --git-dir": ".git" })).toBe(
+      "Recent history: no commits",
     );
+  });
+
+  it("says no commits when git log answers nothing", async () => {
+    expect(await historyLine({ [LOG]: "" })).toBe("Recent history: no commits");
   });
 
   it("says unavailable when git fails, and still reads the rest", async () => {

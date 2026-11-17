@@ -48,14 +48,21 @@ const mostChanged = (names: readonly string[]): string[] => {
     .map(([name]) => name);
 };
 
-/** The digest of the repository, or `null` when `git log` fails. */
+/**
+ * The digest of the repository: empty when it has no commits, `null` when `git
+ * log` fails outside a repository.
+ */
 export const readGitDigest = async (git: Git): Promise<GitDigest | null> => {
   const [subjects, tags, names] = await Promise.all([
     git(["log", "-n", String(MAX_SUBJECTS), "--format=%s"]),
     git(["tag", "--sort=-creatordate"]),
     git(["log", "-n", String(LOG_WINDOW), "--name-only", "--format="]),
   ]);
-  if (subjects === null) return null;
+  if (subjects === null) {
+    // `git log` fails in a repository with no commits; only then is it empty.
+    const inRepo = (await git(["rev-parse", "--git-dir"])) !== null;
+    return inRepo ? { subjects: [], tags: [], paths: [] } : null;
+  }
   return {
     subjects: linesOf(subjects)
       .slice(0, MAX_SUBJECTS)
@@ -74,4 +81,6 @@ const listOf = (items: readonly string[], joiner: string): string =>
 export const digestLine = (digest: GitDigest | null): string =>
   digest === null
     ? "Recent history: unavailable"
-    : `Recent history: commits: ${listOf(digest.subjects, " | ")}; tags: ${listOf(digest.tags, ", ")}; most-changed paths: ${listOf(digest.paths, ", ")}`;
+    : digest.subjects.length === 0
+      ? "Recent history: no commits"
+      : `Recent history: commits: ${listOf(digest.subjects, " | ")}; tags: ${listOf(digest.tags, ", ")}; most-changed paths: ${listOf(digest.paths, ", ")}`;
