@@ -1,6 +1,6 @@
 # RFC-025 — Make `extract` the way sessions read, on every driver
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
 - **Supersedes:** —
 - **Superseded by:** —
@@ -165,18 +165,23 @@ model-drafted code. The built-in text was fixed first, separately (03b49049).
 - **An ADR** when it ships, and this RFC moves to `rfcs/archived/`.
 - **Follow-ups:** RFC-024's Codex driver maps the same rules.
 
+## Answered questions
+
+Answered by the maintainer on 2026-11-17, when accepting:
+
+1. **Read of images and PDFs** in a node that can't edit: Read stays allowed for
+   image and PDF paths only (Claude Code rule specifiers; OpenCode and Command
+   Code patterns); text files go through `extract`.
+2. **The rule:** `rules.reading: extract | open`, defaulting to `extract` in
+   every project; a project or workflow sets `open` to loosen it, and a node's
+   explicit `tools.only` or `allow` naming a withheld tool wins for that node.
+3. **The order of work:** the step program first (`files`, several programs a
+   call, `regex`, `around`, `count`), then refusing shell reads, then
+   withholding, so a session is never left without a way to do something.
+
 ## Open questions
 
-1. **Read of images and PDFs** in a node that can't edit: allow `Read` only for
-   those types (Claude Code rule specifiers; OpenCode and Command Code
-   patterns), or keep Read and refuse a whole-file text Read with a reason?
-2. **The rule's name, default and place:** `rules.reading: extract | open`,
-   defaulting to `extract` in every project? Or leave it off for projects with
-   no `.ork/` until they opt in?
-3. **A folder that isn't a git repository:** fall back to steering only (the
+1. **A folder that isn't a git repository:** fall back to steering only (the
    proposal), or make `files` and `search` walk the folder in Ork's process?
-4. **The refusal's text:** does a refused Bash call count as a failed turn in
+2. **The refusal's text:** does a refused Bash call count as a failed turn in
    `ork feedback`, or as an expected redirect that isn't reported?
-5. **The order of work:** ship the step program first, so that withholding never
-   leaves a session without a way to do something, then refuse shell reads, then
-   withhold?
