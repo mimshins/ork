@@ -358,7 +358,7 @@ describe("verify:", () => {
       steps: realSteps,
       program: {
         script:
-          'i=0; while [ $i -lt 20000 ]; do echo "passing test $i"; i=$((i+1)); done; echo "3 tests failed at the end"; exit 1',
+          "seq 0 19999 | sed 's/^/passing test /'; echo \"3 tests failed at the end\"; exit 1",
       },
     });
     const prompt = String(specs[1]?.prompt);
@@ -378,14 +378,13 @@ describe("verify:", () => {
       steps: realSteps,
       fields: {
         before: {
-          script:
-            'i=0; while [ $i -lt 20000 ]; do echo "setup line $i"; i=$((i+1)); done',
+          script: "seq 0 19999 | sed 's/^/setup line /'",
         },
       },
       program: {
         attempts: 2,
         script:
-          'n=$(cat tries 2>/dev/null || echo 0); n=$((n+1)); echo $n > tries; i=0; while [ $i -lt 20000 ]; do echo "try $n line $i"; i=$((i+1)); done; exit 1',
+          'n=$(cat tries 2>/dev/null || echo 0); n=$((n+1)); echo $n > tries; seq 0 19999 | sed "s/^/try $n line /"; exit 1',
       },
     });
     const kept = (name: string) =>

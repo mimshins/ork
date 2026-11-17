@@ -1,7 +1,8 @@
 /**
  * @file The harness of `ork onboard`'s end-to-end tests: a real git repository,
  *   `runOnboard` with scripted answers and a scripted driver, and the real
- *   `ork __onboard` verbs behind the tool nodes (through `ORK_BIN`).
+ *   `ork __onboard` verbs behind the tool nodes (through `ORK_BIN`), or in this
+ *   process when a case sets `inProcess`.
  */
 
 import { execFileSync } from "node:child_process";
@@ -27,6 +28,9 @@ import { spawnTool } from "@krapht/ork-nodes";
 import { parseWorkflow, serializeWorkflow } from "@krapht/ork-schema";
 
 import { runOnboard } from "../../src/onboard/flow.ts";
+import { finish, finishText } from "../../src/onboard/verbs-finish.ts";
+import type { DriverChecks } from "../../src/run/ready-driver.ts";
+import { formatBrief } from "../../src/onboard/verbs-format.ts";
 import {
   readyOnly,
   type Script,
@@ -124,12 +128,85 @@ const orkWrapper = (missing?: string): string => {
     missing === undefined
       ? ""
       : `[ "\$2" = "${missing}" ] && { echo "ork: command not found" >&2; exit 127; }\n`;
+  // The tool node's env is scrubbed, so the cache `compile-cache.ts` gives other children is set here.
+  const cache = process.env["ORK_TEST_COMPILE_CACHE"];
+  const cacheEnv = cache === undefined ? "" : `NODE_COMPILE_CACHE="${cache}" `;
   writeFileSync(
     file,
-    `#!/bin/sh\n${lost}ORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
+    `#!/bin/sh\n${lost}${cacheEnv}ORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
   );
   chmodSync(file, 0o755);
   return file;
+};
+
+const scriptOf = (file: string | undefined): string => {
+  try {
+    return file === undefined ? "" : readFileSync(file, "utf8");
+  } catch {
+    return "";
+  }
+};
+
+/** An `__onboard` verb the tool nodes run. */
+export type Verb = "format" | "finish";
+
+/** The verb a tool node's script runs, or null when it runs something else. */
+const verbOf = (program: string, args: readonly string[]): Verb | null => {
+  // `sh -eu <file>`: the node writes its script to a file and passes the path last.
+  const script = program === "sh" ? scriptOf(args.at(-1)) : "";
+  if (script.includes("__onboard format")) return "format";
+  if (script.includes("__onboard finish")) return "finish";
+  // A renamed verb must fail here, not fall back to the slow real CLI unseen.
+  if (script.includes("__onboard")) throw new Error(`unknown __onboard verb in: ${script}`);
+  return null;
+};
+
+/** `verb` run in this process, as the real `ork __onboard <verb>` would. */
+const runVerb = async (
+  verb: Verb,
+  { cwd, env = {} }: { cwd: string; env?: Readonly<Record<string, string>> },
+  checks: DriverChecks,
+): Promise<Awaited<ReturnType<typeof spawnTool>>> => {
+  if (verb === "format") {
+    const brief = formatBrief();
+    return {
+      exitCode: brief.ok ? 0 : 2,
+      stdout: brief.ok ? brief.text : "",
+      stderr: brief.ok ? "" : `ork __onboard: ${brief.error}\n`,
+    };
+  }
+  const report = await finish({
+    root: cwd,
+    worktree: env["WORKTREE"] ?? "",
+    branch: env["BRANCH"] ?? "",
+    run: env["ORK_RUN"],
+    checks,
+  });
+  return {
+    exitCode: report.problems.length > 0 ? 1 : 0,
+    stdout: finishText(report),
+    stderr: "",
+  };
+};
+
+/**
+ * The tool nodes' runner: the real `ork` behind `ORK_BIN`, except for the verbs
+ * the case runs in this process (no CLI start, and the stand-in driver checks
+ * in place of the machine's). Any other program goes to `spawnTool`.
+ */
+const toolsOf = (c: Case): typeof spawnTool => {
+  const inProcess = c.inProcess ?? [];
+  const bin = orkWrapper(c.missing);
+  const checks = readyOnly(c.driver);
+  return (program, args, options) => {
+    const verb = verbOf(program, args);
+    return verb !== null && inProcess.includes(verb)
+      ? runVerb(verb, options, checks)
+      : spawnTool(program, args, {
+          ...options,
+          env: { ...options.env, ORK_BIN: bin },
+        });
+  };
 };
 
 /** Every file of `.ork/` except the runs', by path, with its text. */
@@ -180,6 +257,11 @@ export type Case = {
   fresh?: boolean;
   /** A `__onboard` verb the tool nodes' `ORK_BIN` cannot run: exit 127. */
   missing?: string;
+  /**
+   * Run the `__onboard` verbs in this process, not through the real `ork`
+   * (`ORK_BIN`); the wiring stays covered by the cases that do not set it.
+   */
+  inProcess?: readonly Verb[];
 };
 
 const ANSWERS = ["slow tests", "weekly", "a PR", "y", "1"];
@@ -218,7 +300,6 @@ export const onboard = async (c: Case): Promise<Flow> => {
     },
     permit: () => Promise.resolve({ allow: false, message: "no" }),
   };
-  const bin = orkWrapper(c.missing);
   const checks = readyOnly(c.driver);
   seen.code = await runOnboard({
     cwd: root,
@@ -243,11 +324,7 @@ export const onboard = async (c: Case): Promise<Flow> => {
     runtime: () => Promise.resolve(runtime),
     human,
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
-    tools: (program, args, options) =>
-      spawnTool(program, args, {
-        ...options,
-        env: { ...options.env, ORK_BIN: bin },
-      }),
+    tools: toolsOf(c),
     installed: () => true,
     out: line => {
       seen.out += `${line}\n`;
@@ -280,7 +357,6 @@ export const canonical = (text: string): string => {
   if (!parsed.ok) throw new Error("The text is not a workflow.");
   return serializeWorkflow(parsed.workflow);
 };
-
 
 /** The id of the run of `workflow` the store holds; a mark when there is none. */
 export const runIdOf = (store: EventStore, workflow: string): string =>

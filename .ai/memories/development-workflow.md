@@ -62,6 +62,12 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   from `script` has no size, so the card header is not drawn (wait for the
   hidden-cursor escape); the Ctrl-C pty fixture passes a no-op `interrupt`,
   since a self-`SIGINT` would kill the process before it reports.
+- Onboard tests are slow under load because of spawning the CLI, not the
+  assertions: even ~1.6 s tests crossed 7.5 s with 36 `yes` processes running.
+  So all but the first test of each driver call the verbs in-process through
+  `runVerb` in `fixtures/onboard.ts`, which mirrors `commands/onboard-verbs.ts`
+  and differs only in the stand-in `readyOnly` checks for `finish`. A node's
+  script is `sh -eu <file>`, and `verbOf` depends on that layout.
 - `finish`'s scope check exempts an ignored worktree file when the project root
   has the same path with identical bytes (what `createWorktree` copies in). It
   cannot tell a copy from a writer's identical rewrite, which changes nothing.

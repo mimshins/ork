@@ -6,7 +6,9 @@
  *   review. Also discarding, picking none, a writer that never satisfies
  *   `finish` (the run ends failed and says why), and that the paid part leaves
  *   the working tree's `.ork/` alone until the person keeps the branch. The
- *   tool nodes run the real `ork __onboard` verbs from source.
+ *   tool nodes run the real `ork __onboard format` from source in the first
+ *   test of each driver and where `finish` cannot start; the other tests run
+ *   the verbs in this process (`inProcess`).
  */
 
 import path from "node:path";
@@ -16,6 +18,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   branches,
+  type Case,
   canonical,
   DRIVERS,
   git,
@@ -33,6 +36,15 @@ import {
   WRITTEN,
 } from "./fixtures/onboard.ts";
 
+/**
+ * `onboard` with both `__onboard` verbs run in this process: each CLI start
+ * burns CPU a loaded machine does not give. The first test of each driver runs
+ * the real `ork format` through `ORK_BIN` (`finish` in-process: the real one
+ * checks the machine's drivers); the test where `finish` cannot start runs both
+ * real.
+ */
+const fast = (c: Case) => onboard({ ...c, inProcess: ["format", "finish"] });
+
 /** What the preview says: dollars and tokens, or tokens only with no dollars. */
 const PREVIEW = {
   "claude-code": "The most this can spend: $",
@@ -42,7 +54,11 @@ const PREVIEW = {
 
 describe.each(DRIVERS)("ork onboard on %s", driver => {
   it("goes from survey to a kept branch holding a canonical, valid workflow", async () => {
-    const flow = await onboard({ driver, script: SCRIPT });
+    const flow = await onboard({
+      driver,
+      script: SCRIPT,
+      inProcess: ["finish"],
+    });
     // The init step's files are uncommitted, and the run says the worktree lacks them.
     expect(flow.err).toMatch(
       /^warning \d+ uncommitted change\(s\) in this checkout are not in the worktrees\n$/u,
@@ -72,7 +88,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("holds each session to what its built-in names, on this driver", async () => {
-    const flow = await onboard({ driver, script: SCRIPT });
+    const flow = await fast({ driver, script: SCRIPT });
     const only = (node: string) =>
       flow.specs.find(spec => spec.nodeId === node)?.tools.only;
     expect(only("propose")).toEqual(["Read", "Grep", "Glob"]);
@@ -88,12 +104,12 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("words the preview by whether the driver reports dollars", async () => {
-    const { out } = await onboard({ driver, script: SCRIPT });
+    const { out } = await fast({ driver, script: SCRIPT });
     expect(out).toContain(PREVIEW[driver]);
   });
 
   it("tells the writer the files `ork init` made are not in its worktree", async () => {
-    const { store } = await onboard({ driver, script: SCRIPT });
+    const { store } = await fast({ driver, script: SCRIPT });
     const survey = String(
       startedOf(store, "ork-onboard-write").inputs["survey"],
     );
@@ -103,7 +119,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("starts each built-in with every input marked untrusted", async () => {
-    const { store } = await onboard({ driver, script: SCRIPT });
+    const { store } = await fast({ driver, script: SCRIPT });
     expect(startedOf(store, "ork-onboard-propose").untrusted).toEqual([
       "survey",
       "answers",
@@ -117,7 +133,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("shows the gate the diff and says the writer is not in a sandbox", async () => {
-    const flow = await onboard({ driver, script: SCRIPT });
+    const flow = await fast({ driver, script: SCRIPT });
     expect(flow.gate).toHaveLength(1);
     const [gate = ""] = flow.gate;
     expect(gate).toContain("check-on-change.ork.yaml");
@@ -126,7 +142,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("is a review the second time, once the branch is merged and its workflow has run", async () => {
-    const first = await onboard({ driver, script: SCRIPT });
+    const first = await fast({ driver, script: SCRIPT });
     const { root, store } = first;
     git(root, "merge", "-q", "--no-edit", keptBranch(root));
     git(root, "add", "-A");
@@ -138,7 +154,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
       file: path.join(root, WORKFLOW_FILE),
       project: root,
     });
-    const second = await onboard({
+    const second = await fast({
       driver,
       script: SCRIPT,
       root,
@@ -151,7 +167,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
   });
 
   it("gives the proposer the digest of past runs on a review", async () => {
-    const first = await onboard({ driver, script: SCRIPT });
+    const first = await fast({ driver, script: SCRIPT });
     const { root, store } = first;
     git(root, "merge", "-q", "--no-edit", keptBranch(root));
     git(root, "add", "-A");
@@ -162,7 +178,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
       file: path.join(root, WORKFLOW_FILE),
       project: root,
     });
-    await onboard({
+    await fast({
       driver,
       script: SCRIPT,
       root,
@@ -176,7 +192,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
 });
 
 const secondSurvey = async (commit: boolean): Promise<string> => {
-  const first = await onboard({
+  const first = await fast({
     driver: "claude-code",
     script: SCRIPT,
     gate: "discard",
@@ -185,7 +201,7 @@ const secondSurvey = async (commit: boolean): Promise<string> => {
     git(first.root, "add", "-A");
     git(first.root, "commit", "-q", "-m", "keep .ork");
   }
-  const second = await onboard({
+  const second = await fast({
     driver: "claude-code",
     script: SCRIPT,
     root: first.root,
@@ -210,7 +226,7 @@ describe("ork onboard, the writer's note about uncommitted files", () => {
 
 describe("ork onboard, the ways it ends", () => {
   it("discards the change: the branch and the worktree are gone", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: SCRIPT,
       gate: "discard",
@@ -222,7 +238,7 @@ describe("ork onboard, the ways it ends", () => {
   });
 
   it("writes nothing when no suggestion is picked, and the propose run stays", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "open-code",
       script: SCRIPT,
       answers: ["a", "b", "c", "y", ""],
@@ -241,7 +257,7 @@ describe("ork onboard, the ways it ends", () => {
       ...SUGGESTION,
       evidence: [{ path: "docs/nowhere.md" }],
     };
-    const flow = await onboard({
+    const flow = await fast({
       driver: "command-code",
       script: { ...SCRIPT, suggestions: [missing] },
     });
@@ -254,7 +270,7 @@ describe("ork onboard, the ways it ends", () => {
   });
 
   it("sends problems back to the writer, then fails the run and says what and which run", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: { ...SCRIPT, rounds: [{ [WORKFLOW_FILE]: UNCAPPED }] },
     });
@@ -289,7 +305,7 @@ describe("ork onboard, the ways it ends", () => {
   });
 
   it("keeps the branch when the project has gitignored local agent files Ork copies into the worktree", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: SCRIPT,
       root: repositoryWithLocalFiles(),
@@ -301,7 +317,7 @@ describe("ork onboard, the ways it ends", () => {
 
   it("filters a suggestions list of 300 KB without failing the run", async () => {
     const huge = { ...SUGGESTION, workflow: "big", why: "x".repeat(300_000) };
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: { ...SCRIPT, suggestions: [SUGGESTION, huge] },
     });
@@ -311,7 +327,7 @@ describe("ork onboard, the ways it ends", () => {
   });
 
   it("takes a second round that fixes what the first got wrong", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: {
         ...SCRIPT,
@@ -326,7 +342,7 @@ describe("ork onboard, the ways it ends", () => {
 
 describe("the paid part and the working tree", () => {
   it("leaves every .ork/ file as it was from the preview to the gate, and after a discard", async () => {
-    const flow = await onboard({
+    const flow = await fast({
       driver: "claude-code",
       script: SCRIPT,
       gate: "discard",
@@ -338,7 +354,7 @@ describe("the paid part and the working tree", () => {
   });
 
   it("changes the working tree's .ork/ not at all when the branch is kept", async () => {
-    const flow = await onboard({ driver: "claude-code", script: SCRIPT });
+    const flow = await fast({ driver: "claude-code", script: SCRIPT });
     expect(treeOf(flow.root)).toBe(flow.trees.start[0]);
     expect(Object.keys(orkFiles(flow.root))).toEqual([
       ".ork/workflows/hello.ork.yaml",

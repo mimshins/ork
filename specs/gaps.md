@@ -559,7 +559,18 @@ Found closing the list QA follow-ups (list filters):
   after every check passed. A second push gets through, as `ork once` reuses the
   passed tests. Run `pnpm check` before `git push` until the hook can run before
   git connects (or push with a keepalive).
-  ([the runbook](../runbook/development/security-audit.md))
+  ([the runbook](../runbook/development/security-audit.md)) Found: exit 141 is
+  git's SIGPIPE on its remote connection, which goes idle during the
+  minutes-long hook; redirecting the hook's output cannot affect it, and a
+  faster check shortens the window but cannot remove it. The check was slow
+  under load because of `verify.test.ts` (largest test 511 ms to 83 ms alone,
+  about 60000 shell iterations replaced by pipelines) and `onboard.test.ts`
+  (89.6 s to 16.2 s alone, slowest test 5.6 s to 1.2 s; under 36 `yes` processes
+  the slowest is 3.0 s against a 15.0 s timeout before). Pre-push duration after
+  the change: not measured (the node that wrote this could not run
+  `pnpm run check`; the maintainer times it). No hook change. Still open: a
+  follow-up pushes twice to see whether 141 still happens, and sets
+  `ServerAliveInterval` ([CONTRIBUTING.md](../CONTRIBUTING.md)) if it does.
 - **C17 · The vitest HOME exit hook once failed with `ENOTEMPTY`.** A `.npm`
   folder appeared in the shared test `HOME` while the hook was removing it. Seen
   once while running the CLI tests, not reproduced. Look at it if it comes back.

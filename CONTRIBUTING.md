@@ -69,7 +69,10 @@ directly.
   that already passed on identical files is skipped
   (`pnpm ork once --force -- …` or `ORK_ONCE=off` runs it anyway;
   `pnpm check:all` always runs). CI has no cache and runs the same gates; bypass
-  only in an emergency with `git push --no-verify`.
+  only in an emergency with `git push --no-verify`. If a push ends with exit 141
+  after every check passed, git's connection to GitHub went idle while the hook
+  ran: set `ServerAliveInterval 30` under `Host github.com` in `~/.ssh/config`
+  (Ork edits no user config) and push again.
 - `commit-msg` rejects AI or agent attribution lines (see below).
 
 ## Project structure
