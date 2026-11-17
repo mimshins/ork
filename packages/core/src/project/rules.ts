@@ -172,6 +172,7 @@ export const applyProject = (
   const permissions = dropUndefined({ allow, deny });
   const rules = dropUndefined({
     links: workflow.rules?.links ?? project.links,
+    reading: workflow.rules?.reading ?? project.reading,
     git: Object.keys(git).length === 0 ? undefined : git,
     permissions:
       Object.keys(permissions).length === 0 ? undefined : permissions,

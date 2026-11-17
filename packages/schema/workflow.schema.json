@@ -406,6 +406,14 @@
             "on",
             "off"
           ]
+        },
+        "reading": {
+          "description": "Default: extract, sessions read files, search and see git output only through Ork's extract tool: a shell line that starts by reading files is refused with the extract call to make. open: sessions may also read through the shell.",
+          "type": "string",
+          "enum": [
+            "extract",
+            "open"
+          ]
         }
       },
       "additionalProperties": false

@@ -114,8 +114,14 @@ const decideOf = async (
   tools: SessionSpec["tools"],
   cwd = tmp("mod"),
   yolo = false,
+  // The rule tests check matching alone; shell reads have their own test.
+  reading: "extract" | "open" = "open",
 ): Promise<Decide> => {
-  const mod = writeMod({ ...specOf(cwd, tools), ...(yolo ? { yolo } : {}) });
+  const mod = writeMod({
+    ...specOf(cwd, tools),
+    ...(yolo ? { yolo } : {}),
+    reading,
+  });
   const loaded = z
     .object({
       decide: z.custom<Decide>(value => typeof value === "function"),
@@ -238,6 +244,35 @@ describe("the command-code session mod", () => {
     expect(decide("shell", { command: "vitest run" })).toBeDefined();
     const targeted = { command: "vitest run packages/cli/test/x.test.ts" };
     expect(decide("shell", targeted)).toBeUndefined();
+  });
+});
+
+/** The reason a mod refused a shell read, or "" when it did not. */
+const readOf = (decided: unknown): string =>
+  typeof decided === "object" &&
+  decided !== null &&
+  "read" in decided &&
+  typeof decided.read === "string"
+    ? decided.read
+    : "";
+
+describe("the command-code session mod's shell reads (RFC-025)", () => {
+  it("refuses a line that starts by reading files, naming the extract call", async () => {
+    const decide = await decideOf(
+      { allow: ["Bash"], deny: [] },
+      tmp("mod"),
+      false,
+      "extract",
+    );
+    expect(readOf(decide("shell", { command: "cat src/a.ts" }))).toContain(
+      '"step":"read"',
+    );
+    expect(readOf(decide("shell", { command: "git log -5" }))).toContain(
+      '"op":"log"',
+    );
+    expect(
+      decide("shell", { command: "pnpm test | tail -20" }),
+    ).toBeUndefined();
   });
 });
 

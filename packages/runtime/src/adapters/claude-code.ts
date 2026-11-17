@@ -110,7 +110,20 @@ export const hookOutput = (answer: HoldAnswer): Record<string, unknown> =>
         },
       };
 
-const claudeHold: HoldHook = { answer: hookOutput, windowMs: HOLD_WINDOW_MS };
+/** The hook's refusal of a call (RFC-025): Claude Code shows the session why. */
+export const hookRefusal = (reason: string): Record<string, unknown> => ({
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "deny",
+    permissionDecisionReason: reason,
+  },
+});
+
+const claudeHold: HoldHook = {
+  answer: hookOutput,
+  windowMs: HOLD_WINDOW_MS,
+  refuse: hookRefusal,
+};
 
 /**
  * The `claude -p` arguments for a session spec. The brief goes on stdin;

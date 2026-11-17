@@ -131,9 +131,13 @@ A workflow can override the project's under `rules:`:
 rules:
   git: { merge: never }
   permissions: { deny: ["Bash(rm *)"] }
+  reading: open # extract (the default) | open
 ```
 
-Its `git` keys win; permissions add up.
+Its `git` keys and `reading` win; permissions add up. `reading: extract` refuses
+a shell line that starts by reading files, naming the `extract` call to make;
+`open` allows it
+([extract](./skills-and-context.md#reading-part-of-a-file-extract)).
 
 ## What a run asks of the machine
 
@@ -172,17 +176,9 @@ followUps:
 ## Trying an experiment
 
 Features that aren't ready for everyone ship turned off. To try one, name it in
-the project, for everyone working in it:
-
-```yaml
-experimental: [some-feature]
-```
-
-or in your environment, for you alone (several, separated by commas):
-
-```sh
-export ORK_EXPERIMENTAL=some-feature
-```
+the project for everyone (`experimental: [some-feature]`), or in your
+environment for you alone (`export ORK_EXPERIMENTAL=some-feature`, several
+separated by commas).
 
 `some-feature` stands for a real name: none has shipped yet. `ork doctor` lists
 what is on and who turned it on. A name Ork doesn't know is a mistake, not a

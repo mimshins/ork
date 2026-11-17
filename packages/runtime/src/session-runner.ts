@@ -21,7 +21,7 @@ import type {
 } from "@krapht/ork-core";
 
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
-import { heavyHook, toolHook } from "./heavy-hook.ts";
+import { heavyHook, NEVER_HELD, toolHook } from "./heavy-hook.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
 import { type LegInput, runLeg } from "./session-leg.ts";
@@ -114,7 +114,11 @@ export const createSessionRuntime = (
     /** The last report the `report` tool accepted, across legs. */
     let reported: NodeReport | null = null;
     const { hold } = ports;
-    const hook = hold === undefined ? undefined : adapter.hold;
+    // A shell read is refused in the hook, so a driver that can refuse there
+    // gets it on every session that reads only through `extract` (RFC-025).
+    const refuse = spec.reading === "open" ? undefined : adapter.hold?.refuse;
+    const hook =
+      hold === undefined && refuse === undefined ? undefined : adapter.hold;
     const heavy = heavyHook(ports.machine);
     // A stop or a timeout ends a wait for a slot, so a deferred call can't hold it.
     ended.signal.addEventListener(
@@ -145,11 +149,12 @@ export const createSessionRuntime = (
       const byTool = tools.some(tool => tool.name === REPORT_TOOL);
       const mcp = await startOrkMcpHttp(
         tools,
-        hold === undefined || hook === undefined
+        hook === undefined
           ? undefined
           : toolHook({
-              hold,
+              hold: hold ?? NEVER_HELD,
               heavy,
+              ...(refuse === undefined ? {} : { refuse }),
               answer: hook.answer,
               windowMs: options.holdWindowMs ?? hook.windowMs,
               ended: ended.signal,

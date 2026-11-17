@@ -288,3 +288,46 @@ describe("the call's slot without a post-call hook", () => {
     expect(ledger.holders()).toEqual([]);
   });
 });
+
+describe("a tool hook that refuses shell reads (RFC-025)", () => {
+  it("refuses one with its reason before it holds or takes a slot", async () => {
+    const ledger = ledgerOf(1);
+    const handler = toolHook({
+      hold: holdOf(),
+      heavy: heavyHook(portOf(ledger, [])),
+      answer: answer => ({ answer }),
+      windowMs: 1000,
+      ended: signal,
+      onDefer: () => {
+        // Not under test.
+      },
+      refuse: reason => ({ refused: reason }),
+    });
+    const refused = await handler(signal, bash("cat src/a.ts"));
+    expect(JSON.stringify(refused)).toContain("Use the extract tool instead");
+    expect(ledger.holders()).toEqual([]);
+    expect(await handler(signal, bash("pnpm check"))).toEqual({
+      answer: "go",
+    });
+  });
+});
+
+describe("a claude-code session that reads only through extract (RFC-025)", () => {
+  it("gets the hook with no pause port, and a shell read is denied with the call to make", async () => {
+    const cwd = tmp("cwd");
+    const answer = path.join(tmp("hook"), "answer.json");
+    const session = createCliRuntime({
+      bin: FAKE_CLAUDE,
+      env: {
+        ...process.env,
+        FAKE_CLAUDE_BASH: "cat src/a.ts",
+        FAKE_CLAUDE_NO_POST: "1",
+        FAKE_CLAUDE_HOOK_FILE: answer,
+      },
+    }).start(specIn(cwd), { human, machine: portOf(ledgerOf(1), []) });
+    await collect(session.events);
+    const said = readFileSync(answer, "utf8");
+    expect(said).toContain('"permissionDecision":"deny"');
+    expect(said).toContain("Use the extract tool instead");
+  });
+});

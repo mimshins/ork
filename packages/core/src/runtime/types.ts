@@ -93,10 +93,7 @@ export type SessionSpec = {
   permissionMode: "default" | "acceptEdits" | "plan";
   maxTurns?: number;
   budgetUsd?: number;
-  /**
-   * The most counted tokens (input, output, cache-write; RFC-015) the session
-   * may use; the runner stops it at the first usage report that reaches it.
-   */
+  /** Counted-token cap (input, output, cache-write; RFC-015): the runner stops. */
   budgetTokens?: number;
   /** JSON Schema of the final report (structured output). */
   reportSchema: Record<string, unknown>;
@@ -106,6 +103,8 @@ export type SessionSpec = {
   plugins?: string[];
   /** Extra Claude Code settings (`--settings`), e.g. `skillOverrides`. */
   settings?: Record<string, unknown>;
+  /** `extract` (default): shell reads are refused (RFC-025); `open`: not. */
+  reading?: "extract" | "open";
   /** A session id to resume. */
   resume?: string;
   /**

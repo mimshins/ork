@@ -2,8 +2,9 @@
 
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
-Status: **Built**: the tool, its steps, containment and refusals, served on
-`claude-code`, `open-code` and `command-code`
+Status: **Built**: the tool, its steps and programs, containment and refusals,
+and the refusal of shell reads (RFC-025; withholding Grep, Glob and Read is not
+built yet), served on `claude-code`, `open-code` and `command-code`
 ([extract.ts](../../packages/runtime/src/tools/extract.ts),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
@@ -70,6 +71,33 @@ without model-written code. A call gives exactly one of the two.
 | `tail`   | `lines`                                                                                                                            | the last lines                                                                                                                                                                                                                                        |
 | `match`  | `text` (a literal substring, or with `regex: true` a POSIX ERE), `ignoreCase?`, `context?`                                         | the lines holding it, with `context` lines around, `--` between runs                                                                                                                                                                                  |
 | `count`  | none                                                                                                                               | `N lines`: how many lines the text before it has                                                                                                                                                                                                      |
+
+## Shell reads
+
+Under `reading: extract`, the default
+([project rules](../project-rules.md#links-and-reading),
+[RFC-025](../../rfcs/active/RFC-025-extract-only-reading.md)), a shell line in
+which a pipeline **starts** by reading files is refused, and the refusal names
+the `extract` call to make: `cat`, `head`, `tail`, `less`, `more`, `nl`, `sed`
+(not `sed -i`), `awk`, `grep`, `egrep`, `fgrep`, `rg`, `ag`, `find` (not with
+`-exec`, `-ok` or `-delete`), `tree`, `ls -R`, and `git diff`, `show`, `log` and
+`grep` (after any `-C`, `-c` or other option). A reader later in a pipeline
+filters another command's output, which `extract` can't read, so
+`pnpm test | tail -20` runs. One function decides
+([shell-reads.ts](../../packages/runtime/src/tools/shell-reads.ts)):
+
+- **`claude-code`**: Ork's `PreToolUse` HTTP hook, now on every session that
+  refuses (not only on a node that can be paused), answers `deny` with the
+  reason before the pause and heavy-slot checks.
+- **`command-code`**: the session's mod embeds the function's source and blocks
+  the call with the reason as `additionalContext`, after the node's denies.
+- **`open-code`**: deny rules after the node's allows, `<command>` and
+  `<command> *` for each reader (`SHELL_READ_COMMANDS`); OpenCode matches the
+  whole line from its start, so only a line's first pipeline is refused there,
+  and its message is OpenCode's own ([L436](../gaps/extract-limits.md)).
+
+A `readonly` node then runs only `git status` without asking; `git diff`, `log`
+and `show` come back under `reading: open`.
 
 ## Where it may read
 

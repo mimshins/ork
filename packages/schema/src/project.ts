@@ -109,8 +109,17 @@ export const RulesSchema = z.strictObject({
     .describe(
       "Default: on, the user can link a running node to a node of another run. off: its nodes get no message tools unless they have someone to write to, and cannot be linked.",
     ),
+  reading: z
+    .enum(["extract", "open"])
+    .optional()
+    .describe(
+      "Default: extract, sessions read files, search and see git output only through Ork's extract tool: a shell line that starts by reading files is refused with the extract call to make. open: sessions may also read through the shell.",
+    ),
 });
 export type Rules = z.infer<typeof RulesSchema>;
+
+/** Whether sessions read only through `extract` (RFC-025). */
+export type Reading = "extract" | "open";
 
 /** The OS priority Ork starts a run's sessions and tool commands at. */
 export const PrioritySchema = z.enum(["low", "normal"]);

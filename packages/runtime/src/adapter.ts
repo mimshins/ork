@@ -136,6 +136,12 @@ export type ContextLayers = {
 export type HoldHook = {
   answer: (answer: "go" | "defer") => Record<string, unknown>;
   windowMs: number;
+  /**
+   * The hook's answer refusing a call, with the reason the session reads; a
+   * driver that has it gets the hook on every session that refuses shell reads
+   * (RFC-025), not only on one that can be paused.
+   */
+  refuse?: (reason: string) => Record<string, unknown>;
 };
 
 /** One agent CLI, as its strategies. */

@@ -67,3 +67,11 @@ was left simpler, or could not be checked:
   hub-and-chunk rule. Splitting it would move anchors that specs and benchmark
   pages link to (`#the-manual-baseline`, `#the-suites-cost`,
   `#a-build-measured-again`), so it waits for the next review.
+- **L436 · Shell reads are refused unevenly across drivers.** On `open-code` the
+  refusal is a deny pattern matched from the line's start, so
+  `cd src && cat a.ts` passes, `sed -i` is refused with `sed`, and the session
+  reads OpenCode's own refusal, not the `extract` call. On every driver the
+  check is by program name: a reader behind `xargs`, `sh -c` or a script is not
+  seen. A node cannot exempt one program: only `reading: open` (project or
+  workflow) turns refusals off. Revisit if refused reads show up in
+  `ork feedback`.

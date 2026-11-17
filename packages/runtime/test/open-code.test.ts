@@ -289,11 +289,14 @@ const rules = (
   tools: ToolRules,
   mode: SessionSpec["permissionMode"] = "default",
   yolo = false,
+  // The rule tests check the mapping alone; shell reads have their own test.
+  reading: "extract" | "open" = "open",
 ) =>
   permissionRules({
     ...specOf("/w", tools),
     permissionMode: mode,
     ...(yolo ? { yolo } : {}),
+    reading,
   });
 
 /**
@@ -326,6 +329,25 @@ describe("the open-code permission rules", () => {
       ...ORK_ALLOWS,
       { action: "read", resource: "*.env", effect: "deny" },
     ]);
+  });
+
+  it("refuse a shell line that starts by reading files, before the node's denies (RFC-025)", () => {
+    const written = rules(
+      { allow: ["Bash"], deny: [] },
+      "default",
+      false,
+      "extract",
+    );
+    expect(written).toEqual(
+      expect.arrayContaining([
+        { action: "shell", resource: "cat *", effect: "deny" },
+        { action: "shell", resource: "git diff *", effect: "deny" },
+        { action: "shell", resource: "rg", effect: "deny" },
+      ]),
+    );
+    const at = (resource: string) =>
+      written.findIndex(rule => rule.resource === resource);
+    expect(at("cat *")).toBeGreaterThan(at("*"));
   });
 
   it("open Ork's tools by exact name, not a repo server named `ork_<x>`", () => {

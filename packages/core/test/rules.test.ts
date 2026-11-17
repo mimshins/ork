@@ -195,9 +195,27 @@ describe("project rules under a workflow", () => {
       planNodeSession(workflow, "r", { cwd: "/p", inputs: {}, inPlace: true }),
     );
     expect(spec.tools.deny).toEqual(["Write", "Edit", "NotebookEdit"]);
+    // extract shows a diff, a commit and the log (RFC-025).
+    expect(spec.tools.allow).toEqual([
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git -C * status *)",
+    ]);
+    expect(spec.reading).toBe("extract");
+  });
+
+  it("let a readonly node read git through the shell under reading: open", () => {
+    const workflow = workflowOf([
+      "rules: { reading: open }",
+      "nodes:",
+      "  r: { type: agent.worker, prompt: go, isolation: readonly }",
+    ]);
+    const spec = specOf(
+      planNodeSession(workflow, "r", { cwd: "/p", inputs: {}, inPlace: true }),
+    );
     expect(spec.tools.allow).toContain("Bash(git diff *)");
     expect(spec.tools.allow).toContain("Bash(git -C * log *)");
-    expect(spec.tools.allow).not.toContain("Bash");
+    expect(spec.reading).toBe("open");
   });
 
   it("give a node's session its sub-agents, with the tool to reach them", () => {

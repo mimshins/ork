@@ -16,6 +16,7 @@ import type { SessionSpec } from "@krapht/ork-core";
 
 import type { OrkEndpoint } from "../adapter.ts";
 import { ORK_TOOLS } from "../tools/registry.ts";
+import { SHELL_READ_COMMANDS } from "../tools/shell-reads.ts";
 import { ORK_SERVER } from "../tools/tool.ts";
 
 export type Rule = {
@@ -122,12 +123,19 @@ const outsideOnly = (only: ReadonlySet<string> | undefined): Rule[] =>
         .filter(action => !only.has(action))
         .map((action): Rule => ({ action, resource: "*", effect: "deny" }));
 
+/** A shell line that starts by reading files, refused (`extract` reads it). */
+const shellReadRules: Rule[] = SHELL_READ_COMMANDS.flatMap(command => [
+  { action: "shell", resource: command, effect: "deny" },
+  { action: "shell", resource: `${command} *`, effect: "deny" },
+]);
+
 /**
  * The session's rules, in order: deny everything (a yolo run: allow it, then
  * refuse the built-ins its `only` leaves out); read in the worktree (as Claude
  * Code reads without asking); edits there under `acceptEdits`; the node's
  * allows (only its `only` tools, if it names them); Ork's tools; then `.env`
- * reads, plan mode's edits and shell, and the node's denies, refused.
+ * reads, plan mode's edits and shell, shell reads (unless `reading: open`;
+ * RFC-025), and the node's denies, refused.
  */
 export const permissionRules = (spec: SessionSpec): Rule[] => {
   const { cwd, tools } = spec;
@@ -165,6 +173,7 @@ export const permissionRules = (spec: SessionSpec): Rule[] => {
           effect: "deny",
         }))
       : []),
+    ...(spec.reading === "open" ? [] : shellReadRules),
     ...rulesOf(tools.deny, "deny", cwd),
   ];
 };

@@ -2,6 +2,15 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Sessions read files through `extract`, not the shell.** A shell line that
+  starts by reading files (`cat`, `head`, `sed -n`, `grep`, `rg`, `find`,
+  `git diff`, `show` or `log`…) is now refused on every driver, and on Claude
+  Code and Command Code the refusal names the `extract` call to make. A reader
+  that filters another command's output, such as `pnpm test | tail -20`, still
+  runs. Read-only nodes run only `git status` without asking. Upgrade: if your
+  sessions must read through the shell, set `reading: open` in
+  `.ork/project.yaml`, or under a workflow's `rules:`
+  ([project rules](../guides/project-rules.md#a-workflows-own-rules)).
 - **`extract` does more in one call.** A call can run up to eight programs
   (`programs`), each result under its own header, so several files or searches
   cost one turn. A new `files` step lists the folder's files, filtered by a glob

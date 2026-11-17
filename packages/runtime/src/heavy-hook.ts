@@ -15,6 +15,7 @@ import type { HoldPort, MachinePort } from "@krapht/ork-core";
 import type { HoldHook } from "./adapter.ts";
 import { type HoldAnswer, holdAtTool } from "./hold.ts";
 import type { HoldHandler } from "./mcp-http.ts";
+import { shellReadReason } from "./tools/shell-reads.ts";
 
 export type HeavyHook = {
   /** Before a call: "go" once it may run, "defer" while its slot is not free. */
@@ -120,6 +121,21 @@ export const heavyHook = (machine: MachinePort | undefined): HeavyHook => {
   };
 };
 
+/** Why a hook's Bash call is refused as a shell read, if it is (RFC-025). */
+export const shellReadOf = (input: unknown): string | undefined => {
+  if (!isRecord(input) || input["tool_name"] !== "Bash") return undefined;
+  const call = input["tool_input"];
+  const command = isRecord(call) ? call["command"] : undefined;
+  return typeof command === "string" ? shellReadReason(command) : undefined;
+};
+
+/** A node that is never held: the hook only refuses, it never waits. */
+export const NEVER_HELD: HoldPort = {
+  held: () => false,
+  wait: () => Promise.resolve(),
+  watch: () => () => {},
+};
+
 /** Whether a hook's input is from after a tool call. */
 const afterCall = (input: unknown): boolean =>
   isRecord(input) && input["hook_event_name"] === "PostToolUse";
@@ -137,11 +153,17 @@ export const toolHook =
     windowMs: number;
     ended: AbortSignal;
     onDefer: () => void;
+    /** Refuses a shell read before anything else (RFC-025). */
+    refuse?: (reason: string) => Record<string, unknown>;
   }): HoldHandler =>
   async (gone, input) => {
     if (afterCall(input)) {
       given.heavy.after();
       return {};
+    }
+    const refused = given.refuse === undefined ? undefined : shellReadOf(input);
+    if (refused !== undefined && given.refuse !== undefined) {
+      return given.refuse(refused);
     }
     const signal = AbortSignal.any([gone, given.ended]);
     let answer = await holdAtTool(given.hold, signal, given.windowMs);

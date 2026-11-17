@@ -101,11 +101,12 @@ or worktree exists; `worktrees` is relative; `merge: auto` with `commit: never`
 is an error. When a node's worktree is made: the folder must be beside the clone
 (inside its parent, outside the clone), and the branch a name git accepts.
 
-## Links
+## Links and reading
 
-`links: off` leaves the message tools out for a node with no one to write to,
-and refuses links to the run. The default is on
-([messaging](./messaging/links.md)). A workflow's value wins.
+`links: off` leaves out the message tools for a node with no one to write to and
+refuses links ([messaging](./messaging/links.md)); `reading: open` lets sessions
+read through the shell, which the default `extract` refuses
+([shell reads](./runtime/extract-tool.md#shell-reads)). A workflow's value wins.
 
 ## Quotas
 
@@ -189,11 +190,10 @@ doesn't turn a trigger off ([L119](./scheduler/watching-limits.md)).
 
 ## Safety
 
-Whatever the rules say:
+Whatever the rules say, Ork never pushes, and:
 
-- Ork never pushes.
-- Ork never takes over a branch its run did not create: an existing branch stops
-  the node. A resumed run checks its own branches out again.
+- Ork never takes over a branch its run did not create (an existing one stops
+  the node); a resumed run checks its own out again.
 - Every branch and worktree Ork creates is recorded (`worktree` `created`
   events), and [`ork worktrees`](./worktrees.md#ork-worktrees) lists and cleans
   what the runs recorded, plus any `ork/` branch.

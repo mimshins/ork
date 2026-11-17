@@ -5,6 +5,7 @@
  *   isolation, limits, and the report schema.
  */
 
+// oxlint-disable import/max-dependencies -- one module per part of a session spec
 import {
   type ClaudeNode,
   type Driver,
@@ -28,23 +29,12 @@ import type {
   Mailbox,
   Ownership,
   SessionSpec,
-  ToolRules,
 } from "../runtime/types.ts";
 import { AGENT_TOOL, modelOf, renderBrief, subagentsOf } from "./brief.ts";
 import { driverContradiction, modelDriver, namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
+import { toolRules } from "./tool-rules.ts";
 import type { Brief, Checkout, NodeItem, NodeOutput } from "./types.ts";
-
-/** Claude Code tools that change files or run commands. */
-export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit"] as const;
-
-/**
- * Commands a readonly node runs without asking: git that only reads. Any other
- * command asks, as for any node, so a reviewer can run the tests with leave.
- */
-export const READ_ONLY_COMMANDS = ["diff", "log", "show", "status"].flatMap(
-  git => [`Bash(git ${git})`, `Bash(git ${git} *)`, `Bash(git -C * ${git} *)`],
-);
 
 export type PlanOptions = {
   cwd: string;
@@ -118,33 +108,6 @@ const roleSection = (workflow: Workflow, node: ClaudeNode): string[] => {
     ? []
     : [`# Your role: ${node.agent}\n\n${role}`];
 };
-
-/** The node's own tool rules, the project's and workflow's, and isolation's. */
-const toolRules = (
-  node: ClaudeNode,
-  readonly: boolean,
-  rules: Workflow["rules"],
-  mcp: readonly string[],
-): ToolRules => ({
-  allow: [
-    ...new Set([
-      ...(rules?.permissions?.allow ?? []),
-      ...(node.tools?.allow ?? []),
-      // A headless node can't answer per call; the node's author chose the server.
-      // Claude Code writes other characters in a server's name as `_` in tool names.
-      ...mcp.map(server => `mcp__${server.replaceAll(/[^\w-]/gu, "_")}`),
-      ...(readonly ? READ_ONLY_COMMANDS : []),
-    ]),
-  ],
-  deny: [
-    ...new Set([
-      ...(rules?.permissions?.deny ?? []),
-      ...(node.tools?.deny ?? []),
-      ...(readonly ? WRITE_TOOLS : []),
-    ]),
-  ],
-  ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),
-});
 
 /**
  * Turns one Claude node into a session spec: renders its brief, applies the
@@ -250,6 +213,7 @@ export const planNodeSession = (
     tools: toolRules(node, isolation === "readonly", workflow.rules, mcp),
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
+    reading: workflow.rules?.reading ?? "extract",
   };
   // A leader is long-lived and waits in `delegate`: an hour's cache keeps its
   // prefix across the wait (specs/context.md, N3).

@@ -16,7 +16,8 @@
  *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, and with
  *   `FAKE_CLAUDE_PRIORITY_FILE` its own OS priority. `FAKE_CLAUDE_BASH` makes
  *   the hooked call a Bash call of that command, with a `PostToolUse` hook
- *   after it unless `FAKE_CLAUDE_NO_POST=1`. With
+ *   after it unless `FAKE_CLAUDE_NO_POST=1`; `FAKE_CLAUDE_HOOK_FILE` gets the
+ *   `PreToolUse` hook's answer. With
  *   `--resume <id> --fork-session` it is a fork: a new session (`fork-of-<id>`) that asks
  *   nothing and reports the first value its `--json-schema` allows for
  *   `choice` (or `FAKE_CLAUDE_FORK_CHOICE`), with a `note`;
@@ -268,6 +269,10 @@ out({
   },
 });
 const verdict = asks ? await preToolUse() : {};
+// The hook's answer, for a test of what Ork told the session.
+if (process.env.FAKE_CLAUDE_HOOK_FILE !== undefined) {
+  writeFileSync(process.env.FAKE_CLAUDE_HOOK_FILE, JSON.stringify(verdict));
+}
 if (verdict.hookSpecificOutput?.permissionDecision === "defer") {
   writeFileSync(pending, "t1");
   out({

@@ -129,9 +129,9 @@ ork run wait-for-ci --input pr=12
 
 With `--detach`, the run carries on without a terminal and its questions wait in
 `ork decide` and the Decisions panel of `ork ui`, gates included, so nothing is
-pushed or posted until you answer. Read-only nodes run read-only git
-(`git diff`, `log`, `show`, `status`) without asking; any other command, such as
-the tests, asks you first.
+pushed or posted until you answer. Read-only nodes run `git status` without
+asking and read diffs through `extract`; any other command, such as the tests,
+asks you first.
 
 Every example runs on the claude-code driver: your own `claude`, logged in or
 with `ANTHROPIC_API_KEY` (or Bedrock, Vertex or Foundry) set

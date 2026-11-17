@@ -79,9 +79,10 @@ so nothing is loaded twice.
 - **Tool rules** are the node's own `tools`, plus the project's and the
   workflow's `permissions` ([project rules](./project-rules.md#precedence)),
   plus, for a `readonly` node, the write tools (`Write`, `Edit`, `NotebookEdit`)
-  denied and read-only git (`git diff`, `log`, `show`, `status`, also with
-  `-C <path>`) allowed; any other command asks
-  ([plan.ts](../packages/core/src/run/plan.ts), `READ_ONLY_COMMANDS`).
+  denied and `git status` (also with `-C <path>`; `diff`, `log` and `show` too
+  under `reading: open`) allowed, since `extract` shows the rest; any other
+  command asks ([tool-rules.ts](../packages/core/src/run/tool-rules.ts),
+  `readOnlyCommands`).
 - **The checkout line** of the harness says where the node works and what the
   project's git rules let it do: commit there, or not (`commit: never`), and how
   its work reaches its owner (merged, applied as a patch, or kept).
