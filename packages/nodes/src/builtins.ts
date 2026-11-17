@@ -25,11 +25,16 @@ export const builtinExecutors = (
     maskedNames?: readonly string[];
     /** The run's store file, which its programs are guarded in. */
     store?: string;
+    /** The user's checkout, when the run works in a worktree of its own. */
+    sourceRoot?: string;
   },
 ): NodeExecutors => {
   const tool = toolExecutor(options.tools ?? spawnTool, {
     ...(options.orkBin === undefined ? {} : { orkBin: options.orkBin }),
     ...(options.store === undefined ? {} : { store: options.store }),
+    ...(options.sourceRoot === undefined
+      ? {}
+      : { sourceRoot: options.sourceRoot }),
     ...(options.maskedNames === undefined
       ? {}
       : { maskedNames: options.maskedNames }),

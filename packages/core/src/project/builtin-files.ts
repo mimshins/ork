@@ -15,7 +15,12 @@ import path from "node:path";
 
 import { BUILTIN_FILES } from "./builtin-bundles.ts";
 import { BUILTIN_WORKFLOWS } from "./builtin-workflows.ts";
-import { placeFiles, type ProjectPlace } from "./place.ts";
+import {
+  inRepoPlace,
+  ORK_DIR,
+  placeFiles,
+  type ProjectPlace,
+} from "./place.ts";
 import { guardedBase, plainPathInside, writePlainFile } from "./plain-files.ts";
 
 /** A built-in's text by its bare name; never one of an object's own keys. */
@@ -91,7 +96,9 @@ const bundleFiles = (
     ".builtin",
     bundleHash(workflow, companions),
   );
-  const shown = path.relative(place.root, folder).replaceAll(path.sep, "/");
+  // The same text in every place, so a copy written into a run worktree
+  // (`builtinBundleUnder`) is byte-identical to the one under `~/.ork`.
+  const shown = `${ORK_DIR}/runs/.builtin/${path.basename(folder)}`;
   const fill = (text: string): string =>
     text.replaceAll(BUNDLE_DIR_PLACEHOLDER, shown);
   return {
@@ -182,4 +189,27 @@ export const builtinWorkflowFile = (
     if (!writePlainFile(base, file, text).ok) return undefined;
   }
   return bundle.files[0]?.file;
+};
+
+/**
+ * Writes the built-in `arg` names under `root` as an in-repo project would hold
+ * it (`<root>/.ork/runs/.builtin/<hash>/`), for a run worktree that is every
+ * node's working root; the same files, hash and link guard as
+ * `builtinWorkflowFile`. Returns the workflow's file, or why nothing was
+ * written (a link on a path or at `root`, a folder at a file, an unknown
+ * name).
+ */
+export const builtinBundleUnder = (
+  root: string,
+  arg: string,
+): { ok: true; file: string } | { ok: false; error: string } => {
+  const place = inRepoPlace(root);
+  const problem = lstatSync(root).isSymbolicLink()
+    ? `\`${root}\` is a link: Ork writes its own workflow only to plain folders, so it wrote nothing.`
+    : builtinProblem(place, arg);
+  if (problem !== undefined) return { ok: false, error: problem };
+  const file = builtinWorkflowFile(place, arg);
+  return file === undefined
+    ? { ok: false, error: `Ork could not write \`${arg}\` under \`${root}\`.` }
+    : { ok: true, file };
 };

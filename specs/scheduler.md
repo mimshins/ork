@@ -225,9 +225,12 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   - **Who it is:** the program inherits Ork's environment, with `ORK_RUN`,
     `ORK_NODE`, `ORK_ROUND`, `ORK_RUN_DIR`, `ORK_PROJECT`, `ORK_WORKFLOW` and,
     when `ork` can be run directly, `ORK_BIN`
-    ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). An item of a
-    `forEach` node also gets `ORK_ITEM` (a string as it is, anything else as
-    JSON) and `ORK_INDEX`; the scheduler starts items with them
+    ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). When the run
+    works in a [worktree of its own](./worktrees/run-root.md), it also gets
+    `ORK_SOURCE_ROOT`, the user's checkout; a workflow's `env:` cannot set it
+    and a nested run does not inherit it. An item of a `forEach` node also gets
+    `ORK_ITEM` (a string as it is, anything else as JSON) and `ORK_INDEX`; the
+    scheduler starts items with them
     ([RFC-013](../rfcs/archived/RFC-013-for-each.md)). A `verify:` step also
     gets `ORK_REPORT`, the report it checks
     ([steps.md](./scheduler/steps.md#checks-on-a-report)). Then the node's

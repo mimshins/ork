@@ -23,10 +23,12 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  builtinBundleUnder,
   builtinProblem,
   builtinWorkflowFile,
   BUNDLE_DIR_PLACEHOLDER,
   inRepoPlace,
+  type ProjectPlace,
 } from "../src/index.ts";
 import { BUILTIN_WORKFLOWS } from "../src/project/builtin-workflows.ts";
 
@@ -57,6 +59,27 @@ const written = () => {
   if (file === undefined) throw new Error("No bundle written.");
   const folder = path.dirname(file);
   return { root, place, file, folder };
+};
+
+/** The bundle's workflow file under `root`, failing when none is written. */
+const writtenUnder = (root: string): string => {
+  const result = builtinBundleUnder(root, NAME);
+  if (!result.ok) throw new Error(result.error);
+  return result.file;
+};
+
+/** The bundle's workflow file in an attached `place`, failing when none. */
+const writtenIn = (place: ProjectPlace): string => {
+  const file = builtinWorkflowFile(place, NAME);
+  if (file === undefined) throw new Error("No bundle written.");
+  return file;
+};
+
+/** The error of a refused write under `root`, failing when it wrote. */
+const refusedUnder = (root: string): string => {
+  const result = builtinBundleUnder(root, NAME);
+  if (result.ok) throw new Error("A bundle was written.");
+  return result.error;
 };
 
 describe("a built-in bundle", () => {
@@ -119,6 +142,53 @@ describe("a built-in bundle", () => {
     expect(existsSync(path.join(there, "feedback-apply.ork.yaml"))).toBe(false);
     expect(existsSync(path.join(there, "tools"))).toBe(false);
     expect(readdirSync(elsewhere)).toEqual([]);
+  });
+
+  it("writes under a given root, byte-identical to an attached project's copy", () => {
+    const at = project();
+    const home = path.join(at.base, "home");
+    const attached = {
+      root: at.root,
+      mode: "attached" as const,
+      dir: path.join(home, "projects", "p1"),
+    };
+    const recorded = writtenIn(attached);
+    const worktree = path.join(at.base, "worktree");
+    mkdirSync(worktree);
+    const folder = path.dirname(writtenUnder(worktree));
+    expect(path.relative(worktree, folder)).toMatch(
+      /^\.ork\/runs\/\.builtin\/[0-9a-f]{12}$/u,
+    );
+    expect(path.basename(folder)).toBe(path.basename(path.dirname(recorded)));
+    for (const file of ["feedback-apply.ork.yaml", "tools/run.ts"]) {
+      expect(readFileSync(path.join(folder, file), "utf8")).toBe(
+        readFileSync(path.join(path.dirname(recorded), file), "utf8"),
+      );
+    }
+    expect(readFileSync(path.join(folder, "tools/run.ts"), "utf8")).toBe(
+      `node .ork/runs/.builtin/${path.basename(folder)}/tools/run.ts\n`,
+    );
+  });
+
+  it("refuses a link on a path under a given root, and writes nothing", () => {
+    const { root, folder } = written();
+    const at = project();
+    const elsewhere = path.join(at.base, "elsewhere");
+    mkdirSync(elsewhere);
+    const there = path.join(at.root, path.relative(root, folder));
+    mkdirSync(there, { recursive: true });
+    symlinkSync(elsewhere, path.join(there, "skill"));
+    expect(refusedUnder(at.root)).toMatch(/is a link, or behind one/u);
+    expect(existsSync(path.join(there, "feedback-apply.ork.yaml"))).toBe(false);
+    expect(readdirSync(elsewhere)).toEqual([]);
+  });
+
+  it("refuses a root that is itself a link, and writes nothing", () => {
+    const at = project();
+    const link = path.join(at.base, "link");
+    symlinkSync(at.root, link);
+    expect(refusedUnder(link)).toMatch(/is a link/u);
+    expect(existsSync(path.join(at.root, ".ork"))).toBe(false);
   });
 
   it("refuses a folder at a companion's path, and removes nothing", () => {

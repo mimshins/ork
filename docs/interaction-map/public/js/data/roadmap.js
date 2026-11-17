@@ -1284,12 +1284,13 @@ export const MILESTONES = [
         commits: ["da61e3f"],
         date: "2026-11-16",
         detail:
-          "Built and shipped with Ork. `ork run ork:security-audit` is a built-in bundle (ADR-096: the workflow plus the vendored skill, a read-only rule and the audit's scripts, written under `.ork/runs/.builtin/<hash>/`), so it runs in any `ork init` project. It runs free scanners (`pnpm audit` or `npm audit` by lockfile, workflow pinning and permissions, secret patterns), then Cloudflare's security-audit skill, pinned in `.ai/skills/security-audit/`, as read-only nodes: recon and a coverage ledger, one hunter per unit, a critic, a fresh verifier per candidate (its record held to the report schema by a `verify:` check, up to 3 tries), validated findings, and (standard) a recheck. `quick` costs at most $29 and is partial coverage; `standard` at most $72. The report is written to `~/.ork/audits/`, outside the project; it may be sensitive. Left: the first paid run, on the maintainer's go (C15); an `ork register` project is refused by `scan` (L388); only pnpm and npm lockfiles are read (L389).",
+          "Built and shipped with Ork. `ork run ork:security-audit` is a built-in bundle (ADR-096: the workflow plus the vendored skill, a read-only rule and the audit's scripts, written under `.ork/runs/.builtin/<hash>/`), so it runs in an `ork init` project and, in a per-run worktree of `HEAD` that holds the bundle (ADR-100, RFC-021), in an `ork register` project too. It runs free scanners (`pnpm audit` or `npm audit` by lockfile, workflow pinning and permissions, secret patterns), then Cloudflare's security-audit skill, pinned in `.ai/skills/security-audit/`, as read-only nodes: recon and a coverage ledger, one hunter per unit, a critic, a fresh verifier per candidate (its record held to the report schema by a `verify:` check, up to 3 tries), validated findings, and (standard) a recheck. `quick` costs at most $29 and is partial coverage; `standard` at most $72. The report is written to `~/.ork/audits/`, outside the project; it may be sensitive. Left: the first paid run, on the maintainer's go (C15); an attached project's audit sees `HEAD`, not uncommitted changes (L424); only pnpm and npm lockfiles are read (L389).",
         docs: [
           "docs/guides/security-audit.md",
           "runbook/development/security-audit.md",
           "specs/gaps/audit-limits.md",
           "decisions/ADR-096-built-in-bundles.md",
+          "decisions/ADR-100-audit-in-attached-projects.md",
           "packages/core/workflows/security-audit.ork.yaml",
         ],
       },

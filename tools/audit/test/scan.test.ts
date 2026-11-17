@@ -2,17 +2,26 @@
  * @file Tests the scanners and the previous-audit reader: `pnpm audit` and `npm
  *   audit` advisories parsed from output with a non-zero exit (and an offline
  *   run as a note), the scanner chosen by lockfile, a secret hit reported
- *   without its value, the previous audit read tolerantly, and `scan` refusing
- *   a bad input or a bundle outside the checkout before it runs anything.
+ *   without its value, the previous audit read tolerantly, `scan` refusing a
+ *   bad input before it runs anything, and its notes in an attached project's
+ *   run copy (the audited commit, uncommitted changes) reaching the report.
  */
 
-import { existsSync, mkdirSync, utimesSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import { chooseScanner, parseNpmAudit, parsePnpmAudit } from "../advisories.ts";
-import { bundleOutsideRoot, realAudit, runScan, scanSecrets } from "../scan.ts";
+import { runReport } from "../report.ts";
+import { realAudit, runScan, scanSecrets } from "../scan.ts";
 import { previousAudit } from "../store.ts";
 import {
   auditEnv,
@@ -20,6 +29,7 @@ import {
   fakeGithubToken,
   fixtureAudits,
   gitRepo,
+  tempDir,
 } from "./kit.ts";
 
 afterEach(cleanUp);
@@ -162,23 +172,6 @@ describe("chooseScanner", () => {
   });
 });
 
-describe("bundleOutsideRoot", () => {
-  it("accepts a folder inside the root, even a hidden run folder", () => {
-    const root = gitRepo({ "a.txt": "x" });
-    const inside = path.join(root, ".ork/runs/.builtin/abc");
-    mkdirSync(inside, { recursive: true });
-    expect(bundleOutsideRoot(root, inside)).toBe(false);
-  });
-
-  it("refuses a folder beside or above the root", () => {
-    const root = gitRepo({ "a.txt": "x" });
-    expect(bundleOutsideRoot(root, path.join(root, "..", "elsewhere"))).toBe(
-      true,
-    );
-    expect(bundleOutsideRoot(root, path.dirname(root))).toBe(true);
-  });
-});
-
 describe("scanSecrets", () => {
   it("reports file, line and pattern name, never the value", () => {
     const token = fakeGithubToken();
@@ -297,18 +290,6 @@ describe("runScan", () => {
     expect(existsSync(fixtureAudits(env))).toBe(false);
   });
 
-  it("refuses a bundle outside the checkout before it runs anything or makes a folder", () => {
-    const repo = gitRepo({ "pnpm-lock.yaml": "x" });
-    const env = auditEnv();
-    const outside = path.join(path.dirname(repo), "bundle");
-    expect(() =>
-      runScan({ cwd: repo, env, audit: neverRuns, bundleDir: outside }),
-    ).toThrow(
-      /run ork migrate to move this attached project's files into \.ork\//u,
-    );
-    expect(existsSync(fixtureAudits(env))).toBe(false);
-  });
-
   it("runs the scanner its lockfile names, and notes when there is no lockfile", () => {
     const called: string[] = [];
     const audit = (_cwd: string, tool: string): typeof offline => {
@@ -355,5 +336,91 @@ describe("realAudit", () => {
   it("runs the tool with `audit --json`", () => {
     const result = realAudit(process.cwd(), "echo");
     expect(result).toEqual({ status: 0, stdout: "audit --json\n", stderr: "" });
+  });
+});
+
+/**
+ * A per-run worktree of `repo`'s HEAD, as `ork run` makes for an attached
+ * project.
+ */
+const runWorktree = (repo: string): string => {
+  const copy = path.join(tempDir(), "run-copy");
+  execFileSync("git", ["worktree", "add", "-q", "--detach", copy, "HEAD"], {
+    cwd: repo,
+    stdio: "ignore",
+  });
+  return copy;
+};
+
+const headOf = (repo: string): string =>
+  execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repo,
+    encoding: "utf8",
+  }).trim();
+
+const DIRTY_NOTE = "uncommitted changes in your checkout are not audited";
+
+describe("runScan in an attached project's run copy", () => {
+  const offline = { status: 1, stdout: "", stderr: "offline" };
+  const scanCopy = (
+    files: Record<string, string>,
+    dirty: boolean,
+  ): { repo: string; copy: string; result: ReturnType<typeof runScan> } => {
+    const repo = gitRepo(files);
+    const copy = runWorktree(repo);
+    if (dirty) writeFileSync(path.join(repo, "a.txt"), "changed");
+    const env = auditEnv({ ORK_SOURCE_ROOT: repo });
+    return {
+      repo,
+      copy,
+      result: runScan({ cwd: copy, env, audit: () => offline }),
+    };
+  };
+
+  it("names the audited commit and nothing else when the checkout is clean", () => {
+    const { repo, result } = scanCopy({ "a.txt": "x" }, false);
+    expect(result.notes).toEqual([
+      `audited commit ${headOf(repo)} (a per-run copy of HEAD)`,
+      expect.stringMatching(/advisories were not checked/u),
+    ]);
+  });
+
+  it("also says uncommitted changes in the checkout are not audited", () => {
+    const { repo, result } = scanCopy({ "a.txt": "x" }, true);
+    expect(result.notes.slice(0, 2)).toEqual([
+      `audited commit ${headOf(repo)} (a per-run copy of HEAD)`,
+      DIRTY_NOTE,
+    ]);
+  });
+
+  it("keeps the report in the source project's folder and carries both notes", () => {
+    const { copy, result } = scanCopy({ "a.txt": "x" }, true);
+    expect(result.outputDir).toBe(
+      path.join(path.dirname(result.outputDir), "run-1"),
+    );
+    expect(path.basename(path.dirname(result.outputDir))).toBe("ork-fixture");
+    const env = auditEnv({
+      ORK_AUDIT_HOME: path.dirname(path.dirname(result.outputDir)),
+    });
+    runReport(copy, env, { notes: result.notes });
+    const report = readFileSync(
+      path.join(result.outputDir, "REPORT.md"),
+      "utf8",
+    );
+    expect(report).toContain("- Note: audited commit ");
+    expect(report).toContain(`- Note: ${DIRTY_NOTE}`);
+  });
+
+  it("adds no such note without ORK_SOURCE_ROOT", () => {
+    const repo = gitRepo({ "a.txt": "x" });
+    writeFileSync(path.join(repo, "a.txt"), "changed");
+    const { notes } = runScan({
+      cwd: repo,
+      env: auditEnv(),
+      audit: () => offline,
+    });
+    expect(notes).toEqual([
+      expect.stringMatching(/advisories were not checked/u),
+    ]);
   });
 });

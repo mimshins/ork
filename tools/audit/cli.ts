@@ -52,11 +52,7 @@ const commands: Record<string, (cwd: string) => unknown> = {
   "check-inputs": () =>
     checkInputs(process.env["PROFILE"], process.env["SCOPE"]),
   scan: cwd => {
-    const result = runScan({
-      cwd,
-      env: process.env,
-      bundleDir: import.meta.dirname,
-    });
+    const result = runScan({ cwd, env: process.env });
     // A declared output holds no object, so the previous audit also comes as text.
     return {
       ...result,

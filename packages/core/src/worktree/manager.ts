@@ -154,7 +154,8 @@ const copyInto = (from: string, to: string, files: readonly string[]) => {
  * `branch`, or detached when there is none (`commit: never`). An existing
  * branch is checked out again only when this run created it (`known`): a
  * resumed run's branch outlives its removed worktree. Any other existing branch
- * stops it: Ork never takes over a branch it did not create.
+ * stops it: Ork never takes over a branch it did not create. `copyLocal: false`
+ * copies none of the local files (a run's own root holds only the commit).
  */
 export const createWorktree = async (options: {
   root: string;
@@ -162,24 +163,22 @@ export const createWorktree = async (options: {
   branch?: string;
   base: string;
   known?: boolean;
+  copyLocal?: boolean;
 }): Promise<Worktree & { copied: string[]; reused: boolean }> => {
   const { root, branch, base } = options;
   const target = options.path;
+  const copyLocal = async (): Promise<string[]> =>
+    options.copyLocal === false
+      ? []
+      : copyInto(root, target, await localFiles(root));
   mkdirSync(path.dirname(target), { recursive: true });
   if (branch === undefined) {
     await gitOk(root, ["worktree", "add", "--detach", target, base]);
-    const copied = copyInto(root, target, await localFiles(root));
-    return { path: target, copied, reused: false };
+    return { path: target, copied: await copyLocal(), reused: false };
   }
+  const ref = `refs/heads/${branch}`;
   const exists =
-    (
-      await git(root, [
-        "rev-parse",
-        "--verify",
-        "--quiet",
-        `refs/heads/${branch}`,
-      ])
-    ).code === 0;
+    (await git(root, ["rev-parse", "--verify", "--quiet", ref])).code === 0;
   if (exists && options.known !== true) {
     throw new Error(
       `branch ${branch} already exists, and this run did not create it; Ork never takes over a branch it did not create`,
@@ -191,8 +190,7 @@ export const createWorktree = async (options: {
       ? ["worktree", "add", target, branch]
       : ["worktree", "add", "-b", branch, target, base],
   );
-  const copied = copyInto(root, target, await localFiles(root));
-  return { path: target, branch, copied, reused: exists };
+  return { path: target, branch, copied: await copyLocal(), reused: exists };
 };
 
 /** Copies files that exist in `from` and are missing in the worktree. */

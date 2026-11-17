@@ -180,7 +180,7 @@ export const toolExecutor =
           );
     const env = {
       ...nodeEnv.values,
-      ...identityOf(context, options.orkBin, environ, options.store),
+      ...identityOf(context, options, environ),
       ...maskedEnv(namesToMask(context.workflow, environ, options.maskedNames)),
       ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
       ...(reportFile === undefined ? {} : { [REPORT_ENV]: reportFile }),

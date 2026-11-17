@@ -1,14 +1,15 @@
 /**
- * @file The audit's `scan` step: checks the inputs and that the audit's files
- *   are inside the checkout, then runs the free, deterministic scanners (`pnpm
- *   audit` or `npm audit` by lockfile, the workflow checks, the secret
- *   patterns) and reads the previous audit. It costs no tokens. Its result is
+ * @file The audit's `scan` step: checks the inputs, then runs the free,
+ *   deterministic scanners (`pnpm audit` or `npm audit` by lockfile, the
+ *   workflow checks, the secret patterns) and reads the previous audit. In an
+ *   attached project's per-run copy of `HEAD` it notes the audited commit and
+ *   any uncommitted changes it did not see. It costs no tokens. Its result is
  *   one JSON document; the scanner findings are `scanner` records for the
  *   report.
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 // The package's entry point by path: `tools/` has no workspace link to it.
@@ -40,31 +41,6 @@ export type ScanResult = {
   notes: string[];
   previous: PreviousAudit | null;
 };
-
-/** The real path of `target`, or `target` itself when it cannot be resolved. */
-const resolved = (target: string): string => {
-  try {
-    return realpathSync(target);
-  } catch {
-    return path.resolve(target);
-  }
-};
-
-/**
- * Whether the audit's own folder is outside the project root (`ork register`
- * keeps Ork's files outside the checkout; the agents there cannot read it).
- */
-export const bundleOutsideRoot = (root: string, bundleDir: string): boolean => {
-  const relative = path.relative(resolved(root), resolved(bundleDir));
-  return (
-    relative === ".." ||
-    relative.startsWith(`..${path.sep}`) ||
-    path.isAbsolute(relative)
-  );
-};
-
-export const OUTSIDE_ROOT_MESSAGE =
-  "the audit needs its files inside the checkout; run ork migrate to move this attached project's files into .ork/, then audit again";
 
 const MAX_FILE_BYTES = 1_000_000;
 
@@ -185,25 +161,36 @@ export type ScanOptions = {
   cwd: string;
   env: Env;
   audit?: AuditRunner;
-  /** The folder the audit's scripts are in; when set, it must be inside `cwd`. */
-  bundleDir?: string;
 };
 
 /**
- * Checks the inputs, then that the bundle is inside the checkout, then runs
- * every scanner. Throws on a bad input or an outside bundle, before anything is
- * run or made.
+ * What the audit of a per-run copy of `HEAD` (an attached project, where `ork
+ * run` sets `ORK_SOURCE_ROOT` to the user's checkout) must say: the audited
+ * commit, and that uncommitted changes in the checkout are not audited. Empty
+ * when the audit runs in the checkout itself.
+ */
+const sourceNotes = (cwd: string, env: Env): string[] => {
+  const source = env["ORK_SOURCE_ROOT"];
+  if (source === undefined || source === "") return [];
+  const notes = [
+    `audited commit ${git(cwd, ["rev-parse", "HEAD"]).trim()} (a per-run copy of HEAD)`,
+  ];
+  if (git(source, ["status", "--porcelain"]).trim() !== "") {
+    notes.push("uncommitted changes in your checkout are not audited");
+  }
+  return notes;
+};
+
+/**
+ * Checks the inputs, then runs every scanner. Throws on a bad input before
+ * anything is run or made.
  */
 export const runScan = ({
   cwd,
   env,
   audit = realAudit,
-  bundleDir,
 }: ScanOptions): ScanResult => {
   const inputs = checkInputs(env["PROFILE"], env["SCOPE"]);
-  if (bundleDir !== undefined && bundleOutsideRoot(cwd, bundleDir)) {
-    throw new Error(OUTSIDE_ROOT_MESSAGE);
-  }
   const runId = env["ORK_RUN"] ?? "";
   const dir = outputDir(cwd, runId, env);
 
@@ -236,7 +223,7 @@ export const runScan = ({
     runId,
     outputDir: dir,
     findings: [...advisories.records, ...workflows, ...scanSecrets(files)],
-    notes: advisories.notes,
+    notes: [...sourceNotes(cwd, env), ...advisories.notes],
     previous: previousAudit(cwd, runId, env),
   };
 };

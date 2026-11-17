@@ -11,14 +11,17 @@
 The built-in `ork:security-audit` (source
 [`packages/core/workflows/security-audit.ork.yaml`](../../packages/core/workflows/security-audit.ork.yaml),
 [ADR-096](../../decisions/ADR-096-built-in-bundles.md)) ships with Ork and runs
-in any `ork init` project; this repository audits itself with it. It runs free
-scanners first, then the six phases of the vendored
-[security-audit skill](../../.ai/skills/security-audit/SKILL.md) (pinned, see
-its [PROVENANCE.md](../../.ai/skills/security-audit/PROVENANCE.md)) as Ork
-nodes. Ork writes the workflow, the skill, the read-only rule and the
+in an `ork init` project or one attached with `ork register`; this repository
+audits itself with it. It runs free scanners first, then the six phases of the
+vendored [security-audit skill](../../.ai/skills/security-audit/SKILL.md)
+(pinned, see its [PROVENANCE.md](../../.ai/skills/security-audit/PROVENANCE.md))
+as Ork nodes. Ork writes the workflow, the skill, the read-only rule and the
 `tools/audit` scripts into `.ork/runs/.builtin/<hash>/` of the project, where
-the agents read them; `scan` refuses an attached project (`ork register`), with
-nothing spent. What it leaves simpler for now is in
+the agents read them. In an attached project `ork run` makes a worktree of
+`HEAD` beside the clone, writes the bundle into it and runs every node there
+([ADR-100](../../decisions/ADR-100-audit-in-attached-projects.md)), so that
+audit sees `HEAD`, not uncommitted changes, and `scan` names the audited commit.
+What it leaves simpler for now is in
 [the audit's limits](../../specs/gaps/audit-limits.md).
 
 ## Run it

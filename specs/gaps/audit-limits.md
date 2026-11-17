@@ -48,17 +48,6 @@ simpler, or could not be checked:
   and a replacement it asks for is never applied: the record leaves
   `findings.json` and is listed as disputed, because no further fresh verifier
   runs.
-- **L388 · The audit works only in an `ork init` project.** The agents are
-  `readonly` and read the bundle's files (the skill, the read-only rule) from
-  `.ork/runs/.builtin/<hash>/` in the project. In an `ork register` project that
-  folder is outside the checkout, where a read-only agent cannot read, so `scan`
-  (the first node, free) exits 1 naming `ork migrate` before any agent starts.
-  Writing the bundle into the repository stays ruled out
-  ([ADR-096](../../decisions/ADR-096-built-in-bundles.md)). The fix is
-  [RFC-021](../../rfcs/active/RFC-021-audit-in-attached-projects.md), Accepted:
-  a per-run worktree holding only the files the agents read, or, if a read-only
-  chain cannot follow one, a single-folder read grant. A resume and
-  `ork validate` are unaffected.
 - **L389 · The advisory scanner reads two lockfiles.** `scan` runs
   `pnpm audit --json` when `pnpm-lock.yaml` exists and `npm audit --json` when
   `package-lock.json` does (pnpm first when both do); with neither, it notes
@@ -74,3 +63,35 @@ simpler, or could not be checked:
   (three tries), not to the facts: a well-formed record can still be wrong. A
   record the session cannot fix fails the node, and `finalize` marks the audit
   incomplete as before.
+- **L424 · An attached project's audit sees `HEAD`, not uncommitted changes.**
+  In a project attached with `ork register`, `ork run` gives the run a worktree
+  of the project's `HEAD` as its root
+  ([ADR-100](../../decisions/ADR-100-audit-in-attached-projects.md)), so
+  uncommitted changes, and the untracked or ignored files of the checkout, are
+  not audited. `scan` notes the audited commit and, when the checkout has
+  uncommitted changes, says they are not audited; `scope: diff:<ref>` is a diff
+  of `HEAD`. Auditing the working tree needs a snapshot of it or a read grant
+  (RFC-021's option A). An in-repo project audits its working tree as before.
+- **L425 · `ork validate` and `ork context` do not open the run root.** For
+  `ork:security-audit` in an attached project they still report
+  `ref.context ./security-audit/context/read-only-bash.md does not exist`,
+  because only `ork run` opens the worktree that holds the bundle. (The same
+  cause made an attached audit fail at validation, before `scan`, when the
+  refusal was meant to be the first stop.) `ork run` is unaffected.
+- **L426 · A run root's base and names see no inputs.** `git.base` and the
+  worktree name templates are rendered with no inputs for the run root (a
+  `shortcut:` in [run-root.ts](../../packages/cli/src/run/run-root.ts)). The
+  audit's rules do not use inputs; a built-in with a run root whose rules do
+  would need them rendered.
+- **L427 · A crash between opening the run root and its `created` event leaves a
+  worktree recorded nowhere under `commit: never`.** `ork worktrees` and
+  `ork worktrees clean` find a leftover by its `worktree` events or, for the
+  default rules, by its `ork/<run>/audit-root` branch; a detached worktree has
+  no branch, so a crash in that gap leaves a folder beside the clone only
+  `git worktree remove` finds.
+- **L428 · A failed removal of the run root can print its error twice.** When
+  removing the worktree fails at the end of a run, the message can be printed by
+  more than one end path; the folder stays and `ork worktrees clean` removes it.
+- **L429 · Worktree nodes nested under a run root are untested.** The audit has
+  none. A node with `isolation: worktree` in a run whose root is a worktree is
+  named from the run root's folder; no test covers that combination.

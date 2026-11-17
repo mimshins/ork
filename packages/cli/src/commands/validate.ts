@@ -73,10 +73,13 @@ export const loadWorkflow = (
   cwd: string,
   home?: string,
   registered: readonly ProjectPlace[] = registeredProjects(home),
+  // The run's own worktree (run/run-root.ts), checked as the project's root.
+  runRoot?: string,
 ): LoadedWorkflow => {
   const absolute = path.resolve(cwd, file);
   const place = placeFor(path.dirname(absolute), registered);
-  const workflowDir = workflowDirOf(place, absolute);
+  const checked = runRoot === undefined ? place : { ...place, root: runRoot };
+  const workflowDir = workflowDirOf(checked, absolute);
   const where = { place, workflowDir };
   let text: string;
   try {
@@ -101,7 +104,7 @@ export const loadWorkflow = (
 
   const { diagnostics, workflow, graph, summary, locate } = checkWorkflowText(
     text,
-    { ...where, registered, home },
+    { ...where, place: checked, registered, home },
   );
   return {
     report: {

@@ -1,6 +1,6 @@
 # RFC-021 — `ork:security-audit` in attached projects
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-16
 - **Supersedes:** —
 - **Superseded by:** —

@@ -10,7 +10,9 @@ as a bundle, `ork:security-audit`
 [bundles](../../packages/core/src/project/builtin-bundles.ts),
 [tests](../../packages/core/test/builtin-workflows.test.ts),
 [bundle tests](../../packages/core/test/builtin-bundles.test.ts),
-[CLI tests](../../packages/cli/test/builtin-workflows.test.ts)).
+[CLI tests](../../packages/cli/test/builtin-workflows.test.ts)); in an attached
+project it runs in a [worktree of its own](../worktrees/run-root.md)
+([run root tests](../../packages/cli/test/run-root.test.ts)).
 
 ## Ork's own workflows
 
@@ -44,11 +46,24 @@ a read-only rule and the `tools/audit` scripts.
   and nothing is written, as ADR-059 does for one file.
 - **Generated.** The companion texts are a generated module; a test fails when
   it is stale.
-- **Inside the project only.** The folder must be inside the project root for a
-  read-only agent to read it. `ork:security-audit`'s first node, `scan`, refuses
-  a folder outside it (an `ork register` project), naming `ork migrate`, before
-  anything is spent ([audit limits](../gaps/audit-limits.md)). Resume and
-  `validate` are unaffected.
+- **In an attached project, in a worktree.** A read-only agent reads only inside
+  its own folder, and an `ork register` project keeps Ork's folder outside the
+  checkout. So `ork run` of a bundle there opens a worktree of `HEAD` beside the
+  clone, writes the bundle into it as `.ork/runs/.builtin/<hash>/` (the
+  placeholder then names that folder relative to the worktree), and runs every
+  node in it; the user's repository is never written to, and the worktree is
+  removed when the run ends ([a run's own root](../worktrees/run-root.md),
+  [ADR-100](../../decisions/ADR-100-audit-in-attached-projects.md)). An in-repo
+  project has no such worktree. The audit then sees `HEAD`, not uncommitted
+  changes ([audit limits](../gaps/audit-limits.md)). The other built-ins with
+  companion files, `ork:onboard-*`, stay refused in an attached project
+  ([ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md)).
+- **`ORK_SOURCE_ROOT`.** Tool nodes of such a run get the user's checkout in
+  this variable, only when the run's root is a worktree of its own. `scan` reads
+  it and adds the notes `audited commit <sha> (a per-run copy of HEAD)` and,
+  when `git status --porcelain` of that checkout is not empty,
+  `uncommitted changes in your checkout are not audited`; both reach the report.
+  Without it (an in-repo project) `scan` adds neither.
 
 ## Bundle details
 

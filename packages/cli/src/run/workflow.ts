@@ -5,13 +5,7 @@
  *   run's recorded state.
  */
 
-import path from "node:path";
-
 import {
-  appendRecorder,
-  createRecorder,
-  createReplay,
-  createSignals,
   createWorkspace,
   endLinksOf,
   inside,
@@ -29,20 +23,14 @@ import {
   type RunEvent,
   type RunHandle,
   type RunResult,
+  type RunRoot,
+  runRootEvent,
   runScrubber,
   startControl,
   startRun,
-  storePath,
   walkSummary,
   type Workspace,
 } from "@krapht/ork-core";
-import {
-  builtinExecutors,
-  clearOutputFiles,
-  clearStateFiles,
-  maskedNamesOfRun,
-  onPath,
-} from "@krapht/ork-nodes";
 
 import {
   formatReport,
@@ -57,8 +45,16 @@ import {
   liveHandlers,
   takeLastCommands,
 } from "./live-handlers.ts";
-import { feedbackOrigin, ORK_RUN_VERSION } from "./origin.ts";
+import { ORK_RUN_VERSION } from "./origin.ts";
 import { preflight } from "./preflight.ts";
+import { closeRunRoot, openRunRootFor } from "./run-root.ts";
+import {
+  clearRunFiles,
+  executorsOf,
+  recorderOf,
+  replayOf,
+  signalsOf,
+} from "./run-setup.ts";
 import type { RunWorkflowOptions } from "./workflow-options.ts";
 
 export type { RunWorkflowOptions };
@@ -70,10 +66,31 @@ export type RunWorkflowResult = {
 
 /**
  * Runs a whole workflow: checks it and its inputs, then hands the compiled
- * graph to the scheduler with the built-in node types, and streams the run.
+ * graph to the scheduler with the built-in node types, and streams the run. The
+ * run's own root, when it needs one, is opened first (the check finds the
+ * bundle there) and closed however the run ends.
  */
 export const runWorkflowFile = async (
   options: RunWorkflowOptions,
+): Promise<RunWorkflowResult> => {
+  const runId = options.runId ?? newRunId(options.store);
+  const opened = await openRunRootFor(options, runId);
+  if (!opened.ok) {
+    options.err(opened.error);
+    return { exitCode: 1, result: null };
+  }
+  try {
+    return await runIn(options, runId, opened.root);
+  } finally {
+    // A second close is no error: the end of a started run closed it first.
+    await closeRunRoot(opened.root, options.err);
+  }
+};
+
+const runIn = async (
+  options: RunWorkflowOptions,
+  runId: string,
+  runRoot: RunRoot | undefined,
 ): Promise<RunWorkflowResult> => {
   const failed = (lines: string[]): RunWorkflowResult => {
     for (const line of lines) options.err(line);
@@ -85,6 +102,7 @@ export const runWorkflowFile = async (
     options.cwd,
     options.home,
     options.store.projects(),
+    runRoot?.path,
   );
   const { workflow, graph, place, workflowDir, textHash } = loaded;
   if (
@@ -130,27 +148,17 @@ export const runWorkflowFile = async (
   // Without worktrees nodes work where `ork run` was started, if that is in
   // the project (an attached project's workflow can be run from anywhere).
   const cwd =
-    root ?? (inside(place.root, options.cwd) ? options.cwd : place.root);
+    runRoot?.path ??
+    root ??
+    (inside(place.root, options.cwd) ? options.cwd : place.root);
 
-  const runId = options.runId ?? newRunId(options.store);
   const runDir = runDirOf(place, runId);
-  if (options.resume !== undefined) options.store.reopen(runId);
-  const record =
-    options.resume === undefined
-      ? createRecorder(
-          options.store,
-          {
-            id: runId,
-            workflow: workflow.name,
-            file: path.resolve(options.cwd, options.file),
-            project: place.root,
-            ...(options.calledBy === undefined
-              ? {}
-              : { parent: options.calledBy.split("/")[0] ?? "" }),
-          },
-          runDir,
-        )
-      : appendRecorder(options.store, runId, runDir);
+  const record = recorderOf(options, {
+    id: runId,
+    workflow: workflow.name,
+    place,
+    runDir,
+  });
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
   const view = createView();
@@ -172,10 +180,7 @@ export const runWorkflowFile = async (
       ? {}
       : { intervalMs: options.intervalMs }),
   });
-  // Feedback Ork derives from the run's events is recorded right after them.
-  const signals = createSignals(
-    feedbackOrigin(path.resolve(options.cwd, options.file)),
-  );
+  const signals = signalsOf(options);
   const onEvent = (raw: RunEvent): void => {
     for (const event of signals(raw)) {
       control.publish(record(event));
@@ -200,39 +205,30 @@ export const runWorkflowFile = async (
       : createWorkspace({
           graph,
           runId,
-          root,
-          head: options.baseRef ?? options.resume?.settings.baseRef ?? base,
+          root: runRoot?.path ?? root,
+          head:
+            runRoot?.base ??
+            options.baseRef ??
+            options.resume?.settings.baseRef ??
+            base,
           inputs: inputs.inputs,
           onEvent,
           ...resumedOptions(options.resume),
         });
-  const maskedNames = maskedNamesOfRun(workflow, place, projects);
-  const executorOptions: Parameters<typeof builtinExecutors>[0] = {
-    runtimeFor: driver => options.runtime(driver, placeFiles(place).runs),
-    inPlace: options.inPlace,
-    maskedNames,
-    store: storePath(options.home),
-    ...(options.yolo === true ? { yolo: true } : {}),
-  };
-  if (options.driver !== undefined) executorOptions.driver = options.driver;
-  if (ready.readyDriver !== undefined) {
-    executorOptions.readyDriver = ready.readyDriver;
-  }
-  if (options.tools !== undefined) executorOptions.tools = options.tools;
-  const script = process.argv[1];
-  if (script !== undefined && onPath(script)) executorOptions.orkBin = script;
-  const replay =
-    options.resume === undefined
-      ? undefined
-      : createReplay(
-          options.resume.history,
-          options.resume.cutOff,
-          options.resume.mail,
-          options.resume.earlier,
-          options.resume.fanOuts,
-        );
+  const { maskedNames, executors } = executorsOf(options, {
+    workflow,
+    place,
+    projects,
+    ...(ready.readyDriver === undefined
+      ? {}
+      : { readyDriver: ready.readyDriver }),
+    ...(runRoot === undefined ? {} : { sourceRoot: runRoot.source }),
+  });
+  const replay = replayOf(options);
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept(), ork: ORK_RUN_VERSION });
+  // Recorded, so `ork worktrees` and clean find a crash's leftover by its run.
+  if (runRoot !== undefined) onEvent(runRootEvent(runRoot, "created"));
   const ports = callPorts({
     ...options,
     graph,
@@ -241,9 +237,7 @@ export const runWorkflowFile = async (
     human: control.human,
     emit: onEvent,
   });
-  // Recorded with the run, so a resume and its called runs load it too.
-  executorOptions.machineClaude = ports.settings.machineClaude === true;
-  clearOutputFiles(runDir, options.err);
+  clearRunFiles(runDir, options.err);
   const handle = startRun({
     graph: ports.graph,
     calls: ports.calls,
@@ -251,7 +245,8 @@ export const runWorkflowFile = async (
     runDir,
     inputs: inputs.inputs,
     cwd,
-    executors: builtinExecutors(executorOptions),
+    // Recorded with the run, so a resume and its called runs load it too.
+    executors: executors(ports.settings.machineClaude === true),
     human:
       options.resume === undefined
         ? control.human
@@ -265,12 +260,14 @@ export const runWorkflowFile = async (
         ? {}
         : { readyDriver: ready.readyDriver }),
       ...ports.settings,
+      // The commit the run root was made from, which a resume reuses.
+      ...(runRoot === undefined ? {} : { baseRef: runRoot.base }),
     },
     followUps: ports.followUps,
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),
     ...(replay === undefined ? {} : { replay }),
     workflowDir,
-    projectRoot: root ?? place.root,
+    projectRoot: runRoot?.path ?? root ?? place.root,
     orkDir: place.dir,
     ...(workspace === undefined ? {} : { workspace }),
     scrub: runScrubber(maskedNames, process.env),
@@ -291,10 +288,9 @@ export const runWorkflowFile = async (
   options.onRun?.(handle);
   const result = await handle.done;
   await ports.shown.end(result.status);
-  clearOutputFiles(runDir, options.err);
-  // A run that didn't succeed may be resumed, and go on from what was kept.
-  if (result.status === "succeeded") clearStateFiles(runDir, options.err);
+  clearRunFiles(runDir, options.err, result.status === "succeeded");
   await endLinksOf(options.store, runId, result.status, options.home);
+  await closeRunRoot(runRoot, options.err, onEvent);
   await control.close();
   return { exitCode: result.status === "succeeded" ? 0 : 1, result };
 };

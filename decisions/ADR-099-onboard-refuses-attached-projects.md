@@ -29,7 +29,7 @@ same. Attached support stays open as [L390](../specs/gaps/onboard-limits.md).
 `ork:security-audit`'s `scan` refusal for an attached project, which also named
 `ork init`, names `ork migrate` in the same change (`tools/audit/scan.ts`); how
 the audit will support attached projects is
-[RFC-021](../rfcs/active/RFC-021-audit-in-attached-projects.md).
+[RFC-021](../rfcs/archived/RFC-021-audit-in-attached-projects.md).
 
 ## Options considered
 

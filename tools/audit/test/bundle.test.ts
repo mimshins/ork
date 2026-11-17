@@ -4,8 +4,8 @@
  *   every script the workflow calls (`scan`, `ledger`, `consolidate`,
  *   `findings`, `finalize`, `report`, `discard`) runs from the written folder,
  *   the skill's two validators accept what they wrote, no bundled text names
- *   this repository's own folders, and `scan` refuses a bundle outside the
- *   project.
+ *   this repository's own folders, and `scan` running from a folder that does
+ *   not hold the bundle.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -155,18 +155,17 @@ describe("the written security-audit bundle", () => {
     }
   });
 
-  it("makes scan fail, naming ork migrate, when the bundle is outside the project", () => {
+  it("runs scan in a folder that does not hold the bundle", () => {
     const project = bundleProject();
-    const attached = gitRepo({ "b.txt": "y" });
+    const elsewhere = gitRepo({ "b.txt": "y" });
     const run = bundleCli(
       project,
       "scan",
       auditEnv({ PROFILE: "quick", SCOPE: "all" }),
       {},
-      attached,
+      elsewhere,
     );
-    expect(run.status).toBe(1);
-    expect(run.stdout).toBe("");
-    expect(run.stderr).toContain("ork migrate");
+    expect(run.status).toBe(0);
+    expect(printed(run.stdout)["profile"]).toBe("quick");
   });
 });

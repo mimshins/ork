@@ -1,6 +1,6 @@
 # ADR-096 — Built-in bundles: a built-in workflow with companion files
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by ADR-100
 - **Date:** 2026-11-16
 - **Topic:** core built-in workflows, `tools/audit`, `ork:security-audit`
 - **RFC:** waived: the maintainer decided the shape directly (plan "Ship the
@@ -58,7 +58,11 @@ All of those exist only in this repository, so the audit worked only here.
    cannot read them. `scan`, the first node, exits 1 naming `ork init` when the
    bundle folder is outside the project root, before an agent starts and with
    nothing spent. Recorded as a gap
-   ([audit limits](../specs/gaps/audit-limits.md)).
+   ([audit limits](../specs/gaps/audit-limits.md)). _Amended by
+   [ADR-100](./ADR-100-audit-in-attached-projects.md): attached projects are
+   supported. `ork run` gives the run a worktree of `HEAD` as its root, holding
+   the bundle, so the refusal is gone; the audit sees `HEAD`, not uncommitted
+   changes._
 7. **Secret patterns are copied into the bundle.** `scan` needs the list of
    [ADR-091](./ADR-091-shared-secret-patterns-and-scrubber-in-core.md), which
    the bundle cannot import from core. The generator copies

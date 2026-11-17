@@ -50,6 +50,12 @@ export const STATE_ENV = "ORK_STATE";
 /** The report a `verify:` step checks, scrubbed, as a JSON file. */
 export const REPORT_ENV = "ORK_REPORT";
 
+/**
+ * The user's checkout, set only when the run works in a worktree of its own
+ * (RFC-021 Option C); `ORK_PROJECT` is then that worktree.
+ */
+export const SOURCE_ROOT_ENV = "ORK_SOURCE_ROOT";
+
 /** The variables a caller's run reads, for a run it calls to mask too. */
 const MASKED_ENV = "ORK_MASKED";
 
@@ -70,6 +76,7 @@ const IDENTITY_KEYS = new Set([
   REPORT_ENV,
   "ORK_ITEM",
   "ORK_INDEX",
+  SOURCE_ROOT_ENV,
   // A detached run's own marker: an `ork` its nodes start is not detached.
   DETACHED_ENV,
 ]);
@@ -108,22 +115,25 @@ export type ToolOptions = {
   maskedNames?: readonly string[];
   /** The run's store file; without it, a program is guarded everywhere. */
   store?: string;
+  /** The user's checkout, when the run works in a worktree of its own. */
+  sourceRoot?: string;
 };
 
 /**
  * Who a node's program is, and the stores its run guards (none listed without
- * `store`, which guards every one). It is attribution, not a boundary.
+ * `store`, which guards every one), and the user's checkout when the run works
+ * in a worktree of its own. It is attribution, not a boundary.
  */
 export const identityOf = (
   context: Pick<
     ExecuteContext,
     "runId" | "id" | "round" | "runDir" | "projectRoot" | "workflow" | "item"
   >,
-  orkBin: string | undefined,
+  { orkBin, store, sourceRoot }: ToolOptions,
   environ: Environ = {},
-  store?: string,
 ): Record<string, string> => ({
   ...(store === undefined ? {} : guardOf(environ, store)),
+  ...(sourceRoot === undefined ? {} : { [SOURCE_ROOT_ENV]: sourceRoot }),
   [RUN_ENV]: context.runId,
   ORK_NODE: context.id,
   ORK_ROUND: String(context.round),

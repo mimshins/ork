@@ -183,6 +183,15 @@ was removed checks its `ork/<run>/<node>` branch out again and brings it up to
 its owner's branch; new worktrees of root nodes branch from the project's
 current `HEAD`.
 
+## A run's own root
+
+`ork:security-audit`, run in a project attached with `ork register`, works in a
+worktree of the project's `HEAD` that holds its bundle, instead of the user's
+checkout, so no repository file is written and read-only agents read the bundle
+inside their own folder. Ork removes it when the run ends and re-creates it at
+the recorded commit on a resume ([details](./worktrees/run-root.md),
+[ADR-100](../decisions/ADR-100-audit-in-attached-projects.md)).
+
 ## ork worktrees
 
 `ork worktrees` (or `ork wt`) tracks and cleans what runs leave behind: the
@@ -260,4 +269,5 @@ project Ork knows, with **Remove…** (the twin of `ork worktrees remove`) and
 
 ## Contents
 
+- [A run's own root](./worktrees/run-root.md)
 - [Limits: the Worktrees panel](./worktrees/limits.md)

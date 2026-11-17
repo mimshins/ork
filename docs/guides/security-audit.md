@@ -4,8 +4,11 @@
 It ships with Ork, so there is nothing to download. It reads your code and
 reports what it finds; it never changes your project and never runs your code.
 
-It works in a project set up with `ork init`, and it needs a Claude Code login
-like any other workflow that runs agents. A run is paid, so start it on purpose.
+It works in a project set up with `ork init` and in one attached with
+`ork register`
+([how an attached project differs](#in-a-project-attached-with-ork-register)),
+and it needs a Claude Code login like any other workflow that runs agents. A run
+is paid, so start it on purpose.
 
 ## Start it
 
@@ -92,14 +95,41 @@ Read `REPORT.md` first. **The report may be sensitive: do not commit or post
 it.** It describes weaknesses in your code. A real finding belongs in a private
 channel, such as your repository's private security advisories.
 
+## In a project attached with `ork register`
+
+An attached project keeps Ork's files outside your repository
+([projects](./projects.md)), where the audit's read-only agents cannot read, so
+the run works in a temporary copy instead:
+
+- **It audits `HEAD`, the last commit.** `ork run` makes a git worktree of
+  `HEAD` beside your clone (`../<clone>-worktrees/ork-<run>-audit-root`), puts
+  the audit's files in it, and runs every step there. Your checkout is not
+  written to: no file is added to the repository or to `.git/info/exclude`.
+- **Uncommitted changes are not audited.** Neither are untracked or ignored
+  files such as `.env`. When your checkout has uncommitted changes, the first
+  step says so, and the report says so under its notes. Commit first to audit
+  them.
+- **The report names the audited commit**
+  (`audited commit <sha> (a per-run copy of HEAD)`), so you know what it covers.
+- **`scope: diff:<ref>` is computed in the copy**, so it is a diff against the
+  commit, not your working tree.
+- **The copy is removed when the run ends**, whether it finishes, fails, is
+  stopped or discarded. `ork resume` makes it again at the same commit, so a
+  resumed audit covers the same code. If a crash leaves it, `ork worktrees`
+  lists it by the run and `ork worktrees clean` removes it
+  ([worktrees](./worktrees.md)). A `post-checkout` hook in your repository runs
+  when the copy is made, as for any worktree a run makes.
+- `ork validate ork:security-audit` in an attached project still reports a
+  missing `read-only-bash.md` file, because only `ork run` makes the copy; the
+  run itself is not affected.
+
+An `ork init` project is unchanged: the audit runs in your checkout and reads
+your working tree, uncommitted changes included.
+
 ## Limits
 
-- **In-repo projects only, for now.** The audit's agents read the workflow's
-  files from `.ork/runs/.builtin/<hash>/` in your project. In a project attached
-  with `ork register`, Ork's files live outside the checkout, so the first step
-  stops with `the audit needs its files inside the checkout; run ork migrate…`,
-  before any agent starts and with nothing spent. `ork migrate` moves them into
-  the repository's `.ork/` ([projects](./projects.md)).
+- **An attached project's audit sees `HEAD`, not uncommitted changes.** See
+  above.
 - A run writes about 350 KB into the project's gitignored `.ork/runs/`. If that
   folder, or `.ork/runs/.builtin`, is a link, Ork refuses to write there.
 - The skill it follows is Cloudflare's

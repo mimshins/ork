@@ -36,3 +36,10 @@ Those the gaps review carried are open work in the
   even once `keep` has applied it to the checkout;
   `ork worktrees remove <run>/<node> --force` removes it. Ork could remove it
   after a clean apply.
+- **A run's own root** ([details](./run-root.md)) has limits of its own, kept
+  with the audit that uses it: it sees `HEAD` and not uncommitted changes
+  ([L424](../gaps/audit-limits.md)), `git.base` and the name templates are
+  rendered with no inputs ([L426](../gaps/audit-limits.md)), a crash right after
+  it opens can leave a worktree no event names
+  ([L427](../gaps/audit-limits.md)), and worktree nodes nested under it are
+  untested ([L429](../gaps/audit-limits.md)).

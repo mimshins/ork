@@ -7,12 +7,20 @@ _Part of [What's new](../whats-new.md)._
   long option name, its id and `(recommended)` continue on the next lines under
   the label; before, they were cut with `…` at the terminal's edge
   ([terminal](../guides/terminal.md)).
+- **`ork run ork:security-audit` works in a project attached with
+  `ork register`.** It used to stop, because Ork's files for an attached project
+  sit outside your repository where the audit's read-only agents cannot read
+  them. Now `ork run` makes a git worktree of `HEAD` beside your clone, puts the
+  audit's files in it, runs every step there and removes it when the run ends;
+  nothing is written to your repository. The audit sees the last commit, not
+  uncommitted changes: the first step names the audited commit and says when
+  your checkout has changes that are not audited, and the report shows both
+  ([guide](../guides/security-audit.md#in-a-project-attached-with-ork-register)).
 - **An attached project is told to run `ork migrate`, not `ork init`.**
-  `ork onboard` and `ork:security-audit` refuse a project attached with
-  `ork register`; their refusals named `ork init`, which refuses an attached
-  project too. They now name `ork migrate`, which moves Ork's files into the
-  repository's `.ork/` ([onboarding](../guides/onboarding.md),
-  [security audit](../guides/security-audit.md)).
+  `ork onboard` refuses a project attached with `ork register`; its refusal
+  named `ork init`, which refuses an attached project too. It now names
+  `ork migrate`, which moves Ork's files into the repository's `.ork/`
+  ([onboarding](../guides/onboarding.md)).
 - **Sessions get an `extract` tool, so a read does not stay in the
   conversation.** It reads a range of lines, searches, or shows a `git` diff,
   `show` or `log`, then cuts the text with `head`, `tail` or `match`, and
