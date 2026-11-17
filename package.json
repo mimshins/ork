@@ -26,6 +26,7 @@
     "docs:check": "node tools/docs/check.ts",
     "rfc:close": "node tools/rfcs/close.ts",
     "benchmark": "node tools/benchmark/measure.ts",
+    "benchmark:carried": "node tools/benchmark/carried.ts",
     "benchmark:control": "node tools/benchmark/control.ts",
     "benchmark:publish": "node tools/benchmark/publish.ts",
     "benchmarks:check": "node tools/benchmark/public-check.ts",

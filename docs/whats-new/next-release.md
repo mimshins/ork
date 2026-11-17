@@ -2,6 +2,22 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Sessions get an `extract` tool, so a read does not stay in the
+  conversation.** It reads a range of lines, searches, or shows a `git` diff,
+  `show` or `log`, then cuts the text with `head`, `tail` or `match`, and
+  returns only that, up to 16,000 characters with a footer
+  (`[extract: read N characters, returned M]`). It refuses a path outside the
+  session's folder and secret-looking files (`.env*`, keys, `.npmrc`, `.git/`,
+  and what `tools.deny` or the project's `.claude/settings.json` denies with
+  `Read(...)`). Ork's notes to every node now tell it to prefer `extract` over
+  `cat`, `sed`, `rg` and whole-file reads
+  ([guide](../guides/skills-and-context.md#reading-part-of-a-file-extract)).
+- **`pnpm benchmark` also writes `carried.json`.** It measures how much of each
+  tool result a session rereads (characters times later turns), by role and kind
+  of call, with turns per session and the calls to `extract`, when the sessions'
+  transcripts are on the machine; `pnpm benchmark:carried <run>` prints it
+  alone, and `pnpm benchmark:publish` copies it
+  ([method](../../benchmarks/method.md#carried-weight)).
 - **`ork onboard` offers to resume a proposing run that did not finish.** When
   the newest proposing run in the project failed, was stopped or crashed, and
   `ork resume` could continue it, the next `ork onboard` shows its age, id,

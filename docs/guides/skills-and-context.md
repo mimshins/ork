@@ -137,6 +137,58 @@ In `ork ui`, the **Context** panel shows the same for the node you choose, and
 follows the Builder as you edit
 ([panels](./browser-view/panels-and-workspace.md#the-panels)).
 
+## Reading part of a file: `extract`
+
+Everything a tool returns stays in a session's conversation, and every later
+turn reads it again. Every session gets an `extract` tool (with Ork's other
+tools, on a driver that reaches them) that returns only the part it asks for,
+and Ork's notes to a node tell it to use it instead of `cat`, `sed`, `rg` or
+reading a whole file.
+
+A call is one to six steps: first a step that produces text, then cuts that take
+the text before them.
+
+| Step           | What it does                                                                                                |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| `read`         | A file's lines `from` to `to` (1-based, inclusive), each with its number                                    |
+| `search`       | A `pattern` (POSIX extended regex) in a file or folder; up to `maxMatches` hits, 50 unless set              |
+| `git`          | `diff` (with `base`, `staged` or `path`), `show` (a `ref`) or `log` (up to 50 commits); no patches in `log` |
+| `head`, `tail` | The first or last `lines` lines of the text before it                                                       |
+| `match`        | The lines holding a literal `text`, with `context` lines around each                                        |
+
+For example, the lines of a diff that mention `harness`, with three lines around
+each:
+
+```json
+{
+  "steps": [
+    { "step": "git", "op": "diff", "base": "main" },
+    { "step": "match", "text": "harness", "context": 3 }
+  ]
+}
+```
+
+- **Only your folder.** A path that leads outside the session's folder, by `..`,
+  an absolute path or a symlink, is refused, as is Ork's own session folder. The
+  tool runs no shell: `git` is run directly with fixed options, 10 seconds at
+  most.
+- **Secret-looking files are refused.** `.env*`, `*.pem`, `*.key`, `id_rsa*`,
+  `.npmrc`, anything under `.git/` (it is reachable only through the `git`
+  step), a file a `Read(...)` rule in the node's `tools.deny` names, and one the
+  project's `.claude/settings.json` or `settings.local.json` denies with a
+  `Read(...)` rule. In a `git diff` or `show`, a refused file's section reads
+  `[refused: <path>]`. If one of those settings files cannot be parsed, every
+  path is refused and the tool says why. Your user-level Claude Code settings
+  are not read.
+- **Size.** A result is at most 16,000 characters. When it is cut, it says
+  where, and to add a `head`, `tail` or `match` step, or to call again with
+  `from` (a character of the result to start at): the steps run again each time,
+  and nothing is stored. A binary file, or one over 8 MiB, is refused by `read`.
+- **A footer.** Every result ends with
+  `[extract: read N characters, returned M]`: what the first step produced, and
+  what came back. `pnpm benchmark` counts calls from it
+  ([carried weight](../../benchmarks/method.md#carried-weight)).
+
 ## Order, and why it saves tokens
 
 What Ork adds goes at the end of Claude Code's system prompt, shared parts

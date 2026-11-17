@@ -107,9 +107,11 @@ rules are in [what a session loads](./runtime/what-a-session-loads.md).
   `{"behavior":"allow"|"deny", …}`), for leaders `delegate` and `spawn_worker`
   (each task takes an optional `description`, a few words that label the child;
   [delegation](./scheduler.md#delegation)), and `report` on a driver without
-  `reportSchema` ([node report](./runtime/node-report.md)); a tool's arguments
-  may depend on its session; they are validated with Zod, and a failure is an
-  error result naming the field ([delegation](./scheduler.md#delegation));
+  `reportSchema` ([node report](./runtime/node-report.md)), and `extract` for a
+  session with a folder ([the `extract` tool](./runtime/extract-tool.md)); a
+  tool's arguments may depend on its session; they are validated with Zod, and a
+  failure is an error result naming the field
+  ([delegation](./scheduler.md#delegation));
 - a per-server `timeout` of 24 hours in `--mcp-config`: the CLI otherwise ends
   an HTTP request after 60 seconds and drops a call silent for 5 minutes, and
   `delegate` waits for whole child sessions. `MCP_TOOL_TIMEOUT` (about 28 hours
@@ -172,3 +174,4 @@ benchmark ([register](./gaps.md#limits)).
 - [Which driver a session uses](./runtime/which-driver.md)
 - [What a session loads](./runtime/what-a-session-loads.md)
 - [The `open-code` driver](./runtime/open-code.md)
+- [The `extract` tool](./runtime/extract-tool.md)

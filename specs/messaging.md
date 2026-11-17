@@ -32,6 +32,9 @@ driver that can't hold its answer to a schema
 - ✓ `read_input(from?)`: a node whose sent-back input (a loop's `## Round n`)
   was too long for its message, 8 KiB, reads the whole, 32,000 characters a call
   ([ADR-078](../decisions/ADR-078-read-input.md)).
+- ✓ `extract({ steps, from? })`: every session with a folder reads part of a
+  file, searches or sees a diff, and gets back only the extract, at most 16,000
+  characters a call ([the `extract` tool](./runtime/extract-tool.md)).
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
   only ([scheduler](./scheduler.md#delegation)).
 - ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child

@@ -1061,6 +1061,7 @@ export const NODES = [
       "The tools every agent node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
       "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (the prompt tool), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), `claim` and `release` for parallel writers, and `read_input` for a node whose sent-back input was too long for its message (ADR-078); arguments are validated with Zod.",
+      "Built: `extract` for every session with a folder (RFC-023): up to six read-only steps, a producer (`read`, `search` through `git grep -E`, `git` diff, show or log) then cuts (`head`, `tail`, `match`), run in-process with no shell, and only the extract enters the conversation (16,000 characters, a count footer). It refuses a path outside the folder and secret-looking files, and a paused node holds it like any Ork tool.",
       "Built: `follow_up` for every session in a run that keeps follow-ups: work a change leaves for later, kept where the project's `followUps` rule says, apart from feedback.",
       "Built: `feedback` for every session in a run. The report is structured output on a driver that has it (`claude-code`), and Ork's `report` tool on one that does not.",
       "A local MCP server on 127.0.0.1 behind a per-session bearer token, passed to `claude` with `--mcp-config`.",

@@ -2,33 +2,29 @@
  * @file `pnpm benchmark <run> <folder>`: measures one Ork run and every run it
  *   called, for `.ai/skills/benchmark-run/`, into `<folder>/<name>/`:
  *   `summary.json` and `usage.csv` (summary.ts), `brief.md` (the run's inputs),
- *   `spec.md` (the plan or spec that was built) and `workflow/` (the workflows,
- *   `project.yaml` and agents at the commit the run started from). It reads a
- *   consistent copy of `~/.ork/state.db`, never the live store, and refuses a
- *   run still going. It records the Ork version that ran it: from the runs'
- *   `run.started` and `run.resumed` events, else `packages/cli/package.json` at
- *   that commit (a run from before Ork recorded it). Options: `--name`,
- *   `--commits <sha,…>` (else the commits its tool nodes printed), `--db`,
- *   `--repo`.
+ *   `carried.json` (carried.ts, when the sessions' transcripts are on this
+ *   machine), `spec.md` (the plan or spec that was built) and `workflow/` (the
+ *   workflows, `project.yaml` and agents at the commit the run started from).
+ *   It reads a consistent copy of `~/.ork/state.db`, never the live store, and
+ *   refuses a run still going. It records the Ork version that ran it: from the
+ *   runs' `run.started` and `run.resumed` events, else
+ *   `packages/cli/package.json` at that commit (a run from before Ork recorded
+ *   it). Options: `--name`, `--commits <sha,…>` (else the commits its tool
+ *   nodes printed), `--db`, `--repo`, `--home` (where Claude Code's transcripts
+ *   are).
  */
 
 import { execFileSync } from "node:child_process";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
-import { backup, DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 import { parseArgs } from "node:util";
 
+import { carriedReport } from "./carried.ts";
 import { expandHome, rec, text } from "./json.ts";
 import { agentsOf, resultCommits, summarize, usageCsv } from "./summary.ts";
-import { loadTree, type Tree } from "./tree.ts";
+import { copyStore, loadTree, type Tree } from "./tree.ts";
 
 const git = (repo: string, ...args: string[]): string =>
   execFileSync("git", ["-C", repo, ...args], { encoding: "utf8" });
@@ -120,28 +116,44 @@ const orkOf = (tree: Tree, repo: string, commit: string) => {
   };
 };
 
-/** A consistent copy of the live store, in a folder of its own. */
-const copyStore = async (from: string): Promise<string> => {
-  const to = path.join(mkdtempSync(path.join(tmpdir(), "ork-bench-")), "s.db");
-  const live = new DatabaseSync(from, { readOnly: true });
-  try {
-    await backup(live, to);
-  } catch {
-    copyFileSync(from, to);
-  } finally {
-    live.close();
-  }
-  return to;
-};
-
 const USAGE =
-  "Usage: pnpm benchmark <run> <folder> [--name <name>] [--commits <sha,…>] [--db <state.db>] [--repo <path>]";
+  "Usage: pnpm benchmark <run> <folder> [--name <name>] [--commits <sha,…>] [--db <state.db>] [--repo <path>] [--home <dir>]";
+
+/**
+ * Writes `carried.json` (carried.ts) and returns its totals; with no transcript
+ * to read (another machine, pruned) it writes nothing and says so.
+ */
+export const writeCarried = (tree: Tree, dir: string, home: string) => {
+  const carried = carriedReport(tree, home);
+  if (carried === null) {
+    console.log("carried.json not written: no session transcripts found.");
+    return null;
+  }
+  writeFileSync(
+    path.join(dir, "carried.json"),
+    `${JSON.stringify(carried, undefined, 2)}\n`,
+  );
+  const missing = Object.values(carried.missing_transcripts).reduce(
+    (s, n) => s + n,
+    0,
+  );
+  if (missing > 0) {
+    console.log(
+      `carried.json: ${String(missing)} sessions had no transcript: ${JSON.stringify(carried.missing_transcripts)}`,
+    );
+  }
+  return {
+    total_weight: carried.total_weight,
+    turns: carried.turns.mean,
+    extract_calls: carried.extract.calls,
+  };
+};
 
 /** Measures the tree into its folder; returns why not, or null. */
 const benchmark = (
   tree: Tree,
   folder: string,
-  options: { name?: string; commits?: string; repo: string },
+  options: { name?: string; commits?: string; repo: string; home: string },
 ): string | null => {
   const root = tree.runs[0];
   if (root === undefined) return "No run.";
@@ -175,10 +187,12 @@ const benchmark = (
     `${JSON.stringify(summary, undefined, 2)}\n`,
   );
   writeFileSync(path.join(dir, "usage.csv"), usageCsv(tree.usage));
+  const carried = writeCarried(tree, dir, options.home);
   console.log(dir);
   console.log(
     JSON.stringify(
       {
+        ...(carried === null ? {} : { carried }),
         ork: summary.ork.versions,
         cost_usd: summary.cost_usd,
         minutes: summary.minutes,
@@ -202,6 +216,7 @@ const run = async (): Promise<void> => {
       commits: { type: "string" },
       db: { type: "string" },
       repo: { type: "string" },
+      home: { type: "string" },
     },
   });
   const [id, folder] = positionals;
@@ -221,6 +236,7 @@ const run = async (): Promise<void> => {
       ...(values.name === undefined ? {} : { name: values.name }),
       ...(values.commits === undefined ? {} : { commits: values.commits }),
       repo: values.repo ?? process.cwd(),
+      home: values.home ?? homedir(),
     });
     if (problem !== null) {
       console.error(problem);

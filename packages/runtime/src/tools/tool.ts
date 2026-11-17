@@ -35,6 +35,13 @@ export type ToolContext = {
     schema: Record<string, unknown>;
     submit: (report: NodeReport) => void;
   };
+  /**
+   * The session's folder, for tools that read files in it (`extract`). Unset:
+   * those tools are not offered.
+   */
+  cwd?: string;
+  /** The `Read(...)` patterns of the session's `tools.deny`. */
+  denyRead?: readonly string[];
 };
 
 /** A tool ready for one session's MCP server. */

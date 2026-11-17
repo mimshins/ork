@@ -1313,6 +1313,23 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "extract-tool",
+        title: "`extract`: read less, carry less",
+        status: "active",
+        detail:
+          "Built, not yet merged. RFC-023, option 2a. Every session gets one read-only tool, `extract`: a `read`, `search` or `git` diff, show or log step, then `head`, `tail` or `match` cuts, in-process with no shell and no model-written code, returning only the extract (16,000 characters, a count footer). It refuses a path outside the session's folder and secret-looking files, and Ork's notes to every node say to prefer it over `cat`, `sed`, `rg` and whole-file reads. `pnpm benchmark` now also writes `carried.json`, the carried weight (characters of a result times later turns) by role and kind, with turns and calls to `extract`. Left: the before and after benchmark with `carried.json`, and the variants the RFC kept as follow-ups (a program runner, Claude Code's Code Mode, shorter sessions).",
+        docs: [
+          "rfcs/archived/RFC-023-extract-tool-for-session-reads.md",
+          "decisions/ADR-098-extract-tool.md",
+          "specs/runtime/extract-tool.md",
+          "specs/gaps/extract-limits.md",
+          "docs/guides/skills-and-context.md#reading-part-of-a-file-extract",
+          "packages/runtime/src/tools/extract.ts",
+          "tools/benchmark/carried.ts",
+          "benchmarks/method.md#carried-weight",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
@@ -1419,4 +1436,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-13";
+export const ROADMAP_UPDATED = "2026-11-17";

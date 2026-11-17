@@ -2,12 +2,13 @@
  * @file `pnpm benchmark:publish <folder> [name…]`: copies benchmarks from the
  *   private folder `pnpm benchmark` writes into the repository's public
  *   `benchmarks/`, with only what may be published (public.ts): the README, the
- *   allowed `summary.json` fields, `usage.csv`, and under `inputs/` the brief
- *   (cut before an embedded plan) and the workflow and agent files. It then
- *   writes `results.json` and the README's results table from every published
- *   benchmark and the private `control.json`'s aggregates. Everything is staged
- *   and scanned first; one finding and nothing is written. With no names, it
- *   publishes every benchmark in the folder that has a README.
+ *   allowed `summary.json` fields, `usage.csv`, `carried.json` (when there is
+ *   one), and under `inputs/` the brief (cut before an embedded plan) and the
+ *   workflow and agent files. It then writes `results.json` and the README's
+ *   results table from every published benchmark and the private
+ *   `control.json`'s aggregates. Everything is staged and scanned first; one
+ *   finding and nothing is written. With no names, it publishes every benchmark
+ *   in the folder that has a README.
  */
 
 import { execFileSync } from "node:child_process";
@@ -59,7 +60,7 @@ const json = (value: unknown): string =>
   `${JSON.stringify(value, undefined, 2)}\n`;
 
 /** One benchmark's public files, by path inside `benchmarks/`. */
-const stage = (from: string, name: string): Map<string, string> => {
+export const stage = (from: string, name: string): Map<string, string> => {
   const read = (file: string) => readFileSync(path.join(from, file), "utf8");
   const summary = rec(parse(read("summary.json")));
   const staged = new Map<string, string>([
@@ -70,6 +71,9 @@ const stage = (from: string, name: string): Map<string, string> => {
     ],
     [`${name}/usage.csv`, read("usage.csv")],
   ]);
+  if (existsSync(path.join(from, "carried.json"))) {
+    staged.set(`${name}/carried.json`, read("carried.json"));
+  }
   if (existsSync(path.join(from, "brief.md"))) {
     staged.set(`${name}/inputs/brief.md`, publicBrief(read("brief.md")));
   }

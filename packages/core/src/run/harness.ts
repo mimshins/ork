@@ -23,6 +23,10 @@ export type HarnessOptions = {
 const CLAIMS_LINE =
   "- Other nodes may change this project at the same time. Before you edit a file or folder, `claim` it (a path from the project root); if someone holds it, work on something else or ask them. `release` what you are done with; Ork releases the rest when you finish.";
 
+// The tool lives in the runtime package, which core must not import: named by string.
+const EXTRACT_LINE =
+  "- To read part of a file, search, or see a diff, call `extract` with steps instead of `cat`, `sed`, `rg` or reading a whole file: only the extract enters the conversation.";
+
 const HANDOFF: Record<NonNullable<Checkout["merge"]>, string> = {
   auto: "Ork merges your branch when you pass",
   patch: "Ork applies your changes to your owner's worktree when you pass",
@@ -142,6 +146,7 @@ export const harnessInstructions = (
     "- Work on the brief in the first message. Your owner and the user see your final report, not this conversation.",
     `- End with the structured report: \`status\`, a short \`summary\`, and \`artifacts\` (name -> repository-relative path)${extra.length > 0 ? `, plus ${extra.map(f => `\`${f}\``).join(", ")}` : ""}.`,
     "- If you are blocked on a choice only the user can make, call the `ask_user` tool with a clear question, two to four options, and the one you recommend. Never ask about what you can decide or look up yourself.",
+    EXTRACT_LINE,
   ];
   if (checkout !== undefined) lines.push(checkoutInstructions(checkout));
   if (options.ownership !== undefined) {

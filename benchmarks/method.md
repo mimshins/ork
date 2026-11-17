@@ -30,6 +30,40 @@ asked, and one usage row per Claude session.
   it by hand, because the run stopped at its last step or didn't commit, the
   benchmark says so.
 
+## Carried weight
+
+A tool result stays in a session's conversation and every later turn reads it
+again, which is most of the input tokens. The carried weight is a proxy for it,
+in `carried.json` from `pnpm benchmark`, or alone from
+`pnpm benchmark:carried <run>`
+([RFC-023](../rfcs/archived/RFC-023-extract-tool-for-session-reads.md)).
+
+- **The proxy:** a tool result weighs its characters times the turns after the
+  one that made it (a turn is one assistant message). A 1,000-character result
+  on turn 2 of 5 weighs 3,000.
+- **The report:** weight and share by role (the node without its `-2` instance
+  suffix or `.1` fan-out suffix) and by kind of call, turns per session (mean,
+  median), and calls to `extract` with the characters they returned (from each
+  result's footer). Kinds: reads through the shell (`cat`, `sed`, `head`,
+  `tail`, `nl`, `less`, `bat`, `awk`), searches (`rg`, `grep`, `find`, `ls`,
+  `fd`, `tree`, Grep, Glob), `git diff`/`show`/`log`, tests and checks, Read,
+  Ork's tools, `extract`, other.
+- **The 87%:** the RFC's 88 sessions in four build runs: shell reads 53%,
+  searches 14% and git reads 10% make 77%, with the Read tool's 10%, 87%. That
+  is the weight an extract tool could reach, not what it saves: what it returns
+  is carried too.
+- **Heuristic kinds:** a shell command is named by its first real command
+  (leading `cd`, `export` and assignments skipped; a pipeline by its first
+  command). A compound one can land in the wrong kind; that moves weight between
+  kinds, never the total.
+- **Left out:** subagent transcripts, forks, drivers other than `claude-code`,
+  and sessions whose transcript is not on the machine (counted by role as
+  `missing_transcripts`; with none found, no file is written).
+- **A proxy, not a cost:** it ignores cache read and write prices, the model and
+  output. Compare runs of the same work with it, beside cost.
+- **Private:** only names of roles and kinds and numbers are written; no path,
+  command, file name or result text.
+
 ## The manual baseline
 
 What would the same change cost in a plain Claude Code session, with no Ork?

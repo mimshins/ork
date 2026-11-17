@@ -19,6 +19,7 @@ const BENCHMARK_FILES = [
   /^README\.md$/u,
   /^summary\.json$/u,
   /^usage\.csv$/u,
+  /^carried\.json$/u,
   /^inputs\/brief\.md$/u,
   /^inputs\/workflow\/[\w.-]+\.ya?ml$/u,
   /^inputs\/workflow\/agents\/[\w.-]+\.md$/u,

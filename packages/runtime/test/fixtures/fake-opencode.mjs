@@ -21,7 +21,9 @@
  *   a continued one ends with `got: <the message>`), `hang` (starts and waits
  *   for SIGINT, then exits 130 as the real one does), `spend` (three
  *   `step_finish` lines, then waits as `hang` does), `report-tool` (an
- *   `ork_report` outside the schema, then one inside, and nothing else) and
+ *   `ork_report` outside the schema, then one inside, and nothing else),
+ *   `extract` (reads `.endpoint` through `ork_extract` and ends with what it
+ *   said) and
  *   `fail` (an `error` line, exit 1). `end:<kind>` ends the session the way
  *   OpenCode says that cause: `end:turn_limit` uses every step the `ork`
  *   agent's `steps` allows and reports nothing; the others print the `error`
@@ -187,6 +189,9 @@ if (scenario === "hang" || scenario === "spend") {
     finish("first leg");
   }
   finish(`got: ${message}`);
+} else if (scenario === "extract") {
+  const reply = await callOrk("extract", { steps: [{ step: "read", path: ".endpoint" }] });
+  finish(reply.text);
 } else if (scenario === "report-tool") {
   for (const report of [{ status: "maybe", summary: 3 }, PASS]) {
     // oxlint-disable-next-line eslint/no-await-in-loop -- one call at a time

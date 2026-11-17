@@ -28,6 +28,7 @@ export type Scenario =
   | "hang"
   | "spend"
   | "report-tool"
+  | "extract"
   | `end:${EndKind}`;
 
 const human: HumanChannel = {

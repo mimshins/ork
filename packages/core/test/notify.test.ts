@@ -626,6 +626,14 @@ describe("what a session is told", () => {
     expect(harnessOf({ command: "x {{inputs.a}}" })).not.toContain("{{");
   });
 
+  it("points it to extract in one line, for any node", () => {
+    const lines = harnessOf({ command: "pnpm test" })
+      .split("\n")
+      .filter(l => l.includes("`extract`"));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("instead of `cat`, `sed`, `rg`");
+  });
+
   it("names read_inbox when it has no one to write to, and says what via is", () => {
     const bus = createBus({ graph: TEAM, onEvent: () => {} });
     const lines = mailboxInstructions(bus.mailbox("apart"), false).join("\n");

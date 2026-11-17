@@ -3,12 +3,13 @@
  *   `entries.ts` on its fake tool through the shared session runner: events
  *   normalized, a valid report kept and an invalid one rejected, a denied tool
  *   still denied, Ork's endpoint reached and then gone, usage counted, an
- *   interrupt ending the session with the tokens it used, a message sent
- *   mid-session arriving, and, where the driver cannot hold the report to its
- *   schema, a report handed in through Ork's `report` tool. The same cause ends
- *   as the same kind on every driver (specs/runtime/session-ends.md), and every
- *   driver stops at its token cap (RFC-015). Every adapter registered in
- *   `registry.ts` must have an entry.
+ *   interrupt ending the session with the tokens it used, Ork's `extract` tool
+ *   served and reading in the session's folder, a message sent mid-session
+ *   arriving, and, where the driver cannot hold the report to its schema, a
+ *   report handed in through Ork's `report` tool. The same cause ends as the
+ *   same kind on every driver (specs/runtime/session-ends.md), and every driver
+ *   stops at its token cap (RFC-015). Every adapter registered in `registry.ts`
+ *   must have an entry.
  */
 
 import { tmpdir } from "node:os";
@@ -133,6 +134,24 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
     expect(outcome.usage.inputTokens).toBe(300);
     expect(outcome.usage.cacheReadTokens).toBe(240);
     expect(outcome.sessionId).not.toBe("");
+  });
+
+  it("serves Ork's extract tool, which reads in the session's folder", async () => {
+    const events = await collect(start(entry, "extract").session);
+    expect(resultsOf(events, "extract")).toEqual([false]);
+    expect(outcomeOf(events).text).toMatch(
+      /^1: http:\/\/127\.0\.0\.1:\d+\/mcp\n\[extract: read \d+ characters, returned \d+\]$/u,
+    );
+  });
+
+  it("refuses through extract a file the node's Read rules deny", async () => {
+    const events = await collect(
+      start(entry, "extract", entry.fakeTool, {
+        tools: { allow: [], deny: ["Bash", "Read(.endpoint)"] },
+      }).session,
+    );
+    expect(resultsOf(events, "extract")).toEqual([true]);
+    expect(outcomeOf(events).text).toBe("refused: .endpoint");
   });
 
   it(`takes a message sent mid-session ${when(entry.capabilities)}`, async () => {

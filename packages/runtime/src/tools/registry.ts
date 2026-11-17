@@ -3,9 +3,11 @@
  *   session; a new tool is one file here and one line in `ORK_TOOLS`.
  */
 
+// oxlint-disable import/max-dependencies -- a registry imports one module per tool
 import { askUserTool } from "./ask-user.ts";
 import { claimTool, releaseTool } from "./claims.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
+import { extractTool } from "./extract.ts";
 import { feedbackTool } from "./feedback.ts";
 import { followUpTool } from "./follow-up.ts";
 import { readInputTool } from "./input.ts";
@@ -34,6 +36,7 @@ export const ORK_TOOLS: readonly OrkTool[] = [
   waitForMessagesTool,
   answerTool,
   readInputTool,
+  extractTool,
   claimTool,
   releaseTool,
   feedbackTool,

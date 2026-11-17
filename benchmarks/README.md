@@ -87,6 +87,8 @@ CPU, before and after it was made cheaper.
 - `summary.json`: every number, by node and by activation, and the Ork version
   that ran it.
 - `usage.csv`: one row per Claude session: model, cost, tokens, turns, time.
+- `carried.json`: the [carried weight](./method.md#carried-weight) by role and
+  kind, and turns per session, when the transcripts were on the machine.
 - `inputs/`: what the run was asked, and the workflow, project rules and agent
   files exactly as the run read them.
 

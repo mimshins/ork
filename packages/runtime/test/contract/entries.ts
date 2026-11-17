@@ -33,7 +33,8 @@ export type ContractEntry = {
    * (start, then wait to be interrupted) and, where the driver has no
    * `reportSchema`, `report-tool` (call Ork's `report` tool with a report
    * outside the schema, then with one inside, and end with no report of its
-   * own), and `end:<kind>` (end the way the tool says that cause).
+   * own), `extract` (read `.endpoint` through Ork's `extract` tool and end with
+   * what it said), and `end:<kind>` (end the way the tool says that cause).
    */
   fakeTool: string;
   capabilities: DriverCapabilities;

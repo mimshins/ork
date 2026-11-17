@@ -31,7 +31,8 @@
  *   waits to be interrupted), `spend` (three model responses, each in two
  *   lines that repeat its usage, then waits to be stopped) or `report-tool` (hands in a report through
  *   Ork's `report` tool, first one outside the schema, then one inside, and
- *   ends with no structured output). `end:<kind>` ends the session the way
+ *   ends with no structured output) or `extract` (reads `.endpoint` through
+ *   Ork's `extract` tool and ends with what it said). `end:<kind>` ends the session the way
  *   Claude Code says that cause (`end:turn_limit` is `error_max_turns`,
  *   `end:rate_limited` an `API Error: 429` result, …; `ENDS` below).
  */
@@ -191,6 +192,15 @@ if (scenario.startsWith("end:")) {
     out({ type: "assistant", message: { id: `${id}-said`, content: [{ type: "text", text: reply.result?.content[0].text ?? reply.error.message }] } });
   }
   finish("reported", null);
+  process.exit(0);
+} else if (scenario === "extract") {
+  init();
+  const input = { steps: [{ step: "read", path: ".endpoint" }] };
+  out({ type: "assistant", message: { id: "x1", content: [{ type: "tool_use", id: "x1", name: "mcp__ork__extract", input }] } });
+  const reply = await rpc("tools/call", { name: "extract", arguments: input });
+  const failing = reply.result?.isError === true || reply.error !== undefined;
+  out({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "x1", is_error: failing }] } });
+  finish(reply.result?.content[0].text ?? reply.error.message, PASS);
   process.exit(0);
 } else if (scenario === "wait-message") {
   const lines = createInterface({ input: process.stdin })[Symbol.asyncIterator]();

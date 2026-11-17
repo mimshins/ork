@@ -1,9 +1,13 @@
 /**
  * @file Reads one run and every run it called, at any depth, from a copy of
- *   Ork's store: the runs, their events, decisions and per-session usage.
+ *   Ork's store: the runs, their events, decisions and per-session usage. Also
+ *   makes that copy (`copyStore`), so the live store is never read.
  */
 
-import type { DatabaseSync, SQLOutputValue } from "node:sqlite";
+import { copyFileSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { backup, DatabaseSync, type SQLOutputValue } from "node:sqlite";
 
 import { type Json, parse, rec, text } from "./json.ts";
 
@@ -171,4 +175,18 @@ export const loadTree = (db: DatabaseSync, prefix: string): Tree => {
     .all(...ids)
     .map(u => toUsage(u));
   return { runs, events, decisions, usage };
+};
+
+/** A consistent copy of the live store, in a folder of its own. */
+export const copyStore = async (from: string): Promise<string> => {
+  const to = path.join(mkdtempSync(path.join(tmpdir(), "ork-bench-")), "s.db");
+  const live = new DatabaseSync(from, { readOnly: true });
+  try {
+    await backup(live, to);
+  } catch {
+    copyFileSync(from, to);
+  } finally {
+    live.close();
+  }
+  return to;
 };

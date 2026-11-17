@@ -21,6 +21,7 @@ describe("what a benchmark may hold", () => {
     ["results.json", true],
     ["node-mcp/README.md", true],
     ["node-mcp/usage.csv", true],
+    ["node-mcp/carried.json", true],
     ["node-mcp/inputs/brief.md", true],
     ["node-mcp/inputs/workflow/feature.ork.yaml", true],
     ["node-mcp/inputs/workflow/agents/engine.md", true],

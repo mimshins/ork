@@ -412,7 +412,7 @@ describe("the CLI driver", () => {
         text: "The user chose: a",
         report: {
           status: "pass",
-          summary: "tools: ask_user,permission",
+          summary: "tools: ask_user,permission,extract",
           artifacts: { notes: "notes.md" },
           fields: { verdict: "approve" },
         },

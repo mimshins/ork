@@ -1,6 +1,6 @@
 # RFC-023 — An extract tool for what sessions read: Code Mode without running code
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-17
 - **Supersedes:** —
 - **Superseded by:** —

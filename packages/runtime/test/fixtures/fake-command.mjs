@@ -16,7 +16,8 @@
  *   message>`), `hang` (starts and waits to be interrupted), `spend` (three
  *   `model_request_end` frames, then waits as `hang` does), `report-tool`
  *   (Ork's `report` tool, first with a report outside the schema, then with
- *   one inside), `max-turns` (a `max_turns` result, exit code 8) and `end:<kind>`
+ *   one inside), `extract` (reads `.endpoint` through Ork's `extract` tool and
+ *   ends with what it said), `max-turns` (a `max_turns` result, exit code 8) and `end:<kind>`
  *   (the error result and exit code Command Code gives that cause; `ENDS`). It loads
  *   `--mod <file>` as Command Code does, and a call the mod's
  *   `beforeToolCall` blocks ends in a `tool_hook_blocked` frame. With
@@ -212,6 +213,9 @@ if (scenario === "end:turn_limit") {
     finish("first leg");
   }
   finish(`got: ${brief}`);
+} else if (scenario === "extract") {
+  const { text } = await callOrk("x1", "extract", { steps: [{ step: "read", path: ".endpoint" }] });
+  finish(text);
 } else if (scenario === "report-tool") {
   await callOrk("t3", "report", { status: "maybe", summary: 3 });
   const { isError } = await callOrk("t4", "report", { status: "pass", summary: "done", artifacts: {} });

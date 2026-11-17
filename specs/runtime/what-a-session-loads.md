@@ -29,6 +29,9 @@ the `claude-code` driver starts **clean of the machine's Claude setup**
   `--exclude-dynamic-system-prompt-sections` moves the working directory, memory
   path and git status into the first user message. It changes no content, so it
   stays on either way.
+- **Ork's `extract` tool**, on every driver, with a line in the harness
+  instructions to prefer it for a line range, a search or a diff over `cat`,
+  `sed`, `rg` or a whole-file read ([the `extract` tool](./extract-tool.md)).
 
 **`ork run --machine-claude`** turns the first two back: the run's sessions load
 the machine's MCP servers and auto-memory as `claude` would. The run records it

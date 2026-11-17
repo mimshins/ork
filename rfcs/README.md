@@ -86,4 +86,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [020](./archived/RFC-020-follow-runs-in-store-order.md)        | Following many runs in store order                                 | Implemented |
 | [021](./active/RFC-021-audit-in-attached-projects.md)          | `ork:security-audit` in attached projects                          | Draft       |
 | [022](./active/RFC-022-onboard-in-attached-projects.md)        | `ork onboard` in attached projects                                 | Draft       |
-| [023](./active/RFC-023-extract-tool-for-session-reads.md)      | An extract tool for what sessions read: Code Mode without code     | Accepted    |
+| [023](./archived/RFC-023-extract-tool-for-session-reads.md)    | An extract tool for what sessions read: Code Mode without code     | Implemented |

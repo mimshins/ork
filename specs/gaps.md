@@ -14,8 +14,8 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L414, and the next chore is
-C18 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
+closes it. Ids are never reused: the next limit is L423, and the next chore is
+C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
 carried to a roadmap item, or to none yet (unplanned).
@@ -57,6 +57,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found fixing QA run bd542734](./gaps/qa-bd542734-limits.md)
 - [Limits found building the `ork:security-audit` workflow](./gaps/audit-limits.md)
 - [Limits found building `ork onboard`](./gaps/onboard-limits.md)
+- [Limits found building `extract`](./gaps/extract-limits.md)
 
 ## Gaps
 

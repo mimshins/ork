@@ -1,10 +1,17 @@
 /** @file Tests a benchmark's working time, its commits and its totals. */
 
-import { describe, expect, it } from "vitest";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
+import { describe, expect, it, vi } from "vitest";
+
+import { writeCarried } from "../measure.ts";
+import { stage } from "../publish.ts";
 import { resultCommits, summarize, toolCpuOf, usageCsv } from "../summary.ts";
 import { type Activation, activations, workingMs } from "../timing.ts";
-import type { Decision, StoredEvent } from "../tree.ts";
+import { transcriptsOf } from "../transcripts.ts";
+import type { Decision, StoredEvent, Tree } from "../tree.ts";
 
 const MIN = 60_000;
 
@@ -263,5 +270,85 @@ describe("summary", () => {
 
   it("writes one CSV row per session", () => {
     expect(usageCsv(tree.usage).trim().split("\n")).toHaveLength(3);
+  });
+});
+
+const started = (id: string): StoredEvent =>
+  event("node.event", 0, {
+    id: "implement",
+    event: {
+      type: "session.started",
+      sessionId: id,
+      model: "m",
+      cwd: "/work/y",
+    },
+  });
+
+/** What `body` returns, and the lines it printed. */
+const quietly = <T>(body: () => T): { value: T; lines: string[] } => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const value = body();
+  const lines = log.mock.calls.map(call => String(call[0]));
+  log.mockRestore();
+  return { value, lines };
+};
+
+describe("carried.json", () => {
+  const home = mkdtempSync(path.join(tmpdir(), "ork-measure-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "ork-measure-out-"));
+  const turns = [1, 2, 3].map(n => ({
+    type: "assistant",
+    message: { id: `m${String(n)}`, model: "claude-sonnet-5-5", content: [] },
+  }));
+  const run = {
+    id: "r1",
+    workflow: "build",
+    file: "",
+    parent: null,
+    status: "succeeded",
+    startedAt: "",
+    finishedAt: null,
+    costUsd: 0,
+  };
+  const tree = (id: string): Tree => ({
+    runs: [run],
+    events: [started(id)],
+    decisions: [],
+    usage: [],
+  });
+  const transcripts = transcriptsOf(home, "/work/y");
+  mkdirSync(transcripts, { recursive: true });
+  writeFileSync(
+    path.join(transcripts, "s1.jsonl"),
+    turns.map(t => JSON.stringify(t)).join("\n"),
+  );
+
+  it("is written, with its totals, when a transcript exists", () => {
+    const { value } = quietly(() => writeCarried(tree("s1"), dir, home));
+    expect(existsSync(path.join(dir, "carried.json"))).toBe(true);
+    expect(value).toEqual({ total_weight: 0, turns: 3, extract_calls: 0 });
+  });
+
+  it("is not written, and one line says so, when no transcript exists", () => {
+    const empty = mkdtempSync(path.join(tmpdir(), "ork-measure-out-"));
+    const { value, lines } = quietly(() =>
+      writeCarried(tree("missing"), empty, home),
+    );
+    expect(value).toBeNull();
+    expect(lines).toEqual([
+      "carried.json not written: no session transcripts found.",
+    ]);
+    expect(existsSync(path.join(empty, "carried.json"))).toBe(false);
+  });
+
+  it("is staged for publishing only when it exists", () => {
+    const from = mkdtempSync(path.join(tmpdir(), "ork-measure-pub-"));
+    for (const file of ["README.md", "usage.csv"]) {
+      writeFileSync(path.join(from, file), "x");
+    }
+    writeFileSync(path.join(from, "summary.json"), "{}");
+    expect([...stage(from, "b").keys()]).not.toContain("b/carried.json");
+    writeFileSync(path.join(from, "carried.json"), "{}");
+    expect([...stage(from, "b").keys()]).toContain("b/carried.json");
   });
 });

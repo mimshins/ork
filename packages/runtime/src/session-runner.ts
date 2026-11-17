@@ -25,6 +25,7 @@ import { heavyHook, toolHook } from "./heavy-hook.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
 import { type LegInput, runLeg } from "./session-leg.ts";
+import { readPatterns } from "./tools/contain.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
 
@@ -131,6 +132,8 @@ export const createSessionRuntime = (
         nodeId: spec.nodeId,
         driver: adapter.driver,
         ports,
+        cwd: spec.cwd,
+        denyRead: readPatterns(spec.tools.deny),
         report: {
           schema: spec.reportSchema,
           submit: report => {
