@@ -26,3 +26,7 @@ _Part of [What's new](../whats-new.md)._
   the shell instead. Ork now asks Claude Code to load it up front, and its
   description says to cut a read to a match or a line range
   ([guide](../guides/skills-and-context.md#reading-part-of-a-file-extract)).
+- **The audit's agents search with `extract`.** Claude Code 2.1.326 gives a
+  session no Grep or Glob tool unless the node lists them, but the audit told
+  its agents to search with Grep, so those calls failed before they fell back to
+  the shell. They are now told to search and read parts of files with `extract`.

@@ -3,7 +3,8 @@
 A node that only reads (a reviewer, the `split` step of `qa-pass`) names this
 file in its `context`, after the project's [session rules](./sessions.md).
 
-- Read files with Read and search with Grep.
+- Search, read part of a file or see a git diff with extract, and read a whole
+  file with Read. Claude Code has no Grep or Glob here unless a node lists them.
 - When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut,
   sort, uniq, echo and read-only git, one command per call.
 - No cd (you are already in the checkout), no awk, no find, no loops, no shell
