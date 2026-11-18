@@ -94,9 +94,12 @@ filters another command's output, which `extract` can't read, so
 - **`command-code`**: the session's mod embeds the function's source and blocks
   the call with the reason as `additionalContext`, after the node's denies.
 - **`open-code`**: deny rules after the node's allows, `<command>` and
-  `<command> *` for each reader (`SHELL_READ_COMMANDS`); OpenCode matches the
-  whole line from its start, so only a line's first pipeline is refused there,
-  and its message is OpenCode's own ([L436](../gaps/extract-limits.md)).
+  `<command> *` for each reader (`SHELL_READ_COMMANDS`) but `head`, `tail`,
+  `sed`, `awk`, `grep`, `egrep` and `fgrep`. OpenCode 2.3 matches every command
+  of a line, so `echo a && cat x` is refused, but a deny on one of those seven
+  would also refuse it filtering another command's output (`pnpm test | tail`);
+  they are left to the steering line there, and the message is OpenCode's own
+  ([L436](../gaps/extract-limits.md)).
 
 A `readonly` node then runs only `git status` without asking; `git diff`, `log`
 and `show` come back under `reading: open`.

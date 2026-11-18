@@ -23,6 +23,10 @@ it ready (the tool isn't found, or it isn't signed in), the run stops with the
 driver's detail and hint. A driver named on a node, or in a model's prefix, is
 checked when its session starts instead, since that node may never run.
 
+`open-code` needs `opencode` 2.3.2 or later: on an older one Ork's tools never
+reached the model, so every node ended with no report. `ork doctor` warns about
+it; `opencode upgrade` fixes it.
+
 Run Claude models on `claude-code`. Through OpenCode's `commandcode` provider
 they fail after their first tool call, an error between OpenCode and that
 provider; other models through it work.

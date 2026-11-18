@@ -18,8 +18,8 @@ to 3 hold the spike this follows).
 
 ## The session
 
-Each leg is one process of the user's own `opencode` (2.1.0), started in the
-node's worktree:
+Each leg is one process of the user's own `opencode` (2.3.2 or later;
+`ork doctor` warns about an older one), started in the node's worktree:
 
 ```sh
 opencode run --standalone --format json --agent ork \
@@ -107,6 +107,12 @@ printed none. Its [end](./session-ends.md) comes from the same: an `error` line
 `no_report`. Legs add up, cost included: each reports only its own steps. Tool
 names come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
 `mcp__ork__report`), the words a node's rules use.
+
+**The version floor.** On 2026-11-18, sessions of `opencode` 2.1.0 saw none of
+Ork's tools, only `read` and `shell`, so every node ended with no report; after
+`opencode upgrade` to 2.3.2 they saw every `ork_<tool>` with `codemode: false`.
+So `ork doctor` warns about an `opencode` older than 2.3.2
+(`MIN_OPENCODE_VERSION`), and the driver is not ready until it is upgraded.
 
 ## Measured on the gate run
 

@@ -15,6 +15,7 @@ import {
   INTEGRATIONS,
   integrationFor,
   MIN_CLAUDE_VERSION,
+  MIN_OPENCODE_VERSION,
   olderThan,
 } from "../src/index.ts";
 
@@ -140,6 +141,17 @@ describe("the claude-code driver's check", () => {
     );
     expect(others.map(r => r.status)).toEqual(["ok", "ok"]);
     expect(others.some(r => r.detail.includes("unproven"))).toBe(false);
+  });
+
+  it("warns about an OpenCode older than the one that keeps Ork's tools out of Code Mode", async () => {
+    const opencode = AGENT_DRIVERS.find(d => d.id === "open-code");
+    const said = (stdout: string) =>
+      opencode?.doctor(() => Promise.resolve({ ok: true, stdout }), {});
+    expect(await said("opencode v2.1.0\n")).toMatchObject({
+      status: "warn",
+      detail: `opencode v2.1.0, older than ${MIN_OPENCODE_VERSION}`,
+    });
+    expect(await said("opencode v2.3.2\n")).toMatchObject({ status: "ok" });
   });
 
   it("skips a driver whose tool is missing, saying how to get it", async () => {

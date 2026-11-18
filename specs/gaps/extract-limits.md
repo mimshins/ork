@@ -68,10 +68,11 @@ was left simpler, or could not be checked:
   pages link to (`#the-manual-baseline`, `#the-suites-cost`,
   `#a-build-measured-again`), so it waits for the next review.
 - **L436 · Shell reads are refused unevenly across drivers.** On `open-code` the
-  refusal is a deny pattern matched from the line's start, so
-  `cd src && cat a.ts` passes, `sed -i` is refused with `sed`, and the session
-  reads OpenCode's own refusal, not the `extract` call. On every driver the
-  check is by program name: a reader behind `xargs`, `sh -c` or a script is not
-  seen. A node cannot exempt one program: only `reading: open` (project or
-  workflow) turns refusals off. Revisit if refused reads show up in
-  `ork feedback`.
+  refusal is a deny pattern, which OpenCode 2.3 matches against every command of
+  a line. So `cd src && cat a.ts` is refused, but `head`, `tail`, `sed`, `awk`
+  and `grep` are not denied there at all (a deny would refuse them filtering a
+  command's output too), and the session reads OpenCode's own refusal, not the
+  `extract` call. On every driver the check is by program name: a reader behind
+  `xargs`, `sh -c` or a script is not seen. A node cannot exempt one program:
+  only `reading: open` (project or workflow) turns refusals off. Revisit if
+  refused reads show up in `ork feedback`.

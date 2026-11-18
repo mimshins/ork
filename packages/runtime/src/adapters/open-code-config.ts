@@ -131,11 +131,31 @@ const textReadRules: Rule[] = [
   ),
 ];
 
-/** A shell line that starts by reading files, refused (`extract` reads it). */
-const shellReadRules: Rule[] = SHELL_READ_COMMANDS.flatMap(command => [
-  { action: "shell", resource: command, effect: "deny" },
-  { action: "shell", resource: `${command} *`, effect: "deny" },
+/**
+ * Readers that are as often filters of another command's output (`pnpm test |
+ * tail -20`). OpenCode 2.3 matches every command of a line, not only its first,
+ * so a deny on one would refuse the filter too: these are left to the steering
+ * line there (gap L436).
+ */
+const OPEN_CODE_FILTERS: ReadonlySet<string> = new Set([
+  "head",
+  "tail",
+  "sed",
+  "awk",
+  "grep",
+  "egrep",
+  "fgrep",
 ]);
+
+/** A shell line that reads files, refused (`extract` reads it). */
+const shellReadRules: Rule[] = SHELL_READ_COMMANDS.flatMap(command =>
+  OPEN_CODE_FILTERS.has(command)
+    ? []
+    : [
+        { action: "shell", resource: command, effect: "deny" },
+        { action: "shell", resource: `${command} *`, effect: "deny" },
+      ],
+);
 
 /**
  * The session's rules, in order: deny everything (a yolo run: allow it, then

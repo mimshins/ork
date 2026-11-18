@@ -350,6 +350,22 @@ describe("the open-code permission rules", () => {
     expect(at("cat *")).toBeGreaterThan(at("*"));
   });
 
+  it("leave the readers that are as often filters alone, as OpenCode matches every command of a line", () => {
+    const written = rules(
+      { allow: ["Bash"], deny: [] },
+      "default",
+      false,
+      "extract",
+    );
+    for (const filter of ["tail", "head", "grep", "sed", "awk"]) {
+      expect(written).not.toContainEqual({
+        action: "shell",
+        resource: `${filter} *`,
+        effect: "deny",
+      });
+    }
+  });
+
   it("open Ork's tools by exact name, not a repo server named `ork_<x>`", () => {
     const written = permissionRules({
       ...specOf("/w", { allow: [], deny: [] }),

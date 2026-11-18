@@ -57,6 +57,12 @@ export type AgentDriver = {
  */
 export const MIN_CLAUDE_VERSION = "2.1.281";
 
+/**
+ * The first OpenCode found to honour a server's `codemode: false`, so Ork's
+ * tools reach the model as tools (2.1.0 hid them behind Code Mode).
+ */
+export const MIN_OPENCODE_VERSION = "2.3.2";
+
 /** Whether `claude --version` output names a version below `min`. */
 export const olderThan = (text: string, min: string): boolean => {
   const found = /(\d+)\.(\d+)\.(\d+)/u.exec(text);
@@ -169,10 +175,16 @@ const installedCli = (
   id: DriverId,
   program: string,
   login: string,
-  rest: Pick<
+  {
+    min,
+    ...rest
+  }: Pick<
     AgentDriver,
     "label" | "capabilities" | "proven" | "onePerCheckout"
-  >,
+  > & {
+    /** The oldest version Ork works with, and why: older is a warning. */
+    min?: { version: string; why: string };
+  },
 ): AgentDriver => ({
   id,
   ...rest,
@@ -194,6 +206,14 @@ const installedCli = (
           : {}),
       };
     }
+    if (min !== undefined && olderThan(version.stdout, min.version)) {
+      return {
+        name,
+        status: "warn",
+        detail: `${firstLine(version.stdout)}, older than ${min.version}`,
+        hint: min.why,
+      };
+    }
     return {
       name,
       status: rest.proven ? "ok" : "skip",
@@ -205,6 +225,10 @@ const installedCli = (
 const openCode = installedCli("open-code", "opencode", "opencode auth login", {
   label: "the `opencode` CLI",
   proven: true,
+  min: {
+    version: MIN_OPENCODE_VERSION,
+    why: "Update OpenCode (`opencode upgrade`): an older one ignores Ork's `codemode: false`, so Ork's tools never reach the model.",
+  },
   onePerCheckout: false,
   // Proven on a real session (2026-11-10): Ork's tools reach the model with
   // Code Mode off, and the agent's `steps` caps the turns.
