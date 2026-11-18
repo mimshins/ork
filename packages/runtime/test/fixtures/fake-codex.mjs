@@ -24,11 +24,13 @@
  *   for SIGINT, then exits 130), `spend` (three `turn.completed` lines, where
  *   the real one prints one a leg, then waits as `hang` does), `report-tool`,
  *   `extract` (reads `.endpoint` through Ork's `extract` and ends with what it
- *   said), `edit` (a patch, then a shell command) and `end:<kind>` (the error
+ *   said), `edit` (a patch, then a shell command), `two-shells` (a shell `ls`,
+ *   then two seconds later writes `late.txt` and runs a second one, so a leg
+ *   Ork kills at the first never gets there) and `end:<kind>` (the error
  *   lines for that cause, exit 1; only `model_unavailable`'s words were
  *   measured, the others are OpenAI-shaped stand-ins). Codex has no turn
  *   limit, so there is no `end:turn_limit`. `FAKE_CODEX_RECORD` gets a line per
- *   leg: its folder, arguments and the token it read. `FAKE_CODEX_NO_HOOK=1`
+ *   leg: its folder, arguments, the token it read and its pid. `FAKE_CODEX_NO_HOOK=1`
  *   skips the hook, as a Codex that did not load it would.
  */
 
@@ -92,7 +94,7 @@ const token = tokenVar === undefined ? undefined : process.env[tokenVar];
 const scenario = process.env.FAKE_SCENARIO ?? "";
 
 if (process.env.FAKE_CODEX_RECORD !== undefined) {
-  appendFileSync(process.env.FAKE_CODEX_RECORD, `${JSON.stringify({ cwd: process.cwd(), args: argv, token })}\n`);
+  appendFileSync(process.env.FAKE_CODEX_RECORD, `${JSON.stringify({ cwd: process.cwd(), args: argv, token, pid: process.pid })}\n`);
 }
 if (url === undefined) {
   process.stderr.write("Error: MCP server `ork` is required but failed to start\n");
@@ -233,6 +235,12 @@ if (scenario === "hang" || scenario === "spend") {
   const patched = patch("b.txt");
   const ran = shell("ls");
   finish(`patch ${patched.isError ? "refused" : "ran"}, shell ${ran.isError ? "refused" : "ran"}`);
+} else if (scenario === "two-shells") {
+  shell("ls");
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  writeFileSync("late.txt", "ran on\n");
+  shell("ls");
+  finish("both shells ran");
 } else if (scenario === "wait-message") {
   if (resumed === undefined) {
     await new Promise(resolve => setTimeout(resolve, 300));

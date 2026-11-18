@@ -84,15 +84,22 @@ Two walls, and the node is deny by default
 ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for `--yolo`):
 
 - **The sandbox** (`-c sandbox_mode`, `codexSandbox`) is the outer wall:
-  `read-only` in `plan` mode, for a node whose `tools.only` names no `Bash`,
-  `Edit` or `Write` (that holds under `--yolo` and `acceptEdits` too: `only`
-  caps what a node can do), and for a node whose `allow` has none of them (and
-  no `--yolo`); else `workspace-write`. `--yolo` gets `workspace-write`, never
-  wider. Network stays off (`sandbox_workspace_write.network_access` is not
-  set), so an `allow` naming `WebFetch` allows nothing. Codex asks for no
-  approval in `exec`; its hook input reports
-  `permission_mode: "bypassPermissions"`, so the sandbox and the hook are the
-  only fences.
+  `read-only` in `plan` mode; for a node whose `deny` has a bare `Edit` and a
+  bare `Write` (no path in parentheses, case and spaces aside), as a `readonly`
+  node's isolation denies them, whatever its `allow`, `acceptEdits` or `--yolo`
+  say (a readonly node's `git status` allows are shell rules); for a node whose
+  `tools.only` names no `Bash`, `Edit` or `Write` (that holds under `--yolo` and
+  `acceptEdits` too: `only` caps what a node can do); and for a node whose
+  `allow` has none of them (and no `--yolo`); else `workspace-write`. A
+  path-scoped deny (`Edit(docs/**)`) or one of the two alone changes nothing.
+  The cost: a node denied writing can't run a command that writes a file
+  anywhere the sandbox guards (a test cache, temporary output), so a readonly
+  reviewer that runs the tests on `codex` sees them fail where they write.
+  `--yolo` gets `workspace-write`, never wider. Network stays off
+  (`sandbox_workspace_write.network_access` is not set), so an `allow` naming
+  `WebFetch` allows nothing. Codex asks for no approval in `exec`; its hook
+  input reports `permission_mode: "bypassPermissions"`, so the sandbox and the
+  hook are the only fences.
 - **The hook** is the node's rules: a `PreToolUse` command hook with matcher
   `.*`, given inline by `-c hooks.PreToolUse=[…]`. `exec` runs a hook Ork wrote
   only with `--dangerously-bypass-hook-trust`, which is per invocation and saves
@@ -147,9 +154,14 @@ the model reads the reason. Printing nothing allows.
   hook was not called in that leg, the node ends `driver_crashed` ("Codex ran
   tool calls without Ork's hook … the node is stopped"). It is found after the
   fact, at the first finished tool item (`item.completed` of one of those
-  three): those first calls ran inside the sandbox with no rules. Codex runs to
-  its turn's end, since Ork cannot stop it from the decoder, and its later lines
-  no longer change the end.
+  three): those first calls ran inside the sandbox with no rules. The line that
+  trips it carries `kill` (`Decoded.kill`,
+  [adapter.ts](../../packages/runtime/src/adapter.ts)): the leg runner yields
+  the end, then stops the process at once as `ork stop` does (SIGINT, then the
+  leg's usual kill on its way out) and reads nothing after, so Codex runs no
+  further unguarded and no tool event follows the end. The decoder also drops
+  any line after the trip, and gives no second end at the exit. No event type is
+  added: the end is the `session.finished` it always was.
 
 ## Output, usage and ends
 

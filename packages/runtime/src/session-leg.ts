@@ -218,13 +218,11 @@ export const runLeg = async function* (
     if (child.stdin.writable) child.stdin.write(line);
   };
   let stopped = false;
-  input.attach({
-    write,
-    stop: () => {
-      stopped = true;
-      child.kill("SIGINT");
-    },
-  });
+  const stop = () => {
+    stopped = true;
+    child.kill("SIGINT");
+  };
+  input.attach({ write, stop });
   for (const line of input.pending.splice(0)) write(line);
   if (input.adapter.command.input === undefined) child.stdin.end();
 
@@ -247,15 +245,18 @@ export const runLeg = async function* (
         // The first result ends the process; a resume continues the session.
         child.stdin.end();
         outcome = ended;
+        // Ended while the tool runs on: nothing it prints after is the session's.
+        if (decoded.kill === true) {
+          stop();
+          return ended;
+        }
       }
       const capped =
         outcome === undefined
           ? tokenCapEnd(input, decoded.usage, sessionId)
           : undefined;
       if (capped !== undefined) {
-        // Nothing the tool prints after it is the session's.
-        stopped = true;
-        child.kill("SIGINT");
+        stop();
         yield capped;
         return { kind: "finished" };
       }

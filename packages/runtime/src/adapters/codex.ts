@@ -54,13 +54,26 @@ const acting = (rules: readonly string[]): boolean =>
     ACTING.has(rule.split("(")[0]?.trim().toLowerCase() ?? ""),
   );
 
+/** The bare rules that, denied together, deny a node all writing. */
+const WRITING = ["edit", "write"];
+
 /**
- * The sandbox of a leg: `read-only` in plan mode or for a node whose rules
- * allow no edit and no shell; otherwise `workspace-write`, yolo included.
+ * Whether `deny` refuses writing outright: a bare `Edit` and a bare `Write` (no
+ * path in parentheses), as a `readonly` node's isolation denies them.
+ */
+const deniesWriting = (deny: readonly string[]): boolean =>
+  WRITING.every(tool => deny.some(rule => rule.trim().toLowerCase() === tool));
+
+/**
+ * The sandbox of a leg: `read-only` in plan mode, for a node denied writing
+ * outright (whatever its allows or yolo say: a readonly node's `git status`
+ * allow is a shell rule) and for a node whose rules allow no edit and no shell;
+ * otherwise `workspace-write`, yolo included.
  */
 export const codexSandbox = (spec: SessionSpec): string => {
   if (spec.permissionMode === "plan") return "read-only";
-  const { allow, only } = toolRuleSet(spec);
+  const { allow, deny, only } = toolRuleSet(spec);
+  if (deniesWriting(deny)) return "read-only";
   // `only` caps allow and yolo alike: a node held to reads never acts.
   if (only !== undefined && !acting(only)) return "read-only";
   return acting(allow) || spec.yolo === true ? "workspace-write" : "read-only";
@@ -170,11 +183,11 @@ export const HOOK_DID_NOT_RUN =
 
 /**
  * A leg's decoder with the canary: once a tool call finished while the hook's
- * calls file did not grow in this leg, the session ends with a driver error.
- * Codex keeps running to its turn's end (Ork cannot stop it from here), inside
- * its sandbox; its later lines no longer change the end. A call the hook
- * refused leaves no line (RFC-024 spike), so each refusal in the calls file
- * becomes a refused tool call at the next line or the leg's exit.
+ * calls file did not grow in this leg, the session ends with a driver error and
+ * the line asks the runner to kill the leg (`kill`), so Codex runs no further
+ * unguarded; nothing is decoded after it. A call the hook refused leaves no
+ * line (RFC-024 spike), so each refusal in the calls file becomes a refused
+ * tool call at the next line or the leg's exit.
  */
 const guarded = (spec: SessionSpec): LegDecoder => {
   const hook = HOOKS.get(spec.tools);
@@ -201,6 +214,8 @@ const guarded = (spec: SessionSpec): LegDecoder => {
   };
   return {
     decode: line => {
+      // Ended: nothing Codex prints after the canary is the session's.
+      if (tripped) return { events: [] };
       const decoded = decoder.decode(line);
       for (const event of decoded.events) {
         if (event.type === "session.started") sessionId = event.sessionId;
@@ -208,7 +223,7 @@ const guarded = (spec: SessionSpec): LegDecoder => {
       // The hook ran before this line was printed.
       const events = [...refused(), ...decoded.events];
       const ran = (hook?.count().calls ?? 0) > before;
-      if (tripped || !decoder.toolsRan() || ran) return { ...decoded, events };
+      if (!decoder.toolsRan() || ran) return { ...decoded, events };
       tripped = true;
       return {
         events: [
@@ -223,9 +238,10 @@ const guarded = (spec: SessionSpec): LegDecoder => {
             },
           ),
         ],
+        kill: true,
       };
     },
-    exit: code => [...refused(), ...decoder.exit(code)],
+    exit: code => (tripped ? [] : [...refused(), ...decoder.exit(code)]),
   };
 };
 

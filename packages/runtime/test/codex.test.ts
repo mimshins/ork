@@ -8,7 +8,8 @@
  *   session, a user or system hooks file refusing the session); the canary that
  *   ends a leg whose tools ran without the hook; and whole sessions on the fake
  *   `codex` (resume and fork legs, the token in the environment only, the hook
- *   removed after a failure, a refused call surfaced).
+ *   removed after a failure, a refused call surfaced, a leg killed when the
+ *   canary trips).
  */
 
 import {
@@ -26,7 +27,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { HumanChannel, RuntimeEvent, SessionSpec } from "@krapht/ork-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import {
@@ -516,6 +517,29 @@ describe("the codex adapter's arguments", () => {
       "read-only",
     ]);
   });
+
+  it("chooses read-only for a node denied Edit and Write outright, whatever its allows or yolo say", () => {
+    // What core's toolRules gives a readonly node: git status, Write and Edit denied.
+    const readonly = {
+      allow: ["Bash(git status)", "Bash(git status *)"],
+      deny: ["Write", "Edit", "NotebookEdit", "Grep", "Glob"],
+    };
+    expect(
+      [
+        legOf({ tools: readonly }),
+        legOf({ tools: readonly, yolo: true }),
+        legOf({ tools: readonly, permissionMode: "acceptEdits" }),
+        legOf({ tools: { allow: ["Bash"], deny: ["Edit(docs/**)"] } }),
+        legOf({ tools: { allow: ["Bash"], deny: ["Edit"] } }),
+      ].map(each => codexSandbox(each)),
+    ).toEqual([
+      "read-only",
+      "read-only",
+      "read-only",
+      "workspace-write",
+      "workspace-write",
+    ]);
+  });
 });
 
 const ENDPOINT = {
@@ -651,7 +675,22 @@ const LegSchema = z.object({
   cwd: z.string(),
   args: z.array(z.string()),
   token: z.string().optional(),
+  pid: z.number(),
 });
+
+/** Whether the process `pid` still runs. */
+const isAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** The pid of a session's only leg, once the fake has recorded it. */
+const pidOf = (legs: () => z.infer<typeof LegSchema>[]): number =>
+  legs()[0]?.pid ?? -1;
 
 const human: HumanChannel = {
   ask: ({ recommended }) => Promise.resolve(recommended ?? "none"),
@@ -770,6 +809,28 @@ describe("a codex session on the fake codex", () => {
     });
   });
 
+  it("kills the leg at the canary's trip, and yields nothing after its end", async () => {
+    const { session, cwd, legs } = played(
+      "two-shells",
+      { tools: { allow: ["Bash"], deny: [] } },
+      { FAKE_CODEX_NO_HOOK: "1" },
+    );
+    const events = await collect(session);
+    expect(events.at(-1)).toMatchObject({
+      type: "session.finished",
+      outcome: { end: { kind: "driver_crashed" }, errors: [HOOK_DID_NOT_RUN] },
+    });
+    expect(resultsOf(events, "Bash")).toEqual([false]);
+    // The fake waits two seconds before its second shell call.
+    await vi.waitFor(
+      () => {
+        expect(isAlive(pidOf(legs))).toBe(false);
+      },
+      { timeout: 1500 },
+    );
+    expect(existsSync(path.join(cwd, "late.txt"))).toBe(false);
+  });
+
   it("refuses to start when the user's Codex home has a hooks file", async () => {
     const home = temp("ork-codex-home-");
     writeFileSync(path.join(home, "hooks.json"), "{}");
@@ -801,6 +862,30 @@ describe("the codex hook canary", () => {
       sessionId: "th-1",
       errors: [HOOK_DID_NOT_RUN],
     });
+    await wired.release();
+  });
+
+  it("asks the runner to kill the leg at the trip, and decodes nothing after", async () => {
+    const adapter = adapterIn(temp("ork-codex-root-"));
+    const session = sessionIn(temp("ork-codex-cwd-"));
+    const wired = await wireOf(adapter, session, {
+      CODEX_HOME: temp("ork-codex-home-"),
+    });
+    const decoder = decoderOf(adapter, session);
+    const decoded = LEG.map(each => decoder.decode(each));
+    // The shell command's `item.completed` (the fourth line) trips it.
+    expect(decoded.map(each => each.kill === true)).toEqual([
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
+    expect(decoded.slice(4).flatMap(each => each.events)).toEqual([]);
+    expect(decoder.exit(0)).toEqual([]);
     await wired.release();
   });
 

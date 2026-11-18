@@ -12,9 +12,11 @@ _Part of [What's new](../whats-new.md)._
   `skip`, and both `ork validate` and `ork run` refuse a node that names it as
   "not yet proven on a real session". It reports tokens and no dollars, takes a
   message when a stretch ends, and refuses a node that needs `mcp` servers,
-  sub-agents, `maxTurns` or a `deny` on a `Read`, `Glob` or `Grep` path. A user
-  or system `hooks.json` ends its node before it starts, and its skills stay
-  visible ([Codex](../guides/drivers/codex.md),
+  sub-agents, `maxTurns` or a `deny` on a `Read`, `Glob` or `Grep` path. A
+  `readonly` node runs in Codex's read-only sandbox, so it can't run a command
+  that writes files. A user or system `hooks.json` ends its node before it
+  starts; a Codex that runs tools without Ork's hook is stopped at the first
+  one; and its skills stay visible ([Codex](../guides/drivers/codex.md),
   [the limits](../../specs/gaps/codex-limits.md)).
 - **A node you stopped mid tool call reads "was stopped".** Stopping a node with
   `ork stop` while its agent was in a tool call could end the agent's session as

@@ -47,6 +47,13 @@ export type Decoded = {
    * `budgetTokens` (RFC-015).
    */
   usage?: SessionUsage;
+  /**
+   * With the session's end among the line's events: the end comes while the
+   * process still runs (Codex's hook canary), so the runner stops the process
+   * at once, as `ork stop` does, and reads nothing after. Ignored on a line
+   * with no end.
+   */
+  kill?: boolean;
 };
 
 /** Reads the tool's output, one line at a time. */

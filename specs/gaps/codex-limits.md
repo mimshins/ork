@@ -46,8 +46,9 @@ until the maintainer's gate run. What was left simpler, or could not be checked:
   unknown one ends as a generic error with its text under Details.
 - **L446 · A hook that did not load is found after the fact.** The leg's decoder
   ends the node (`driver_crashed`) at the first finished tool item with no hook
-  call in the leg, but the first calls ran inside the sandbox with no rules.
-  Nothing cheaper exists without a model call.
+  call in the leg and the runner kills the leg's process there, but the calls up
+  to that item ran inside the sandbox with no rules. Nothing cheaper exists
+  without a model call.
 - **L447 · What the sandbox writes besides the folder is unmeasured, and so is
   the hook's own file.** `workspace-write` may also allow Codex's temporary
   folders, and whether a shell command can write the hook's `calls.jsonl` (it is

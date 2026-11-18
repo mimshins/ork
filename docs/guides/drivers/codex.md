@@ -46,8 +46,11 @@ hold it:
 
 - **Codex's sandbox.** A node in `plan` mode, or whose `allow` has no `Bash`,
   `Edit` or `Write`, runs read-only; so does a node whose `tools.only` names
-  none of them, even under `--yolo`. Any other node, `--yolo` too, can write
-  only in its folder. The network is off.
+  none of them, and a node whose `deny` has a bare `Edit` and a bare `Write` (as
+  `isolation: readonly` gives it), even under `--yolo`. Such a read-only node
+  can't run a command that writes files (a test cache, temporary output), so a
+  reviewer that runs the tests may see them fail. Any other node, `--yolo` too,
+  can write only in its folder. The network is off.
 - **A hook Ork writes for the session.** It checks each shell command, patch and
   tool call against the node's `allow`, `deny` and `only` lists, in Claude
   Code's words, and refuses what is not allowed with a reason the model reads;
@@ -73,8 +76,9 @@ A project's own `.codex/hooks.json` stays off, as Codex treats an untrusted
 project.
 
 **`Codex ran tool calls without Ork's hook …`.** The node's rules were not
-applied to a call, so Ork ended the node. Check that nothing else sets Codex's
-hooks. The first calls ran inside Codex's sandbox before Ork saw it.
+applied to a call, so Ork ended the node and stopped Codex at once. Check that
+nothing else sets Codex's hooks. The first calls ran inside Codex's sandbox
+before Ork saw it.
 
 ## What a Codex session loads
 
