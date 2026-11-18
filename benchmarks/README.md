@@ -80,6 +80,16 @@ wide range. [Method and caveats](./method.md).
 [The suite's cost](./method.md#the-suites-cost): what the test suite costs in
 CPU, before and after it was made cheaper.
 
+## Experiments
+
+Comparisons of two settings on the same tasks, with no commit kept, so they have
+no row above:
+
+- [Reading rule A/B](./rfc-025-reading/README.md) (2026-11-17): `reading: open`
+  against `reading: extract`, 2 tasks × 2 runs each, $10.19 in all.
+  Inconclusive: sessions already read through `extract` in both arms, and
+  neither cost more.
+
 ## In each benchmark
 
 - `README.md`: what was built, the numbers, how the run went and what went

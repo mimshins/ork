@@ -14,8 +14,10 @@ the refusal of shell reads, and the withheld tools (RFC-025), served on
 [containment](../../packages/runtime/test/contain.test.ts),
 [contract](../../packages/runtime/test/contract/contract.test.ts)). Why:
 [RFC-023](../../rfcs/archived/RFC-023-extract-tool-for-session-reads.md), option
-2a, and [ADR-098](../../decisions/ADR-098-extract-tool.md). Its effect on cost
-is not measured yet (the before/after benchmark is a follow-up;
+2a, and [ADR-098](../../decisions/ADR-098-extract-tool.md). An A/B benchmark of
+`reading: open` against `reading: extract` was inconclusive: sessions read
+82–100% of their reading weight through `extract` in both arms, and neither cost
+more ([rfc-025-reading](../../benchmarks/rfc-025-reading/README.md),
 [carried weight](../../benchmarks/method.md#carried-weight)).
 
 A tool result stays in the conversation, and every later turn reads it again
