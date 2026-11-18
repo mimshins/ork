@@ -2,21 +2,23 @@
 
 _Part of [What's new](../whats-new.md)._
 
-- **A fourth driver, `codex`, is built but not proven yet.** It runs your own
-  OpenAI `codex` (0.169.0 or later), one `codex exec` for each stretch of a
-  session, with Ork's tools, a sandbox and a hook Ork writes per session that
-  holds the node to its `allow`, `deny` and `only` rules (denied unless
-  allowed). The id (`driver: codex`, `--driver codex`, `codex.<model>`) is
-  accepted by the workflow schema and by tab completion, but until the
-  maintainer's capped run on a real `codex`, `ork doctor` shows the driver as
-  `skip`, and both `ork validate` and `ork run` refuse a node that names it as
-  "not yet proven on a real session". It reports tokens and no dollars, takes a
-  message when a stretch ends, and refuses a node that needs `mcp` servers,
-  sub-agents, `maxTurns` or a `deny` on a `Read`, `Glob` or `Grep` path. A
-  `readonly` node runs in Codex's read-only sandbox, so it can't run a command
-  that writes files. A user or system `hooks.json` ends its node before it
-  starts; a Codex that runs tools without Ork's hook is stopped at the first
-  one; and its skills stay visible ([Codex](../guides/drivers/codex.md),
+- **A fourth driver, `codex`, proven on a real session.** It runs your own
+  OpenAI `codex` (0.169.0 or later, signed in with `codex login`), one
+  `codex exec` for each stretch of a session, with Ork's tools, a sandbox and a
+  hook Ork writes per session that holds the node to its `allow`, `deny` and
+  `only` rules (denied unless allowed). Name it with `driver: codex`,
+  `--driver codex` or `codex.<model>`; `ork doctor` shows it `ok` once signed
+  in, and a run that names no driver still takes `claude-code` when that is
+  ready. It reports tokens and no dollars, so cap it with `budgetTokens`. A
+  message sent during a stretch arrives when it ends (the agent's `read_inbox`
+  says "no message" until then). It refuses a node that needs `mcp` servers,
+  sub-agents, `maxTurns` or a `deny` on a `Read`, `Glob` or `Grep` path, so
+  `ork onboard` and `ork:security-audit` don't run on it. A `readonly` node runs
+  in Codex's read-only sandbox, so it can't run a command that writes files.
+  Ork's token for its tools is kept out of Codex's shell. A user or system
+  `hooks.json` ends its node before it starts; a Codex that runs tools without
+  Ork's hook is stopped at the first one; and its skills stay visible
+  ([Codex](../guides/drivers/codex.md),
   [the limits](../../specs/gaps/codex-limits.md)).
 - **A node you stopped mid tool call reads "was stopped".** Stopping a node with
   `ork stop` while its agent was in a tool call could end the agent's session as

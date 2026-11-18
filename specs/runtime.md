@@ -3,9 +3,9 @@
 Status: **Built**: the port, the adapter strategies and session runner, the
 `claude-code` driver and Ork's MCP tools, tested against a stand-in `claude`;
 the [`open-code`](./runtime/open-code.md) and
-[`command-code`](./architecture/command-code.md) drivers are built and proven on
-a real session, and the [`codex`](./runtime/codex.md) driver is built but not
-proven ([code](../packages/runtime/src/index.ts),
+[`command-code`](./architecture/command-code.md) drivers and the
+[`codex`](./runtime/codex.md) driver are built and proven on a real session
+([code](../packages/runtime/src/index.ts),
 [tests](../packages/runtime/test/runtime.test.ts)), and run one node at a time
 by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 [ADR-004](../decisions/ADR-004-no-credentials.md),
@@ -58,15 +58,14 @@ descriptor has `capabilities` (`questions`, `permissionPrompt`, `price`,
 `command-code` runs `cmd` ([its page](./architecture/command-code.md)). Both are
 `proven: true`, since their gate runs (2026-11-10). `codex` runs the user's own
 `codex exec` per leg ([its page](./runtime/codex.md); the sandbox and a
-per-session hook hold the node's rules) and is `proven: false` until the
-maintainer's capped run on a real `codex`. `readDenies: false` (`codex`) means a
-`deny` on a `Read`, `Glob` or `Grep` path can't hold, so `ork validate` and
-`ork run` refuse a node that has one for that driver. A descriptor with
-`proven: false` is refused and never counts as ready. The session runner sets
-`PWD` to the session's folder, which OpenCode reads as its own. The ids `sdk`
-and `cli` are retired: naming one is refused ("use `claude-code`"); a stored
-run's are read as `claude-code` ([rows.ts](../packages/core/src/store/rows.ts)),
-never rewritten.
+per-session hook hold the node's rules) and is `proven: true` since its gate run
+(2026-11-18). `readDenies: false` (`codex`) means a `deny` on a `Read`, `Glob`
+or `Grep` path can't hold, so `ork validate` and `ork run` refuse a node that
+has one for that driver. A descriptor with `proven: false` is refused and never
+counts as ready. The session runner sets `PWD` to the session's folder, which
+OpenCode reads as its own. The ids `sdk` and `cli` are retired: naming one is
+refused ("use `claude-code`"); a stored run's are read as `claude-code`
+([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
 
 | Concern               | `claude-code` ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts))                                                                                                                                                                                           |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

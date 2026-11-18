@@ -4,7 +4,7 @@ _Part of [Runtime: the agent drivers](../runtime.md)._
 
 Status: **Built**: the tool, its steps and programs, containment and refusals,
 the refusal of shell reads, and the withheld tools (RFC-025), served on
-`claude-code`, `open-code`, `command-code` and `codex` (built, not proven)
+`claude-code`, `open-code`, `command-code` and `codex`
 ([extract.ts](../../packages/runtime/src/tools/extract.ts),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
@@ -31,7 +31,7 @@ model-written code, no shell, no sandbox.
 Every session whose spec has a folder: the session runner sets `cwd` (the spec's
 `cwd`) and `denyRead` (the `Read(...)` patterns of `tools.deny`) on the tool
 context, and the tool is offered only when `cwd` is set. It is preapproved, one
-line in `ORK_TOOLS`, and the three drivers serve it as they serve every Ork tool
+line in `ORK_TOOLS`, and the four drivers serve it as they serve every Ork tool
 (`mcp__ork__extract`, OpenCode's `ork_extract`). Every session's harness
 instructions carry the whole rule in one line: read, search and see git output
 through it, several calls in one turn rather than one chained shell command, and

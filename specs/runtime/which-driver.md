@@ -73,11 +73,14 @@ sub-agent whose model names another driver than its leader's is refused too.
   registry order, and the line says so
   (`claude-code isn't ready, so open-code is next (\`ork doctor\` says
   why)`; `whyReady`, which `ork init` uses too).
-- **An unproven driver is never ready.** `codex` is `proven: false` until its
-  gate run, so its doctor check says `skip`, never `ok`, whatever is installed
-  ([the page](./codex.md#the-doctor-check)); with `--driver codex` the run stops
-  as above, and a node or model prefix naming it is refused by `ork validate`
-  and `ork run` ("not yet proven on a real session").
+- **An unproven driver is never ready.** A descriptor with `proven: false` gets
+  a doctor check of `skip`, never `ok`, whatever is installed; with
+  `--driver <id>` the run stops as above, and a node or model prefix naming it
+  is refused by `ork validate` and `ork run` ("not yet proven on a real
+  session"). Every driver today is proven; `codex` was, on its gate run
+  (2026-11-18, [the page](./codex.md#measured-on-the-gate-run)), and comes last
+  in registry order, so a signed-in `codex` is taken only when no other driver
+  is ready.
 - **`ork run` looks once, before anything starts**, and only when a session node
   names no driver and `--driver` isn't given
   ([ready-driver.ts](../../packages/cli/src/run/ready-driver.ts)). It says so in

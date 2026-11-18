@@ -2,20 +2,20 @@
 
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
-Status: **Built, not proven**: the `codex` descriptor (`proven: false`), the
+Status: **Built and proven**: the `codex` descriptor (`proven: true`), the
 adapter ([codex.ts](../../packages/runtime/src/adapters/codex.ts)), its decoder
 ([codex-events.ts](../../packages/runtime/src/adapters/codex-events.ts)) and its
 hook ([codex-hook.ts](../../packages/runtime/src/adapters/codex-hook.ts)) are
-built, and the contract suite passes on the fake `codex`. Nothing was run on a
-real model by Ork: the facts below were measured on `codex-cli` 0.169.0 signed
-in with a ChatGPT account, in
-[RFC-024](../../rfcs/archived/RFC-024-codex-driver.md)'s spike (2026-11-18), and
-`exec resume` and `exec fork` were checked to accept `--disable` and
-`--dangerously-bypass-hook-trust`. Until the maintainer's capped gate run on a
-real `codex`, `ork doctor` shows the driver as `skip`, `readyDriver` never takes
-it, and `ork validate` and `ork run` refuse a node that names it
-([drivers](./which-driver.md#the-ready-driver)). What the spike did not measure
-is [below](#not-measured) and in [the register](../gaps/codex-limits.md).
+built, the contract suite passes on the fake `codex`, and the maintainer's
+capped gate run on a real `codex` proved it (2026-11-18,
+[below](#measured-on-the-gate-run)). The facts below were measured on
+`codex-cli` 0.169.0 signed in with a ChatGPT account, in
+[RFC-024](../../rfcs/archived/RFC-024-codex-driver.md)'s spike and that gate
+run. `ork doctor` shows the driver `ok` when `codex` is signed in, a run may
+take it when no `claude-code` is ready, and `ork validate` and `ork run` refuse
+only a node that needs what it can't do
+([drivers](./which-driver.md#the-ready-driver)). What is still not measured is
+[below](#not-measured) and in [the register](../gaps/codex-limits.md).
 
 Why: [ADR-102](../../decisions/ADR-102-codex-driver.md) (this driver),
 [ADR-076](../../decisions/ADR-076-cli-drivers-only.md) (CLI drivers only),
@@ -78,9 +78,11 @@ environment only**, under that name: never on the command line, in a file or in
 an event. Codex 0.169.0 hands its whole environment to a shell it starts (the
 gate run read the token from one), so the leg also passes
 `-c shell_environment_policy.exclude=["ORK_CODEX_MCP_TOKEN"]`, which keeps it
-out (measured). Ork's tools reach the model as `mcp__ork__<tool>`. The node's
-own `.mcp.json` servers are not given to Codex (`mcpServers: false`;
-`ork validate` refuses a node that names `mcp`).
+out (measured again: absent). Ork's tools reach the model as `mcp__ork__<tool>`.
+Codex reads no project `.mcp.json` (measured: it listed no MCP servers), so a
+node's own servers are not given to it (`mcpServers: false`; `ork validate`
+refuses a node that names `mcp`); giving them would mean writing each as
+`-c mcp_servers.<name>.*` keys.
 
 ## What holds a node to its rules
 
@@ -172,11 +174,14 @@ the model reads the reason. Printing nothing allows.
 [codex-events.ts](../../packages/runtime/src/adapters/codex-events.ts) reads one
 JSON object a line: `thread.started` (the session id), `item.started` and
 `item.completed` for `agent_message`, `command_execution`, `file_change` and
-`mcp_tool_call`, then `turn.completed` with `usage`, or `turn.failed`. A
-top-level `error` line also carries warnings (the trust bypass prints one), so
-it ends nothing alone, even on exit 0: only a failed turn, or a non-zero exit
-whose first provider-classified `error` sets the end. There is no result line:
-the process's exit ends the leg.
+`mcp_tool_call`, then `turn.completed` with `usage`, or `turn.failed`. The trust
+bypass's warning ("`--dangerously-bypass-hook-trust` is enabled. Enabled hooks
+may run without review for this invocation.") comes twice a leg as an
+`item.completed` whose item is of type `error` (measured), and the decoder drops
+it. A top-level `error` line may carry a warning too, so it ends nothing alone,
+even on exit 0: only a failed turn, or a non-zero exit whose first
+provider-classified `error` sets the end; the bypass's words are kept out of the
+end. There is no result line: the process's exit ends the leg.
 
 The descriptors of `codex`, `open-code` and `command-code` live in
 [cli-drivers.ts](../../packages/integrations/src/cli-drivers.ts), which the
@@ -186,8 +191,9 @@ three descriptors, not only `codex`.
 - **Usage is tokens only** (`price: false`, `costUsd` 0). Per turn:
   `output_tokens` is output, `cached_input_tokens` cache read,
   `cache_write_input_tokens` cache write, and input is `input_tokens` minus the
-  cached part (floored at 0), one `turns` per turn. Two legs add as one. Usage
-  comes once, at a turn's end, so `budgetTokens` stops a session between legs
+  cached part (floored at 0; `input_tokens` includes it, measured), one `turns`
+  per turn. Two legs add as one. Usage comes once, at a turn's end, so
+  `budgetTokens` stops a session between legs
   ([session ends](./session-ends.md#the-token-cap)); a node with only
   `budgetUsd` is warned.
 - **Ends.** `turn.failed` and `error` text go through the shared provider
@@ -199,7 +205,8 @@ three descriptors, not only `codex`.
   calls.
 - **The report** goes by Ork's `report` tool (`reportSchema: false`), checked
   against the node's schema as on the other drivers
-  ([node report](./node-report.md)).
+  ([node report](./node-report.md)): the API refuses Ork's report schemas under
+  `--output-schema` (measured).
 
 ## What a session loads
 
@@ -212,19 +219,54 @@ with plugins off began at about 19,000 input tokens.
 
 ## The doctor check
 
-`codex --version`: missing is `skip` with no hint (while unproven); older than
-`MIN_CODEX_VERSION` (0.169.0, the version tried) is `warn`. Else
-`codex login status` runs, and only its **exit status** is read (0 signed in,
-else "sign in with `codex login`"); Ork never reads `auth.json`. While `proven`
-is false the status is `skip`, never `ok`. `OPENAI_API_KEY` is not counted as a
-login: Codex reading it was never measured.
+`codex --version`: missing is `skip`, with a hint to install it; older than
+`MIN_CODEX_VERSION` (0.169.0, the version proven) is `warn`. Else
+`codex login status` runs, and only its **exit status** is read: 0 is `ok`
+("logged in"), else `warn` with "sign in with `codex login`"; Ork never reads
+`auth.json`. With more than one driver ready a run takes `claude-code` first
+(`PREFERRED_DRIVER`), so a signed-in `codex` never displaces it.
+`OPENAI_API_KEY` is not counted as a login: Codex reading it was never measured.
+
+## Measured on the gate run
+
+On 2026-11-18, `codex-cli` 0.169.0 with a ChatGPT account, the default model at
+effort `low`, under token caps (Codex reports no dollars):
+
+- **Ork's tools reach the model**: `extract`, `report`, `wait_for_messages` and
+  `read_inbox` all worked, also when Codex called them from its own JavaScript
+  `exec` cell ("code mode": `tools.exec_command(…)`, `tools.mcp__ork__…`). One
+  session used plain shell items, another code mode.
+- **The hook refuses**: a `touch made.txt` the node did not allow was blocked
+  ("Command blocked by PreToolUse hook: Ork: Bash is not allowed for this node.
+  Do not retry it. Command: touch made.txt"), a piped `printenv … | wc -c | awk`
+  line was refused command by command, and Codex's own `clock.sleep` was refused
+  as a tool Ork does not know.
+- **The token** was in the agent's shell before
+  `shell_environment_policy.exclude`; with it, absent.
+- **A resumed leg** (a message sent with `ork chat -m` mid-leg, delivered at its
+  end by `exec resume`) kept Ork's tools and the hook: it ran `extract`, and the
+  canary did not trip.
+- **`input_tokens` includes the cached part**: Codex's own record was input
+  210,767, cached 178,816, and its total input plus output.
+- **A `readonly` node got the read-only sandbox**: an allowed `touch ro.txt`
+  failed with "Operation not permitted".
+- **`--output-schema`** refused all 14 report schemas of this repository's
+  workflows: "'schema.required' is required to include every key in properties"
+  (the API's strict mode; Ork's reports have optional fields and an `artifacts`
+  map). So `reportSchema` stays `false`.
+- **Outside a git repository** Codex exits 1 with "Not inside a trusted
+  directory and --skip-git-repo-check was not specified.", which ends the node
+  `invalid_node`. Ork's projects are git repositories, so the flag stays off.
+- **A project `.mcp.json`** is not read: Codex listed no MCP servers.
+- **Found**: a message sent mid-leg is held for the next leg, so `read_inbox`
+  and `wait_for_messages` say "no message" while one waits; a refused call shows
+  in `ork logs` with an empty input; a call from code mode is logged as the
+  inner tool (L451 to L453 in [the register](../gaps/codex-limits.md)).
 
 ## Not measured
 
-Each is in [the register](../gaps/codex-limits.md): `--output-schema` against
-Ork's report schemas, a node's own `.mcp.json` servers, auth, rate-limit and
-credit error shapes (only text matching is used), `input_tokens` including the
-cached part (assumed: OpenAI's convention), the paths `workspace-write` allows
+Each is in [the register](../gaps/codex-limits.md): auth, rate-limit and credit
+error shapes (only text matching is used), the paths `workspace-write` allows
 besides the folder, whether a hook can write the calls file, Codex's own web
 search (no key found to turn it off on 0.169.0), and holding a paused call from
 a hook. The tests that pin the behavior above:

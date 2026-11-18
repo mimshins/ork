@@ -1021,7 +1021,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, `open-code` and `command-code`, each proven on a real session, and `codex`, built but not proven yet. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
@@ -1240,17 +1240,18 @@ export const NODES = [
     zone: "runtime",
     x: 1720,
     y: 720,
-    status: "partial",
+    status: "built",
     pkg: "runtime",
     src: "packages/runtime/src/adapters/codex.ts",
     summary:
-      "Built, not proven (RFC-024). Runs a node through your `codex` (OpenAI's Codex CLI), one `codex exec` per leg, with Ork's tools over `-c`, the sandbox as the outer wall and a per-session hook that holds the node's rules. `ork doctor` shows it as `skip` and no run takes it until the maintainer's gate run on a real `codex`.",
+      "Built, proven on a real session (RFC-024). Runs a node through your `codex` (OpenAI's Codex CLI), one `codex exec` per leg, with Ork's tools over `-c`, the sandbox as the outer wall and a per-session hook that holds the node's rules.",
     facts: [
+      "Proven on its gate run (2026-11-18, codex-cli 0.169.0): Ork's tools reach the model, also from Codex's JavaScript code mode; the hook refuses a command, a piped line command by command and a tool it doesn't know; a resumed leg keeps both; the token is kept out of Codex's shell; a `readonly` node gets the read-only sandbox.",
       "Each leg is `codex exec [resume|fork <id>] --json` with your config, rules, plugins and apps off; a message waits for the leg's end and resumes the session. Ork's instructions go in `developer_instructions` on a session's first leg.",
-      "Ork's MCP endpoint is `-c mcp_servers.ork.*`, its token in the leg's environment only. Never `--skip-git-repo-check`, `--trust`, `--ephemeral` or the full bypass.",
+      "Ork's MCP endpoint is `-c mcp_servers.ork.*`, its token in the leg's environment only and kept out of Codex's shell. Never `--skip-git-repo-check`, `--trust`, `--ephemeral` or the full bypass.",
       "Deny by default: `read-only` or `workspace-write` sandbox (never wider, `--yolo` too), and a `PreToolUse` hook Ork writes in a 0700 private folder outside the checkout, with the same matcher as Command Code's mod; an unknown tool is refused.",
-      "Fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call ends it as a driver error.",
-      "Tokens only (`budgetUsd` alone is warned about); no `hold`, so pause and stop land at a leg's end. A node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped `Read` deny is refused. Unmeasured: `--output-schema`, auth and rate-limit error shapes, whether `input_tokens` includes the cached part (gaps G39 to G44, L438 to L448).",
+      "Fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call is killed and ends as a driver error.",
+      "Tokens only (`budgetUsd` alone is warned about); no `hold`, so pause and stop land at a leg's end. A node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped `Read` deny is refused. Reports go by Ork's `report` tool, as the API refuses Ork's report schemas under `--output-schema`. A message sent mid-leg waits for the next leg, and a refused call is logged with no input (gaps G39 to G44, L438 to L454).",
     ],
     docs: [
       RUNTIME.codex,

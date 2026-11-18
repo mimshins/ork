@@ -3,7 +3,7 @@
 # Ork
 
 **An orchestration harness for coding agents (Claude Code, OpenCode, Command
-Code) that runs on your machine.**
+Code, Codex) that runs on your machine.**
 
 <p align="center"><img src="./assets/demo/ork-demo.gif" alt="An Ork run: the Monitor's live graph above, ork logs -f below" width="800"></p>
 
@@ -19,8 +19,8 @@ for agents and engineering tasks:
 - **Context-engineered.** Fresh sessions per task, briefs instead of
   transcripts, cache-friendly prompts, a model and effort per node, budgets, and
   bounded loops.
-- **Your agent tools.** Each agent node runs a session of Claude Code, OpenCode
-  or Command Code, under your own login, and one workflow can mix them
+- **Your agent tools.** Each agent node runs a session of Claude Code, OpenCode,
+  Command Code or Codex, under your own login, and one workflow can mix them
   ([Drivers](./docs/guides/drivers.md)).
 - **Yours.** Your repository's `CLAUDE.md`, `AGENTS.md` and skills load as they
   do in your agent tool, and Ork never stores a credential.
@@ -47,10 +47,10 @@ and writes the workflows you pick on a branch. It shows the most it can spend
 first, and Ork never merges ([Onboarding](./docs/guides/onboarding.md)).
 
 You need Node 24.20+, git, and one agent driver: your own `claude` login, or an
-API key, Bedrock, Vertex or Foundry. Your own `opencode` or Command Code's `cmd`
-work too ([Drivers](./docs/guides/drivers.md)). `gh` and `aws` are optional,
-needed only by workflows that use them. Run Ork inside a git repository with at
-least one commit:
+API key, Bedrock, Vertex or Foundry. Your own `opencode`, Command Code's `cmd`
+or OpenAI's `codex` work too ([Drivers](./docs/guides/drivers.md)). `gh` and
+`aws` are optional, needed only by workflows that use them. Run Ork inside a git
+repository with at least one commit:
 
 ```sh
 npm install --global @krapht/ork

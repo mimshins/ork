@@ -10,15 +10,14 @@ names one by its id.
 | `claude-code`  | your own `claude`   | Proven; the one a run takes when it is here |
 | `open-code`    | your own `opencode` | Proven on a real session                    |
 | `command-code` | your own `cmd`      | Proven on a real session                    |
-| `codex`        | your own `codex`    | Built, not proven yet                       |
+| `codex`        | your own `codex`    | Proven on a real session                    |
 
 Each driver passes Ork's tests against a stand-in for its tool, and a proven one
-has run a real session. A driver that has not is refused by `ork validate` and
-`ork run` (`not yet proven on a real session`) until it has, and `ork doctor`
-shows it as `skip`, so no run takes it ([Codex](./drivers/codex.md)).
-`ork doctor` lists a driver whose tool it can't find as `skip`, with how to
-install it. Logins, and what each tool needs:
-[Accounts and credentials](./accounts.md).
+has run a real session; all four have. A driver that has not would be refused by
+`ork validate` and `ork run` (`not yet proven on a real session`) until it has,
+and `ork doctor` would show it as `skip`, so no run takes it. `ork doctor` lists
+a driver whose tool it can't find as `skip`, with how to install it. Logins, and
+what each tool needs: [Accounts and credentials](./accounts.md).
 
 `ork run --driver <id>` (also `ork resume` and `ork feedback apply`) looks at
 that one driver's tool before any session starts. If `ork doctor` wouldn't call
@@ -96,7 +95,7 @@ A node asks for something its driver does not do. Each refusal names both:
 - An `agent.subagent` under a leader whose driver does not run subagents.
 - A `deny` on a `Read`, `Glob` or `Grep` path, on `codex`: it has no read tool
   to gate, so the deny could not hold.
-- A driver that is not yet proven (`codex` today).
+- A driver that is not yet proven (none today).
 
 `ork validate` checks against `--driver` if you give it, else against the driver
 a run would take. `ork run` checks again with the real driver before any session

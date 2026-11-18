@@ -15,7 +15,7 @@ against your Claude plan's limits; a budget caps each run
 | Claude       | the `claude-code` driver, running your own `claude`                                                                          | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
 | OpenCode     | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
 | Command Code | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
-| Codex        | the `codex` driver (not proven yet), running your own `codex`                                                                | `codex login`                                                            |
+| Codex        | the `codex` driver, running your own `codex`                                                                                 | `codex login`                                                            |
 | GitHub       | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
 | AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
@@ -75,12 +75,11 @@ It runs one session per checkout at a time
 
 ### The codex driver (`driver: codex`)
 
-Runs your own `codex` (OpenAI's Codex CLI, tried on 0.169.0), headless. Log in
-with `codex login`; Ork runs `codex login status` and reads only its exit
-status, never Codex's own login files (`auth.json`). `OPENAI_API_KEY` is not
-counted as a login. The driver is built but not proven on a real session yet, so
-`ork doctor` shows it as `skip` and no run takes it
-([Codex](./drivers/codex.md)).
+Runs your own `codex` (OpenAI's Codex CLI, proven on 0.169.0 with a ChatGPT
+account), headless. Log in with `codex login`; Ork runs `codex login status` and
+reads only its exit status, never Codex's own login files (`auth.json`).
+`OPENAI_API_KEY` is not counted as a login. Ork's token for its own tools is
+kept out of the shell Codex starts ([Codex](./drivers/codex.md)).
 
 ## Secrets in workflows
 

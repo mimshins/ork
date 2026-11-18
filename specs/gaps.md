@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L451, and the next chore is
+closes it. Ids are never reused: the next limit is L455, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -236,13 +236,16 @@ Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
   `cat` of a file outside the folder runs. A `deny` on a `Read`, `Glob` or
   `Grep` path is refused for this driver by `ork validate` and `ork run`
   (`readDenies: false`) instead of being half held.
-- **G42 · `--output-schema` is not measured, so Codex reports by the `report`
-  tool.** `reportSchema` is `false`; whether `--output-schema` accepts Ork's
-  report schemas was not tried. Measure it, then decide.
+- **G42 · Codex reports by the `report` tool, never `--output-schema`.**
+  `reportSchema` is `false`: on the gate run the API's strict mode refused every
+  one of this repository's report schemas under `--output-schema`, as it wants
+  every property required (Ork's reports have optional fields and an `artifacts`
+  map). Revisit if Codex accepts such schemas.
 - **G43 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not
   supported on `codex`.** `mcpServers`, `subagents` and `turnLimit` are `false`
-  and `ork validate` refuses a node that needs one: the servers were not tried
-  with `-c`, and no key caps a session's turns.
+  and `ork validate` refuses a node that needs one. Codex reads no project
+  `.mcp.json` (the gate run), so giving a node's servers means writing each as
+  `-c mcp_servers.<name>.*` keys; and no key caps a session's turns.
 - **G44 · Codex's own web search is not fenced.** Ork keeps the network off in
   the sandbox, but no key to turn Codex's own web search off was found on
   0.169.0 (`codex --help`, `codex features list`), and none was guessed. A node

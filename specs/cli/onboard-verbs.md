@@ -276,4 +276,5 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
   `.commandcode/agents` load, with the machine's own skills, memory and mods.
 
 These are [limits](../gaps/onboard-limits.md), and the onboarding guide says
-which driver reads least. `codex` is not offered while unproven.
+which driver reads least. `codex` is offered but refuses the built-ins'
+`maxTurns` before any session ([L454](../gaps/codex-limits.md)).

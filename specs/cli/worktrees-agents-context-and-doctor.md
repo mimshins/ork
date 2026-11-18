@@ -139,9 +139,11 @@ drivers `open-code` and `command-code` are checked with `opencode --version` and
 `cmd --version`: `ok` when the tool answers (their logins, `opencode auth login`
 and `cmd login`, are named, never read), `skip` with how to install it when it
 is missing. `codex` is checked with `codex --version` (a warning below 0.169.0)
-and then `codex login status`, whose exit status alone is read; it is always
-`skip` while unproven. A driver whose descriptor is not `proven` is listed as
-`skip` with "unproven", and never counts as a ready driver.
+and then `codex login status`, whose exit status alone is read: `ok` when it is
+0, a warning with "sign in with `codex login`" when not, and `skip` with how to
+install it when `codex` is missing. A driver whose descriptor is not `proven` is
+listed as `skip` with "unproven", and never counts as a ready driver; every
+driver today is proven.
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

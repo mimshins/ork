@@ -3,13 +3,13 @@
 _Part of [Drivers](../drivers.md)._
 
 The `codex` driver runs your own `codex`
-([OpenAI's Codex CLI](https://github.com/openai/codex), tried on 0.169.0),
+([OpenAI's Codex CLI](https://github.com/openai/codex), proven on 0.169.0),
 headless: one `codex exec` process for each stretch of a session, in the node's
-folder. It is **built but not proven yet**: Ork's tests pass against a stand-in
-for `codex`, and the maintainer has not yet run it on a real session. Until then
-`ork doctor` shows it as `skip`, no run picks it on its own, and `ork validate`
-and `ork run` refuse a node that names it (`not yet proven on a real session`).
-This page says what it will do, so you can see whether it fits.
+folder. It is **proven on a real session**: the maintainer ran it on a real
+`codex` signed in with a ChatGPT account, and Ork's tools, the hook and the
+sandbox held, also in a session carried on after a message. `ork doctor` shows
+it `ok` once `codex` is signed in. When `claude-code` is ready too, a run that
+names no driver still takes `claude-code`; name `codex` to use it.
 
 ## Setting it up
 
@@ -20,18 +20,30 @@ This page says what it will do, so you can see whether it fits.
 - A node names it with `driver: codex`, `ork run --driver codex` or a model such
   as `codex.<model>`. A node with no model runs Codex's own default for your
   account; the model's name is passed to Codex as written.
-- The node has to be in a git repository, as Codex requires. Ork does not ask
-  Codex to skip that check.
+- The node has to be in a git repository, as Codex requires: outside one, Codex
+  refuses with "Not inside a trusted directory …" and the node ends as a setup
+  problem. Ork does not ask Codex to skip that check.
 
 ## What it does
 
 - A message or answer sent while Codex is working arrives when that stretch
-  ends, and the session carries on from where it was (`codex exec resume`).
+  ends, and the session carries on from where it was (`codex exec resume`), with
+  Ork's tools and rules. Until then the agent's `read_inbox` and
+  `wait_for_messages` say there is no message, even though one waits.
 - It reports tokens and no dollars, so a node with only `budgetUsd` is warned
-  about and does not stop on dollars; add `budgetTokens`. A token cap stops a
-  session between stretches, as usage arrives at the end of each.
-- Ork's tools (`ask_user`, `delegate`, messages, `report`) reach it. A node's
-  own `mcp` servers, `agent.subagent` nodes and `maxTurns` are refused.
+  about and does not stop on dollars; cap it with `budgetTokens`. A token cap
+  stops a session between stretches, as usage arrives at the end of each. The
+  input Ork counts leaves out the cached part, which Codex reports inside its
+  input.
+- Ork's tools (`ask_user`, `delegate`, messages, `extract`, `report`) reach it.
+  A node's own `mcp` servers (Codex does not read a project `.mcp.json`),
+  `agent.subagent` nodes and `maxTurns` are refused, so `ork onboard` and
+  `ork:security-audit`, whose workflows set `maxTurns`, do not run on `codex`.
+- The report goes through Ork's `report` tool: the OpenAI API refuses Ork's
+  report schemas as Codex's structured output.
+- Codex may run tools from its own JavaScript cell ("code mode"). The hook still
+  checks each call, but `ork logs` shows the tool it ran, not that it came from
+  code mode, and a call the hook refused shows with an empty input (`Bash {}`).
 - `ork pause` and `ork stop` take effect when the current stretch ends, and a
   shell call does not take a `heavy` slot.
 - Codex's own web search is not turned off. Ork keeps its sandbox's network off,
@@ -56,8 +68,10 @@ hold it:
   Code's words, and refuses what is not allowed with a reason the model reads;
   the run's output shows each refusal as a failed tool call. A shell line is
   checked command by command, as on `command-code`. Ork's own tools always pass.
-  A call Ork can't name is refused, even under `--yolo`. The hook's files are in
-  a private folder outside your project, and go when the session ends.
+  A call Ork can't name (Codex's own `clock.sleep`, say) is refused, even under
+  `--yolo`. Ork's token for its tools is kept out of the shell Codex starts. The
+  hook's files are in a private folder outside your project, and go when the
+  session ends.
 
 Reading is not gated: Codex has no read tool, and its sandbox can read outside
 your folder, so a shell command may read files elsewhere. `ork validate` and

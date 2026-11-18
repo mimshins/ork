@@ -1335,9 +1335,11 @@ export const MILESTONES = [
       {
         id: "codex-driver",
         title: "The `codex` driver",
-        status: "active",
+        status: "done",
+        commits: ["3c68367", "b56c05e", "f1610f2", "966d11a"],
+        date: "2026-11-18",
         detail:
-          "Built, not proven; waiting to land (it becomes done with its commit). RFC-024 (closed with ADR-102): OpenAI's `codex` as the fourth driver, one `codex exec --json` per leg (`exec resume` and `exec fork` for follow-ups), Ork's tools over `-c mcp_servers.ork.*` with the token in the leg's environment only, the sandbox as the outer wall (`read-only` or `workspace-write`, never wider) and a per-session `PreToolUse` hook that holds the node's rules, deny by default, in a private folder outside the checkout. It fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call ends it. Tokens only; Codex's own default model; a node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped read deny is refused. The descriptor stays `proven: false`, so `ork doctor` says `skip` and no run takes it. Left: the maintainer's capped gate run on a real `codex` (then `proven: true`), `--output-schema`, and `codex app-server` for mid-turn messages and Ork-answered approvals (G39 to G44, L438 to L448).",
+          "Built and proven on a real session (the gate run, 2026-11-18, codex-cli 0.169.0, a ChatGPT account, token caps). RFC-024 (closed with ADR-102): OpenAI's `codex` as the fourth driver, one `codex exec --json` per leg (`exec resume` and `exec fork` for follow-ups), Ork's tools over `-c mcp_servers.ork.*` with the token in the leg's environment only and kept out of Codex's shell (`shell_environment_policy.exclude`), the sandbox as the outer wall (`read-only` for a node denied writing, else `workspace-write`, never wider) and a per-session `PreToolUse` hook that holds the node's rules, deny by default, in a private folder outside the checkout. It fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call is killed at once. The gate run measured Ork's tools reaching the model (from Codex's code mode too), the hook refusing, a resumed leg keeping both, `input_tokens` including the cached part, and the API refusing Ork's report schemas under `--output-schema`. Tokens only; a node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped read deny is refused. Left: `codex app-server` for mid-turn messages and Ork-answered approvals, and the limits (G39 to G44, L438 to L454).",
         docs: [
           "decisions/ADR-102-codex-driver.md",
           "specs/runtime/codex.md",

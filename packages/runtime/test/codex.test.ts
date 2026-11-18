@@ -1,15 +1,15 @@
 /**
  * @file The `codex` adapter beyond the contract suite: its decoder, on the line
- *   shapes RFC-024's spike measured (the session id, assistant text, tool calls
- *   and results in Claude Code's words, tokens-only usage, and how a leg ends);
- *   each leg's arguments (the flags always and never passed, the sandbox,
- *   resume and fork, instructions on the first leg only); the wiring (Ork's MCP
- *   keys, the token in the environment only, the hook removed after the
- *   session, a user or system hooks file refusing the session); the canary that
- *   ends a leg whose tools ran without the hook; and whole sessions on the fake
- *   `codex` (resume and fork legs, the token in the environment only, the hook
- *   removed after a failure, a refused call surfaced, a leg killed when the
- *   canary trips).
+ *   shapes RFC-024's spike and the gate run measured (the session id, assistant
+ *   text, tool calls and results in Claude Code's words, tokens-only usage, and
+ *   how a leg ends); each leg's arguments (the flags always and never passed,
+ *   the sandbox, resume and fork, instructions on the first leg only); the
+ *   wiring (Ork's MCP keys, the token in the environment only, the hook removed
+ *   after the session, a user or system hooks file refusing the session); the
+ *   canary that ends a leg whose tools ran without the hook; and whole sessions
+ *   on the fake `codex` (resume and fork legs, the token in the environment
+ *   only, the hook removed after a failure, a refused call surfaced, a leg
+ *   killed when the canary trips).
  */
 
 import {
@@ -62,6 +62,10 @@ const spec: SessionSpec = {
 };
 
 const line = (value: Record<string, unknown>): string => JSON.stringify(value);
+
+/** The hook-trust bypass's warning, verbatim from the gate run on 0.169.0. */
+const HOOK_TRUST_TEXT =
+  "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.";
 
 const USAGE = {
   input_tokens: 1200,
@@ -305,7 +309,25 @@ describe("the codex decoder", () => {
     });
   });
 
+  it("drops the hook-trust warning item, as the gate run printed it", () => {
+    const warning = line({
+      type: "item.completed",
+      item: { id: "item_0", type: "error", message: HOOK_TRUST_TEXT },
+    });
+    const [started, ...rest] = LEG;
+    expect(decodeAll([warning], null).events).toEqual([]);
+    const [outcome] = finished(
+      decodeAll([String(started), warning, warning, ...rest], 0).events,
+    );
+    expect(outcome).toMatchObject({
+      subtype: "success",
+      end: { kind: "no_report" },
+      errors: [],
+    });
+  });
+
   it.each([
+    HOOK_TRUST_TEXT,
     "hooks trust bypassed for this run",
     "hook-trust bypass enabled for hooks",
   ])("leaves a failed exit with only the warning %j to stderr", message => {
@@ -358,6 +380,17 @@ describe("the codex decoder", () => {
 });
 
 describe("codex usage", () => {
+  it("counts input without its cached part, as the gate run measured", () => {
+    // Codex's own record: input 210,767 with 178,816 cached.
+    expect(
+      codexTurnUsage({
+        input_tokens: 210_767,
+        cached_input_tokens: 178_816,
+        output_tokens: 1_000,
+      }),
+    ).toMatchObject({ inputTokens: 31_951, cacheReadTokens: 178_816 });
+  });
+
   it("counts input without its cached part, never below zero, and no dollars", () => {
     expect(
       codexTurnUsage({

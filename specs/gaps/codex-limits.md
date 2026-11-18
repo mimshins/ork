@@ -6,8 +6,9 @@ Status: **Open**: to decide at the next review, as the register's other entries.
 The gaps found with them are G39 to G44 in [the register](../gaps.md#gaps).
 
 Found building [the `codex` driver](../runtime/codex.md)
-([RFC-024](../../rfcs/archived/RFC-024-codex-driver.md)), which is not proven
-until the maintainer's gate run. What was left simpler, or could not be checked:
+([RFC-024](../../rfcs/archived/RFC-024-codex-driver.md)) and on its gate run
+(2026-11-18, codex-cli 0.169.0), which proved it. What was left simpler, or
+could not be checked:
 
 - **L438 · A Codex session sees the bundled skills and your own.** Codex has no
   way to turn skills off: the bundled ones and those in `~/.agents/skills` and
@@ -18,10 +19,6 @@ until the maintainer's gate run. What was left simpler, or could not be checked:
   `$CODEX_HOME/sessions` (no `--ephemeral`: a later leg resumes it, and a
   private `CODEX_HOME` would need your login copied, which Ork never does).
   Nothing prunes it.
-- **L440 · A node outside a git repository is refused by Codex.** Ork never
-  passes `--skip-git-repo-check`, matching what was measured and keeping Codex's
-  own guard. Every worktree node is in a repository; a node outside one was not
-  tried. Try one, then decide whether the flag is warranted.
 - **L441 · A user or system hooks file refuses the node.** The trust bypass Ork
   needs for its own hook would run `$CODEX_HOME/hooks.json` (default
   `~/.codex/hooks.json`) or `/etc/codex/hooks.json` untrusted, so a node ends
@@ -36,10 +33,6 @@ until the maintainer's gate run. What was left simpler, or could not be checked:
 - **L443 · Codex reports tokens, never dollars.** `price` is `false` and
   `costUsd` is 0, so `budgetUsd` alone does not bind it (`ork validate` warns,
   as for `command-code`); Ork has no price table for OpenAI models.
-- **L444 · The cached part of `input_tokens` is assumed.** Ork subtracts
-  `cached_input_tokens` from `input_tokens` to count input, taking OpenAI's
-  convention that the first includes the second. The spike listed the fields and
-  did not check that. If it is wrong, input reads low. The gate run confirms it.
 - **L445 · Auth, rate-limit and credit errors are read by text.** The spike
   provoked only an unsupported model. Other failures go through the shared
   provider-error classifier on their `turn.failed` or `error` text, and an
@@ -64,3 +57,22 @@ until the maintainer's gate run. What was left simpler, or could not be checked:
   a shell, and Ork quotes the script path for `sh` (`shellQuote`). That holds on
   macOS and Linux; it would break if Codex ran hooks through `cmd.exe` on
   Windows. Check it when Ork supports Windows.
+- **L451 · A message sent during a Codex leg reads as none until the leg ends.**
+  Codex takes nothing mid-turn, so Ork holds the message for the next leg
+  (`exec resume`), and meanwhile `read_inbox` and `wait_for_messages` tell the
+  agent "no message" while one waits (the gate run). Saying in those tools'
+  answers that a message is held for the next leg would close it.
+- **L452 · A call the hook refused is logged with no input.** `ork logs` shows
+  it as `Bash {}`: the hook's record gives the decoder the tool's name only, so
+  the log does not say which command was refused (the model reads it in the
+  refusal). Recording the input in `calls.jsonl` would close it.
+- **L453 · A tool run from Codex's code mode is logged as the inner tool.**
+  Codex may run tools from its JavaScript `exec` cell (`tools.exec_command(…)`,
+  `tools.mcp__ork__…`). The hook sees each call and holds the node's rules, but
+  `ork logs` shows the inner tool, not that it came from code mode.
+- **L454 · `ork onboard` and `ork:security-audit` are refused on `codex`.**
+  Their built-in workflows set `maxTurns`, which `codex` cannot hold, so
+  `ork run` refuses them before any session starts, while `ork onboard` still
+  offers a ready `codex` among its drivers. Dropping the built-ins' `maxTurns`
+  for the token caps, or not offering a driver the built-ins refuse, would close
+  it.

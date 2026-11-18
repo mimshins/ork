@@ -2,7 +2,8 @@
  * @file Tests for `ork:` names in the CLI: a built-in resolves to its file in
  *   the project's run folder, loads clean as that project's workflow with its
  *   runs beside the project's own, and an unknown name is refused; `ork
- *   onboard`'s two built-ins validate on every driver.
+ *   onboard`'s two built-ins validate on every driver but `codex`, which
+ *   refuses their `maxTurns`.
  */
 
 import { existsSync, mkdirSync, mkdtempSync, realpathSync } from "node:fs";
@@ -142,6 +143,18 @@ describe("ork onboard's built-ins", () => {
   )("%s validates on %s", async (name, driver) => {
     expect(await validated(name, driver)).toEqual([]);
   });
+
+  it.each([
+    ["ork:onboard-propose", "propose"],
+    ["ork:onboard-write", "write"],
+  ])(
+    "%s is refused on codex, which has no turn limit (L454)",
+    async (name, node) => {
+      expect((await validated(name, "codex")).map(d => d.message)).toEqual([
+        `node \`${node}\` sets maxTurns, but driver \`codex\` has no turn limit`,
+      ]);
+    },
+  );
 
   it("explain each node's bundled rule", () => {
     const root = project();

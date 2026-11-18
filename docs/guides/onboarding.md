@@ -41,7 +41,9 @@ line ([the terminal](./terminal.md)).
    the repository's `.ork/`, then `ork onboard`.
 2. **Picks the driver.** `--driver <id>` skips the question; one ready driver is
    used; several show a list; none prints how to log in and stops, before
-   anything is written: your project folder is as it was.
+   anything is written: your project folder is as it was. Don't pick `codex`:
+   onboarding's workflows set a turn limit, which it can't hold, so the run is
+   refused before any session starts.
 3. **Sets up `.ork/`** like `ork init` when it is missing (the starter, the
    `.gitignore` entry). That `.gitignore` edit stays in your working tree,
    uncommitted: commit it with the branch. On a first visit the runs then print

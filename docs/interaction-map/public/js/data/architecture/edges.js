@@ -501,8 +501,8 @@ export const EDGES = [
     kind: "local",
     label: "strategies · -c keys · hook",
     detail:
-      "The `codex` adapter supplies its own strategies, with `-c` keys as its MCP wiring (the token in the leg's environment) and a per-session hook file for the node's rules. Built, not proven.",
-    status: "partial",
+      "The `codex` adapter supplies its own strategies, with `-c` keys as its MCP wiring (the token in the leg's environment) and a per-session hook file for the node's rules. Built and proven on a real session.",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {

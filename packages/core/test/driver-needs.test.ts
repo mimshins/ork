@@ -68,14 +68,11 @@ const warnings = (workflow: Workflow, driver: DriverNeeds): string[] =>
     w => w.message,
   );
 
-/**
- * The real codex descriptor, proven here so the refusals read are its
- * capabilities'.
- */
-const provenCodex = (): DriverNeeds => {
+/** The real codex descriptor, so the refusals read are its capabilities'. */
+const realCodex = (): DriverNeeds => {
   const real = AGENT_DRIVERS.find(d => d.id === "codex");
   if (real === undefined) throw new Error("no codex descriptor");
-  return { ...real, proven: true };
+  return real;
 };
 
 describe("what a node needs of its driver", () => {
@@ -160,7 +157,7 @@ describe("what a node needs of its driver", () => {
   });
 
   it("refuses what the codex descriptor does not do: turns, its own MCP servers, sub-agents, a path-scoped read deny", () => {
-    const codex = provenCodex();
+    const codex = realCodex();
     const w = workflowOf(`  lead:
     type: agent.leader
     prompt: go

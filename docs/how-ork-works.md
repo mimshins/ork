@@ -16,9 +16,9 @@ anything runs ([writing workflows](./guides/writing-workflows.md)).
 
 Each node is one step, of one of these kinds:
 
-- **Leaders and workers:** agents, each a session of Claude Code, OpenCode or
-  Command Code. A leader plans and hands parts of the job to the nodes it owns;
-  a worker does one task and reports back.
+- **Leaders and workers:** agents, each a session of Claude Code, OpenCode,
+  Command Code or Codex. A leader plans and hands parts of the job to the nodes
+  it owns; a worker does one task and reports back.
 - **Tools:** a program of yours, such as `git`, `gh`, `aws`, your tests or a
   short script, run without a model.
 - **Gates:** a question for you, with options and a recommended answer.
@@ -34,7 +34,7 @@ context small, so runs cost less
 ## Agent sessions
 
 A leader or worker runs as a **session**: a conversation in your agent tool
-(Claude Code, OpenCode or Command Code, the node's
+(Claude Code, OpenCode, Command Code or Codex, the node's
 [driver](./guides/drivers.md)) that Ork starts for that step, with only what the
 step needs: its brief, your repository's `CLAUDE.md` or `AGENTS.md` and skills,
 and what the workflow adds

@@ -222,10 +222,10 @@ const codexCheck = (version: string | null, loggedIn: boolean) => {
 };
 
 describe("the codex driver", () => {
-  it("is the fourth, unproven, and declares what it does itself", () => {
+  it("is the fourth, proven, and declares what it does itself", () => {
     const codex = AGENT_DRIVERS[3];
     expect(codex.id).toBe("codex");
-    expect([codex.proven, codex.onePerCheckout]).toEqual([false, false]);
+    expect([codex.proven, codex.onePerCheckout]).toEqual([true, false]);
     expect(codex.capabilities).toEqual({
       questions: true,
       permissionPrompt: false,
@@ -239,10 +239,12 @@ describe("the codex driver", () => {
     });
   });
 
-  it("is skipped, with no hint, when codex is missing", async () => {
-    const found = await codexCheck(null, true);
-    expect(found).toMatchObject({ status: "skip" });
-    expect(found.hint).toBeUndefined();
+  it("is skipped when codex is missing, saying how to get it", async () => {
+    expect(await codexCheck(null, true)).toMatchObject({
+      status: "skip",
+      detail: "codex CLI not found",
+      hint: "Install codex to use the codex driver.",
+    });
   });
 
   it("warns about a codex older than the minimum", async () => {
@@ -252,19 +254,39 @@ describe("the codex driver", () => {
     });
   });
 
-  it("is skipped, with no hint, when logged out", async () => {
-    const found = await codexCheck("codex-cli 0.169.0\n", false);
-    expect(found).toMatchObject({ status: "skip" });
-    expect(found.detail).toContain("not logged in");
-    expect(found.detail).toContain("codex login");
-    expect(found.hint).toBeUndefined();
+  it("warns when logged out, saying how to sign in", async () => {
+    expect(await codexCheck("codex-cli 0.169.0\n", false)).toMatchObject({
+      status: "warn",
+      detail: "codex-cli 0.169.0, not logged in; sign in with `codex login`",
+      hint: "Sign in with `codex login`.",
+    });
   });
 
-  it("stays skipped, never ok, when logged in, so no run takes it", async () => {
+  it("is ready when logged in, so a run may take it", async () => {
     const found = await codexCheck("codex-cli 0.169.0\n", true);
-    expect(found).toMatchObject({ status: "skip" });
-    expect(found.detail).toContain("unproven");
-    expect(readyDriver([{ id: "codex", result: found }]).ok).toBe(false);
+    expect(found).toMatchObject({
+      status: "ok",
+      detail: "codex-cli 0.169.0, logged in",
+    });
+    expect(readyDriver([{ id: "codex", result: found }])).toMatchObject({
+      ok: true,
+      driver: "codex",
+    });
+  });
+
+  it("does not displace claude-code when both are ready", async () => {
+    const found = await codexCheck("codex-cli 0.169.0\n", true);
+    const claude = {
+      name: "claude",
+      status: "ok" as const,
+      detail: "logged in",
+    };
+    expect(
+      readyDriver([
+        { id: "codex", result: found },
+        { id: "claude-code", result: claude },
+      ]),
+    ).toMatchObject({ ok: true, driver: "claude-code" });
   });
 });
 

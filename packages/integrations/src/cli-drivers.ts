@@ -153,10 +153,11 @@ export const commandCode = installedCli("command-code", "cmd", "cmd login", {
   },
 });
 
-// RFC-024. Unproven until the maintainer's capped run on a real `codex`.
+// RFC-024. Proven on a real session (2026-11-18, codex-cli 0.169.0): Ork's
+// tools reach the model, the hook refuses, and a resumed leg keeps both.
 export const codex = installedCli("codex", "codex", "codex login", {
   label: "the `codex` CLI of OpenAI",
-  proven: false,
+  proven: true,
   onePerCheckout: false,
   min: {
     version: MIN_CODEX_VERSION,
@@ -169,8 +170,12 @@ export const codex = installedCli("codex", "codex", "codex login", {
     permissionPrompt: false,
     price: false,
     midTurnMessages: false,
+    // The API's strict mode refuses Ork's report schemas (optional fields, an
+    // `artifacts` map) under `--output-schema`: reports use the `report` tool.
     reportSchema: false,
     turnLimit: false,
+    // Codex reads no `.mcp.json`: a node's own servers would need Ork to
+    // write them as `-c mcp_servers.*` keys.
     mcpServers: false,
     subagents: false,
     // No read tool for the hook to gate, and the sandbox may read outside the

@@ -34,9 +34,9 @@ worker waits for it, so neither would finish. Give the worker
 `isolation: worktree`, or run one of them on another driver.
 
 **`node … runs on driver …, which is not yet proven on a real session`.** A
-driver is refused until a real session has proven it. `claude-code`, `open-code`
-and `command-code` all have; `codex` has not yet, and `ork doctor` shows it as
-`skip` even when installed. Name one of the proven ones, or no driver.
+driver is refused until a real session has proven it, and `ork doctor` shows it
+as `skip` even when installed. All four of Ork's drivers are proven today; name
+one of them, or no driver.
 
 **`node … denies …, but driver codex has no read tool to gate`.** Codex can read
 outside the worktree, so a deny on a `Read`, `Glob` or `Grep` path could not

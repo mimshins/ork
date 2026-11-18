@@ -44,14 +44,9 @@ const unproven = standInDrivers.map(d =>
 
 const unasked = () => Promise.reject(new Error("the drivers' checks ran"));
 
-/** The real `codex` descriptor, proven, so only what it can't serve is refused. */
-const provenCodex = AGENT_DRIVERS.map(d =>
-  Object.assign({}, d, { proven: d.id === "codex" || d.proven }),
-);
-
 /**
- * Every driver's check but none `ok`: `codex` is `skip` (unproven), the rest
- * `warn`.
+ * Every driver's check but none `ok`: `codex` is `skip` (its tool missing), the
+ * rest `warn`.
  */
 const notReady = AGENT_DRIVERS.map(({ id }) => ({
   id,
@@ -82,7 +77,7 @@ describe("ork validate on the codex driver", () => {
   ])("refuses a node that needs %s", async (_need, extra, message) => {
     const found = await driverDiagnostics(
       workflowOf(yamlOf(`    driver: codex\n${extra}`)),
-      { drivers: provenCodex, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found).toHaveLength(1);
     expect(found[0]?.code).toBe("driver.unfit");
@@ -94,7 +89,7 @@ describe("ork validate on the codex driver", () => {
       workflowOf(
         "schemaVersion: 1\nname: notes\nnodes:\n  lead:\n    type: agent.leader\n    driver: codex\n    prompt: go\n  helper:\n    type: agent.subagent\n    parent: lead\n    description: helps\n    prompt: help\n",
       ),
-      { drivers: provenCodex, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found.map(d => d.message)).toContain(
       "sub-agent `helper` runs in `lead`'s session on driver `codex`, which does not run subagents",
@@ -104,40 +99,29 @@ describe("ork validate on the codex driver", () => {
   it("takes the codex. model prefix as the codex driver", async () => {
     const found = await driverDiagnostics(
       workflowOf(yamlOf("    model: codex.gpt-5.1\n    maxTurns: 4\n")),
-      { drivers: provenCodex, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found.map(d => d.message)).toEqual([
       "node `build` sets maxTurns, but driver `codex` has no turn limit",
     ]);
   });
 
-  it("accepts a plain codex node on the proven descriptor", async () => {
+  it("accepts a plain codex node on the real descriptor, now proven", async () => {
     expect(
       await driverDiagnostics(workflowOf(yamlOf("    driver: codex\n")), {
-        drivers: provenCodex,
         checks: unasked,
       }),
     ).toEqual([]);
   });
 
-  it("is never the driver a run takes while its check is skip", () => {
+  it("is never the driver a run takes while its check isn't ok", () => {
     expect(readyDriver(notReady)).toEqual({ ok: false, hints: [] });
-  });
-
-  it("refuses a node that names codex while it is unproven", async () => {
-    const found = await driverDiagnostics(
-      workflowOf(yamlOf("    driver: codex\n")),
-      { checks: unasked },
-    );
-    expect(found.map(d => d.message)).toEqual([
-      "node `build` runs on driver `codex`, which is not yet proven on a real session",
-    ]);
   });
 
   it("warns that budgetUsd alone does not bind codex", async () => {
     const found = await driverDiagnostics(
       workflowOf(yamlOf("    driver: codex\n    budgetUsd: 1\n")),
-      { drivers: provenCodex, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found.map(d => d.severity)).toEqual(["warning"]);
     expect(found[0]?.message).toContain("driver `codex` reports no dollars");

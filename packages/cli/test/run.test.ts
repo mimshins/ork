@@ -82,8 +82,8 @@ const project = () => {
 };
 
 /**
- * Proven, able descriptors for the stand-in sessions (the real open-code is
- * unproven).
+ * Proven, able descriptors for the stand-in sessions, so a run does not meet
+ * what a real driver lacks.
  */
 const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
   ["claude-code", "open-code", "command-code", "codex"] as const

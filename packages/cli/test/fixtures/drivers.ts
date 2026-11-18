@@ -48,7 +48,8 @@ export const openCodeReady = readyOnly("open-code");
 
 /**
  * Descriptors for the tests' stand-in sessions: every driver proven and able,
- * so a test of the run does not meet the real `open-code`, which is unproven.
+ * so a test of the run does not meet what a real driver lacks (a turn limit,
+ * dollars, a node's own MCP servers).
  * Refusals have their own tests, with descriptors that lack things.
  */
 export const standInDrivers: readonly DriverNeeds[] = (

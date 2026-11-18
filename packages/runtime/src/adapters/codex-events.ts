@@ -6,12 +6,13 @@
  *   (`text`), `command_execution` (`command`, `status` `completed` or
  *   `failed`), `file_change` (`changes[]`) or `mcp_tool_call` (`server`,
  *   `tool`, `arguments`, `error`); then `turn.completed` with the turn's
- *   `usage`, or `turn.failed` (`error.message`). A top-level `error` line also
- *   carries warnings (the hook-trust bypass prints one), so it ends nothing by
- *   itself. There is no result line: the process's exit ends the leg. Tool
- *   names come back in Claude Code's words (a shell command is `Bash`, a patch
- *   is `Edit`, an MCP call `mcp__<server>__<tool>`), the words a node's rules
- *   use.
+ *   `usage`, or `turn.failed` (`error.message`). An item of type `error` is a
+ *   warning (the hook-trust bypass prints one twice a leg, measured at the gate
+ *   run) and is dropped; a top-level `error` line may be one too, so it ends
+ *   nothing by itself. There is no result line: the process's exit ends the
+ *   leg. Tool names come back in Claude Code's words (a shell command is
+ *   `Bash`, a patch is `Edit`, an MCP call `mcp__<server>__<tool>`), the words
+ *   a node's rules use.
  */
 
 import {
@@ -114,9 +115,10 @@ const parseLine = (line: string): unknown => {
 };
 
 /**
- * One `turn.completed`'s usage, as a session's of one turn. `input_tokens` is
- * taken to include the cached part (OpenAI's convention, to confirm on a real
- * `codex`); reasoning is already in `output_tokens`. Codex gives no dollars.
+ * One `turn.completed`'s usage, as a session's of one turn. `input_tokens`
+ * includes the cached part (measured at the gate run: Codex's own total is
+ * input plus output); reasoning is already in `output_tokens`. Codex gives no
+ * dollars.
  */
 export const codexTurnUsage = (usage: unknown): SessionUsage => ({
   costUsd: 0,
@@ -146,9 +148,12 @@ export const NONE: SessionUsage = {
 };
 
 /**
- * The warning `--dangerously-bypass-hook-trust` prints as an `error` line on
- * every leg. shortcut: matched by its words (not measured verbatim in the
- * spike); pin the exact text at the gate run.
+ * The warning `--dangerously-bypass-hook-trust` prints on every leg. On 0.169.0
+ * (the gate run, 2026-11-18) it reads "`--dangerously-bypass-hook-trust` is
+ * enabled. Enabled hooks may run without review for this invocation." and comes
+ * twice a leg as an `item.completed` whose item is of type `error`, which the
+ * decoder drops; matched by its words, so it is also kept out of the end should
+ * it come as a top-level `error` line.
  */
 const HOOK_TRUST_WARNING = /hooks?\W?trust|bypass-hook-trust/iu;
 

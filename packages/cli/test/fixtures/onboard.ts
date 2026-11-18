@@ -68,8 +68,8 @@ export const SUGGESTION = {
 };
 
 /**
- * Not `codex`: it is unproven, so `finish` (which validates under the real
- * descriptors) refuses a workflow under it until the gate run proves it.
+ * Not `codex`: onboarding's built-ins set `maxTurns`, which it can't hold, so
+ * `ork run` refuses them under the real descriptor (L454).
  */
 export const DRIVERS = ["claude-code", "open-code", "command-code"] as const;
 
