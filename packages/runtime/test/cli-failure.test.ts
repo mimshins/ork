@@ -2,7 +2,8 @@
  * @file Tests for what the CLI driver says when `claude` dies without a result:
  *   the last meaningful block of its stderr, capped and masked, and
  *   `interrupted` when a signal ended it or Ork asked it to stop, also when it
- *   prints a result once stopped and hands in no report.
+ *   prints a result once stopped and hands in no report; a stop after a normal
+ *   result keeps its end.
  */
 
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -150,6 +151,35 @@ const endOf = async (body: string, stop: boolean): Promise<SessionOutcome> => {
   return outcome;
 };
 
+/** The end kinds of a fake running `body`, stopped once it has finished. */
+const endsStoppedAfterFinish = async (body: string): Promise<string[]> => {
+  const session = createCliRuntime({ bin: fakeClaude(body) }).start(spec, {
+    human,
+  });
+  const kinds: string[] = [];
+  for await (const event of session.events) {
+    if (event.type !== "session.finished") continue;
+    kinds.push(event.outcome.end?.kind ?? "none");
+    void session.interrupt();
+  }
+  return kinds;
+};
+
+/** A normal result with a passing report, then the process stays alive. */
+const DONE_THEN_ALIVE = `${STARTED} console.log(${JSON.stringify(
+  JSON.stringify({
+    type: "result",
+    subtype: "success",
+    session_id: "s",
+    result: "done",
+    structured_output: { status: "pass", summary: "ok", artifacts: {} },
+    total_cost_usd: 0.01,
+    num_turns: 1,
+    duration_ms: 100,
+    usage: { input_tokens: 10, output_tokens: 1 },
+  }),
+)}); setInterval(() => {}, 1000);`;
+
 describe("a claude that dies without a result", () => {
   it("gives the error line, not the Node banner or the stack", async () => {
     const crash = [
@@ -216,6 +246,10 @@ describe("a claude that dies without a result", () => {
   it("reads the same result unstopped as the tool's own end", async () => {
     const outcome = await endOf(`${STARTED} ${EDE_RESULT}`, false);
     expect(outcome.end?.kind).toBe("unknown");
+  });
+
+  it("keeps done when Ork stops it after it printed a normal result", async () => {
+    expect(await endsStoppedAfterFinish(DONE_THEN_ALIVE)).toEqual(["done"]);
   });
 
   it("keeps the report of a stopped session that handed one in", async () => {

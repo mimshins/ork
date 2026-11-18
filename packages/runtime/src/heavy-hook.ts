@@ -108,9 +108,15 @@ export const heavyHook = (machine: MachinePort | undefined): HeavyHook => {
     ready: async () => {
       const pending = waiting;
       if (pending === undefined) return;
-      const release = await pending.slot;
-      // Abandoned meanwhile: `abandon` gave it back.
-      if (waiting !== pending) return;
+      // A stop abandons the wait at once, even when the slot never comes.
+      const given = new Promise<null>(resolve => {
+        pending.stop.signal.addEventListener("abort", () => {
+          resolve(null);
+        });
+      });
+      const release = await Promise.race([pending.slot, given]);
+      // Abandoned meanwhile: `abandon` gave it back, or will once it comes.
+      if (waiting !== pending || release === null) return;
       waiting = undefined;
       held = { command: pending.command, release, ran: false };
     },

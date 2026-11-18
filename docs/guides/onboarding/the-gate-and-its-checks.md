@@ -42,12 +42,12 @@ Checked in code, not by a prompt:
 - That the writer changed only `.ork/workflows/*.ork.yaml` and
   `.ork/project.yaml` (a file it left in an ignored path counts, unless it is an
   unchanged copy Ork put there, byte-identical to the project root's, or the
-  empty `.commandcode/taste/taste.md` Command Code makes in its folder), that
-  each workflow has both caps, names no `driver` or `model`, uses only the two
-  built-in agents (a workflow you already had keeps the driver, model and agents
-  it names; only new ones count), is in Ork's canonical form, and passes
-  `ork validate` and `ork validate --driver <id>` for every driver ready on the
-  machine.
+  empty `.commandcode/taste/taste.md` Command Code makes in its folder, at the
+  repository's top for a project in a subfolder), that each workflow has both
+  caps, names no `driver` or `model`, uses only the two built-in agents (a
+  workflow you already had keeps the driver, model and agents it names; only new
+  ones count), is in Ork's canonical form, and passes `ork validate` and
+  `ork validate --driver <id>` for every driver ready on the machine.
 
 Held only by a prompt:
 

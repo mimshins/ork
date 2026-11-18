@@ -38,7 +38,10 @@ the runner resumes the session once the node continues, yielding one session. A
 message to a tool with no stdin waits for the turn's end, and the runner resumes
 the session with it ([tests](../packages/runtime/test/session-runner.test.ts)).
 The same hook takes a slot for a Bash call matching `heavy`, and a `PostToolUse`
-hook on Bash frees it ([machine](./machine.md#a-sessions-bash-call)).
+hook on Bash frees it ([machine](./machine.md#a-sessions-bash-call)). A stopped
+session is never resumed: one stopped with a deferred call and no report ends
+`interrupted`, and a stop during its slot wait ends it at once, the slot given
+back if it comes later.
 
 ## The drivers
 

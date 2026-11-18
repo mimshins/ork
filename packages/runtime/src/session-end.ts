@@ -186,6 +186,14 @@ const NOTHING_SPENT: Spent = {
   sessionId: "",
 };
 
+/** What a result a decoder held when Ork stopped the leg says was spent. */
+export const heldUsage = (
+  events: RuntimeEvent[] = [],
+): SessionUsage | undefined =>
+  events.flatMap(e =>
+    e.type === "session.finished" ? [e.outcome.usage] : [],
+  )[0];
+
 /**
  * A finished event for a session the driver could not run, ended as `kind` with
  * `message` (Ork's words or the tool's, masked) as its detail; a stopped one

@@ -3,19 +3,32 @@
  *   stdin: the brief goes in its arguments, a message sent mid-session reaches
  *   the next leg, which resumes the session with it, unless the session ended
  *   in an error; the legs' usage adds up, an interrupt during the wiring starts
- *   no process, and the MCP wiring is released when the session ends.
+ *   no process, and the MCP wiring is released when the session ends. On the
+ *   stand-in `claude`, a session stopped after a deferred call is never
+ *   resumed, even while it waits for a heavy slot.
  */
 
+import { existsSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 
-import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
+import {
+  createHolds,
+  type MachinePort,
+  type RunEvent,
+  type RuntimeEvent,
+  type SessionSpec,
+  type SessionUsage,
+} from "@krapht/ork-core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
   type CliAdapter,
   commandCodeDecoder,
+  createCliRuntime,
   createSessionRuntime,
   type Decoded,
 } from "../src/index.ts";
@@ -252,5 +265,128 @@ describe("the session runner, when a signal it did not send kills the tool", () 
     expect(events.at(-1)).toMatchObject({
       outcome: { sessionId: "k1", text: "done", end: { kind: "no_report" } },
     });
+  });
+});
+
+const FAKE_CLAUDE = fileURLToPath(
+  new URL("fixtures/fake-claude.mjs", import.meta.url),
+);
+
+const claudeSpec = (): SessionSpec => ({
+  ...spec,
+  cwd: mkdtempSync(path.join(tmpdir(), "ork-runner-stop-")),
+  model: "haiku",
+  prompt: "Check the work",
+});
+
+/** A node's hold, paused or not, and the events it recorded. */
+const holdFor = (paused: boolean) => {
+  const recorded: RunEvent[] = [];
+  const holds = createHolds({
+    onEvent: event => {
+      recorded.push(event);
+    },
+    onChange: () => {
+      // Not under test.
+    },
+  });
+  if (paused) holds.pause();
+  return { recorded, hold: holds.forNode("worker") };
+};
+
+/** A machine whose slot ignores the stop and comes only when `free` is called. */
+const stuckMachine = () => {
+  const gives: ((release: () => void) => void)[] = [];
+  const given: string[] = [];
+  const machine: MachinePort = {
+    priority: "normal",
+    slot: () =>
+      new Promise(resolve => {
+        gives.push(resolve);
+      }),
+  };
+  return {
+    machine,
+    asked: () => gives.length > 0,
+    free: () => {
+      for (const give of gives) {
+        give(() => {
+          given.push("released");
+        });
+      }
+    },
+    given,
+  };
+};
+
+/**
+ * Waits until `ready` and the leg wrote its deferred marker, then stops the
+ * session.
+ */
+const stopOnceDeferred = async (
+  session: { interrupt: () => Promise<void> },
+  cwd: string,
+  ready: () => boolean,
+) => {
+  while (!ready() || !existsSync(path.join(cwd, ".fake-deferred"))) {
+    // oxlint-disable-next-line eslint/no-await-in-loop -- polling a fake
+    await delay(10);
+  }
+  await session.interrupt();
+};
+
+/** The session's events, or "hung" when it does not end within 5 seconds. */
+const endedIn = (events: AsyncIterable<RuntimeEvent>) =>
+  Promise.race([collect(events), delay(5000).then(() => "hung" as const)]);
+
+const endKinds = (events: RuntimeEvent[] | "hung") =>
+  events === "hung"
+    ? ["hung"]
+    : events.flatMap(e =>
+        e.type === "session.finished" ? [e.outcome.end?.kind] : [],
+      );
+
+const spokenTexts = (events: RuntimeEvent[] | "hung") =>
+  events === "hung"
+    ? []
+    : events.flatMap(e => (e.type === "assistant.text" ? [e.text] : []));
+
+describe("the session runner, when a session with a deferred call is stopped", () => {
+  it("ends it interrupted and never resumes it", async () => {
+    const { recorded, hold } = holdFor(true);
+    const own = claudeSpec();
+    const session = createCliRuntime({
+      bin: FAKE_CLAUDE,
+      holdWindowMs: 30,
+    }).start(own, { human, hold });
+    const stopping = stopOnceDeferred(session, own.cwd, () =>
+      recorded.some(e => e.type === "node.held"),
+    );
+    const events = await endedIn(session.events);
+    await stopping;
+    expect(endKinds(events)).toEqual(["interrupted"]);
+    expect(spokenTexts(events)).toEqual(["Working on: Check the work"]);
+  });
+
+  it("ends it at once while it waits for a slot that never frees, and gives the slot back", async () => {
+    const stuck = stuckMachine();
+    const own = claudeSpec();
+    const session = createCliRuntime({
+      bin: FAKE_CLAUDE,
+      holdWindowMs: 30,
+      env: { ...process.env, FAKE_CLAUDE_BASH: "pnpm check" },
+    }).start(own, {
+      human,
+      hold: holdFor(false).hold,
+      machine: stuck.machine,
+    });
+    const stopping = stopOnceDeferred(session, own.cwd, stuck.asked);
+    const events = await endedIn(session.events);
+    await stopping;
+    stuck.free();
+    await delay(20);
+    expect(endKinds(events)).toEqual(["interrupted"]);
+    expect(spokenTexts(events)).toEqual(["Working on: Check the work"]);
+    expect(stuck.given).toEqual(["released"]);
   });
 });

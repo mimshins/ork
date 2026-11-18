@@ -187,14 +187,14 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    project root: an edited copy, or any other ignored file, is refused; and
    except `.commandcode/taste/taste.md`, the file `command-code` leaves in the
    folder it runs in, when it is new in the worktree, a regular file (not a
-   link, nor behind one) and empty: the exact path only, so a non-empty file, a
-   link, a committed one or any other path there is refused. Each must be an
-   added or modified `.ork/workflows/<name>.ork.yaml` (one level) or
-   `.ork/project.yaml`; any other path, or a deletion or rename, is a problem. A
-   write outside the worktree is still not seen
-   ([L395](../gaps/onboard-limits.md)). A subfolder project's paths lose the
-   `git rev-parse --show-prefix` prefix; one outside it reads `../…` and is
-   refused ([L434](../gaps/onboard-limits.md)).
+   link, nor behind one) and empty; a non-empty file, a link, a committed one or
+   any other path is refused (in a subfolder project the path is
+   `../.commandcode/taste/taste.md`). Each must be an added or modified
+   `.ork/workflows/<name>.ork.yaml` (one level) or `.ork/project.yaml`; any
+   other path, or a deletion or rename, is a problem. A write outside the
+   worktree is still not seen ([L395](../gaps/onboard-limits.md)). A subfolder
+   project's paths lose the project prefix; one outside it reads `../…` and is
+   refused ([L434, L437](../gaps/onboard-limits.md)).
 2. **Each changed workflow**, read in the worktree: it parses and passes the
    schema; it sets `limits.budgetUsd` and `limits.budgetTokens`; no `driver` or
    `model` anywhere (`defaults`, `agents`, nodes); no `agents:` of its own, and

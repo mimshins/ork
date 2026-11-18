@@ -133,12 +133,25 @@ could not be checked:
   subject still goes to the model provider. It is the first thing cut at the
   survey's 6,000-character bound (L407).
 - **L434 · `finish` in a subfolder project: a file outside the project is
-  refused, even one the tool leaves.** `changesOf` now strips the project's
-  folder (`git rev-parse --show-prefix`) from each path, so a project that is a
+  refused, except one tool file.** `changesOf` strips the project's folder
+  (`git rev-parse --show-prefix`) from each path, so a project that is a
   subfolder of its repository is checked from its own folder, and a path outside
-  it reads `../…` and is refused. The writer's worktree is the whole
-  repository's, so a file a driver leaves outside the project folder, such as
-  command-code's empty `.commandcode/taste/taste.md` at the repository's top, is
-  refused (`../.commandcode/taste/taste.md`), not ignored: the taste exception
-  holds only inside the project folder. Not checked: which folder a command-code
-  writer runs in for such a project.
+  it reads `../…` and is refused. Traced: the run's root is the repository's top
+  (`inspectProject().root`, which `prepareCheckout` takes), and a `worktree`
+  node's `cwd` is its worktree, so the writer runs at the repository's top and
+  command-code leaves its empty file at `<top>/.commandcode/taste/taste.md`
+  (`../.commandcode/taste/taste.md` in the project's terms). `finish` skips that
+  exact path there, and in the project's folder, when it is new, a regular file
+  (not a link, nor behind one) and empty, as for any project; a committed one, a
+  non-empty one, a link and any other path stay refused. The writer is not moved
+  into the project's folder (that would change every worktree node). Not traced
+  against a real command-code run; the path comes from the single-folder case.
+- **L437 · The writer's own files for a subfolder project land at the
+  repository's top.** The `ork:onboard-write` prompt says "write each pick as
+  `.ork/workflows/<workflow>.ork.yaml`" and never names the project's folder,
+  and the writer runs at the repository's top (L434), so for a project in `sub/`
+  it writes `.ork/workflows/…` at the top, not in `sub/.ork/`. `finish` reads
+  that as `../.ork/workflows/…`, outside the project, and refuses it, so
+  onboarding a subfolder project fails the check until the writer is told the
+  folder (the prompt, or a `--root`-style input). Not built here; `ork onboard`
+  from the repository's own root is not affected.

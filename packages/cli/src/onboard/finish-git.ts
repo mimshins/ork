@@ -3,9 +3,10 @@
  *   (committed on its branch, or still uncommitted or ignored in its worktree;
  *   a write outside the worktree is not seen, nor a local file Ork copied in
  *   and the writer left as it was, nor the empty `.commandcode/taste/taste.md`
- *   command-code leaves), which of them the writer may change, a file's text at
- *   `HEAD`, and the commit of the canonical rewrite. Every argument is Ork's or
- *   validated; nothing the model drafted is run.
+ *   command-code leaves, at the repository's top or in the project's folder),
+ *   which of them the writer may change, a file's text at `HEAD`, and the
+ *   commit of the canonical rewrite. Every argument is Ork's or validated;
+ *   nothing the model drafted is run.
  */
 
 import { execFileSync } from "node:child_process";
@@ -72,8 +73,9 @@ const copiedUnchanged = (
 const TASTE_FILE = ".commandcode/taste/taste.md";
 
 /**
- * Whether `file` of the worktree is the taste file, new, a regular file (not a
- * link, nor behind one) and empty. Any other path, or content, is not.
+ * Whether `file` (relative to `worktree`) is the taste file, new, a regular
+ * file (not a link, nor behind one) and empty. Any other path, or content, is
+ * not.
  */
 const emptyTaste = (worktree: string, file: string): boolean => {
   if (file !== TASTE_FILE) return false;
@@ -146,13 +148,15 @@ export const changesOf = (
   return [
     ...fromDiff(
       git(root, [
+        // A user's `diff.relative` would turn the repository's paths into the
+        // project's, which `inProject` below then strips a second time. The
+        // config form works on any git; `--no-relative` needs 2.28.
+        "-c",
+        "diff.relative=false",
         "diff",
         "--name-status",
         "-z",
         "--no-renames",
-        // A user's `diff.relative` would turn the repository's paths into the
-        // project's, which `inProject` below then strips a second time.
-        "--no-relative",
         `HEAD...${branch}`,
       ]),
     ),
@@ -168,7 +172,10 @@ export const changesOf = (
         "--ignored",
       ]),
       file => copiedUnchanged(root, here, inProject(file)),
-      file => emptyTaste(here, inProject(file)),
+      // The writer runs at the repository's top, so command-code leaves the
+      // file there (`../.commandcode/…` in a subfolder project); a file in
+      // the project's folder is skipped as before.
+      file => emptyTaste(worktree, file) || emptyTaste(here, inProject(file)),
     ),
   ].map(({ path: file, kind }) => ({ path: inProject(file), kind }));
 };

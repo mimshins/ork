@@ -28,6 +28,7 @@ import {
   type EndScope,
   failureKind,
   failureReason,
+  heldUsage,
   settleEnd,
   type Spent,
   tokenCapOutcome,
@@ -110,6 +111,12 @@ const settled = (
     input.scope.scrub,
   );
 };
+
+/** A deferred leg's result once Ork stopped the session: as `settled`, stopped. */
+export const asStopped = (last: RuntimeEvent, input: LegInput): RuntimeEvent =>
+  last.type === "session.finished"
+    ? { ...last, outcome: settled(last.outcome, input, true) }
+    : last;
 
 /** What this leg `used`, with what the legs before it spent. */
 const withCarried = (
@@ -266,14 +273,12 @@ export const runLeg = async function* (
       if (ended !== undefined) return ended;
     }
     if (end instanceof Error) {
-      return {
-        kind: "failed",
-        reason: `could not start ${input.bin}: ${end.message}`,
-        end: failureKind(end),
-      };
+      const reason = `could not start ${input.bin}: ${end.message}`;
+      return { kind: "failed", reason, end: failureKind(end) };
     }
     if (stopped || end.signal !== null) {
-      const usage = withCarried(input, used);
+      const held = stopped && heldUsage(decoder?.exit(end.code));
+      const usage = withCarried(input, held || used);
       return {
         kind: "failed",
         reason: "interrupted",

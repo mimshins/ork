@@ -9,6 +9,23 @@ _Part of [What's new](../whats-new.md)._
   handed in a report now ends as interrupted, on every driver; a report it had
   handed in still decides
   ([why a node stopped](../guides/why-a-node-stopped.md#interrupted)).
+- **`ork stop` ends a node waiting for a slot at once, and never resumes a
+  stopped one.** A session that was held for a heavy slot kept waiting for the
+  slot after you stopped the run; it now ends as interrupted immediately and
+  gives the slot back. A session Ork stopped is never resumed.
+- **`ork onboard` no longer refuses Command Code's empty taste file in a
+  subfolder project.** The writer runs at the repository's top, so Command Code
+  leaves its empty `.commandcode/taste/taste.md` there, and the check refused it
+  as a file outside your project. It now skips that exact file, when it is new
+  and empty, as it does at a repository's root
+  ([what is checked](../guides/onboarding/the-gate-and-its-checks.md#what-is-checked-and-what-is-only-asked-for)).
+  The writer is still not told your project's folder, so it may write its
+  workflows at the top, where the check refuses them
+  ([L437](../../specs/gaps/onboard-limits.md)).
+- **`ork onboard`'s check works on git older than 2.28.** It used
+  `git diff --no-relative`, which older git does not know; it now sets
+  `diff.relative` through `-c`, which any git accepts and which also ignores a
+  `diff.relative` setting of yours.
 - **`ork onboard` checks the writer's files in a subfolder project.** When your
   project is a subfolder of its git repository, the check after the writer ran
   named paths from the repository's top, so it refused a workflow in the

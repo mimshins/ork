@@ -8,7 +8,8 @@
  *   at the next leg, which resumes the session with it. A driver that cannot
  *   hold the final answer to the report schema gets Ork's `report` tool, and
  *   the session ends with the report it accepted. Interrupting stops the
- *   running process.
+ *   running process, or ends a wait between legs; a stopped session is never
+ *   resumed.
  */
 
 import type {
@@ -24,7 +25,7 @@ import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
 import { heavyHook, NEVER_HELD, toolHook } from "./heavy-hook.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
-import { type LegInput, runLeg } from "./session-leg.ts";
+import { asStopped, type LegInput, runLeg } from "./session-leg.ts";
 import { readPatterns } from "./tools/contain.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
@@ -229,7 +230,8 @@ export const createSessionRuntime = (
             yield driverFailure("interrupted", "interrupted", scope);
             return;
           }
-          const leg = yield* runLeg(legOf(legSpec, spent));
+          const legInput = legOf(legSpec, spent);
+          const leg = yield* runLeg(legInput);
           if (leg.kind === "failed") {
             // A resumed leg stopped before it printed its start ran as before.
             const { spent: stopped } = leg;
@@ -245,17 +247,20 @@ export const createSessionRuntime = (
             spent === undefined
               ? leg.usage
               : adapter.usage.combine(spent, leg.usage);
-          if (leg.kind === "deferred") {
+          if (leg.kind === "deferred" && !ended.signal.aborted) {
             // Wait for the node to continue, then resume the session with no
             // new message; the pending call's hook then lets it run.
-            // A call deferred for a slot waits for it too.
+            // A call deferred for a slot waits for it too, until a stop.
             // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
             await heavy.ready();
             // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
             await hold?.wait("tool", ended.signal);
           }
+          // A stopped session is never resumed; a deferred one ends interrupted.
           if (ended.signal.aborted) {
-            yield leg.last;
+            yield leg.kind === "deferred"
+              ? asStopped(leg.last, legInput)
+              : leg.last;
             return;
           }
           legSpec =

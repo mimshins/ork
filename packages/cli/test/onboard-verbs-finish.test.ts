@@ -739,6 +739,17 @@ const subScenario = (head: Record<string, string> = {}): Scenario => {
 const paths = (changes: readonly Change[]): string[] =>
   changes.map(({ path: file }) => file).toSorted();
 
+const listed = (scene: Scenario): string[] =>
+  paths(changesOf(scene.root, scene.worktree, scene.branch));
+
+/** A subfolder project whose ignored `CLAUDE.local.md` was copied in. */
+const withCopy = (): Scenario => {
+  const scene = subScenario({ ".gitignore": "CLAUDE.local.md\n" });
+  put(scene.root, { "CLAUDE.local.md": "mine\n" });
+  put(path.join(scene.worktree, "sub"), { "CLAUDE.local.md": "mine\n" });
+  return scene;
+};
+
 describe("finish: a project in a subfolder of its repository", () => {
   const CI = ".ork/workflows/ci.ork.yaml";
 
@@ -831,6 +842,99 @@ describe("finish: a project in a subfolder of its repository", () => {
     expect((await check(scene)).eye).toEqual([
       ".ork/project.yaml: project defaults set `model` for every workflow",
     ]);
+  });
+
+  describe("the empty taste file at the repository's top", () => {
+    const TASTE = ".commandcode/taste/taste.md";
+    const OUT = `../${TASTE}`;
+
+    it("is not listed when new, a regular file and empty", () => {
+      const scene = subScenario();
+      put(scene.worktree, { [TASTE]: "" });
+      expect(listed(scene)).toEqual([]);
+    });
+
+    it("is not listed when the repository ignores it", () => {
+      const scene = subScenario({ ".gitignore": ".commandcode/\n" });
+      put(scene.worktree, { [TASTE]: "" });
+      expect(listed(scene)).toEqual([]);
+    });
+
+    it("is listed once it holds anything", () => {
+      const scene = subScenario();
+      put(scene.worktree, { [TASTE]: "x" });
+      expect(listed(scene)).toEqual([OUT]);
+    });
+
+    it("is listed when it is a link", () => {
+      const scene = subScenario();
+      mkdirSync(path.join(scene.worktree, ".commandcode/taste"), {
+        recursive: true,
+      });
+      const target = path.join(tempDir(), "empty.md");
+      writeFileSync(target, "");
+      symlinkSync(target, path.join(scene.worktree, TASTE));
+      expect(listed(scene)).toEqual([OUT]);
+    });
+
+    it("is listed when it is behind a linked folder", () => {
+      const scene = subScenario();
+      const elsewhere = tempDir();
+      put(elsewhere, { "taste.md": "" });
+      mkdirSync(path.join(scene.worktree, ".commandcode"));
+      symlinkSync(elsewhere, path.join(scene.worktree, ".commandcode/taste"));
+      // Git lists the linked folder itself, so the exact-path check rejects it
+      // first; the plainPathInside guard is defence in depth.
+      expect(listed(scene)).toEqual(["../.commandcode/taste"]);
+    });
+
+    it("is listed when committed", () => {
+      const scene = subScenario();
+      put(scene.worktree, { [TASTE]: "" });
+      git(scene.worktree, "add", "-f", TASTE);
+      git(scene.worktree, "commit", "-q", "-m", "taste");
+      expect(listed(scene)).toEqual([OUT]);
+    });
+
+    it("exempts no other path", () => {
+      const scene = subScenario();
+      put(scene.worktree, {
+        ".commandcode/taste/other.md": "",
+        ".commandcode/taste.md": "",
+        [`other/${TASTE}`]: "",
+      });
+      expect(listed(scene)).toEqual([
+        "../.commandcode/taste.md",
+        "../.commandcode/taste/other.md",
+        `../other/${TASTE}`,
+      ]);
+    });
+  });
+
+  describe("a local file Ork copied into the project's folder", () => {
+    it("is not listed while the copy is as it was", () => {
+      const scene = withCopy();
+      expect(changesOf(scene.root, scene.worktree, scene.branch)).toEqual([]);
+    });
+
+    it("is listed, relative to the project, once the writer edits it", () => {
+      const scene = withCopy();
+      put(path.join(scene.worktree, "sub"), { "CLAUDE.local.md": "edited\n" });
+      expect(changesOf(scene.root, scene.worktree, scene.branch)).toEqual([
+        { path: "CLAUDE.local.md", kind: "added" },
+      ]);
+    });
+  });
+
+  it("lists the same changes under a user's `diff.relative` config", () => {
+    const scene = subScenario();
+    put(scene.worktree, { "other.md": "y\n", [`sub/${CI}`]: workflow("ci") });
+    git(scene.worktree, "add", ".");
+    git(scene.worktree, "commit", "-q", "-m", "both");
+    const before = changesOf(scene.root, scene.worktree, scene.branch);
+    git(scene.root, "config", "diff.relative", "true");
+    expect(changesOf(scene.root, scene.worktree, scene.branch)).toEqual(before);
+    expect(paths(before)).toEqual(["../other.md", CI]);
   });
 
   it("runs the program with the project as its folder", () => {
