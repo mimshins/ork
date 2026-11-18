@@ -13,6 +13,7 @@
 - [Decision](#decision)
 - [Consequences](#consequences)
 - [Open questions](#open-questions): what the spike must confirm
+- [What the spike found](#what-the-spike-found): the answers, 2026-11-18
 
 ## Context
 
@@ -414,3 +415,99 @@ answer changes the build, and none is assumed above.
    git check, or the flag is needed for a node outside a repository.
 10. **A minimum version.** The oldest `codex` that has every flag above, if one
     is needed, as `MIN_CLAUDE_VERSION` is for `claude`.
+
+## What the spike found
+
+Run by the maintainer's agent on 2026-11-18, `codex-cli` 0.169.0 signed in with
+a ChatGPT account (default model `gpt-6.2-sol`), in a scratch git repository,
+with a stand-in for Ork's MCP endpoint and a logging hook. Each answer is
+numbered as its question above.
+
+1. **Events.** `codex exec --json` prints one JSON object a line:
+   `thread.started` (`thread_id`, the session id), `turn.started`, then
+   `item.started`/`item.completed` with `item.type` `agent_message` (`text`),
+   `command_execution` (`command`, `aggregated_output`, `exit_code`, `status`
+   `completed` or `failed`), `file_change` (`changes[]` with `path` and `kind`),
+   `mcp_tool_call` (`server`, `tool`, `arguments`, `result.content`, `error`),
+   and `error` (`message`, also for warnings such as the hook-trust bypass);
+   then `turn.completed` with `usage` (`input_tokens`, `cached_input_tokens`,
+   `cache_write_input_tokens`, `output_tokens`, `reasoning_output_tokens`) or
+   `turn.failed` (`error.message`) and a top-level `error`. Usage comes once, at
+   the turn's end, so `budgetTokens` can stop a session only between legs. A
+   call a hook refuses leaves no item: only Codex's stderr logs it, so Ork
+   counts refusals from its own hook. A model the account refuses ends
+   `turn.failed` with "The '<model>' model is not supported when using Codex
+   with a ChatGPT account." and exit code 1, for `model_unavailable`. Auth,
+   rate-limit and credit errors were not provoked.
+2. **MCP over `-c`.** Loads with no file in `~/.codex`: `mcp_servers.ork.url`,
+   `mcp_servers.ork.bearer_token_env_var` (the token reached the server only
+   from the leg's environment), `mcp_servers.ork.tool_timeout_sec`, and
+   `mcp_servers.ork.required=true` (startup fails when Ork's server is not
+   ready). Ork's tools reach the model as `mcp__ork__<tool>`, but every call is
+   refused ("requires approval, but approval policy is never") unless
+   `mcp_servers.ork.default_tools_approval_mode="approve"` is set. The node's
+   own `.mcp.json` servers were not tried.
+3. **Resume and fork.** `codex exec resume <id> <msg> --json` keeps the session
+   id; the hook, the MCP server and the sandbox hold when they are passed again
+   on that leg (`-c sandbox_mode="read-only"` held: a write was refused), and
+   the folder is the process's. `codex exec fork <id> <msg> --json` prints a new
+   `thread.started` with a new id. A fork keeps the instructions of the session
+   it came from; `developer_instructions` given on the fork's leg did not take,
+   while on a new session they did.
+4. **The hook.** A `PreToolUse` hook given inline by
+   `-c hooks.PreToolUse=[{matcher=".*",hooks=[{type="command",command=…}]}]`
+   runs in `exec` only with `--dangerously-bypass-hook-trust`; without it the
+   hook is skipped silently and every call runs. With it, the hook saw Bash,
+   `apply_patch` (as `tool_input.command`, the patch) and MCP calls
+   (`mcp__ork__report`, their arguments), and its answer
+   `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":…}}`
+   refused the call and the model read the reason. The bypass did not run the
+   checkout's own `.codex/hooks.json`: an untrusted project's configuration
+   stays off ("Untrusted project-local configuration is disabled"). It is per
+   invocation and saves nothing. It would also run a user-level
+   `$CODEX_HOME/hooks.json` or system hook without its saved trust; the
+   maintainer's machine has none. Holding a paused call was not tried; a hook's
+   `timeout` is in seconds, 600 by default.
+5. **The sandbox.** `read-only` lets shell commands read outside the folder
+   (`/etc/hosts`, a file in the home folder) and blocks writes and the network
+   (a `curl` failed). `workspace-write` let `apply_patch` add a file in the
+   folder; its network is off unless `sandbox_workspace_write.network_access`.
+   No approval was asked in `exec`: the hook input reports
+   `permission_mode: "bypassPermissions"`, so the hook and the sandbox are the
+   only fences.
+6. **A clean session.** `--ignore-user-config` and `--ignore-rules` leave the
+   user's plugins on: a plugin's skill was read and doubled the first turn's
+   input. `--disable plugins --disable apps --disable remote_plugin` turned them
+   off. Skills still load: the bundled ones (with `skills.bundled.enabled=false`
+   too) and the user's own (`~/.agents/skills`, `~/.codex/skills`), by name and
+   description. Memories are off by default (`features.memories`).
+   `developer_instructions` adds to the system prompt on a session's first leg.
+   Sessions are kept in `$CODEX_HOME/sessions/<yyyy>/<mm>/<dd>/rollout-*.jsonl`.
+   A new session with plugins off started at about 19,000 input tokens.
+7. **Turns, effort, models.** No key caps a session's turns (`turnLimit` stays
+   `false`). `model_reasoning_effort` is the effort key. The account's default
+   model ran; a made-up one was refused as above.
+8. **The doctor check.** `codex login status` exits 0 when signed in and 1 with
+   an empty `CODEX_HOME`; the maintainer confirmed the check as proposed.
+9. **`--skip-git-repo-check`.** Not needed in a git repository, where every
+   worktree node runs; a node outside one was not tried.
+10. **A minimum version.** Every flag above is in 0.169.0, the version tried.
+
+**Decided after the spike** (the maintainer, 2026-11-18):
+
+- **The hook runs with `--dangerously-bypass-hook-trust` on every leg**, the
+  only way `exec` runs a hook Ork wrote. So that no other hook runs untrusted
+  beside it, the driver ends the node with a driver error before any model call
+  when a user-level `$CODEX_HOME/hooks.json` or the system hooks file
+  (`/etc/codex/hooks.json`) exists; a checkout's own hooks stay off as an
+  untrusted project's configuration. The spec and `specs/gaps.md` record it.
+- **Every leg also passes**
+  `--disable plugins --disable apps --disable remote_plugin` and, on Ork's
+  server, `default_tools_approval_mode="approve"` and `required=true`; Ork's
+  instructions go in `developer_instructions` on a session's first leg.
+- **Skills are a gap, not fixed:** a Codex session sees the bundled skills and
+  the user's own, by name and description, unlike a clean Claude Code session.
+  `specs/gaps.md` records it, to revisit when Codex can turn them off.
+- **Reads outside the worktree** are the gap the Decision expected (the sandbox
+  reads anywhere; no read tool for the hook), and nodes with a read deny stay
+  refused for this driver.
