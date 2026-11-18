@@ -85,13 +85,18 @@ CPU, before and after it was made cheaper.
 
 ## Experiments
 
-Comparisons of two settings on the same tasks, with no commit kept, so they have
-no row above:
+Comparisons of two settings on the same tasks, and estimates from past runs,
+with no commit kept, so they have no row above:
 
 - [Reading rule A/B](./rfc-025-reading/README.md) (2026-11-17): `reading: open`
   against `reading: extract`, 2 tasks × 2 runs each, $10.19 in all.
   Inconclusive: sessions already read through `extract` in both arms, and
   neither cost more.
+- [Shorter builder sessions](./rfc-023-option-5/README.md) (2026-11-18): an
+  estimate from the transcripts of 21 runs, with no new runs. A turn cap saves
+  little or loses money; starting a reused builder's next task in a fresh
+  session once its context passes about 100k tokens would have saved about 7% of
+  builder cost, mostly in three long sessions.
 
 ## In each benchmark
 
