@@ -75,9 +75,10 @@ const hookSource = (calls: string): string =>
   `// Ork's hook for one Codex session; written by Ork, removed after it.
 import { appendFileSync, readFileSync } from "node:fs";
 const CALLS = ${JSON.stringify(calls)};
+// Codex ends the reason with its own period.
 const refuse = reason => {
   process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason },
+    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason.replace(/\\.$/, "") },
   }));
 };
 try {

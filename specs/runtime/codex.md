@@ -73,10 +73,12 @@ then the wiring's keys: `-c mcp_servers.ork.*` and `-c hooks.PreToolUse=[…]`.
 and `.default_tools_approval_mode="approve"` (without it every Ork tool call is
 refused as needing an approval `exec` never gives). **The token is in the leg's
 environment only**, under that name: never on the command line, in a file or in
-an event. Codex keeps variables named `*TOKEN*` out of a shell it starts. Ork's
-tools reach the model as `mcp__ork__<tool>`. The node's own `.mcp.json` servers
-are not given to Codex (`mcpServers: false`; `ork validate` refuses a node that
-names `mcp`).
+an event. Codex 0.169.0 hands its whole environment to a shell it starts (the
+gate run read the token from one), so the leg also passes
+`-c shell_environment_policy.exclude=["ORK_CODEX_MCP_TOKEN"]`, which keeps it
+out (measured). Ork's tools reach the model as `mcp__ork__<tool>`. The node's
+own `.mcp.json` servers are not given to Codex (`mcpServers: false`;
+`ork validate` refuses a node that names `mcp`).
 
 ## What holds a node to its rules
 

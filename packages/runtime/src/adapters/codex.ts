@@ -157,6 +157,8 @@ const wiring = (system: string, root: string | undefined): McpWiring => ({
       args: [
         ...config("mcp_servers.ork.url", endpoint.url),
         ...config("mcp_servers.ork.bearer_token_env_var", CODEX_TOKEN_VAR),
+        // Codex hands its environment to the agent's shell; keep the token out.
+        ...config("shell_environment_policy.exclude", [CODEX_TOKEN_VAR]),
         ...config(
           "mcp_servers.ork.tool_timeout_sec",
           ORK_TOOL_TIMEOUT_MS / 1000,

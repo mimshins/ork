@@ -583,7 +583,7 @@ const decoderOf = (
 ) => adapter.legDecoder?.(leg) ?? codexDecoder(leg);
 
 describe("the codex adapter's wiring", () => {
-  it("passes Ork's MCP keys and the hook by -c, the token only in the environment", async () => {
+  it("passes Ork's MCP keys and the hook by -c, the token only in the environment and kept out of the shell", async () => {
     const root = temp("ork-codex-root-");
     const wired = await wireOf(
       adapterIn(root),
@@ -593,11 +593,13 @@ describe("the codex adapter's wiring", () => {
       },
     );
     const hook = hookOf(wired.args);
-    expect(wired.args.slice(0, 10)).toEqual([
+    expect(wired.args.slice(0, 12)).toEqual([
       "-c",
       'mcp_servers.ork.url="http://127.0.0.1:4567/mcp"',
       "-c",
       `mcp_servers.ork.bearer_token_env_var="${CODEX_TOKEN_VAR}"`,
+      "-c",
+      `shell_environment_policy.exclude=["${CODEX_TOKEN_VAR}"]`,
       "-c",
       "mcp_servers.ork.tool_timeout_sec=86400",
       "-c",
@@ -605,8 +607,8 @@ describe("the codex adapter's wiring", () => {
       "-c",
       'mcp_servers.ork.default_tools_approval_mode="approve"',
     ]);
-    expect(wired.args.slice(10, 11)).toEqual(["-c"]);
-    expect(wired.args[11]).toMatch(
+    expect(wired.args.slice(12, 13)).toEqual(["-c"]);
+    expect(wired.args[13]).toMatch(
       /^hooks\.PreToolUse=\[\{matcher = "\.\*", hooks = /u,
     );
     expect(wired.env).toEqual({ [CODEX_TOKEN_VAR]: ENDPOINT.token });

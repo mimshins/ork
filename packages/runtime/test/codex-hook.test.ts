@@ -113,7 +113,7 @@ describe("the codex hook's rules", () => {
   it("allows what a rule allows and refuses the rest, in Claude Code's words", () => {
     expect(bash(rules(["Bash(git:*)"]), "git status")).toBeUndefined();
     expect(bash(rules(["Bash(git:*)"]), "rm -rf x")).toBe(
-      "Ork: Bash is not allowed for this node. Do not retry it.",
+      "Ork: Bash is not allowed for this node. Do not retry it",
     );
   });
 
@@ -155,7 +155,7 @@ describe("the codex hook's rules", () => {
       answer({ permissionMode: "acceptEdits" }, "apply_patch", PATCH),
     ).toBeUndefined();
     expect(answer(rules([]), "apply_patch", PATCH)).toBe(
-      "Ork: apply_patch is not allowed for this node. Do not retry it.",
+      "Ork: apply_patch is not allowed for this node. Do not retry it",
     );
   });
 
@@ -165,8 +165,8 @@ describe("the codex hook's rules", () => {
         answer({ ...rules(["Bash"], deny), yolo: true }, "apply_patch", PATCH),
       ),
     ).toEqual([
-      "Ork: apply_patch is denied for this node. Do not retry it.",
-      "Ork: apply_patch is denied for this node. Do not retry it.",
+      "Ork: apply_patch is denied for this node. Do not retry it",
+      "Ork: apply_patch is denied for this node. Do not retry it",
     ]);
   });
 
@@ -191,7 +191,7 @@ describe("the codex hook's rules", () => {
 
   it("refuses a tool name Ork does not know, also in yolo", () => {
     expect(answer({ yolo: true }, "web_search", {})).toBe(
-      "Ork: web_search is not a tool Ork knows. Do not retry it.",
+      "Ork: web_search is not a tool Ork knows. Do not retry it",
     );
   });
 
