@@ -24,6 +24,11 @@ import type { DriverCheck } from "@krapht/ork-integrations";
 import { parseWorkflow, serializeWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
+import {
+  type Change,
+  changesOf,
+  isAllowedPath,
+} from "../src/onboard/finish-git.ts";
 import { finish, finishText } from "../src/onboard/verbs-finish.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
@@ -709,6 +714,142 @@ describe("finish: the canonical commit", () => {
     expect(git(scene.worktree, "log", "-1", "--format=%s")).toBe(
       "ork: canonical form (run r1)",
     );
+  });
+});
+
+/** A repository whose project is its `sub` folder, with a worktree on a branch. */
+const subScenario = (head: Record<string, string> = {}): Scenario => {
+  const repo = tempDir();
+  git(repo, "init", "-q", "-b", "main");
+  git(repo, "config", "user.email", "t@example.com");
+  git(repo, "config", "user.name", "T");
+  put(repo, {
+    "README.md": "x\n",
+    "sub/README.md": "x\n",
+    "sub/.ork/workflows/base.ork.yaml": BASE,
+    ...head,
+  });
+  git(repo, "add", ".");
+  git(repo, "commit", "-q", "-m", "first");
+  const worktree = path.join(tempDir(), "wt");
+  git(repo, "worktree", "add", "-q", "-b", "ork/w", worktree);
+  return { root: path.join(repo, "sub"), worktree, branch: "ork/w" };
+};
+
+const paths = (changes: readonly Change[]): string[] =>
+  changes.map(({ path: file }) => file).toSorted();
+
+describe("finish: a project in a subfolder of its repository", () => {
+  const CI = ".ork/workflows/ci.ork.yaml";
+
+  it("lists a committed change relative to the project", () => {
+    const scene = subScenario();
+    put(scene.worktree, { [`sub/${CI}`]: workflow("ci") });
+    git(scene.worktree, "add", ".");
+    git(scene.worktree, "commit", "-q", "-m", "ci");
+    const changes = changesOf(scene.root, scene.worktree, scene.branch);
+    expect(changes).toEqual([{ path: CI, kind: "added" }]);
+    expect(changes.every(({ path: file }) => isAllowedPath(file))).toBe(true);
+  });
+
+  it("lists an uncommitted change relative to the project", () => {
+    const scene = subScenario();
+    put(scene.worktree, { [`sub/${CI}`]: workflow("ci") });
+    expect(changesOf(scene.root, scene.worktree, scene.branch)).toEqual([
+      { path: CI, kind: "added" },
+    ]);
+  });
+
+  it("lists a change outside the project as `../…`, never allowed", () => {
+    const scene = subScenario();
+    put(scene.worktree, {
+      "other.md": "y\n",
+      ".ork/project.yaml": "schemaVersion: 1\n",
+      [`sub/${CI}`]: workflow("ci"),
+    });
+    git(scene.worktree, "add", "other.md");
+    git(scene.worktree, "commit", "-q", "-m", "other");
+    const changes = changesOf(scene.root, scene.worktree, scene.branch);
+    expect(paths(changes)).toEqual(["../.ork/project.yaml", "../other.md", CI]);
+    expect(paths(changes).filter(file => isAllowedPath(file))).toEqual([CI]);
+  });
+
+  it("accepts an allowed workflow and refuses the repository's own rules", async () => {
+    const scene = subScenario();
+    put(scene.worktree, {
+      [`sub/${CI}`]: `# mine\n${workflow("ci")}`,
+      ".ork/project.yaml": "schemaVersion: 1\n",
+    });
+    expect((await check(scene)).problems).toEqual([
+      "../.ork/project.yaml: outside .ork/workflows/*.ork.yaml and .ork/project.yaml",
+    ]);
+    // The workflow was read, rewritten canonically and committed in `sub/`.
+    expect(readFileSync(path.join(scene.worktree, "sub", CI), "utf8")).toBe(
+      canonical(`# mine\n${workflow("ci")}`),
+    );
+    expect(git(scene.worktree, "log", "-1", "--format=%s")).toBe(
+      "ork: canonical form (run r1)",
+    );
+  });
+
+  it("passes with nothing but an allowed workflow", async () => {
+    const scene = subScenario();
+    put(scene.worktree, { [`sub/${CI}`]: `# mine\n${workflow("ci")}` });
+    expect(await check(scene)).toEqual({ problems: [], eye: [] });
+    expect(git(scene.worktree, "status", "--porcelain")).toBe("");
+  });
+
+  it("lists only what is new against a workflow's text at HEAD", async () => {
+    const allowed = workflow(
+      "base",
+      "",
+      "    tools:\n      allow:\n        - Bash(pnpm test:*)\n",
+    );
+    const scene = subScenario({
+      "sub/.ork/workflows/base.ork.yaml": canonical(allowed),
+    });
+    put(scene.worktree, {
+      "sub/.ork/workflows/base.ork.yaml": allowed.replace(
+        "- Bash(pnpm test:*)",
+        "- Bash(pnpm test:*)\n        - Bash(pnpm lint:*)",
+      ),
+    });
+    expect((await check(scene)).eye).toEqual([
+      ".ork/workflows/base.ork.yaml: node build allows `Bash(pnpm lint:*)`",
+    ]);
+  });
+
+  it("lists only what is new against the project file at HEAD", async () => {
+    const scene = subScenario({
+      "sub/.ork/project.yaml":
+        "schemaVersion: 1\ndefaults:\n  driver: claude-code\n",
+    });
+    put(scene.worktree, {
+      "sub/.ork/project.yaml":
+        "schemaVersion: 1\ndefaults:\n  driver: claude-code\n  model: opus\n",
+    });
+    expect((await check(scene)).eye).toEqual([
+      ".ork/project.yaml: project defaults set `model` for every workflow",
+    ]);
+  });
+
+  it("runs the program with the project as its folder", () => {
+    const scene = subScenario();
+    put(scene.worktree, { [`sub/${CI}`]: canonical(workflow("ci")) });
+    const out = spawnSync(
+      process.execPath,
+      [
+        BIN,
+        "__onboard",
+        "finish",
+        "--worktree",
+        scene.worktree,
+        "--branch",
+        scene.branch,
+      ],
+      { encoding: "utf8", cwd: scene.root, env: { PATH: PATH_NOW } },
+    );
+    expect(out.stdout).toContain("problems:\n- none\n");
   });
 });
 

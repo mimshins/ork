@@ -132,10 +132,13 @@ could not be checked:
   pattern-based scrubber (ADR-091), so a secret that matches no pattern in a
   subject still goes to the model provider. It is the first thing cut at the
   survey's 6,000-character bound (L407).
-- **L434 · `finish-git.ts` may list wrong paths in a subfolder project.**
-  `changesOf` (`packages/cli/src/onboard/finish-git.ts`) runs
-  `git diff --name-status -z` in the project root and
-  `git status --porcelain=v1 -z` in the worktree, and does not strip the repo
-  prefix the way `uncommittedFiles` does. In a project that is a subfolder of
-  its git repository it may list paths relative to the repository, not to the
-  project. Not checked, not fixed.
+- **L434 · `finish` in a subfolder project: a file outside the project is
+  refused, even one the tool leaves.** `changesOf` now strips the project's
+  folder (`git rev-parse --show-prefix`) from each path, so a project that is a
+  subfolder of its repository is checked from its own folder, and a path outside
+  it reads `../…` and is refused. The writer's worktree is the whole
+  repository's, so a file a driver leaves outside the project folder, such as
+  command-code's empty `.commandcode/taste/taste.md` at the repository's top, is
+  refused (`../.commandcode/taste/taste.md`), not ignored: the taste exception
+  holds only inside the project folder. Not checked: which folder a command-code
+  writer runs in for such a project.

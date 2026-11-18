@@ -192,7 +192,9 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    added or modified `.ork/workflows/<name>.ork.yaml` (one level) or
    `.ork/project.yaml`; any other path, or a deletion or rename, is a problem. A
    write outside the worktree is still not seen
-   ([L395](../gaps/onboard-limits.md)).
+   ([L395](../gaps/onboard-limits.md)). A subfolder project's paths lose the
+   `git rev-parse --show-prefix` prefix; one outside it reads `../…` and is
+   refused ([L434](../gaps/onboard-limits.md)).
 2. **Each changed workflow**, read in the worktree: it parses and passes the
    schema; it sets `limits.budgetUsd` and `limits.budgetTokens`; no `driver` or
    `model` anywhere (`defaults`, `agents`, nodes); no `agents:` of its own, and

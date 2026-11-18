@@ -116,43 +116,68 @@ const fromStatus = (
     });
 
 /**
+ * The project's folder inside its repository, `""` at the repository's root,
+ * `"sub/"` for a project in `sub`. `""` too when git cannot say (the git calls
+ * after it then fail with their own message).
+ */
+export const projectPrefix = (root: string): string => {
+  try {
+    return git(root, ["rev-parse", "--show-prefix"]).trim();
+  } catch {
+    return "";
+  }
+};
+
+/**
  * What the branch changed since `HEAD` (run in `root`) and what the worktree
- * still holds uncommitted. A rename is a deletion and an addition.
+ * (of the whole repository) still holds uncommitted, as paths relative to the
+ * project: git reports them relative to the repository, so a project in a
+ * subfolder loses its prefix, and a path outside the project becomes `../…`,
+ * which `isAllowedPath` refuses. A rename is a deletion and an addition.
  */
 export const changesOf = (
   root: string,
   worktree: string,
   branch: string,
-): Change[] => [
-  ...fromDiff(
-    git(root, [
-      "diff",
-      "--name-status",
-      "-z",
-      "--no-renames",
-      `HEAD...${branch}`,
-    ]),
-  ),
-  ...fromStatus(
-    git(worktree, [
-      "-c",
-      "status.renames=false",
-      "status",
-      "--porcelain=v1",
-      "-z",
-      "-uall",
-      // A file the writer hid in an ignored path is still a change.
-      "--ignored",
-    ]),
-    file => copiedUnchanged(root, worktree, file),
-    file => emptyTaste(worktree, file),
-  ),
-];
+): Change[] => {
+  const prefix = projectPrefix(root);
+  const inProject = (file: string): string => path.posix.relative(prefix, file);
+  const here = path.join(worktree, prefix);
+  return [
+    ...fromDiff(
+      git(root, [
+        "diff",
+        "--name-status",
+        "-z",
+        "--no-renames",
+        // A user's `diff.relative` would turn the repository's paths into the
+        // project's, which `inProject` below then strips a second time.
+        "--no-relative",
+        `HEAD...${branch}`,
+      ]),
+    ),
+    ...fromStatus(
+      git(worktree, [
+        "-c",
+        "status.renames=false",
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "-uall",
+        // A file the writer hid in an ignored path is still a change.
+        "--ignored",
+      ]),
+      file => copiedUnchanged(root, here, inProject(file)),
+      file => emptyTaste(here, inProject(file)),
+    ),
+  ].map(({ path: file, kind }) => ({ path: inProject(file), kind }));
+};
 
-/** `file` as of `HEAD` in `root`, or null when it was not there. */
+/** `file` (relative to `root`) as of `HEAD`, or null when it was not there. */
 export const textAtHead = (root: string, file: string): string | null => {
   try {
-    return git(root, ["show", `HEAD:${file}`]);
+    // `./` makes git read the path from `root`, not from the repository.
+    return git(root, ["show", `HEAD:./${file}`]);
   } catch {
     return null;
   }

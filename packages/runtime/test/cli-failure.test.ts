@@ -1,14 +1,20 @@
 /**
  * @file Tests for what the CLI driver says when `claude` dies without a result:
  *   the last meaningful block of its stderr, capped and masked, and
- *   `interrupted` when a signal ended it or Ork asked it to stop.
+ *   `interrupted` when a signal ended it or Ork asked it to stop, also when it
+ *   prints a result once stopped and hands in no report.
  */
 
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { HumanChannel, RuntimeEvent, SessionSpec } from "@krapht/ork-core";
+import type {
+  HumanChannel,
+  RuntimeEvent,
+  SessionOutcome,
+  SessionSpec,
+} from "@krapht/ork-core";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createCliRuntime } from "../src/index.ts";
@@ -92,6 +98,58 @@ const stderrOf = (text: string, code = 1): string =>
 
 const STARTED = `console.log(JSON.stringify({ type: "system", subtype: "init", session_id: "s", model: "m", cwd: "/" }));`;
 
+/** What the result Claude Code prints when stopped mid tool call spent. */
+const EDE_USAGE = {
+  costUsd: 0.5,
+  inputTokens: 100,
+  outputTokens: 20,
+  turns: 3,
+};
+
+/** That result line (run b88b5fbb), printed by a fake's `body`. */
+const edeResult = (extra: Record<string, unknown> = {}): string =>
+  `console.log(${JSON.stringify(
+    JSON.stringify({
+      type: "result",
+      subtype: "error_during_execution",
+      is_error: true,
+      session_id: "s",
+      errors: [
+        "[ede_diagnostic] result_type=user last_content_type=n/a stop_reason=tool_use",
+      ],
+      total_cost_usd: EDE_USAGE.costUsd,
+      num_turns: EDE_USAGE.turns,
+      duration_ms: 100,
+      usage: {
+        input_tokens: EDE_USAGE.inputTokens,
+        output_tokens: EDE_USAGE.outputTokens,
+      },
+      ...extra,
+    }),
+  )});`;
+
+const EDE_RESULT = edeResult();
+
+const FAILED_REPORT = { status: "fail", summary: "stopped", artifacts: {} };
+
+/** A fake that starts, then runs `then` and exits 1 on SIGINT. */
+const onSigint = (then: string): string =>
+  `${STARTED} process.on("SIGINT", () => { ${then} process.exit(1); }); setInterval(() => {}, 1000);`;
+
+/** The outcome a fake running `body` ends with, `stop`ped once started. */
+const endOf = async (body: string, stop: boolean): Promise<SessionOutcome> => {
+  const session = createCliRuntime({ bin: fakeClaude(body) }).start(spec, {
+    human,
+  });
+  let outcome: SessionOutcome | undefined;
+  for await (const event of session.events) {
+    if (stop && event.type === "session.started") void session.interrupt();
+    if (event.type === "session.finished") outcome = event.outcome;
+  }
+  if (outcome === undefined) throw new Error("no finish");
+  return outcome;
+};
+
 describe("a claude that dies without a result", () => {
   it("gives the error line, not the Node banner or the stack", async () => {
     const crash = [
@@ -146,6 +204,24 @@ describe("a claude that dies without a result", () => {
   it("says interrupted when Ork stopped it, however it exits", async () => {
     const body = `${STARTED} process.on("SIGINT", () => { process.stderr.write("bye\\n"); process.exit(1); }); setInterval(() => {}, 1000);`;
     expect(await stoppedOf(body)).toBe("interrupted");
+  });
+
+  it("ends interrupted when Ork stopped it, whatever result it then prints", async () => {
+    const outcome = await endOf(onSigint(EDE_RESULT), true);
+    expect(outcome.end?.kind).toBe("interrupted");
+    expect(outcome.end?.detail).toBeUndefined();
+    expect(outcome.usage).toMatchObject(EDE_USAGE);
+  });
+
+  it("reads the same result unstopped as the tool's own end", async () => {
+    const outcome = await endOf(`${STARTED} ${EDE_RESULT}`, false);
+    expect(outcome.end?.kind).toBe("unknown");
+  });
+
+  it("keeps the report of a stopped session that handed one in", async () => {
+    const body = onSigint(edeResult({ structured_output: FAILED_REPORT }));
+    const outcome = await endOf(body, true);
+    expect(outcome.end?.kind).toBe("reported_failure");
   });
 
   it("ends a crash it can't read as driver_crashed", async () => {

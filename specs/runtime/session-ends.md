@@ -17,7 +17,9 @@ lists every kind (a core test fails when a kind has no section there). Why a
 closed set: [ADR-079](../../decisions/ADR-079-closed-set-of-end-kinds.md). What
 is left is in [the register](../gaps/end-kinds-limits.md) (L241 and L243 to
 L248). The token cap of RFC-015 ends `budget_limit` too
-([below](#the-token-cap)).
+([below](#the-token-cap)). A session Ork stopped, with no report, ends
+`interrupted` on every driver, whatever its tool printed after the stop
+([below](#a-session-ork-stopped)).
 
 ## The kinds
 
@@ -78,6 +80,27 @@ and then writes on can end with a result that carries no `structured_output`.
 The adapter's leg decoder keeps the last accepted call's input and gives it to
 such a result, so the session ends with that report, not `no_report`; a call
 `claude` refused is not kept, and a result's own report wins.
+
+### A session Ork stopped
+
+When Ork stops a session (`stop()` on its handle: `ork stop`, a run's stop, an
+abort), the tool often still prints a final result. Claude Code, cut off in a
+tool call, prints an `error_during_execution` result whose text names a
+diagnostic; read as an error result, that would end the session `unknown` and
+file an Ork bug for a stop the user asked for. So the shared session leg
+([session-leg.ts](../../packages/runtime/src/session-leg.ts), `legStep`), not a
+decoder, decides it for every driver: a session Ork had stopped when its result
+line was read, and that handed in no report, ends `interrupted`, with no detail,
+and keeps its subtype and its usage. A session never continues after it
+(`interrupted` is not in `wentWell`). The order is the one below: a report the
+session handed in still wins (`done` or `reported_failure`), then the stop, then
+the decoder's own signal. The stop is read when the line is decoded, so a stop
+that comes after a normal finish does not rewrite it; one that races a result
+already printed is read by line order, and the node ends `interrupted` anyway.
+The token cap's stop ends `budget_limit` and is not touched by this. No text of
+a provider or tool is matched for it. Tested in
+[cli-failure.test.ts](../../packages/runtime/test/cli-failure.test.ts) and by
+the contract suite's "ends when interrupted" case on every adapter.
 
 Node types that run no driver set their own ends, in the node's own code, with
 Ork's message and the program's (or server's) own text, scrubbed and capped, as

@@ -131,6 +131,10 @@ You stopped the node, or the run. **Who acts:** you. **What to do:**
 `ork resume` goes on from where it stopped. A stop by you ends the nodes still
 running as interrupted, even one whose session threw while it was torn down; the
 run's own `limits.timeout` ends them as timed out. The run's status says why.
+The session's own end reads stopped too: when you stop a node in the middle of a
+tool call, the agent's tool may print an error as it is cut off, and Ork does
+not report that as an end it doesn't recognize. A session that had already
+handed in its report keeps that report's end.
 
 ## Tool missing
 

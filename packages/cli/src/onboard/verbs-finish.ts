@@ -10,10 +10,9 @@
  *   (specs/cli/onboard-verbs.md#finish).
  */
 
-import { lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { plainPathInside, writePlainFile } from "@krapht/ork-core";
+import { writePlainFile } from "@krapht/ork-core";
 import {
   parseProject,
   parseWorkflow,
@@ -37,8 +36,14 @@ import {
   changesOf,
   commitIn,
   isAllowedPath,
+  projectPrefix,
   textAtHead,
 } from "./finish-git.ts";
+import {
+  inWorktree,
+  readInWorktree,
+  type Scene as Place,
+} from "./finish-tree.ts";
 
 export type FinishOptions = {
   /** The project root `finish` runs in. */
@@ -55,26 +60,12 @@ export type FinishReport = { problems: string[]; eye: string[] };
 
 const PROJECT_FILE = ".ork/project.yaml";
 
-/** A file of the worktree's text, or the reason it cannot be read. */
-const readInWorktree = (
-  worktree: string,
-  file: string,
-): { text: string } | { error: string } => {
-  const absolute = path.join(worktree, file);
-  if (!plainPathInside(worktree, absolute)) {
-    return { error: "is a link, or behind one" };
-  }
-  try {
-    if (!lstatSync(absolute).isFile()) return { error: "is not a file" };
-    return { text: readFileSync(absolute, "utf8") };
-  } catch {
-    return { error: "cannot be read" };
-  }
-};
+/** The options plus where the project sits in the repository. */
+type Scene = FinishOptions & Place;
 
 /** The scope check: what changed, the problems, and the files to read. */
 const scopeOf = (
-  options: FinishOptions,
+  options: Scene,
   problems: string[],
 ): { workflows: string[]; project: boolean } => {
   let changes: Change[];
@@ -129,13 +120,13 @@ const newProblems = (now: string[], before: Workflow | null): string[] => {
 
 /** Reads and checks each workflow file: schema, caps, names. */
 const readWorkflows = (
-  options: FinishOptions,
+  options: Scene,
   files: readonly string[],
   problems: string[],
 ): Read[] => {
   const reads: Read[] = [];
   for (const file of files) {
-    const read = readInWorktree(options.worktree, file);
+    const read = readInWorktree(options, file);
     if ("error" in read) {
       problems.push(`${file}: ${read.error}`);
       continue;
@@ -163,16 +154,16 @@ const readWorkflows = (
  * branch (`commit: never`) the rewrite stays uncommitted, like the writer's.
  */
 const canonicalize = (
-  options: FinishOptions,
+  options: Scene,
   reads: readonly Read[],
   problems: string[],
 ): void => {
   const changed: { file: string; text: string }[] = [];
   for (const { file, workflow } of reads) {
     const text = serializeWorkflow(workflow);
-    const now = readInWorktree(options.worktree, file);
+    const now = readInWorktree(options, file);
     if ("text" in now && now.text === text) continue;
-    const absolute = path.join(options.worktree, file);
+    const absolute = inWorktree(options, file);
     const written = writePlainFile(options.worktree, absolute, text, file);
     if (written.ok) changed.push({ file, text });
     else problems.push(`${file}: ${written.error}`);
@@ -181,7 +172,7 @@ const canonicalize = (
   const run = options.run === undefined ? "" : ` (run ${options.run})`;
   const refused = commitIn(
     options.worktree,
-    changed.map(({ file }) => file),
+    changed.map(({ file }) => `${options.prefix}${file}`),
     `ork: canonical form${run}`,
   );
   if (refused !== null) {
@@ -190,7 +181,7 @@ const canonicalize = (
   }
   // A commit hook may have rewritten a file the serializer just wrote.
   for (const { file, text } of changed) {
-    const after = readInWorktree(options.worktree, file);
+    const after = readInWorktree(options, file);
     if (!("text" in after) || after.text !== text) {
       problems.push(`${file}: rewritten by a commit hook, no longer canonical`);
     }
@@ -199,7 +190,7 @@ const canonicalize = (
 
 /** `ork validate`'s errors, plain and under each ready driver. */
 const validationProblems = async (
-  options: FinishOptions,
+  options: Scene,
   reads: readonly Read[],
 ): Promise<string[]> => {
   const checks = options.checks ?? checksHere;
@@ -209,7 +200,9 @@ const validationProblems = async (
   const problems = new Set<string>();
   for (const { file } of reads) {
     // oxlint-disable-next-line eslint/no-await-in-loop -- a walk's limit is on the clock
-    const loaded = await walkLoaded(loadWorkflow(file, options.worktree));
+    const loaded = await walkLoaded(
+      loadWorkflow(file, path.join(options.worktree, options.prefix)),
+    );
     const errors = [...loaded.report.diagnostics];
     if (loaded.workflow !== null) {
       for (const override of [undefined, ...ready]) {
@@ -229,7 +222,7 @@ const validationProblems = async (
 
 /** What a person should look at, against the files at `HEAD`. */
 const eyeList = (
-  options: FinishOptions,
+  options: Scene,
   reads: readonly Read[],
   project: boolean,
 ): string[] => {
@@ -247,7 +240,7 @@ const eyeList = (
     ].map(item => `${file}: ${item}`);
   });
   if (!project) return items;
-  const read = readInWorktree(options.worktree, PROJECT_FILE);
+  const read = readInWorktree(options, PROJECT_FILE);
   const now = "text" in read ? parseProject(read.text) : null;
   if (now?.ok !== true) return items;
   const old = textAtHead(options.root, PROJECT_FILE);
@@ -263,12 +256,13 @@ const eyeList = (
 };
 
 /** Checks the writer's work; `problems` is empty when it passes. */
-export const finish = async (options: FinishOptions): Promise<FinishReport> => {
+export const finish = async (given: FinishOptions): Promise<FinishReport> => {
+  const options: Scene = { ...given, prefix: projectPrefix(given.root) };
   const problems: string[] = [];
   const scope = scopeOf(options, problems);
   const reads = readWorkflows(options, scope.workflows, problems);
   if (scope.project) {
-    const read = readInWorktree(options.worktree, PROJECT_FILE);
+    const read = readInWorktree(options, PROJECT_FILE);
     if ("error" in read) problems.push(`${PROJECT_FILE}: ${read.error}`);
     else {
       const parsed = parseProject(read.text);

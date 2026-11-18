@@ -12,6 +12,7 @@ import { createInterface } from "node:readline";
 
 import {
   type EndKind,
+  endFor,
   lowerChild,
   type NodeReport,
   type RuntimeEvent,
@@ -92,16 +93,23 @@ export type LegInput = {
 
 /**
  * A session's outcome with its report (the one Ork's `report` tool accepted,
- * when the session has that tool) and its end settled.
+ * when the session has that tool) and its end settled. A session Ork `stopped`
+ * with no report ends `interrupted`, whatever result line its tool printed.
  */
-const settled = (outcome: SessionOutcome, input: LegInput): SessionOutcome =>
-  settleEnd(
-    input.reported === undefined
-      ? outcome
-      : { ...outcome, report: input.reported() },
+const settled = (
+  outcome: SessionOutcome,
+  input: LegInput,
+  stopped = false,
+): SessionOutcome => {
+  const report =
+    input.reported === undefined ? outcome.report : input.reported();
+  const end = stopped && report === null ? endFor("interrupted") : outcome.end;
+  return settleEnd(
+    { ...outcome, report, ...(end === undefined ? {} : { end }) },
     input.scope.facts,
     input.scope.scrub,
   );
+};
 
 /** What this leg `used`, with what the legs before it spent. */
 const withCarried = (
@@ -136,11 +144,12 @@ const wentWell = (kind: EndKind | undefined): boolean =>
  * What one decoded line yields, and how the leg ends if it does: a result is
  * the session's end, unless the hold hook deferred a call or a message waits; a
  * resumed leg's start is not news, and its end carries what the legs before it
- * spent.
+ * spent. `stopped` is whether Ork had stopped the leg when the line came.
  */
 const legStep = (
   decoded: Decoded,
   input: LegInput,
+  stopped = false,
 ): { events: RuntimeEvent[]; ended?: Leg } => {
   const { adapter, carried } = input;
   const deferred = input.deferred() && decoded.deferred === true;
@@ -159,7 +168,7 @@ const legStep = (
       carried === undefined ? own : adapter.usage.combine(carried, own);
     const last = {
       ...said,
-      outcome: settled({ ...said.outcome, usage }, input),
+      outcome: settled({ ...said.outcome, usage }, input, stopped),
     };
     const { sessionId, end } = last.outcome;
     // A queued message continues only a session that ended well; an error
@@ -222,7 +231,7 @@ export const runLeg = async function* (
     for await (const line of createInterface({ input: child.stdout })) {
       const decoded = decode(line);
       used = decoded.usage ?? used;
-      const { events, ended } = legStep(decoded, input);
+      const { events, ended } = legStep(decoded, input, stopped);
       for (const event of decoded.events) {
         if (event.type === "session.started") sessionId = event.sessionId;
       }
