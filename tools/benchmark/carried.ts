@@ -17,13 +17,24 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { parseArgs } from "node:util";
 
-import { KINDS, type Kind, kindOf } from "./carried-kinds.ts";
+import { callsByKind, KINDS, type Kind, kindOf } from "./carried-kinds.ts";
 import { type Json, parse, r1, rec, records, text } from "./json.ts";
 import { transcriptsOf } from "./transcripts.ts";
 import { copyStore, loadTree, type Tree } from "./tree.ts";
 
-/** One tool result: its kind, and its weight. */
-type Result = { kind: Kind; weight: number; returned: number | null };
+/** One tool result: its kind, its weight, and whether Ork refused it. */
+type Result = {
+  kind: Kind;
+  weight: number;
+  returned: number | null;
+  refused?: true;
+};
+
+/**
+ * How Ork's refusals start (RFC-025,
+ * packages/runtime/src/tools/shell-reads.ts).
+ */
+const REFUSAL = "Ork refuses";
 
 /** One session's turns and what its tool results weigh. */
 export type Carried = { turns: number; results: Result[] };
@@ -55,7 +66,12 @@ export const carriedOf = (entries: readonly Json[]): Carried => {
     string,
     { turn: number; kind: Kind; extract: boolean }
   >();
-  const results: { id: string; chars: number; returned: number | null }[] = [];
+  const results: {
+    id: string;
+    chars: number;
+    returned: number | null;
+    refused: boolean;
+  }[] = [];
   for (const e of entries) {
     const m = rec(e["message"]);
     if (e["isSidechain"] === true) continue;
@@ -82,6 +98,7 @@ export const carriedOf = (entries: readonly Json[]): Carried => {
           id: text(block["tool_use_id"]) ?? "",
           chars,
           returned: footer === null ? null : Number(footer[1]),
+          refused: block["is_error"] === true && body.includes(REFUSAL),
         });
       }
     }
@@ -98,6 +115,7 @@ export const carriedOf = (entries: readonly Json[]): Carried => {
               kind: call.kind,
               weight: r.chars * (turns - call.turn),
               returned: call.extract ? (r.returned ?? r.chars) : null,
+              ...(r.refused ? { refused: true as const } : {}),
             },
           ];
     }),
@@ -167,6 +185,14 @@ export const report = (
         part(
           weightOf(() => true, kind),
           total,
+        ),
+      ]),
+    ),
+    calls_by_role: Object.fromEntries(
+      roles.map(role => [
+        role,
+        callsByKind(
+          sessions.filter(s => s.role === role).flatMap(s => s.carried.results),
         ),
       ]),
     ),

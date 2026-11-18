@@ -44,10 +44,18 @@ in `carried.json` from `pnpm benchmark`, or alone from
 - **The report:** weight and share by role (the node without its `-2` instance
   suffix or `.1` fan-out suffix) and by kind of call, turns per session (mean,
   median), and calls to `extract` with the characters they returned (from each
-  result's footer). Kinds: reads through the shell (`cat`, `sed`, `head`,
-  `tail`, `nl`, `less`, `bat`, `awk`), searches (`rg`, `grep`, `find`, `ls`,
-  `fd`, `tree`, Grep, Glob), `git diff`/`show`/`log`, tests and checks, Read,
-  Ork's tools, `extract`, other.
+  result's footer), and each role's calls of each kind with how many Ork refused
+  (RFC-025: an error result that starts "Ork refuses"). Kinds: reads through the
+  shell (`cat`, `sed`, `head`, `tail`, `nl`, `less`, `bat`, `awk`), searches
+  (`rg`, `grep`, `find`, `ls`, `fd`, `tree`, Grep, Glob),
+  `git diff`/`show`/`log`, tests and checks, Read, Ork's tools, `extract`,
+  other.
+- **Arms:** `pnpm benchmark:arms <folder> <name>…` sets benchmarks named
+  `<prefix>-<task>-<arm>-<n>` side by side: per run, cost, working minutes,
+  median turns, the weight of the reading kinds (shell reads, searches, git
+  reads, Read, `extract`) for the writing roles, the review roles and in all,
+  and the calls of `extract`, shell reads and Read with the refusals; then each
+  task and arm's medians.
 - **The baseline:** this script on the RFC's four build runs (`f7f49775`,
   `8d0a6287`, `3867d943`, `aedbdc3d`): 55 sessions; shell reads 57%, searches
   17%, the Read tool 9% and git reads 9% make 92%. That is the weight an extract

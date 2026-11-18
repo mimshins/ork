@@ -87,3 +87,28 @@ export const kindOf = (tool: string, input: Json): Kind => {
   if (tool === "mcp__ork__extract") return "extract";
   return tool.startsWith("mcp__ork__") ? "Ork tools" : "other";
 };
+
+/**
+ * The calls and Ork's refusals of each kind in `results`, with their weight;
+ * only the kinds that appear.
+ */
+export const callsByKind = (
+  results: readonly { kind: Kind; weight: number; refused?: true }[],
+) =>
+  Object.fromEntries(
+    KINDS.flatMap(kind => {
+      const list = results.filter(r => r.kind === kind);
+      return list.length === 0
+        ? []
+        : [
+            [
+              kind,
+              {
+                calls: list.length,
+                refused: list.filter(r => r.refused === true).length,
+                weight: list.reduce((s, r) => s + r.weight, 0),
+              },
+            ],
+          ];
+    }),
+  );

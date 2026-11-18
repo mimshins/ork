@@ -42,6 +42,16 @@ const result = (id: string, content: unknown): Json => ({
   message: { content: [{ type: "tool_result", tool_use_id: id, content }] },
 });
 
+/** An error result, as Claude Code logs a refused or failed call. */
+const refusal = (id: string, body: string): Json => ({
+  type: "user",
+  message: {
+    content: [
+      { type: "tool_result", tool_use_id: id, is_error: true, content: body },
+    ],
+  },
+});
+
 /** Five turns; turn 2 reads 1,000 characters through `cat`. */
 const session = (): Json[] => [
   ...turn(1),
@@ -74,6 +84,23 @@ describe("carried weight", () => {
       ...turn(3),
     ];
     expect(carriedOf(entries).results[0]?.weight).toBe(10);
+  });
+
+  it("counts calls and Ork's refusals by role and kind", () => {
+    const entries = [
+      ...turn(1, [
+        use("a", "Bash", { command: "grep -rn x src" }),
+        use("b", "Bash", { command: "pnpm test" }),
+      ]),
+      refusal("a", "Ork refuses `grep` here: use the extract tool instead."),
+      refusal("b", "1 test failed"),
+      ...turn(2),
+    ];
+    const out = report([{ role: "build.review", carried: carriedOf(entries) }]);
+    expect(out.calls_by_role["build.review"]).toEqual({
+      searches: { calls: 1, refused: 1, weight: 54 },
+      "tests and checks": { calls: 1, refused: 0, weight: 13 },
+    });
   });
 
   it("splits weight by role and kind, with shares and turns", () => {

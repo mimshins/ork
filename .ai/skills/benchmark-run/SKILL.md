@@ -59,7 +59,9 @@ itself, and the README's account of what happened.
    prints the same report alone; see `benchmarks/method.md#carried-weight`.
 4. **Carried weight.** Read the printed totals (or `carried.json`) and give the
    biggest roles and kinds, mean turns, and `extract` calls in the report; a
-   before/after comparison of the same work needs both runs' `carried.json`.
+   before/after comparison of the same work needs both runs' `carried.json`;
+   `pnpm benchmark:arms <folder> <name>…` sets several runs of the same tasks
+   side by side by arm.
    Say when `missing_transcripts` is not empty.
 5. **Result commits.** `summary.json`'s `result_commits` lists the commits the
    run's tool nodes printed (a `publish` step). If it is empty because the
