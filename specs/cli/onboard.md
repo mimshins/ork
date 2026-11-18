@@ -29,6 +29,11 @@ ork onboard [--driver <id>] [--review | --fresh]
   and an unfinished one. With `--review`, refused.
 - The global `--plain` applies, as everywhere ([terminal](./terminal.md)).
 
+Review stays a mode of `ork onboard`, not a command of its own (decided
+2026-11-18, RFC-018's naming consequence): it is about 8% of the command's code.
+Revisit if review gains steps a first visit lacks, such as resolving feedback,
+or if users ask for it by name.
+
 `ork onboard` needs a terminal: it asks, and it has no flags for the answers or
 the picks.
 

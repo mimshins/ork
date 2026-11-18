@@ -3,7 +3,8 @@
  *   run is offered (the newest succeeded propose run of this project that no
  *   write run followed, nobody else's), what is said on Ctrl-C at the pick, and
  *   that a next `ork onboard` takes the proposal without the questions or a
- *   second paid propose run, or starts as before on "no" and `--fresh`; and
+ *   second paid propose run, or starts as before on "no" and `--fresh`, says
+ *   the proposal's age, and on Ctrl-C at the offer keeps it for next time; and
  *   that an unfinished propose run, when it is the newest, is offered and
  *   resumed under its own id instead.
  */
@@ -403,6 +404,57 @@ describe("ork onboard after a proposal was left at the pick", () => {
     });
     expect(second.out).not.toContain("is saved");
     expect(second.out).toContain("▸ proposing workflows");
+  });
+
+  it("says the proposal's age, and still offers one older than a week, by its date", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-01T09:00:00Z"));
+    const { root, store } = await leave();
+    vi.setSystemTime(new Date("2026-11-01T12:30:00Z"));
+    const later = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      answers: ["n", ...LEAVE],
+    });
+    expect(later.out).toContain("A proposal from 3h ago is saved (run ");
+    vi.setSystemTime(new Date("2026-11-12T09:00:00Z"));
+    const old = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      answers: ["n", ...LEAVE],
+    });
+    expect(old.out).toContain("A proposal from 2026-11-01 is saved (run ");
+  });
+
+  it("exits 130 on Ctrl-C at the offer, starts and writes nothing, and offers the same run next time", async () => {
+    const { root, store } = await leave();
+    const id = runIdOf(store, "ork-onboard-propose");
+    vi.mocked(confirmOrStop).mockResolvedValueOnce(null);
+    const stopped = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+    });
+    expect(stopped.code).toBe(130);
+    expect(stopped.out).toContain(`is saved (run ${id})`);
+    expect(stopped.specs).toEqual([]);
+    expect(store.runs().map(run => run.id)).toEqual([id]);
+    expect(branches(root)).toEqual([]);
+    const next = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root,
+      store,
+      answers: ["y", "1"],
+    });
+    expect(next.code).toBe(0);
+    expect(next.out).toContain(`is saved (run ${id})`);
+    expect(proposeRuns(store)).toEqual([id]);
   });
 
   it("is not offered when nothing was proposed before, or after the workflows were written", async () => {
