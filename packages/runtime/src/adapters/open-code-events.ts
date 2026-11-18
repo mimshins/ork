@@ -19,7 +19,7 @@ import {
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
-import { ORK_SERVER, toolId } from "../tools/tool.ts";
+import { isBadArguments, ORK_SERVER, toolId } from "../tools/tool.ts";
 
 type Json = Record<string, unknown>;
 
@@ -116,7 +116,15 @@ const toolEvents = (part: unknown): RuntimeEvent[] => {
       name: toolName(str(get(part, "tool"))),
       input: isObject(input) ? input : {},
     },
-    { type: "tool.result", id, isError: get(state, "status") === "error" },
+    {
+      type: "tool.result",
+      id,
+      isError: get(state, "status") === "error",
+      ...(get(state, "status") === "error" &&
+      isBadArguments(`${str(get(state, "error"))}${str(get(state, "output"))}`)
+        ? { fault: "arguments" as const }
+        : {}),
+    },
   ];
 };
 

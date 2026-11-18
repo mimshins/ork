@@ -14,8 +14,8 @@ fix it at the source.
   ([why a node stopped](./why-a-node-stopped.md)): `unknown` and
   `driver_crashed` are Ork bugs, a workflow kind a workflow note, an agent kind
   a context gap; an account's, provider's or your own stop is a setup hint, not
-  filed. A report the `report` tool refuses is the agent's context gap
-  (`report.rejected`), not an Ork bug.
+  filed. A report or arguments an Ork tool refuses are the agent's context gap
+  (`report.rejected`, `tool.arguments`), not an Ork bug.
 - **The agents**, with the `feedback` tool every agent node in a run gets. Its
   description asks only for what materially got in the way, in a line and a
   short body, and Ork takes at most 3 reports from a session.

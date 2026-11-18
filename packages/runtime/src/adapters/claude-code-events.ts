@@ -17,6 +17,7 @@ import {
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd, sessionEnd } from "../session-end.ts";
+import { isBadArguments } from "../tools/tool.ts";
 
 type Json = Record<string, unknown>;
 
@@ -30,6 +31,16 @@ const num = (value: unknown): number => (typeof value === "number" ? value : 0);
 
 const str = (value: unknown): string =>
   typeof value === "string" ? value : "";
+
+/** A tool result block's text: a string, or its text parts joined. */
+const resultText = (block: Json): string => {
+  const content = block["content"];
+  return typeof content === "string"
+    ? content
+    : Array.isArray(content)
+      ? content.map(part => str(get(part, "text"))).join("")
+      : "";
+};
 
 const blocks = (message: unknown): Json[] => {
   const content = get(get(message, "message"), "content");
@@ -165,11 +176,13 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
     case "user": {
       return blocks(message)
         .filter(block => block["type"] === "tool_result")
-        .map(block => ({
-          type: "tool.result",
-          id: str(block["tool_use_id"]),
-          isError: block["is_error"] === true,
-        }));
+        .map((block): RuntimeEvent => {
+          const id = str(block["tool_use_id"]);
+          const isError = block["is_error"] === true;
+          return isError && isBadArguments(resultText(block))
+            ? { type: "tool.result", id, isError, fault: "arguments" }
+            : { type: "tool.result", id, isError };
+        });
     }
     case "rate_limit_event": {
       return planLimitOf(message["rate_limit_info"]);

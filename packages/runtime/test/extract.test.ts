@@ -137,7 +137,9 @@ describe("extract refuses", () => {
       "the first step must be read, files, search or git",
     );
     expect(twoProducers.said).toContain("only the first step");
-    expect(seven.said).toBe("steps: Too big: expected array to have <=6 items");
+    expect(seven.said).toBe(
+      "Invalid arguments, nothing ran:\nsteps: Too big: expected array to have <=6 items",
+    );
     expect(unknown.said).toContain("steps[0].step: Invalid discriminator");
     expect(
       [cutFirst, twoProducers, seven, unknown].map(result => result.isError),

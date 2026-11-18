@@ -107,10 +107,7 @@ export type SessionSpec = {
   reading?: "extract" | "extract-only" | "open";
   /** A session id to resume. */
   resume?: string;
-  /**
-   * With `resume`: start a new session from a copy of that one, leaving it as
-   * it was (`--fork-session`; the SDK's `forkSession`).
-   */
+  /** With `resume`: start from a copy of that session (`--fork-session`). */
   fork?: boolean;
   /**
    * The prompt cache's lifetime, when longer than Claude Code's 5 minutes: a
@@ -175,6 +172,8 @@ export type RuntimeEvent = (
       type: "tool.result";
       id: string;
       isError: boolean;
+      /** `arguments`: an Ork tool refused its arguments (agent, not Ork). */
+      fault?: "arguments";
       /** For an Ork tool command: the CPU it used, its children's included. */
       cpu?: CpuTime;
     }

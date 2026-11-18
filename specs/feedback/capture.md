@@ -13,12 +13,16 @@ _Part of [Feedback and self-improvement](../feedback.md)._
 **System signals** (built), each recorded right after the event that shows it: a
 loop out of rounds (`loop.exhausted`), a budget that ran out
 (`budget.exhausted`), a tool the user denied (`permission.denied`), an Ork tool
-that returned an error (`tool.error`, which leaves out the `report` tool), a
-report the `report` tool refused (`report.rejected`, a context gap the agent's
-own: the agent got its report wrong, not Ork), a gate that timed out and took
-its default (`gate.timeout`), and an answer other than the recommended one
-(`recommendation.overridden`). They are derived where a run's events are
-recorded, so the decision queue's events count too.
+that returned an error (`tool.error`, which leaves out the `report` tool and
+refused arguments), a report the `report` tool refused (`report.rejected`, a
+context gap the agent's own: the agent got its report wrong, not Ork), arguments
+an Ork tool's schema refused (`tool.arguments`, also the agent's: the decoder
+sees the tool's answer start with "Invalid arguments, nothing ran:" and sets the
+`tool.result`'s `fault`, on Claude Code and OpenCode; Command Code's decoder
+does not read result text, so there it stays `tool.error`), a gate that timed
+out and took its default (`gate.timeout`), and an answer other than the
+recommended one (`recommendation.overridden`). They are derived where a run's
+events are recorded, so the decision queue's events count too.
 
 A failed node's end files by who should act on it (the per-node `end.<kind>`
 signal, [end-signals.ts](../../packages/core/src/feedback/end-signals.ts)): an

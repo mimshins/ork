@@ -17,6 +17,17 @@ export type ToolText = {
   isError?: boolean;
 };
 
+/**
+ * How an Ork tool's answer to arguments its schema refused starts, so a
+ * driver's decoder can tell the agent's mistake from Ork's failure
+ * (`tool.result`'s `fault`).
+ */
+export const BAD_ARGUMENTS = "Invalid arguments, nothing ran:";
+
+/** Whether a tool result's text is Ork's answer to bad arguments. */
+export const isBadArguments = (body: string): boolean =>
+  body.includes(BAD_ARGUMENTS);
+
 export const text = (value: string): ToolText => ({
   content: [{ type: "text", text: value }],
 });
@@ -150,7 +161,9 @@ export const defineTool = <S extends z.ZodRawShape>(definition: {
         return parsed.success
           ? definition.run(context, parsed.data)
           : Promise.resolve({
-              ...text(readableIssues(parsed.error.issues)),
+              ...text(
+                `${BAD_ARGUMENTS}\n${readableIssues(parsed.error.issues)}`,
+              ),
               isError: true,
             });
       },

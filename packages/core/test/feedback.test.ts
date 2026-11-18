@@ -276,6 +276,42 @@ const answering = (permission: string, question: string): RunEvent[] => [
 ];
 
 describe("system signals", () => {
+  it("file arguments an Ork tool refused as the agent's context gap, not an Ork bug", () => {
+    const recorded = reports(
+      observe([
+        ...RUN.slice(0, 3),
+        {
+          type: "node.event",
+          id: "fix",
+          event: {
+            type: "tool.called",
+            id: "t2",
+            name: "mcp__ork__extract",
+            input: {},
+          },
+        },
+        {
+          type: "node.event",
+          id: "fix",
+          event: {
+            type: "tool.result",
+            id: "t2",
+            isError: true,
+            fault: "arguments",
+          },
+        },
+      ]),
+    );
+    expect(recorded).toMatchObject([
+      {
+        code: "tool.arguments",
+        kind: "context-gap",
+        target: "workflow",
+        title: "fix called Ork's extract tool with arguments it refused",
+      },
+    ]);
+  });
+
   it("come from the run's own events, once each, with their origin", () => {
     const recorded = reports(observe(RUN));
     expect(recorded.map(r => r.code)).toEqual([

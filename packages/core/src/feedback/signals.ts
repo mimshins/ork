@@ -180,6 +180,21 @@ export const createSignals = (
           },
         ];
       }
+      // Arguments the tool refused are the agent's mistake: Ork said what was wrong.
+      if (event.event.fault === "arguments") {
+        return [
+          event.id,
+          {
+            code: "tool.arguments",
+            kind: "context-gap",
+            target: "workflow",
+            severity: "low",
+            title: `${event.id} called Ork's ${tool} tool with arguments it refused`,
+            body: `Nothing ran, and the tool said what was wrong. If it recurs, the node's prompt or context may need an example of a \`${tool}\` call.`,
+            evidence: [name],
+          },
+        ];
+      }
       return [
         event.id,
         {
