@@ -230,7 +230,9 @@ describe("git", () => {
     ).toBe("error: refused: ref --output=x (not a plain revision)");
     expect(
       await said(cwd, [{ step: "git", op: "show", ref: "HEAD:.env" }]),
-    ).toBe("error: refused: ref HEAD:.env (not a plain revision)");
+    ).toBe(
+      "error: refused: ref HEAD:.env (a commit, not rev:path; extract cannot read a file as it was at a commit)",
+    );
     expect(await said(cwd, [{ step: "git", op: "show", ref: blob }])).toBe(
       `error: not a commit: ${blob}`,
     );

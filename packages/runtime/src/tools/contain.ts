@@ -18,7 +18,10 @@ import { z } from "zod";
 import { secretRoot } from "../secret-file.ts";
 
 /** A path the session asked for, refused; the message names the path only. */
-export class Refused extends Error {}
+export class Refused extends Error {
+  /** The path asked for caused it; not so when the project's settings did. */
+  byArguments = true;
+}
 
 export type Inside = {
   /** The real path, symlinks followed. */
@@ -133,8 +136,11 @@ const settingsPatterns = (cwd: string): string[] =>
     const file = path.join(cwd, name);
     if (!existsSync(file)) return [];
     const fail = (why: string): never => {
-      throw new Refused(
-        `refused: every path, because ${name} ${why}; fix it to use extract`,
+      throw Object.assign(
+        new Refused(
+          `refused: every path, because ${name} ${why}; fix it to use extract`,
+        ),
+        { byArguments: false },
       );
     };
     let parsed: unknown;

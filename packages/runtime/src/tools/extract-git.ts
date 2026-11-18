@@ -12,6 +12,7 @@
 import { execFile } from "node:child_process";
 
 import { type Denied, readable, Refused } from "./contain.ts";
+import { badStep, REV_PATH, StepError } from "./extract-error.ts";
 
 export type SearchStep = {
   step: "search";
@@ -41,9 +42,6 @@ export const MAX_LOG = 50;
 
 /** A revision: no leading dash (a flag) and no colon (`rev:path`). */
 export const REF = /^[A-Za-z0-9_][A-Za-z0-9_./~^@{}-]*$/u;
-
-/** A step that failed; the message is one short line. */
-export class StepError extends Error {}
 
 export type GitResult = { out: string; cut: boolean; code: number };
 
@@ -125,7 +123,7 @@ const commitOf = async (cwd: string, rev: string): Promise<string> => {
     }
     throw error;
   });
-  if (result?.code !== 0) throw new StepError(`not a commit: ${rev}`);
+  if (result?.code !== 0) throw badStep(`not a commit: ${rev}`);
   return result.out.trim();
 };
 
@@ -138,7 +136,8 @@ const sideOf = (cwd: string, side: string): Promise<string> =>
  */
 const revisionOf = async (cwd: string, rev: string): Promise<string> => {
   if (!REF.test(rev)) {
-    throw new Refused(`refused: ref ${rev} (not a plain revision)`);
+    const why = rev.includes(":") ? REV_PATH : "not a plain revision";
+    throw new Refused(`refused: ref ${rev} (${why})`);
   }
   const range = /^(.*?)(\.\.\.?)(.*)$/u.exec(rev);
   if (range === null) return commitOf(cwd, rev);

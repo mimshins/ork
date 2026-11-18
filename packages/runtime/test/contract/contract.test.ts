@@ -20,6 +20,7 @@ import type { DriverCapabilities } from "@krapht/ork-integrations";
 import { describe, expect, it, vi } from "vitest";
 
 import { ADAPTERS } from "../../src/index.ts";
+import { BAD_ARGUMENTS } from "../../src/tools/tool.ts";
 import { CONTRACT, TOOL_ENDS } from "./entries.ts";
 import {
   answers,
@@ -151,7 +152,8 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
       }).session,
     );
     expect(resultsOf(events, "extract")).toEqual([true]);
-    expect(outcomeOf(events).text).toBe("refused: .endpoint");
+    // The call asked for a denied file: the agent's mistake, not Ork's failure.
+    expect(outcomeOf(events).text).toBe(`${BAD_ARGUMENTS}\nrefused: .endpoint`);
   });
 
   it(`takes a message sent mid-session ${when(entry.capabilities)}`, async () => {

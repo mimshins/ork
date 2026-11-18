@@ -10,6 +10,7 @@
 import { readFileSync, statSync } from "node:fs";
 
 import { type Denied, deniedRead, readable, Refused } from "./contain.ts";
+import { badStep, StepError } from "./extract-error.ts";
 import { type FilesStep, filesStep, regexLines } from "./extract-files.ts";
 import {
   type GitStep,
@@ -17,7 +18,6 @@ import {
   linesOf,
   type SearchStep,
   searchStep,
-  StepError,
 } from "./extract-git.ts";
 
 export type ReadStep = {
@@ -54,7 +54,12 @@ export type StepContext = {
 /** The last step's text and the size of what the producer yielded. */
 export type StepOutput =
   | { ok: true; text: string; read: number }
-  | { ok: false; error: string };
+  | {
+      ok: false;
+      error: string;
+      /** The call's arguments caused it: a refusal or a `badStep`. */
+      byArguments: boolean;
+    };
 
 /** Larger files are refused: `read` loads the whole file. */
 export const READ_FILE_CAP = 8 * 1024 * 1024;
@@ -64,9 +69,9 @@ const sizeOf = (real: string, asked: string): number => {
   try {
     stat = statSync(real);
   } catch {
-    throw new StepError(`no such file: ${asked}`);
+    throw badStep(`no such file: ${asked}`);
   }
-  if (!stat.isFile()) throw new StepError(`not a file: ${asked}`);
+  if (!stat.isFile()) throw badStep(`not a file: ${asked}`);
   return stat.size;
 };
 
@@ -74,11 +79,11 @@ const sizeOf = (real: string, asked: string): number => {
 const readStep = (cwd: string, step: ReadStep, denied: Denied): string => {
   const where = readable(cwd, step.path, denied);
   if (sizeOf(where.real, step.path) > READ_FILE_CAP) {
-    throw new StepError(`refused: ${step.path} is over 8 MiB; search it`);
+    throw badStep(`refused: ${step.path} is over 8 MiB; search it`);
   }
   const content = readFileSync(where.real);
   if (content.subarray(0, 8192).includes(0)) {
-    throw new StepError(`refused: ${step.path} (a binary file)`);
+    throw badStep(`refused: ${step.path} (a binary file)`);
   }
   const lines = linesOf(content.toString("utf8"));
   const from = Math.max(step.from ?? 1, 1);
@@ -167,6 +172,9 @@ export const runSteps = async (
         error instanceof StepError || error instanceof Refused
           ? message
           : `extract failed: ${message.split("\n")[0] ?? ""}`,
+      byArguments:
+        (error instanceof Refused || error instanceof StepError) &&
+        error.byArguments,
     };
   }
 };

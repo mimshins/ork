@@ -10,7 +10,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -20,6 +20,7 @@ import { describe, expect, it } from "vitest";
 
 import { orkTools, preapprovedTools } from "../src/index.ts";
 import { EXTRACT_CAP } from "../src/tools/extract.ts";
+import { BAD_ARGUMENTS } from "../src/tools/tool.ts";
 
 const human: HumanChannel = {
   ask: () => Promise.resolve(""),
@@ -70,6 +71,9 @@ const call = async (
   };
 };
 
+/** What a call says when its own arguments caused the error. */
+const theirs = (message: string): string => `${BAD_ARGUMENTS}\n${message}`;
+
 const read = (file: string, from?: number, to?: number) => ({
   step: "read",
   path: file,
@@ -96,7 +100,7 @@ describe("extract refuses", () => {
     writeFileSync(path.join(outside, "x.txt"), "outside\n");
     symlinkSync(path.join(outside, "x.txt"), path.join(cwd, "link.txt"));
     expect(await call(cwd, { steps: [read("link.txt")] })).toEqual({
-      said: "refused: link.txt (outside the folder)",
+      said: theirs("refused: link.txt (outside the folder)"),
       isError: true,
     });
   });
@@ -104,11 +108,11 @@ describe("extract refuses", () => {
   it("a denied file, built in or by the session's Read rules", async () => {
     const cwd = repo();
     expect(await call(cwd, { steps: [read(".env")] })).toEqual({
-      said: "refused: .env",
+      said: theirs("refused: .env"),
       isError: true,
     });
     expect(await call(cwd, { steps: [read("a.ts")] }, ["*.ts"])).toEqual({
-      said: "refused: a.ts",
+      said: theirs("refused: a.ts"),
       isError: true,
     });
   });
@@ -124,6 +128,47 @@ describe("extract refuses", () => {
     expect(ref.said).toContain("refused: ref --output=x");
     expect(magic.said).toContain("refused: :(top)x");
     expect([ref.isError, magic.isError]).toEqual([true, true]);
+  });
+
+  it("a missing file and a rev:path as the call's mistake, a missing repository as not", async () => {
+    const cwd = repo();
+    const bare = mkdtempSync(path.join(tmpdir(), "ork-extract-nogit-"));
+    const missing = await call(cwd, { steps: [read("nope.ts")] });
+    const revPath = await call(cwd, {
+      steps: [{ step: "git", op: "show", ref: "HEAD:a.ts" }],
+    });
+    const noRepo = await call(bare, {
+      steps: [{ step: "search", pattern: "x" }],
+    });
+    expect([missing.said, revPath.said, noRepo.said]).toEqual([
+      theirs("no such file: nope.ts"),
+      theirs(
+        "refused: ref HEAD:a.ts (a commit, not rev:path; extract cannot read a file as it was at a commit)",
+      ),
+      "not a git repository",
+    ]);
+  });
+
+  it("unreadable project settings as not the call's mistake", async () => {
+    const cwd = repo();
+    mkdirSync(path.join(cwd, ".claude"));
+    writeFileSync(path.join(cwd, ".claude", "settings.json"), "{ not json");
+    const result = await call(cwd, { steps: [read("a.ts")] });
+    expect(result.said).toContain("refused: every path");
+    expect(result.said.startsWith(BAD_ARGUMENTS)).toBe(false);
+  });
+
+  it("programs that all failed by their arguments as the call's mistake, and not when one failed for Ork", async () => {
+    const bare = mkdtempSync(path.join(tmpdir(), "ork-extract-nogit-"));
+    const allTheirs = await call(bare, {
+      programs: [[read("nope.ts")], [read("gone.ts")]],
+    });
+    const mixed = await call(bare, {
+      programs: [[read("nope.ts")], [{ step: "search", pattern: "x" }]],
+    });
+    expect(allTheirs.said.startsWith(BAD_ARGUMENTS)).toBe(true);
+    expect(mixed.said.startsWith(BAD_ARGUMENTS)).toBe(false);
+    expect([allTheirs.isError, mixed.isError]).toEqual([true, true]);
   });
 
   it("steps that don't start with a producer, or are too many or unknown", async () => {
@@ -247,11 +292,11 @@ describe("extract runs several programs in one call (RFC-025)", () => {
     const neither = await call(cwd, {});
     expect([both, neither]).toEqual([
       {
-        said: "give either steps (one program) or programs, not both",
+        said: theirs("give either steps (one program) or programs, not both"),
         isError: true,
       },
       {
-        said: "give either steps (one program) or programs, not both",
+        said: theirs("give either steps (one program) or programs, not both"),
         isError: true,
       },
     ]);

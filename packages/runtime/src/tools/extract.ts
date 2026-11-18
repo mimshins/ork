@@ -14,7 +14,7 @@
 import { z } from "zod";
 
 import { type CutStep, type ProducerStep, runSteps } from "./extract-steps.ts";
-import { defineTool, text, type ToolText } from "./tool.ts";
+import { BAD_ARGUMENTS, defineTool, text, type ToolText } from "./tool.ts";
 
 /** The characters one call returns. */
 export const EXTRACT_CAP = 16_000;
@@ -186,6 +186,10 @@ const failed = (message: string): ToolText => ({
   isError: true,
 });
 
+/** An error the call's arguments caused: its decoder files it as theirs. */
+const refused = (message: string): ToolText =>
+  failed(`${BAD_ARGUMENTS}\n${message}`);
+
 export const extractTool = defineTool({
   name: "extract",
   description: `Use instead of Read, Glob, Grep, cat, sed, grep, rg, find or git in the shell to read part of a file, list files, search, or see git output in your folder: only what you keep enters the conversation and is reread on every later turn. A program is steps run in order: first one producer (read: numbered lines from–to; files: the folder's files, filtered by a glob; search: git grep -E; git: diff, show or log), then up to ${String(MAX_STEPS - 1)} cuts of its output (head, tail: lines; match: lines with a literal substring, or a POSIX ERE with regex: true, and context lines around; count: how many lines). Pass one program as steps, or up to ${String(MAX_PROGRAMS)} as programs to read several files or run several searches in one call. Cut to what you need: a match or a line range, not a whole file. Returns up to ${EXTRACT_CAP.toLocaleString("en-US")} characters from \`from\`.`,
@@ -210,14 +214,14 @@ export const extractTool = defineTool({
     { steps, programs, from },
   ): Promise<ToolText> => {
     if ((steps === undefined) === (programs === undefined)) {
-      return failed("give either steps (one program) or programs, not both");
+      return refused("give either steps (one program) or programs, not both");
     }
     const parsed = (programs ?? [steps ?? []]).map(program =>
       programOf(program),
     );
     const valid = parsed.filter(program => program !== undefined);
     if (valid.length !== parsed.length) {
-      return failed("the first step must be read, files, search or git");
+      return refused("the first step must be read, files, search or git");
     }
     const context = { cwd, ...(denyRead === undefined ? {} : { denyRead }) };
     const results = await Promise.all(
@@ -225,9 +229,8 @@ export const extractTool = defineTool({
     );
     const [only] = results;
     if (programs === undefined && only !== undefined) {
-      return only.ok
-        ? text(paged(only.text, from ?? 0, only.read))
-        : failed(only.error);
+      if (only.ok) return text(paged(only.text, from ?? 0, only.read));
+      return only.byArguments ? refused(only.error) : failed(only.error);
     }
     const whole = results
       .map((result, index) => {
@@ -244,8 +247,12 @@ export const extractTool = defineTool({
       (sum, result) => sum + (result.ok ? result.read : 0),
       0,
     );
-    return results.some(result => result.ok)
-      ? text(paged(whole, from ?? 0, read))
+    if (results.some(result => result.ok)) {
+      return text(paged(whole, from ?? 0, read));
+    }
+    // Ork's failure when any program failed for a reason of its own.
+    return results.every(result => !result.ok && result.byArguments)
+      ? refused(whole)
       : failed(whole);
   },
 });

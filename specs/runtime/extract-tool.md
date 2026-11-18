@@ -213,8 +213,18 @@ file over 8 MiB is refused (the step loads the whole file).
 
 An error (outside the folder, refused, not a file, not a git repository, not a
 commit, git failed, timed out) is one short line with `isError`, and no footer;
-git's stderr is cut to its first line.
+git's stderr is cut to its first line. An error the call's own arguments caused
+starts with `Invalid arguments, nothing ran:` on its own line, so the driver's
+decoder files it as the agent's context gap (`tool.arguments`), not as a bug in
+Ork. That covers a refusal (outside the folder, denied, a binary file, a file
+over 8 MiB, a revision that is not plain), a missing file or one that is not a
+file, a name that is not a commit, and both or neither of `steps` and
+`programs`; with `programs`, only when every program failed that way. A missing
+repository, a git failure, a timeout and a refusal of every path (the project's
+settings can't be read) keep no such line. A `rev:path` revision is refused with
+a line saying that `extract` cannot read a file as it was at a commit
+([L450](../gaps/extract-limits.md)).
 
 ## Limits
 
-[L414 to L421](../gaps/extract-limits.md).
+[L414 to L421, and L450](../gaps/extract-limits.md).

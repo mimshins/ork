@@ -52,7 +52,8 @@ _Part of [What's new](../whats-new.md)._
   called one of Ork's tools with arguments it refused, `ork feedback` listed it
   as a bug in Ork. It is now the agent's context gap (`tool.arguments`), on
   Claude Code and OpenCode, and the tool's answer starts with "Invalid
-  arguments, nothing ran:".
+  arguments, nothing ran:". The same holds for what `extract` refuses once it
+  runs: a missing file, a refused path or a `rev:path` revision.
 - **OpenCode 2.3.2 or later.** `ork doctor` warns about an older `opencode`,
   whose sessions never saw Ork's tools, and the `open-code` driver is not ready
   until you run `opencode upgrade`. On OpenCode, a shell line that pipes through

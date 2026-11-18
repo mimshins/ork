@@ -76,3 +76,10 @@ was left simpler, or could not be checked:
   `xargs`, `sh -c` or a script is not seen. A node cannot exempt one program:
   only `reading: open` (project or workflow) turns refusals off. Revisit if
   refused reads show up in `ork feedback`.
+- **L450 · `extract` cannot read a file as it was at a commit.** `git show`
+  takes a commit and shows its diff, and a revision with a colon (`HEAD:path`)
+  is refused, since a blob would print a file past the deny list. A session that
+  wants an old version of a file asks for the diff, or reads it in the shell
+  where reading is open. Seen once (a build run on 2026-11-18). **Revisit if**
+  sessions keep asking: a `path` on `show` that runs `git show <commit>:<path>`
+  with the path contained and checked against the deny list.
