@@ -1,10 +1,10 @@
 {
   "manual_rate": {
     "sessions": 5,
-    "windows": 147,
-    "commits": 220,
-    "changed_lines": 194244,
-    "usd_per_1000_lines": [2.96, 4.53, 7],
+    "windows": 151,
+    "commits": 224,
+    "changed_lines": 194664,
+    "usd_per_1000_lines": [2.81, 4.65, 7],
     "working_min_per_1000_lines": [8.8, 15.2, 38.9]
   },
   "benchmarks": [
@@ -23,7 +23,7 @@
       "permission_requests": 33,
       "result_commits": ["742efac"],
       "changed_lines": 960,
-      "manual_usd": [2.84, 4.34, 6.72],
+      "manual_usd": [2.69, 4.47, 6.72],
       "manual_working_min": [8.5, 14.6, 37.3]
     },
     {
@@ -41,7 +41,7 @@
       "permission_requests": 2,
       "result_commits": ["0485790"],
       "changed_lines": 1115,
-      "manual_usd": [3.3, 5.05, 7.81],
+      "manual_usd": [3.13, 5.19, 7.81],
       "manual_working_min": [9.8, 16.9, 43.3]
     },
     {
@@ -59,7 +59,7 @@
       "permission_requests": 13,
       "result_commits": ["aa3b231"],
       "changed_lines": 4294,
-      "manual_usd": [12.71, 19.43, 30.06],
+      "manual_usd": [12.05, 19.98, 30.06],
       "manual_working_min": [37.8, 65.3, 166.9]
     },
     {
@@ -77,7 +77,7 @@
       "permission_requests": 0,
       "result_commits": ["6332204"],
       "changed_lines": 755,
-      "manual_usd": [2.23, 3.42, 5.29],
+      "manual_usd": [2.12, 3.51, 5.29],
       "manual_working_min": [6.6, 11.5, 29.3]
     },
     {
@@ -95,7 +95,7 @@
       "permission_requests": 0,
       "result_commits": ["ed453d6"],
       "changed_lines": 8065,
-      "manual_usd": [23.87, 36.5, 56.47],
+      "manual_usd": [22.63, 37.53, 56.47],
       "manual_working_min": [71, 122.6, 313.5]
     },
     {
@@ -113,7 +113,7 @@
       "permission_requests": 10,
       "result_commits": ["692df82"],
       "changed_lines": 11097,
-      "manual_usd": [32.84, 50.22, 77.69],
+      "manual_usd": [31.14, 51.64, 77.69],
       "manual_working_min": [97.7, 168.7, 431.3]
     },
     {
@@ -131,7 +131,7 @@
       "permission_requests": 2,
       "result_commits": ["dedea75"],
       "changed_lines": 11190,
-      "manual_usd": [33.12, 50.64, 78.34],
+      "manual_usd": [31.4, 52.07, 78.34],
       "manual_working_min": [98.6, 170.1, 434.9]
     },
     {
@@ -167,8 +167,26 @@
       "permission_requests": 6,
       "result_commits": ["ca789e8"],
       "changed_lines": 7419,
-      "manual_usd": [21.96, 33.58, 51.94],
+      "manual_usd": [20.82, 34.52, 51.94],
       "manual_working_min": [65.3, 112.8, 288.4]
+    },
+    {
+      "benchmark": "codex-driver",
+      "run": "9e81055a",
+      "ork": ["1.0.0-alpha.24"],
+      "status": "succeeded",
+      "started": "2026-11-18T09:30:56.471Z",
+      "cost_usd": 23.8634,
+      "working_min": 76.6,
+      "waiting_min": 13.2,
+      "wall_min": 89.8,
+      "sessions": 29,
+      "failed_sessions": 0,
+      "permission_requests": 0,
+      "result_commits": ["3c683670"],
+      "changed_lines": 4292,
+      "manual_usd": [12.05, 19.97, 30.05],
+      "manual_working_min": [37.8, 65.2, 166.8]
     }
   ]
 }

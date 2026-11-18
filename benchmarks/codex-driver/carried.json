@@ -1,0 +1,373 @@
+{
+  "sessions": 16,
+  "missing_transcripts": {},
+  "total_weight": 57822229,
+  "by_role": {
+    "build.build": {
+      "weight": 334841,
+      "share_percent": 0.6
+    },
+    "build.declare": {
+      "weight": 312,
+      "share_percent": 0
+    },
+    "build.docs": {
+      "weight": 108844,
+      "share_percent": 0.2
+    },
+    "build.engine": {
+      "weight": 27904843,
+      "share_percent": 48.3
+    },
+    "build.followups": {
+      "weight": 0,
+      "share_percent": 0
+    },
+    "build.implement": {
+      "weight": 19664837,
+      "share_percent": 34
+    },
+    "build.polish": {
+      "weight": 7632,
+      "share_percent": 0
+    },
+    "build.repair": {
+      "weight": 8518,
+      "share_percent": 0
+    },
+    "build.review": {
+      "weight": 8594566,
+      "share_percent": 14.9
+    },
+    "plan.spec": {
+      "weight": 865300,
+      "share_percent": 1.5
+    },
+    "start.frame": {
+      "weight": 332536,
+      "share_percent": 0.6
+    }
+  },
+  "by_kind": {
+    "reads through the shell": {
+      "weight": 16415,
+      "share_percent": 0
+    },
+    "searches": {
+      "weight": 853769,
+      "share_percent": 1.5
+    },
+    "git diff/show/log": {
+      "weight": 9889,
+      "share_percent": 0
+    },
+    "tests and checks": {
+      "weight": 1424194,
+      "share_percent": 2.5
+    },
+    "Read": {
+      "weight": 17450894,
+      "share_percent": 30.2
+    },
+    "Ork tools": {
+      "weight": 507843,
+      "share_percent": 0.9
+    },
+    "extract": {
+      "weight": 34816163,
+      "share_percent": 60.2
+    },
+    "other": {
+      "weight": 2743062,
+      "share_percent": 4.7
+    }
+  },
+  "calls_by_role": {
+    "build.build": {
+      "Ork tools": {
+        "calls": 7,
+        "refused": 0,
+        "weight": 331366
+      },
+      "extract": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 2673
+      },
+      "other": {
+        "calls": 5,
+        "refused": 1,
+        "weight": 802
+      }
+    },
+    "build.declare": {
+      "Ork tools": {
+        "calls": 6,
+        "refused": 0,
+        "weight": 312
+      },
+      "other": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 0
+      }
+    },
+    "build.docs": {
+      "tests and checks": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 1350
+      },
+      "extract": {
+        "calls": 6,
+        "refused": 0,
+        "weight": 85530
+      },
+      "other": {
+        "calls": 7,
+        "refused": 2,
+        "weight": 21964
+      }
+    },
+    "build.engine": {
+      "reads through the shell": {
+        "calls": 1,
+        "refused": 1,
+        "weight": 16415
+      },
+      "searches": {
+        "calls": 3,
+        "refused": 1,
+        "weight": 218823
+      },
+      "tests and checks": {
+        "calls": 27,
+        "refused": 0,
+        "weight": 560432
+      },
+      "Read": {
+        "calls": 63,
+        "refused": 0,
+        "weight": 17163274
+      },
+      "Ork tools": {
+        "calls": 17,
+        "refused": 0,
+        "weight": 153814
+      },
+      "extract": {
+        "calls": 57,
+        "refused": 0,
+        "weight": 7774416
+      },
+      "other": {
+        "calls": 138,
+        "refused": 2,
+        "weight": 2017669
+      }
+    },
+    "build.followups": {
+      "other": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 0
+      }
+    },
+    "build.implement": {
+      "searches": {
+        "calls": 2,
+        "refused": 2,
+        "weight": 35784
+      },
+      "git diff/show/log": {
+        "calls": 1,
+        "refused": 1,
+        "weight": 8294
+      },
+      "tests and checks": {
+        "calls": 29,
+        "refused": 0,
+        "weight": 862001
+      },
+      "Read": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 264250
+      },
+      "Ork tools": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 1440
+      },
+      "extract": {
+        "calls": 94,
+        "refused": 0,
+        "weight": 17805281
+      },
+      "other": {
+        "calls": 177,
+        "refused": 1,
+        "weight": 687787
+      }
+    },
+    "build.polish": {
+      "tests and checks": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 209
+      },
+      "extract": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 6995
+      },
+      "other": {
+        "calls": 3,
+        "refused": 0,
+        "weight": 428
+      }
+    },
+    "build.repair": {
+      "tests and checks": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 202
+      },
+      "extract": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 8172
+      },
+      "other": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 144
+      }
+    },
+    "build.review": {
+      "searches": {
+        "calls": 24,
+        "refused": 0,
+        "weight": 598315
+      },
+      "git diff/show/log": {
+        "calls": 2,
+        "refused": 2,
+        "weight": 1595
+      },
+      "Read": {
+        "calls": 2,
+        "refused": 2,
+        "weight": 19000
+      },
+      "Ork tools": {
+        "calls": 3,
+        "refused": 0,
+        "weight": 20791
+      },
+      "extract": {
+        "calls": 69,
+        "refused": 0,
+        "weight": 7940597
+      },
+      "other": {
+        "calls": 7,
+        "refused": 0,
+        "weight": 14268
+      }
+    },
+    "plan.spec": {
+      "Ork tools": {
+        "calls": 2,
+        "refused": 0,
+        "weight": 120
+      },
+      "extract": {
+        "calls": 12,
+        "refused": 0,
+        "weight": 865180
+      },
+      "other": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 0
+      }
+    },
+    "start.frame": {
+      "searches": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 847
+      },
+      "Read": {
+        "calls": 1,
+        "refused": 1,
+        "weight": 4370
+      },
+      "extract": {
+        "calls": 12,
+        "refused": 0,
+        "weight": 327319
+      },
+      "other": {
+        "calls": 1,
+        "refused": 0,
+        "weight": 0
+      }
+    }
+  },
+  "turns": {
+    "mean": 31.4,
+    "median": 17.5,
+    "by_role": {
+      "build.build": {
+        "mean": 13,
+        "median": 13
+      },
+      "build.declare": {
+        "mean": 3,
+        "median": 3
+      },
+      "build.docs": {
+        "mean": 12,
+        "median": 12
+      },
+      "build.engine": {
+        "mean": 97.5,
+        "median": 97.5
+      },
+      "build.followups": {
+        "mean": 1,
+        "median": 1
+      },
+      "build.implement": {
+        "mean": 53.3,
+        "median": 50
+      },
+      "build.polish": {
+        "mean": 4,
+        "median": 4
+      },
+      "build.repair": {
+        "mean": 4,
+        "median": 4
+      },
+      "build.review": {
+        "mean": 28,
+        "median": 30
+      },
+      "plan.spec": {
+        "mean": 15,
+        "median": 15
+      },
+      "start.frame": {
+        "mean": 12,
+        "median": 12
+      }
+    }
+  },
+  "extract": {
+    "calls": 255,
+    "characters_returned": 1222144
+  }
+}
