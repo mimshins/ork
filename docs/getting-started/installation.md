@@ -123,9 +123,9 @@ that needs it. Example output (`--plain`: `✓` and `-`):
  OK    experiments                  none on
 ```
 
-The `claude-code` and `open-code` drivers are ready, and Command Code's `cmd`
-and neither optional tool is installed: a working setup. When nothing required
-is missing, that is all it prints. Else it ends:
+The `claude-code` and `open-code` drivers are ready, and `cmd`, `codex` (`skip`
+even when installed, until proven) and the optional tools are not: a working
+setup. When nothing required is missing, that is all it prints. Else it ends:
 
 ```
 Not ready: Ork needs Node, git, and at least one agent driver.

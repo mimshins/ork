@@ -152,6 +152,7 @@ describe("ork __complete", () => {
       "claude-code",
       "open-code",
       "command-code",
+      "codex",
     ]);
     expect(await values("chat", "--driver", "cl")).toEqual(["claude-code"]);
     expect(await values("ps", "--limit", "")).toEqual([]);
@@ -162,6 +163,7 @@ describe("ork __complete", () => {
       "--driver=claude-code",
       "--driver=open-code",
       "--driver=command-code",
+      "--driver=codex",
     ]);
     expect(await values("chat", "--driver=cl")).toEqual([
       "--driver=claude-code",

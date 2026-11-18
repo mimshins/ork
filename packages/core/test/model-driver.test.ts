@@ -62,6 +62,7 @@ const ABLE = {
   turnLimit: true,
   mcpServers: true,
   subagents: true,
+  readDenies: true,
 };
 
 const fake = (id: DriverNeeds["id"], subagents: boolean): DriverNeeds => ({
@@ -116,6 +117,18 @@ describe("a model that names its driver", () => {
       driver: "command-code",
       model: "deepseek/deepseek-v4.1-flash",
     });
+  });
+
+  it("runs a `codex.` model on codex and hands the rest to `-m` as written", () => {
+    expect(modelDriver("codex.gpt-5.5-codex")).toEqual({
+      driver: "codex",
+      model: "gpt-5.5-codex",
+    });
+    const w = workflowOf(WORKER("codex.gpt-5.5-codex"));
+    expect(nodeDriver(nodeOf(w, "build"), w, { override: "open-code" })).toBe(
+      "codex",
+    );
+    expect(planned(w, "build").spec.model).toBe("gpt-5.5-codex");
   });
 
   it("pins a node through `defaults.model`, so it names a driver", () => {

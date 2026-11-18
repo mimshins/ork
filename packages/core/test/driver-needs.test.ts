@@ -6,6 +6,7 @@
  *   driver with no dollars is a warning (RFC-015). Descriptors are fakes.
  */
 
+import { AGENT_DRIVERS } from "@krapht/ork-integrations";
 import { parseWorkflow, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
@@ -24,6 +25,7 @@ const ABLE = {
   turnLimit: true,
   mcpServers: true,
   subagents: true,
+  readDenies: true,
 };
 
 const fake = (
@@ -65,6 +67,16 @@ const warnings = (workflow: Workflow, driver: DriverNeeds): string[] =>
   budgetWarnings(workflow, [driver], { override: driver.id }).map(
     w => w.message,
   );
+
+/**
+ * The real codex descriptor, proven here so the refusals read are its
+ * capabilities'.
+ */
+const provenCodex = (): DriverNeeds => {
+  const real = AGENT_DRIVERS.find(d => d.id === "codex");
+  if (real === undefined) throw new Error("no codex descriptor");
+  return { ...real, proven: true };
+};
 
 describe("what a node needs of its driver", () => {
   it("refuses maxTurns on a driver with no turn limit, naming both", () => {
@@ -114,6 +126,65 @@ describe("what a node needs of its driver", () => {
       messages(workflowOf(BARE, "defaults:\n  mcp: [docs]\n"), deaf),
     ).toHaveLength(1);
     expect(messages(own, fake("command-code"))).toEqual([]);
+  });
+
+  it("refuses a path-scoped read deny on a driver with no read tool to gate, naming the gap", () => {
+    const blind = fake("codex", { readDenies: false });
+    const scoped = workflowOf(
+      `${BARE}    tools:\n      deny: ["Read(./secrets/**)"]\n`,
+    );
+    expect(messages(scoped, blind)).toEqual([
+      "node `build` denies `Read(./secrets/**)`, but driver `codex` has no read tool to gate, so a deny on a path can't hold (reads outside the worktree are not fenced)",
+    ]);
+    expect(messages(scoped, fake("claude-code"))).toEqual([]);
+    // The project's rules count too; so do Glob and Grep.
+    const project = workflowOf(
+      BARE,
+      'rules:\n  permissions:\n    deny: ["Grep(*.env)"]\n',
+    );
+    expect(messages(project, blind)).toHaveLength(1);
+    expect(
+      messages(
+        workflowOf(`${BARE}    tools:\n      deny: ["Glob(.git/**)"]\n`),
+        blind,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("lets a codex node deny what is not a path-scoped read", () => {
+    const blind = fake("codex", { readDenies: false });
+    const w = workflowOf(
+      `${BARE}    tools:\n      deny: ["Bash(git push *)", "Grep", "Edit(./src/**)"]\n`,
+    );
+    expect(messages(w, blind)).toEqual([]);
+  });
+
+  it("refuses what the codex descriptor does not do: turns, its own MCP servers, sub-agents, a path-scoped read deny", () => {
+    const codex = provenCodex();
+    const w = workflowOf(`  lead:
+    type: agent.leader
+    prompt: go
+    maxTurns: 5
+    mcp: [docs]
+    tools:
+      deny: ["Read(./secrets/**)"]
+  helper:
+    type: agent.subagent
+    parent: lead
+    description: helps
+`);
+    expect(messages(w, codex).map(m => m.split(",")[0])).toEqual([
+      "node `lead` sets maxTurns",
+      "node `lead` names MCP servers (`mcp`)",
+      "node `lead` denies `Read(./secrets/**)`",
+      "sub-agent `helper` runs in `lead`'s session on driver `codex`",
+    ]);
+    expect(messages(workflowOf(`${BARE}    budgetUsd: 2\n`), codex)).toEqual(
+      [],
+    );
+    expect(warnings(workflowOf(`${BARE}    budgetUsd: 2\n`), codex)).toEqual([
+      "node `build` sets only budgetUsd, but driver `codex` reports no dollars: only budgetTokens applies on codex",
+    ]);
   });
 
   it("refuses an owner and a node it owns sharing a one-per-checkout driver's checkout", () => {

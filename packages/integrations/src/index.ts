@@ -8,6 +8,7 @@
  */
 
 export { aws } from "./aws.ts";
+export * from "./cli-drivers.ts";
 export * from "./drivers.ts";
 export { gh } from "./gh.ts";
 export * from "./git.ts";

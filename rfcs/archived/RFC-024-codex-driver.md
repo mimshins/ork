@@ -1,6 +1,6 @@
 # RFC-024 — The Codex driver: OpenAI's `codex` CLI as the fourth driver
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-17
 - **Supersedes:** —
 - **Superseded by:** —

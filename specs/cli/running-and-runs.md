@@ -102,7 +102,8 @@ with the built-in node types
   before it detaches and hands its copy `--yes`. The run records
   `settings.yolo`; each permission prompt becomes a decision answered `allow` by
   `yolo` at once, and open-code's and command-code's rules allow what isn't
-  denied. Deny lists, `only`, Ork's `.env` refusal, questions, gates and budgets
+  denied, as does codex's hook (inside its `workspace-write` sandbox, never
+  wider). Deny lists, `only`, Ork's `.env` refusal, questions, gates and budgets
   hold. Its called runs are yolo too; `ork ps` (`yolo` in `--json`), `ork tree`,
   the run's first line and `ork ui` say so while it is live. `ork ui`,
   `ork mcp`'s `start_run` and triggers can't start one.

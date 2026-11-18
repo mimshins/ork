@@ -138,8 +138,10 @@ which; it warns when `claude` is older than 2.1.281, which Ork needs to read
 drivers `open-code` and `command-code` are checked with `opencode --version` and
 `cmd --version`: `ok` when the tool answers (their logins, `opencode auth login`
 and `cmd login`, are named, never read), `skip` with how to install it when it
-is missing. A driver whose descriptor is not `proven` is listed as `skip` with
-"unproven", and never counts as a ready driver.
+is missing. `codex` is checked with `codex --version` (a warning below 0.169.0)
+and then `codex login status`, whose exit status alone is read; it is always
+`skip` while unproven. A driver whose descriptor is not `proven` is listed as
+`skip` with "unproven", and never counts as a ready driver.
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

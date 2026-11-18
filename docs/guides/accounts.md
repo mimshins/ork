@@ -15,6 +15,7 @@ against your Claude plan's limits; a budget caps each run
 | Claude       | the `claude-code` driver, running your own `claude`                                                                          | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
 | OpenCode     | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
 | Command Code | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
+| Codex        | the `codex` driver (not proven yet), running your own `codex`                                                                | `codex login`                                                            |
 | GitHub       | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
 | AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
@@ -26,10 +27,11 @@ never a token.
 Ork runs agents through a **driver**: the CLI of an agent tool, run headless
 ([Drivers](./drivers.md) says what each does and refuses). `claude-code`, your
 own `claude`, `open-code`, your own `opencode`, and `command-code`, your own
-`cmd`, have each run a real session. `ork doctor` finds the `opencode` and `cmd`
-binaries (it does not read their logins), and lists one it can't find as `skip`.
-A workflow that names no driver runs on the one that's ready, and `ork run` says
-which. A driver the workflow or a node names, or `--driver` on `ork run`, wins.
+`cmd`, have each run a real session; `codex`, your own `codex`, has not yet.
+`ork doctor` finds the `opencode`, `cmd` and `codex` binaries (it does not read
+their logins), and lists one it can't find as `skip`. A workflow that names no
+driver runs on the one that's ready, and `ork run` says which. A driver the
+workflow or a node names, or `--driver` on `ork run`, wins.
 
 The ids `sdk` and `cli` of earlier versions are retired: a workflow, a
 `.ork/project.yaml` or `--driver` that names one is refused with a message
@@ -70,6 +72,15 @@ Runs your own `cmd` ([Command Code](https://commandcode.ai), tested against
 1.88.5), headless. Log in with `cmd login`; Ork never reads that login either.
 It runs one session per checkout at a time
 ([Drivers](./drivers.md#command-code-runs-one-session-per-checkout)).
+
+### The codex driver (`driver: codex`)
+
+Runs your own `codex` (OpenAI's Codex CLI, tried on 0.169.0), headless. Log in
+with `codex login`; Ork runs `codex login status` and reads only its exit
+status, never Codex's own login files (`auth.json`). `OPENAI_API_KEY` is not
+counted as a login. The driver is built but not proven on a real session yet, so
+`ork doctor` shows it as `skip` and no run takes it
+([Codex](./drivers/codex.md)).
 
 ## Secrets in workflows
 

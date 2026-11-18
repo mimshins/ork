@@ -135,7 +135,7 @@ written; any other value is a plain model for the run's driver
 ([the model prefix](../runtime/which-driver.md#the-model-prefix)).
 
 Agent nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
-`driver`: `claude-code`, `open-code` or `command-code`
+`driver`: `claude-code`, `open-code`, `command-code` or `codex`
 ([which driver a session uses](../runtime.md#which-driver-a-session-uses)). The
 ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
 retired; use `claude-code`"; no `schemaVersion` changed.

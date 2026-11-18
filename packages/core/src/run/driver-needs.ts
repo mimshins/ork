@@ -49,6 +49,17 @@ const limitsOf = (
 };
 
 /**
+ * The first `deny` rule scoped to a path on a read tool (`Read(./secrets/**)`,
+ * `Glob(…)`, `Grep(…)`), from the node's own rules or the workflow's. Ork's own
+ * withheld `Grep` and `Glob` carry no path and are not these.
+ */
+const scopedReadDeny = (node: Node, workflow: Workflow): string | undefined =>
+  [
+    ...(workflow.rules?.permissions?.deny ?? []),
+    ...((isClaudeNode(node) ? node.tools?.deny : undefined) ?? []),
+  ].find(rule => /^(?:Read|Glob|Grep)\(/u.test(rule));
+
+/**
  * What a node asks of Ork's tools: `delegate` to its children (which also
  * brings their questions to it).
  */
@@ -127,6 +138,14 @@ export const sessionRefusals = (
     refusals.push(
       refuse(
         `names MCP servers (\`mcp\`), but driver \`${driver.id}\` does not load a node's own MCP servers`,
+      ),
+    );
+  }
+  const readDeny = scopedReadDeny(node, workflow);
+  if (readDeny !== undefined && !driver.capabilities.readDenies) {
+    refusals.push(
+      refuse(
+        `denies \`${readDeny}\`, but driver \`${driver.id}\` has no read tool to gate, so a deny on a path can't hold (reads outside the worktree are not fenced)`,
       ),
     );
   }

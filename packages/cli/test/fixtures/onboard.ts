@@ -67,6 +67,10 @@ export const SUGGESTION = {
   feedback: ["fb-1234"],
 };
 
+/**
+ * Not `codex`: it is unproven, so `finish` (which validates under the real
+ * descriptors) refuses a workflow under it until the gate run proves it.
+ */
 export const DRIVERS = ["claude-code", "open-code", "command-code"] as const;
 
 export const git = (cwd: string, ...args: string[]): string =>

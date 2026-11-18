@@ -87,5 +87,5 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [021](./archived/RFC-021-audit-in-attached-projects.md)        | `ork:security-audit` in attached projects                          | Implemented |
 | [022](./archived/RFC-022-onboard-in-attached-projects.md)      | `ork onboard` in attached projects                                 | Implemented |
 | [023](./archived/RFC-023-extract-tool-for-session-reads.md)    | An extract tool for what sessions read: Code Mode without code     | Implemented |
-| [024](./active/RFC-024-codex-driver.md)                        | The Codex driver: OpenAI's `codex` CLI as the fourth driver        | Accepted    |
+| [024](./archived/RFC-024-codex-driver.md)                      | The Codex driver: OpenAI's `codex` CLI as the fourth driver        | Implemented |
 | [025](./archived/RFC-025-extract-only-reading.md)              | Make `extract` the way sessions read, on every driver              | Implemented |

@@ -85,6 +85,7 @@ describe("the report tool", () => {
   it("is offered on a driver without reportSchema, and not on claude-code", () => {
     expect(names("command-code")).toContain(REPORT_TOOL);
     expect(names("open-code")).toContain(REPORT_TOOL);
+    expect(names("codex")).toContain(REPORT_TOOL);
     expect(names("claude-code")).not.toContain(REPORT_TOOL);
   });
 

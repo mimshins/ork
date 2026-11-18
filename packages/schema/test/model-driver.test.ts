@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { driverOf } from "../src/index.ts";
 
-const DRIVERS = ["claude-code", "open-code", "command-code"];
+const DRIVERS = ["claude-code", "open-code", "command-code", "codex"];
 
 describe("driverOf", () => {
   it("splits a registered driver id from the model", () => {
@@ -20,6 +20,10 @@ describe("driverOf", () => {
     ).toEqual({
       driver: "command-code",
       model: "deepseek/deepseek-v4.1-flash",
+    });
+    expect(driverOf("codex.gpt-5.5-codex", DRIVERS)).toEqual({
+      driver: "codex",
+      model: "gpt-5.5-codex",
     });
     expect(driverOf("open-code.anthropic/claude-sonnet-5-5", DRIVERS)).toEqual({
       driver: "open-code",

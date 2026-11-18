@@ -2,8 +2,9 @@
  * @file The provider-error classifier, on error bodies in the shapes the
  *   providers send them (Anthropic's `{"type":"error","error":{…}}`, the
  *   OpenAI-style `{"error":{"code",…}}`, Claude Code's `API Error: <status>`
- *   lines and OpenCode's `commandcode` provider, including gaps L240's two
- *   refusals): type first, status next, words last.
+ *   lines, OpenCode's `commandcode` provider, including gaps L240's two
+ *   refusals, and Codex's `turn.failed` text): type first, status next, words
+ *   last.
  */
 
 import { describe, expect, it } from "vitest";
@@ -143,6 +144,24 @@ const FIXTURES: readonly (readonly [string, number | undefined, string])[] = [
     ),
     404,
     "model_unavailable",
+  ],
+  // Codex's `turn.failed` text: the model a ChatGPT account refuses (RFC-024
+  // spike); its other errors were not provoked, so its `unexpected status`
+  // shape is read by status, no status passed.
+  [
+    "The 'gpt-x' model is not supported when using Codex with a ChatGPT account.",
+    undefined,
+    "model_unavailable",
+  ],
+  [
+    "unexpected status 401 Unauthorized: Missing bearer or basic authentication in header",
+    undefined,
+    "auth",
+  ],
+  [
+    "unexpected status 503 Service Unavailable: upstream connect error",
+    undefined,
+    "provider_unavailable",
   ],
   // OpenCode's own errors.
   ["ProviderAuthError\nInvalid API key", undefined, "auth"],

@@ -133,9 +133,14 @@ const EDE_RESULT = edeResult();
 
 const FAILED_REPORT = { status: "fail", summary: "stopped", artifacts: {} };
 
-/** A fake that starts, then runs `then` and exits 1 on SIGINT. */
+/**
+ * A fake that starts, then runs `then` and exits 1 on SIGINT. Its handler is
+ * set before it says it started, since Ork stops it as soon as it reads that;
+ * it ends by letting the loop drain, not `process.exit`, since a pipe's writes
+ * are async on macOS and an exit at once could drop what `then` printed.
+ */
 const onSigint = (then: string): string =>
-  `${STARTED} process.on("SIGINT", () => { ${then} process.exit(1); }); setInterval(() => {}, 1000);`;
+  `const alive = setInterval(() => {}, 1000); process.on("SIGINT", () => { ${then} process.exitCode = 1; clearInterval(alive); }); ${STARTED}`;
 
 /** The outcome a fake running `body` ends with, `stop`ped once started. */
 const endOf = async (body: string, stop: boolean): Promise<SessionOutcome> => {

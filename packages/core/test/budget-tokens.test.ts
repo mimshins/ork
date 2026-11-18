@@ -182,6 +182,15 @@ describe("a run's limits.budgetTokens", () => {
     spend.started("command-code");
     expect(spend.partial()).toBe(true);
   });
+
+  it("does the same for codex, which reports tokens only", () => {
+    const spend = createSpend(10);
+    spend.started("codex");
+    expect(spend.partial()).toBe(true);
+    expect(
+      usageReport([row("claude-code"), row("codex")]).totals,
+    ).toMatchObject({ tokens: 250, partial: true });
+  });
 });
 
 describe("quotas.dayTokens", () => {

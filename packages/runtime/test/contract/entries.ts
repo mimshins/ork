@@ -18,6 +18,7 @@ import {
 import {
   type CliAdapter,
   claudeCodeAdapter,
+  codexAdapter,
   commandCodeAdapter,
   openCodeAdapter,
 } from "../../src/index.ts";
@@ -40,6 +41,10 @@ export type ContractEntry = {
   capabilities: DriverCapabilities;
   /** The causes the tool itself reports, which its fake plays as `end:<kind>`. */
   ends: readonly EndKind[];
+  /** Causes of `TOOL_ENDS` the tool can never report (Codex has no turn cap). */
+  cannot: readonly EndKind[];
+  /** Words of the tool's model-refused error, kept in the end's detail. */
+  modelError: string;
 };
 
 /** The causes every tool reports; a tool that caps spending adds its budget. */
@@ -73,6 +78,8 @@ export const CONTRACT: readonly ContractEntry[] = [
     // dollars; `budgetTokens` does), and Ork checks OpenCode's dollars only
     // before a session or a late turn, not within one.
     ends: [...TOOL_ENDS, "budget_limit"],
+    cannot: [],
+    modelError: "prefill",
   },
   {
     driver: "command-code",
@@ -80,6 +87,8 @@ export const CONTRACT: readonly ContractEntry[] = [
     fakeTool: fixture("fake-command.mjs"),
     capabilities: capabilitiesOf("command-code"),
     ends: TOOL_ENDS,
+    cannot: [],
+    modelError: "prefill",
   },
   {
     driver: "open-code",
@@ -87,5 +96,17 @@ export const CONTRACT: readonly ContractEntry[] = [
     fakeTool: fixture("fake-opencode.mjs"),
     capabilities: capabilitiesOf("open-code"),
     ends: TOOL_ENDS,
+    cannot: [],
+    modelError: "prefill",
+  },
+  {
+    driver: "codex",
+    adapter: codexAdapter,
+    fakeTool: fixture("fake-codex.mjs"),
+    capabilities: capabilitiesOf("codex"),
+    // No key caps a Codex session's turns (RFC-024 spike), so none ends there.
+    ends: TOOL_ENDS.filter(kind => kind !== "turn_limit"),
+    cannot: ["turn_limit"],
+    modelError: "not supported when using Codex",
   },
 ];

@@ -270,11 +270,10 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
   `settingSources` stay `[project, local]` under `layers.project: ignore`
   (`--setting-sources project,local`), with their permissions and hooks
   ([L394](../gaps/onboard-limits.md)).
-- **`open-code`**: the session settings that carry `ignore` are not passed, so
-  the repository's `AGENTS.md` loads. `.claude/` and `CLAUDE.md` stay out, as
-  always on this driver.
+- **`open-code`**: the settings that carry `ignore` are not passed, so the
+  repository's `AGENTS.md` loads; `.claude/` and `CLAUDE.md` stay out.
 - **`command-code`**: not passed either: `AGENTS.md`, `.commandcode/skills` and
   `.commandcode/agents` load, with the machine's own skills, memory and mods.
 
 These are [limits](../gaps/onboard-limits.md), and the onboarding guide says
-which driver reads least.
+which driver reads least. `codex` is not offered while unproven.

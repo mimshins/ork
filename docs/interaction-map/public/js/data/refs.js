@@ -1312,6 +1312,12 @@ export const RUNTIME = {
     "Code: the open-code adapter",
   ),
   openSpec: d("specs/runtime/open-code.md", "Spec: the open-code driver"),
+  codex: d("packages/runtime/src/adapters/codex.ts", "Code: the codex adapter"),
+  codexHook: d(
+    "packages/runtime/src/adapters/codex-hook.ts",
+    "Code: the codex hook that holds a node's rules",
+  ),
+  codexSpec: d("specs/runtime/codex.md", "Spec: the codex driver"),
   driverGuide: d("docs/guides/drivers.md", "Guide: the drivers"),
   needs: d(
     "packages/core/src/run/driver-needs.ts",

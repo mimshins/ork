@@ -82,18 +82,27 @@ const ABLE = {
   turnLimit: true,
   mcpServers: true,
   subagents: true,
+  readDenies: true,
 };
 
-/** Command Code without a turn limit, the others able. */
+/**
+ * Command Code and Codex without a turn limit, Codex without read denies, the
+ * others able.
+ */
 const DRIVERS: DriverNeeds[] = [
   "claude-code" as const,
   "open-code" as const,
   "command-code" as const,
+  "codex" as const,
 ].map(id => ({
   id,
   proven: true,
   onePerCheckout: false,
-  capabilities: { ...ABLE, turnLimit: id !== "command-code" },
+  capabilities: {
+    ...ABLE,
+    turnLimit: id !== "command-code" && id !== "codex",
+    readDenies: id !== "codex",
+  },
 }));
 
 /** Runs a workflow of these lines, `--driver` set to `override` if given. */
@@ -199,6 +208,27 @@ describe("a session's driver from its model", () => {
     expect(started.map(s => s.nodeId)).toEqual(["build.1"]);
     expect(JSON.stringify(events)).toContain(
       "node `build` sets maxTurns, but driver `command-code` has no turn limit",
+    );
+  });
+
+  it("runs a `codex.` model on codex, handing `-m` the rest as written", async () => {
+    const { result, started } = await run(worker("codex.gpt-5.5-codex"));
+    expect(result.status).toBe("succeeded");
+    expect(started).toEqual([
+      { nodeId: "build", driver: "codex", model: "gpt-5.5-codex" },
+    ]);
+  });
+
+  it("refuses a path-scoped read deny on a codex node before it starts", async () => {
+    const { result, started, events } = await run(
+      worker("codex.gpt-5.5-codex", [
+        "    tools: { deny: ['Read(./secrets/**)'] }",
+      ]),
+    );
+    expect(result.status).toBe("failed");
+    expect(started).toEqual([]);
+    expect(JSON.stringify(events)).toContain(
+      "denies `Read(./secrets/**)`, but driver `codex` has no read tool to gate",
     );
   });
 

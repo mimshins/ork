@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L438, and the next chore is
+closes it. Ids are never reused: the next limit is L449, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -58,6 +58,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building the `ork:security-audit` workflow](./gaps/audit-limits.md)
 - [Limits found building `ork onboard`](./gaps/onboard-limits.md)
 - [Limits found building `extract`](./gaps/extract-limits.md)
+- [Limits found building the `codex` driver](./gaps/codex-limits.md)
 
 ## Gaps
 
@@ -217,6 +218,35 @@ review:
   invalid, only the patterns apply. Recording the workflow's text with the run
   and scrubbing with that would close it.
   ([event store](./event-store.md#masking))
+
+Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
+
+- **G39 · `codex` takes no message mid-turn and asks no approval through Ork.**
+  The driver runs `codex exec` per leg, so a message waits for the leg's end
+  (`midTurnMessages: false`), and `exec` asks nothing, so there is no
+  `permissionPrompt`. `codex app-server` (JSON-RPC over stdio, experimental)
+  could do both; it is a later RFC.
+- **G40 · Pause, stop and `heavy` do not reach a Codex call.** Ork's hook
+  decides locally and does not hold a call (holding from a Codex command hook
+  was never tried), so `ork pause` and `ork stop` land at a leg's end, and a
+  Codex shell call takes no `heavy` slot
+  ([machine](./machine.md#a-sessions-bash-call)).
+- **G41 · Reads outside the worktree are not fenced on `codex`.** Codex has no
+  read tool for the hook to gate, and its sandbox reads anywhere, so a shell
+  `cat` of a file outside the folder runs. A `deny` on a `Read`, `Glob` or
+  `Grep` path is refused for this driver by `ork validate` and `ork run`
+  (`readDenies: false`) instead of being half held.
+- **G42 · `--output-schema` is not measured, so Codex reports by the `report`
+  tool.** `reportSchema` is `false`; whether `--output-schema` accepts Ork's
+  report schemas was not tried. Measure it, then decide.
+- **G43 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not
+  supported on `codex`.** `mcpServers`, `subagents` and `turnLimit` are `false`
+  and `ork validate` refuses a node that needs one: the servers were not tried
+  with `-c`, and no key caps a session's turns.
+- **G44 · Codex's own web search is not fenced.** Ork keeps the network off in
+  the sandbox, but no key to turn Codex's own web search off was found on
+  0.169.0 (`codex --help`, `codex features list`), and none was guessed. A node
+  that must not search the web should not run on this driver.
 
 ## Limits
 

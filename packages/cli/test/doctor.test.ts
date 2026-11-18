@@ -84,6 +84,7 @@ describe("ork doctor", () => {
       "claude (claude-code driver): ok",
       "opencode (open-code driver): skip",
       "cmd (command-code driver): skip",
+      "codex (codex driver): skip",
       "gh: ok",
       "aws: skip",
       "git identity: ok",
@@ -371,6 +372,7 @@ describe("ork doctor with the QA stand-ins", () => {
       "claude (claude-code driver): ok",
       "opencode (open-code driver): skip",
       "cmd (command-code driver): ok",
+      "codex (codex driver): skip",
     ]);
   });
 });

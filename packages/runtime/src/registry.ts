@@ -12,6 +12,7 @@ import type { DriverId, Env } from "@krapht/ork-integrations";
 
 import type { CliAdapter } from "./adapter.ts";
 import { claudeCodeAdapter } from "./adapters/claude-code.ts";
+import { codexAdapter } from "./adapters/codex.ts";
 import { commandCodeAdapter } from "./adapters/command-code.ts";
 import { openCodeAdapter } from "./adapters/open-code.ts";
 import { driverFailure } from "./session-end.ts";
@@ -41,6 +42,7 @@ export const ADAPTERS: Record<DriverId, CliAdapter | null> = {
   "claude-code": claudeCodeAdapter,
   "open-code": openCodeAdapter,
   "command-code": commandCodeAdapter,
+  codex: codexAdapter,
 };
 
 /**

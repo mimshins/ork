@@ -96,7 +96,7 @@ passes by what the running sessions were given ([L99](./limits.md)).
 
 ## Partial totals
 
-A driver with no `price` capability (`command-code` today,
+A driver with no `price` capability (`command-code` and `codex` today,
 [drivers](../runtime/which-driver.md)) reports no dollars, so its sessions add
 $0 to a dollar total. A total that leaves some out is **partial**:
 

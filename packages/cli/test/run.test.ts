@@ -86,7 +86,7 @@ const project = () => {
  * unproven).
  */
 const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
-  ["claude-code", "open-code", "command-code"] as const
+  ["claude-code", "open-code", "command-code", "codex"] as const
 ).map(id => ({
   id,
   proven: true,
@@ -100,6 +100,7 @@ const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
     turnLimit: true,
     mcpServers: true,
     subagents: true,
+    readDenies: true,
   },
 }));
 

@@ -67,13 +67,15 @@ export const start = (
   const endpointFile = path.join(cwd, ".endpoint");
   const spentFile = path.join(cwd, ".spent");
   // A throwaway home and runs folder: a tool may keep config per user (Command
-  // Code's MCP entries) and Ork keeps leases in the runs folder.
+  // Code's MCP entries, a Codex hooks file that refuses the session) and Ork
+  // keeps leases in the runs folder.
   const home = mkdtempSync(path.join(tmpdir(), "ork-contract-home-"));
   const session = createSessionRuntime(entry.adapter, {
     bin,
     env: {
       ...process.env,
       HOME: home,
+      CODEX_HOME: path.join(home, ".codex"),
       FAKE_SCENARIO: scenario === "plain" ? "" : scenario,
       FAKE_ENDPOINT_FILE: endpointFile,
       FAKE_SPENT_FILE: spentFile,

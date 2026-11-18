@@ -33,16 +33,16 @@ How the report reaches Ork depends on the driver's `reportSchema` capability
 - **Structured output**, where the driver holds its final answer to the schema
   itself (`reportSchema: true`; `claude-code`'s `--json-schema`). The report is
   read from the tool's result line.
-- **Ork's `report` tool**, where it can't (`reportSchema: false`; `open-code`
-  and `command-code`). The session runner serves it on Ork's MCP endpoint only
-  then, preapproved, with the node's report schema as its input schema. Zod
-  checks each call against that schema (`z.fromJSONSchema`; Ork adds no other
-  validator). A report that breaks it comes back as a tool error naming each
-  violation (a wrong value, a missing field, a stray one), and the model fixes
-  it and calls again. One that fits is kept. The session ends with the last
-  report kept, across all its legs, whatever the tool's result line says; with
-  none kept, it ends with `report: null`. A leader's question fork is held to
-  its own schema the same way.
+- **Ork's `report` tool**, where it can't (`reportSchema: false`; `open-code`,
+  `command-code` and `codex`). The session runner serves it on Ork's MCP
+  endpoint only then, preapproved, with the node's report schema as its input
+  schema. Zod checks each call against that schema (`z.fromJSONSchema`; Ork adds
+  no other validator). A report that breaks it comes back as a tool error naming
+  each violation (a wrong value, a missing field, a stray one), and the model
+  fixes it and calls again. One that fits is kept. The session ends with the
+  last report kept, across all its legs, whatever the tool's result line says;
+  with none kept, it ends with `report: null`. A leader's question fork is held
+  to its own schema the same way.
 - The fake tools play both: `report-tool` in the contract suite calls the tool
   with a report outside the schema, then one inside
   ([contract](../../packages/runtime/test/contract/contract.test.ts)).

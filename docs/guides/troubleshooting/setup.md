@@ -35,7 +35,18 @@ worker waits for it, so neither would finish. Give the worker
 
 **`node … runs on driver …, which is not yet proven on a real session`.** A
 driver is refused until a real session has proven it. `claude-code`, `open-code`
-and `command-code` all have; name one of them, or no driver.
+and `command-code` all have; `codex` has not yet, and `ork doctor` shows it as
+`skip` even when installed. Name one of the proven ones, or no driver.
+
+**`node … denies …, but driver codex has no read tool to gate`.** Codex can read
+outside the worktree, so a deny on a `Read`, `Glob` or `Grep` path could not
+hold, and the node is refused. Remove the deny, or run the node on another
+driver ([Codex](../drivers/codex.md#what-holds-a-node-to-its-rules)).
+
+**`… exists: Ork runs its own Codex hook …`.** A hooks file of yours
+(`~/.codex/hooks.json`, `$CODEX_HOME/hooks.json` or `/etc/codex/hooks.json`)
+would run untrusted beside Ork's, so a Codex node ends before it starts. Move
+the file away ([Codex](../drivers/codex.md#if-a-node-stops-before-it-starts)).
 
 **`No agent driver is ready here, and … name none.`** Neither your `claude`
 login nor an API key or cloud provider is set up, and the nodes it names don't

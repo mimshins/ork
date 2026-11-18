@@ -1333,6 +1333,20 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "codex-driver",
+        title: "The `codex` driver",
+        status: "active",
+        detail:
+          "Built, not proven; waiting to land (it becomes done with its commit). RFC-024 (closed with ADR-102): OpenAI's `codex` as the fourth driver, one `codex exec --json` per leg (`exec resume` and `exec fork` for follow-ups), Ork's tools over `-c mcp_servers.ork.*` with the token in the leg's environment only, the sandbox as the outer wall (`read-only` or `workspace-write`, never wider) and a per-session `PreToolUse` hook that holds the node's rules, deny by default, in a private folder outside the checkout. It fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call ends it. Tokens only; Codex's own default model; a node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped read deny is refused. The descriptor stays `proven: false`, so `ork doctor` says `skip` and no run takes it. Left: the maintainer's capped gate run on a real `codex` (then `proven: true`), `--output-schema`, and `codex app-server` for mid-turn messages and Ork-answered approvals (G39 to G44, L438 to L448).",
+        docs: [
+          "decisions/ADR-102-codex-driver.md",
+          "specs/runtime/codex.md",
+          "specs/gaps/codex-limits.md",
+          "docs/guides/drivers/codex.md",
+          "packages/runtime/src/adapters/codex.ts",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
@@ -1439,4 +1453,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-17";
+export const ROADMAP_UPDATED = "2026-11-18";

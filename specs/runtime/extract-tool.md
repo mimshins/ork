@@ -4,7 +4,7 @@ _Part of [Runtime: the agent drivers](../runtime.md)._
 
 Status: **Built**: the tool, its steps and programs, containment and refusals,
 the refusal of shell reads, and the withheld tools (RFC-025), served on
-`claude-code`, `open-code` and `command-code`
+`claude-code`, `open-code`, `command-code` and `codex` (built, not proven)
 ([extract.ts](../../packages/runtime/src/tools/extract.ts),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
@@ -100,6 +100,10 @@ filters another command's output, which `extract` can't read, so
   would also refuse it filtering another command's output (`pnpm test | tail`);
   they are left to the steering line there, and the message is OpenCode's own
   ([L436](../gaps/extract-limits.md)).
+- **`codex`**: the session's `PreToolUse` hook refuses the shell read, and a
+  text read when the node is `extract-only`, with the reason, from the matcher
+  it shares with the `command-code` mod; Codex has no read tool to gate
+  ([the page](./codex.md#the-hook)).
 
 A `readonly` node then runs only `git status` without asking; `git diff`, `log`
 and `show` come back under `reading: open`.

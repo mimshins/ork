@@ -15,8 +15,10 @@ import {
   INTEGRATIONS,
   integrationFor,
   MIN_CLAUDE_VERSION,
+  MIN_CODEX_VERSION,
   MIN_OPENCODE_VERSION,
   olderThan,
+  readyDriver,
 } from "../src/index.ts";
 
 describe("the registries", () => {
@@ -137,7 +139,7 @@ describe("the claude-code driver's check", () => {
 
   it("lists the other drivers as ready once their tool answers", async () => {
     const others = await Promise.all(
-      AGENT_DRIVERS.slice(1).map(d => d.doctor(answersAnything, {})),
+      AGENT_DRIVERS.slice(1, 3).map(d => d.doctor(answersAnything, {})),
     );
     expect(others.map(r => r.status)).toEqual(["ok", "ok"]);
     expect(others.some(r => r.detail.includes("unproven"))).toBe(false);
@@ -180,6 +182,7 @@ describe("the claude-code driver's check", () => {
       turnLimit: true,
       mcpServers: true,
       subagents: false,
+      readDenies: true,
     });
     expect(command.capabilities).toEqual({
       questions: true,
@@ -190,7 +193,78 @@ describe("the claude-code driver's check", () => {
       turnLimit: true,
       mcpServers: false,
       subagents: false,
+      readDenies: true,
     });
+  });
+});
+
+/**
+ * `codex`'s check with a `codex` whose `--version` and `login status` answer as
+ * given.
+ */
+const codexCheck = (version: string | null, loggedIn: boolean) => {
+  const exec: Exec = (program, args) => {
+    const call = [program, ...args].join(" ");
+    if (call === "codex --version") {
+      return Promise.resolve(
+        version === null
+          ? { ok: false, stdout: "" }
+          : { ok: true, stdout: version },
+      );
+    }
+    // Only the exit status counts: the output is never read.
+    return Promise.resolve({
+      ok: call === "codex login status" && loggedIn,
+      stdout: "Logged in using ChatGPT",
+    });
+  };
+  return AGENT_DRIVERS[3].doctor(exec, {});
+};
+
+describe("the codex driver", () => {
+  it("is the fourth, unproven, and declares what it does itself", () => {
+    const codex = AGENT_DRIVERS[3];
+    expect(codex.id).toBe("codex");
+    expect([codex.proven, codex.onePerCheckout]).toEqual([false, false]);
+    expect(codex.capabilities).toEqual({
+      questions: true,
+      permissionPrompt: false,
+      price: false,
+      midTurnMessages: false,
+      reportSchema: false,
+      turnLimit: false,
+      mcpServers: false,
+      subagents: false,
+      readDenies: false,
+    });
+  });
+
+  it("is skipped, with no hint, when codex is missing", async () => {
+    const found = await codexCheck(null, true);
+    expect(found).toMatchObject({ status: "skip" });
+    expect(found.hint).toBeUndefined();
+  });
+
+  it("warns about a codex older than the minimum", async () => {
+    expect(await codexCheck("codex-cli 0.168.9\n", true)).toMatchObject({
+      status: "warn",
+      detail: `codex-cli 0.168.9, older than ${MIN_CODEX_VERSION}`,
+    });
+  });
+
+  it("is skipped, with no hint, when logged out", async () => {
+    const found = await codexCheck("codex-cli 0.169.0\n", false);
+    expect(found).toMatchObject({ status: "skip" });
+    expect(found.detail).toContain("not logged in");
+    expect(found.detail).toContain("codex login");
+    expect(found.hint).toBeUndefined();
+  });
+
+  it("stays skipped, never ok, when logged in, so no run takes it", async () => {
+    const found = await codexCheck("codex-cli 0.169.0\n", true);
+    expect(found).toMatchObject({ status: "skip" });
+    expect(found.detail).toContain("unproven");
+    expect(readyDriver([{ id: "codex", result: found }]).ok).toBe(false);
   });
 });
 

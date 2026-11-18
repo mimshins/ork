@@ -183,19 +183,22 @@ describe.each(CONTRACT)("the $driver adapter's ends", entry => {
     },
   );
 
-  it("writes the turn limit with the node's number, and keeps the tool's words out of it", async () => {
-    const { end } = outcomeOf(
-      await collect(start(entry, "end:turn_limit").session),
-    );
-    expect(end?.message).toBe("reached its turn limit (5)");
-  });
+  it.runIf(entry.ends.includes("turn_limit"))(
+    "writes the turn limit with the node's number, and keeps the tool's words out of it",
+    async () => {
+      const { end } = outcomeOf(
+        await collect(start(entry, "end:turn_limit").session),
+      );
+      expect(end?.message).toBe("reached its turn limit (5)");
+    },
+  );
 
   it("keeps a provider's error as the detail, never the message", async () => {
     const { end } = outcomeOf(
       await collect(start(entry, "end:model_unavailable").session),
     );
-    expect(end?.detail).toContain("prefill");
-    expect(end?.message).not.toContain("prefill");
+    expect(end?.detail).toContain(entry.modelError);
+    expect(end?.message).not.toContain(entry.modelError);
   });
 
   it("ends as tool_missing when its program isn't installed", async () => {
@@ -265,7 +268,9 @@ describe.each(CONTRACT)("the $driver adapter's token cap", entry => {
 });
 
 describe.each(CONTRACT)("the $driver contract entry", entry => {
-  it("plays every cause a tool reports", () => {
-    expect(entry.ends).toEqual(expect.arrayContaining([...TOOL_ENDS]));
+  it("plays every cause a tool reports, or says it can't be reported", () => {
+    expect([...entry.ends, ...entry.cannot]).toEqual(
+      expect.arrayContaining([...TOOL_ENDS]),
+    );
   });
 });

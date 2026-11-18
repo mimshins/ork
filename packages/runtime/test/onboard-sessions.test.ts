@@ -2,9 +2,10 @@
  * @file Tests that the sessions of `ork onboard`'s built-in workflows get what
  *   they need on every driver: the proposer (`tools.only` Read, Grep, Glob) can
  *   read, search and reach Ork's tools (`ask_user`, `report`) without a prompt
- *   or a refusal, and is refused edits and the shell; the writer can also edit.
- *   Each session is planned from the bundled built-in, as a run plans it, then
- *   played on each driver's fake tool.
+ *   or a refusal, and is refused edits and the shell; the writer can also edit
+ *   (on Codex, by its hook and sandbox). Each session is planned from the
+ *   bundled built-in, as a run plans it, then played on each driver's fake
+ *   tool.
  */
 
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
@@ -24,8 +25,10 @@ import { z } from "zod";
 
 import {
   buildCliArgs,
+  codexSandbox,
   permissionRules,
   type Rule,
+  writeHook,
   writeMod,
 } from "../src/index.ts";
 import { CONTRACT } from "./contract/entries.ts";
@@ -81,6 +84,25 @@ const decideOf = async (spec: SessionSpec): Promise<Decide> => {
     .object({ decide: z.custom<Decide>(value => typeof value === "function") })
     .parse(await import(pathToFileURL(mod.file).href));
   mod.remove();
+  return loaded.decide;
+};
+
+const PATCH = {
+  command:
+    "*** Begin Patch\n*** Add File: .ork/workflows/ci.ork.yaml\n+x\n*** End Patch",
+};
+
+/**
+ * The `decide` of the Codex hook written for `spec` (its `rules.mjs`): why a
+ * call is refused, or `undefined` when it runs.
+ */
+const codexDecideOf = async (spec: SessionSpec): Promise<Decide> => {
+  const hook = writeHook(spec);
+  const rules = path.join(path.dirname(hook.file), "rules.mjs");
+  const loaded = z
+    .object({ decide: z.custom<Decide>(value => typeof value === "function") })
+    .parse(await import(pathToFileURL(rules).href));
+  hook.remove();
   return loaded.decide;
 };
 
@@ -156,6 +178,17 @@ describe("ork:onboard-propose's session", () => {
     expect(decide("shell", { command: "ls" })).toBeDefined();
   });
 
+  it("reads through extract on codex, read-only, and is refused edits and the shell", async () => {
+    const spec = propose();
+    expect(codexSandbox(spec)).toBe("read-only");
+    const decide = await codexDecideOf(spec);
+    expect(decide("mcp__ork__extract", {})).toBeUndefined();
+    expect(decide("mcp__ork__ask_user", {})).toBeUndefined();
+    expect(decide("mcp__ork__report", {})).toBeUndefined();
+    expect(decide("apply_patch", PATCH)).toBeDefined();
+    expect(decide("Bash", { command: "ls" })).toBeDefined();
+  });
+
   it.each(CONTRACT)(
     "asks the user and reports on $driver's fake tool",
     async entry => {
@@ -175,11 +208,14 @@ describe("the token caps of the built-ins on drivers that report no dollars", ()
   // there must stop at its `budgetTokens` with no dollar cap beside it.
   const noDollars = CONTRACT.filter(entry => !entry.capabilities.price);
 
-  it("covers command-code and open-code's fake tools", () => {
+  it("covers command-code, open-code and codex's fake tools", () => {
     expect(CONTRACT.map(entry => entry.driver)).toEqual(
-      expect.arrayContaining(["command-code", "open-code"]),
+      expect.arrayContaining(["command-code", "open-code", "codex"]),
     );
-    expect(noDollars.map(entry => entry.driver)).toEqual(["command-code"]);
+    expect(noDollars.map(entry => entry.driver)).toEqual([
+      "command-code",
+      "codex",
+    ]);
   });
 
   it.each(CONTRACT.filter(entry => entry.driver !== "claude-code"))(
@@ -219,5 +255,13 @@ describe("ork:onboard-write's session", () => {
     const file = { path: path.join(spec.cwd, ".ork/workflows/ci.ork.yaml") };
     expect(decide("edit_file", file)).toBeUndefined();
     expect(decide("shell", { command: "ls" })).toBeDefined();
+  });
+
+  it("edits on codex, in workspace-write, and is refused the shell", async () => {
+    const spec = write();
+    expect(codexSandbox(spec)).toBe("workspace-write");
+    const decide = await codexDecideOf(spec);
+    expect(decide("apply_patch", PATCH)).toBeUndefined();
+    expect(decide("Bash", { command: "ls" })).toBeDefined();
   });
 });

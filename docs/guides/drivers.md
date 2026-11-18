@@ -1,7 +1,7 @@
 # Drivers
 
 A **driver** is how Ork reaches an agent tool: Ork runs that tool's own
-command-line program, headless, and reads what it prints. Ork has three drivers.
+command-line program, headless, and reads what it prints. Ork has four drivers.
 A workflow, a node, a node's `model` (`claude-code.opus`) or `ork run --driver`
 names one by its id.
 
@@ -10,12 +10,15 @@ names one by its id.
 | `claude-code`  | your own `claude`   | Proven; the one a run takes when it is here |
 | `open-code`    | your own `opencode` | Proven on a real session                    |
 | `command-code` | your own `cmd`      | Proven on a real session                    |
+| `codex`        | your own `codex`    | Built, not proven yet                       |
 
-Each driver passes Ork's tests against a stand-in for its tool and has run a
-real session. A driver added later is refused by `ork validate` and `ork run`
-(`not yet proven on a real session`) until it has. `ork doctor` lists a driver
-whose tool it can't find as `skip`, with how to install it. Logins, and what
-each tool needs: [Accounts and credentials](./accounts.md).
+Each driver passes Ork's tests against a stand-in for its tool, and a proven one
+has run a real session. A driver that has not is refused by `ork validate` and
+`ork run` (`not yet proven on a real session`) until it has, and `ork doctor`
+shows it as `skip`, so no run takes it ([Codex](./drivers/codex.md)).
+`ork doctor` lists a driver whose tool it can't find as `skip`, with how to
+install it. Logins, and what each tool needs:
+[Accounts and credentials](./accounts.md).
 
 `ork run --driver <id>` (also `ork resume` and `ork feedback apply`) looks at
 that one driver's tool before any session starts. If `ork doctor` wouldn't call
@@ -46,7 +49,7 @@ nodes:
     model: command-code.deepseek/deepseek-v4.1-flash
 ```
 
-The text before the first `.` is the driver when it is one of the three ids; the
+The text before the first `.` is the driver when it is one of the four ids; the
 rest goes to that tool as written. Anything else is a plain model for the run's
 driver, so `deepseek/deepseek-v4.1-flash` still works. A prefixed node needs no
 `driver`, and `ork run --driver` does not change it. `driver: open-code` with
@@ -61,17 +64,18 @@ machine.
 Tools differ. Ork writes down what each driver does itself, and a node that
 needs more is refused rather than half-run:
 
-| Capability                                     | `claude-code` | `open-code`              | `command-code`           |
-| ---------------------------------------------- | ------------- | ------------------------ | ------------------------ |
-| Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      |
-| Permission prompts mid-session                 | yes           | no                       | no                       |
-| Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          |
-| Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      |
-| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            |
-| Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) |
-| Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      |
-| A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       |
-| Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       |
+| Capability                                     | `claude-code` | `open-code`              | `command-code`           | `codex`                  |
+| ---------------------------------------------- | ------------- | ------------------------ | ------------------------ | ------------------------ |
+| Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      | yes                      |
+| Permission prompts mid-session                 | yes           | no                       | no                       | no                       |
+| Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          | no, tokens only          |
+| Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      | yes                      |
+| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            | no (next leg)            |
+| Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) |
+| Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      | no                       |
+| A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       | no                       |
+| Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       | no                       |
+| A `deny` on a `Read`, `Glob` or `Grep` path    | yes           | yes                      | yes                      | no                       |
 
 A dollar budget on a driver that reports no dollars is not refused, but warned
 about (below). Where Ork has a fallback it uses it, and nothing is refused: a
@@ -90,7 +94,9 @@ A node asks for something its driver does not do. Each refusal names both:
   own `ask_user` and run-time messages are not checked,
   [L234](../../specs/gaps.md)).
 - An `agent.subagent` under a leader whose driver does not run subagents.
-- A driver that is not yet proven.
+- A `deny` on a `Read`, `Glob` or `Grep` path, on `codex`: it has no read tool
+  to gate, so the deny could not hold.
+- A driver that is not yet proven (`codex` today).
 
 `ork validate` checks against `--driver` if you give it, else against the driver
 a run would take. `ork run` checks again with the real driver before any session
@@ -107,7 +113,7 @@ A workflow that uses a feature only one driver has runs only on that driver;
 ## What `ork validate` warns about
 
 `budgetUsd` on a node, or `limits.budgetUsd` on the workflow, can't see a
-session on a driver that reports no dollars (`command-code` today). Each is a
+session on a driver that reports no dollars (`command-code`, `codex`). Each is a
 warning, and the run goes on:
 
 - A node with only `budgetUsd`: "only budgetTokens applies on command-code". Add
@@ -122,12 +128,12 @@ warning, and the run goes on:
 ## Permissions: denied unless allowed
 
 `claude-code` asks you when a tool isn't allowed, and the question shows up in
-`ork decide`. `open-code` and `command-code` have no way to ask in the middle of
-a session, so Ork **denies by default**: the node's `allow` and `deny` lists are
-written as that tool's own rules, and everything else is refused. A node that
-would have been asked about on `claude-code` is refused here, and the session
-sees the refusal and goes on without it. Give the node the tools it needs in its
-`allow` list.
+`ork decide`. `open-code`, `command-code` and `codex` have no way to ask in the
+middle of a session, so Ork **denies by default**: the node's `allow` and `deny`
+lists are written as that tool's own rules, and everything else is refused. A
+node that would have been asked about on `claude-code` is refused here, and the
+session sees the refusal and goes on without it. Give the node the tools it
+needs in its `allow` list.
 
 `ork run --yolo` turns this around for one run, on every driver: nothing is
 asked, and every tool is allowed but what a node's `deny` list refuses
@@ -166,7 +172,9 @@ your other entries as they were.
 ([skills and context](./skills-and-context.md)): they load no MCP server but
 Ork's and the ones the node names. Command Code still loads your own skills,
 memory and MCP servers; Ork blocks the calls a node did not allow, but those
-servers start. A project's own `.mcp.json` is never touched.
+servers start. Codex ignores your config and turns plugins off, but still shows
+your own skills ([Codex](./drivers/codex.md#what-a-codex-session-loads)). A
+project's own `.mcp.json` is never touched.
 
 ## What the onboarding sessions read
 
@@ -186,3 +194,7 @@ OpenCode names a tool `<server>_<tool>`, so its tools could pass for Ork's own
 `ork_<tool>`. The node fails before its session starts, with an error that names
 the server; rename it in `.mcp.json`. A name such as `orkish` or `my_ork_x` is
 fine.
+
+## Contents
+
+- [Codex](./drivers/codex.md)

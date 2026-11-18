@@ -104,7 +104,8 @@ completes the long names; type a letter yourself.
 - **List filters**: each list's flags, the values of `--status`, `--kind`,
   `--severity`, `--due` and `--source`, and your registered projects after
   `--project` and `--for` ([filtering lists](./filtering-lists.md)).
-- **Drivers** after `--driver`: `claude-code`, `open-code` or `command-code`.
+- **Drivers** after `--driver`: `claude-code`, `open-code`, `command-code` or
+  `codex`.
 
 Values are read from your project and Ork's store on your machine. Completing
 never changes either, never shows a prompt or an output, and offers nothing

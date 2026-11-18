@@ -67,6 +67,7 @@ read untrusted repositories:
 | `claude-code`  | Off: `claudeMdExcludes` drops every `CLAUDE.md`, `CLAUDE.local.md` and `.claude/rules` in the checkout, the AGENTS.md plugin reads `CLAUDE.md` only, and `skillOverrides` switches the project's skills off. `.claude/settings*.json` still load, hooks too. |
 | `open-code`    | Not applied: the repository's `AGENTS.md` loads. `.claude/`, `CLAUDE.md`, the checkout's `opencode.json` and the user's `~/.config/opencode` stay out, as always ([OpenCode](./open-code.md#what-a-session-loads)).                                          |
 | `command-code` | Not applied: `AGENTS.md`, `.commandcode/skills` and `.commandcode/agents` load, and the machine's own skills, memory, mods and MCP servers too ([Command Code](../architecture/command-code.md)).                                                            |
+| `codex`        | Not applied: the checkout's `AGENTS.md` loads (and `.agents/skills`, `.codex/agents`); Codex's bundled skills and the user's own stay visible, and the user's config and rules are ignored ([Codex](./codex.md#what-a-session-loads)).                       |
 
 `ork validate --driver` does not warn about it. Both are limits
 ([L393, L394](../gaps/onboard-limits.md)).

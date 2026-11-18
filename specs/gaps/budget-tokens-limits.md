@@ -21,7 +21,7 @@ left simpler:
   `budgetUsd` ([L138](../ui/design-tokens-limits.md)). Record it in
   `run.started` and show it.
 - **L280 · A session stopped at its token cap records $0.** Ork stops the
-  process with SIGINT before it prints a result, and none of the three drivers
+  process with SIGINT before it prints a result, and none of the four drivers
   prints a cost mid-session, so the session's ledger row and its share of the
   run's dollars are $0. A dollar limit on a run with such a session under-counts
   it. Estimating it needs the price table RFC-015 left out

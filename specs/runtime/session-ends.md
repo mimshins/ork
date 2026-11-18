@@ -70,6 +70,9 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 |                | any other exit or `error`                      | the classifier, else `unknown`                                |
 | `open-code`    | every `steps` step used and no report          | `turn_limit` (closes L239)                                    |
 |                | an `error` line (name, status, body); exit 130 | the classifier; `interrupted`                                 |
+| `codex`        | `turn.failed` or `error` text; exit 130        | the classifier, else `unknown`; `interrupted`                 |
+|                | "not supported when using Codex"               | `model_unavailable`                                           |
+|                | no key caps its turns                          | never `turn_limit`                                            |
 | every driver   | counted tokens reach `budgetTokens`            | `budget_limit` (Ork stops it, below)                          |
 |                | the program is not installed (`ENOENT`)        | `tool_missing`                                                |
 |                | a start that failed with a provider's words    | the classifier                                                |
@@ -218,8 +221,9 @@ to one report:
 | `claude-code`  | each `assistant` message's usage, per message id | one model response; its output count may lag a little; result lines exact |
 | `open-code`    | each `step_finish`                               | one step                                                                  |
 | `command-code` | each `model_request_end`                         | one model request                                                         |
+| `codex`        | each `turn.completed`                            | one turn (usage arrives once, at a turn's end)                            |
 
-None of the three prints a cost mid-session, so a session stopped at its token
+None of the four prints a cost mid-session, so a session stopped at its token
 cap records $0 and a run's dollar limit under-counts it
 ([L280](../gaps/budget-tokens-limits.md)). Claude Code's own `--max-budget-usd`
 stays, so on `claude-code` both caps bind.

@@ -35,7 +35,9 @@ export const readyOnly =
   (...ready: DriverId[]): DriverChecks =>
   () =>
     Promise.resolve(
-      (["open-code", "claude-code", "command-code"] as const).map(id => check(id, ready.includes(id))),
+      (["open-code", "claude-code", "command-code", "codex"] as const).map(id =>
+        check(id, ready.includes(id)),
+      ),
     );
 
 /**
@@ -50,7 +52,7 @@ export const openCodeReady = readyOnly("open-code");
  * Refusals have their own tests, with descriptors that lack things.
  */
 export const standInDrivers: readonly DriverNeeds[] = (
-  ["claude-code", "open-code", "command-code"] as const
+  ["claude-code", "open-code", "command-code", "codex"] as const
 ).map(id => ({
   id,
   proven: true,
@@ -64,6 +66,7 @@ export const standInDrivers: readonly DriverNeeds[] = (
     turnLimit: true,
     mcpServers: true,
     subagents: true,
+    readDenies: true,
   },
 }));
 

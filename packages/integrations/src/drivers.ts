@@ -1,11 +1,13 @@
 /**
  * @file The agent drivers Ork can run a session with, as descriptors: id, label
  *   and doctor check (RFC-014: `claude-code`, `open-code` and `command-code`,
- *   each proven on a real session). `@krapht/ork-runtime` registers a factory
- *   for each id, so adding a driver is one descriptor here and one factory
- *   there (ADR-022). Ork never handles the user's login (ADR-004).
+ *   each proven on a real session; RFC-024: `codex`, not yet proven).
+ *   `@krapht/ork-runtime` registers a factory for each id, so adding a driver
+ *   is one descriptor here and one factory there (ADR-022). Ork never handles
+ *   the user's login (ADR-004).
  */
 
+import { codex, commandCode, olderThan, openCode } from "./cli-drivers.ts";
 import type { CheckResult, Env, Exec } from "./integration.ts";
 import { field, firstLine, parseJson } from "./json.ts";
 
@@ -31,6 +33,12 @@ export type DriverCapabilities = {
   mcpServers: boolean;
   /** The tool runs subagents, so `agent.subagent` nodes can sit under a leader. */
   subagents: boolean;
+  /**
+   * A `deny` rule scoped to a path (`Read(./secrets/**)`, `Grep(…)`) holds: the
+   * tool has a read tool Ork's rules can gate. `false` means `ork validate` and
+   * `ork run` refuse a node that has one rather than run it unfenced.
+   */
+  readDenies: boolean;
 };
 
 export type AgentDriver = {
@@ -56,26 +64,6 @@ export type AgentDriver = {
  * CLAUDE.md); Ork relies on it rather than adding AGENTS.md itself.
  */
 export const MIN_CLAUDE_VERSION = "2.1.281";
-
-/**
- * The first OpenCode found to honour a server's `codemode: false`, so Ork's
- * tools reach the model as tools (2.1.0 hid them behind Code Mode).
- */
-export const MIN_OPENCODE_VERSION = "2.3.2";
-
-/** Whether `claude --version` output names a version below `min`. */
-export const olderThan = (text: string, min: string): boolean => {
-  const found = /(\d+)\.(\d+)\.(\d+)/u.exec(text);
-  if (found === null) return false;
-  const have = found.slice(1).map(Number);
-  const want = min.split(".").map(Number);
-  for (let i = 0; i < 3; i += 1) {
-    const a = have[i] ?? 0;
-    const b = want[i] ?? 0;
-    if (a !== b) return a < b;
-  }
-  return false;
-};
 
 /**
  * The credential `claude` runs with besides its own login, named for `ork
@@ -120,6 +108,7 @@ const claudeCode: AgentDriver = {
     turnLimit: true,
     mcpServers: true,
     subagents: true,
+    readDenies: true,
   },
   proven: true,
   onePerCheckout: false,
@@ -166,116 +155,25 @@ const claudeCode: AgentDriver = {
 };
 
 /**
- * A driver whose tool Ork finds by `<program> --version`. While `proven` is
- * false its check is `skip`, never `ok`, so `readyDriver` never takes it and
- * `ork doctor` does not count it as a ready driver. Its login is the tool's own
- * and never read (ADR-004), so the detail only names the command to run.
- */
-const installedCli = (
-  id: DriverId,
-  program: string,
-  login: string,
-  {
-    min,
-    ...rest
-  }: Pick<
-    AgentDriver,
-    "label" | "capabilities" | "proven" | "onePerCheckout"
-  > & {
-    /** The oldest version Ork works with, and why: older is a warning. */
-    min?: { version: string; why: string };
-  },
-): AgentDriver => ({
-  id,
-  ...rest,
-  doctor: async exec => {
-    const name = `${program} (${id} driver)`;
-    const version = await exec(program, ["--version"]);
-    const unproven = rest.proven
-      ? ""
-      : ", unproven: not yet proven on a real session";
-    // Another driver is optional: a missing tool is a skip, not a warning.
-    if (!version.ok) {
-      return {
-        name,
-        status: "skip",
-        detail: `${program} CLI not found${unproven}`,
-        // No hint while unproven: it would show under "no driver is ready".
-        ...(rest.proven
-          ? { hint: `Install ${program} to use the ${id} driver.` }
-          : {}),
-      };
-    }
-    if (min !== undefined && olderThan(version.stdout, min.version)) {
-      return {
-        name,
-        status: "warn",
-        detail: `${firstLine(version.stdout)}, older than ${min.version}`,
-        hint: min.why,
-      };
-    }
-    return {
-      name,
-      status: rest.proven ? "ok" : "skip",
-      detail: `${firstLine(version.stdout)}${unproven}; sign in with \`${login}\` if a session asks`,
-    };
-  },
-});
-
-const openCode = installedCli("open-code", "opencode", "opencode auth login", {
-  label: "the `opencode` CLI",
-  proven: true,
-  min: {
-    version: MIN_OPENCODE_VERSION,
-    why: "Update OpenCode (`opencode upgrade`): an older one ignores Ork's `codemode: false`, so Ork's tools never reach the model.",
-  },
-  onePerCheckout: false,
-  // Proven on a real session (2026-11-10): Ork's tools reach the model with
-  // Code Mode off, and the agent's `steps` caps the turns.
-  capabilities: {
-    questions: true,
-    permissionPrompt: false,
-    price: true,
-    midTurnMessages: false,
-    reportSchema: false,
-    turnLimit: true,
-    mcpServers: true,
-    // Not measured on a real session yet: refused until it is.
-    subagents: false,
-  },
-});
-
-const commandCode = installedCli("command-code", "cmd", "cmd login", {
-  label: "the `cmd` CLI of Command Code",
-  proven: true,
-  onePerCheckout: true,
-  capabilities: {
-    questions: true,
-    permissionPrompt: false,
-    price: false,
-    midTurnMessages: false,
-    reportSchema: false,
-    turnLimit: true,
-    // Its MCP servers come from a per-folder scope, which holds only Ork's.
-    mcpServers: false,
-    subagents: false,
-  },
-});
-
-/**
  * The registry of agent drivers, in the order `ork doctor` lists them. None is
  * a default: a run takes the one ready here (`ready.ts`), and never one that is
  * not `proven`.
  */
-export const AGENT_DRIVERS = [claudeCode, openCode, commandCode] as const;
+export const AGENT_DRIVERS = [
+  claudeCode,
+  openCode,
+  commandCode,
+  codex,
+] as const;
 
-export type DriverId = "claude-code" | "open-code" | "command-code";
+export type DriverId = "claude-code" | "open-code" | "command-code" | "codex";
 
 /** The drivers' ids, for the workflow schema's `driver` field. */
 export const DRIVER_IDS: readonly [DriverId, ...DriverId[]] = [
   "claude-code",
   "open-code",
   "command-code",
+  "codex",
 ];
 
 /**

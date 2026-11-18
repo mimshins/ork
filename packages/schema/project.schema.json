@@ -95,7 +95,8 @@
           "enum": [
             "claude-code",
             "open-code",
-            "command-code"
+            "command-code",
+            "codex"
           ]
         },
         "model": {

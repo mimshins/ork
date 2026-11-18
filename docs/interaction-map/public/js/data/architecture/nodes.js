@@ -1021,7 +1021,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, `open-code` and `command-code`, each proven on a real session. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code` and `command-code`, each proven on a real session, and `codex`, built but not proven yet. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
@@ -1161,7 +1161,7 @@ export const NODES = [
       "One set of tests that every adapter passes against a fake of its tool, so a driver keeps the same promises: events, reports, denials, cleanup, usage, interrupt and messages.",
     facts: [
       "Covers: events normalized; a report that fits kept and one that breaks the schema rejected; a denied tool stays denied; Ork's endpoint reached and then gone; usage counted; an interrupt ends the session; a mid-session message arrives.",
-      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
+      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`, `fake-codex`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
       "Runs on fakes, so CI needs no account. A real session is the maintainer's gate, outside the suite.",
     ],
     docs: [RUNTIME.contract, RUNTIME.runner, DESIGN.packages],
@@ -1178,7 +1178,7 @@ export const NODES = [
     summary:
       "How a node ends with a report on a driver that can't return structured output: the model calls `report`, Ork checks it against the node's schema, and a bad one comes back to the model with the violations.",
     facts: [
-      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`); `claude-code` uses `--json-schema`.",
+      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`, `codex`); `claude-code` uses `--json-schema`.",
       "The session ends with the last report it accepted; one that breaks the schema is refused and the model tries again.",
       "A schema it can't read falls back to any object with a valid `status` and `summary` (gap L237).",
     ],
@@ -1232,6 +1232,32 @@ export const NODES = [
       "Claude models through OpenCode's `commandcode` provider fail after a tool call (L240); the node ends as model unavailable, the provider's text under Details. Run Claude on `claude-code`.",
     ],
     docs: [RUNTIME.openCode, RUNTIME.openSpec, RUNTIME.driverGuide],
+  },
+  {
+    id: "codexDriver",
+    title: "codex driver",
+    sub: "`codex exec --json` · sandbox + hook",
+    zone: "runtime",
+    x: 1720,
+    y: 720,
+    status: "partial",
+    pkg: "runtime",
+    src: "packages/runtime/src/adapters/codex.ts",
+    summary:
+      "Built, not proven (RFC-024). Runs a node through your `codex` (OpenAI's Codex CLI), one `codex exec` per leg, with Ork's tools over `-c`, the sandbox as the outer wall and a per-session hook that holds the node's rules. `ork doctor` shows it as `skip` and no run takes it until the maintainer's gate run on a real `codex`.",
+    facts: [
+      "Each leg is `codex exec [resume|fork <id>] --json` with your config, rules, plugins and apps off; a message waits for the leg's end and resumes the session. Ork's instructions go in `developer_instructions` on a session's first leg.",
+      "Ork's MCP endpoint is `-c mcp_servers.ork.*`, its token in the leg's environment only. Never `--skip-git-repo-check`, `--trust`, `--ephemeral` or the full bypass.",
+      "Deny by default: `read-only` or `workspace-write` sandbox (never wider, `--yolo` too), and a `PreToolUse` hook Ork writes in a 0700 private folder outside the checkout, with the same matcher as Command Code's mod; an unknown tool is refused.",
+      "Fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call ends it as a driver error.",
+      "Tokens only (`budgetUsd` alone is warned about); no `hold`, so pause and stop land at a leg's end. A node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped `Read` deny is refused. Unmeasured: `--output-schema`, auth and rate-limit error shapes, whether `input_tokens` includes the cached part (gaps G39 to G44, L438 to L448).",
+    ],
+    docs: [
+      RUNTIME.codex,
+      RUNTIME.codexHook,
+      RUNTIME.codexSpec,
+      RUNTIME.driverGuide,
+    ],
   },
   {
     id: "session",

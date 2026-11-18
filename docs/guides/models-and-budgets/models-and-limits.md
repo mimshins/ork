@@ -81,8 +81,8 @@ and cache write). To see them over time, see
 
 ## Budgets in tokens
 
-Not every tool reports a price: Command Code reports tokens and no dollars, so
-`budgetUsd` can't stop it. `budgetTokens` works on every driver:
+Not every tool reports a price: Command Code and Codex report tokens and no
+dollars, so `budgetUsd` can't stop them. `budgetTokens` works on every driver:
 
 ```yaml
 defaults:
@@ -97,8 +97,9 @@ limits:
   `budget_limit` ([why a node stopped](../why-a-node-stopped.md#budget-limit)).
   Ork checks at each usage report the tool prints, so a session can pass the cap
   by up to one step: a model response on `claude-code`, a step on `open-code`, a
-  model request on `command-code`. A report the node had already handed in still
-  decides how it ended.
+  model request on `command-code`, a whole turn on `codex` (it reports once, at
+  a turn's end, so Ork stops it between its stretches). A report the node had
+  already handed in still decides how it ended.
 - **A run's** `limits.budgetTokens` sets each session's cap aside, as the
   dollars do. A node's own cap wins over `defaults.budgetTokens`, then the
   smaller of that and what is left of the run's applies.
@@ -113,7 +114,7 @@ limits:
   `ork usage`. **Its dollars read $0** on `claude-code` and `command-code`,
   which print a cost only when they finish, so a dollar limit under-counts it. A
   session whose tool crashed records nothing.
-- **On a driver with no price** (`command-code` today), a node with only
+- **On a driver with no price** (`command-code` and `codex`), a node with only
   `budgetUsd`, or under a `limits.budgetUsd` it can't see, is not refused.
   `ork validate` and `ork run` warn: "only budgetTokens applies on
   command-code". Add `budgetTokens`. A run that mixes priced and unpriced

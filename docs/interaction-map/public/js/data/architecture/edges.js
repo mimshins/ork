@@ -495,6 +495,17 @@ export const EDGES = [
     docs: [DESIGN.runtime],
   },
   {
+    id: "runner-codex",
+    from: "sessionRunner",
+    to: "codexDriver",
+    kind: "local",
+    label: "strategies · -c keys · hook",
+    detail:
+      "The `codex` adapter supplies its own strategies, with `-c` keys as its MCP wiring (the token in the leg's environment) and a per-session hook file for the node's rules. Built, not proven.",
+    status: "partial",
+    docs: [DESIGN.runtime],
+  },
+  {
     id: "contract-runner",
     from: "contractSuite",
     to: "sessionRunner",

@@ -19,8 +19,8 @@ const messages = (
 ) => (result.ok ? [] : result.diagnostics.map(d => d.message));
 
 describe("the driver field", () => {
-  it("takes claude-code", () => {
-    expect(workflow("claude-code").ok).toBe(true);
+  it.each(["claude-code", "codex"])("takes %s", id => {
+    expect(workflow(id).ok).toBe(true);
   });
 
   it.each(["sdk", "cli"])("refuses `%s` and names claude-code", id => {
@@ -33,8 +33,8 @@ describe("the driver field", () => {
   });
 
   it("refuses an unknown id with the list", () => {
-    expect(messages(workflow("codex"))).toEqual([
-      "Invalid option: expected one of `claude-code`|`open-code`|`command-code`",
+    expect(messages(workflow("gemini"))).toEqual([
+      "Invalid option: expected one of `claude-code`|`open-code`|`command-code`|`codex`",
     ]);
   });
 });

@@ -94,7 +94,12 @@ describe("ork --help", () => {
     for (const text of texts) {
       expect(text.replaceAll(/\s+/gu, " ")).toContain(DRIVER_IDS.join(", "));
     }
-    expect(DRIVER_IDS).toEqual(["claude-code", "open-code", "command-code"]);
+    expect(DRIVER_IDS).toEqual([
+      "claude-code",
+      "open-code",
+      "command-code",
+      "codex",
+    ]);
   });
 
   it("names every feedback subcommand in its summary", async () => {

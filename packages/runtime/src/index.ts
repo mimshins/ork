@@ -8,6 +8,8 @@ export * from "./adapter.ts";
 export * from "./adapters/claude-code.ts";
 export * from "./adapters/claude-code-flags.ts";
 export * from "./adapters/claude-code-events.ts";
+export * from "./adapters/codex.ts";
+export * from "./adapters/codex-hook.ts";
 export * from "./adapters/command-code.ts";
 export * from "./adapters/command-code-events.ts";
 export * from "./adapters/command-code-mod.ts";

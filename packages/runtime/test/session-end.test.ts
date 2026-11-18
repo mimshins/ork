@@ -2,8 +2,8 @@
  * @file How each driver's decoder ends a session
  *   (specs/runtime/session-ends.md) and how the runner settles it: Claude
  *   Code's subtypes and API errors, OpenCode's step cap, error lines and exit
- *   130, Command Code's exit codes, and a report deciding over a decoder's
- *   guess.
+ *   130, Command Code's exit codes, Codex's failed turns and exit codes, and a
+ *   report deciding over a decoder's guess.
  */
 
 import type {
@@ -14,6 +14,7 @@ import type {
 } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
+import { codexDecoder } from "../src/adapters/codex-events.ts";
 import { openCodeDecoder } from "../src/adapters/open-code-events.ts";
 import { commandCodeDecoder, outcomeOf, settleEnd } from "../src/index.ts";
 
@@ -149,6 +150,49 @@ describe("the command-code decoder's end", () => {
     expect(leg(0, { type: "result", subtype: "success" }).end?.kind).toBe(
       "no_report",
     );
+  });
+});
+
+/** A Codex leg that printed `lines` and exited with `code`. */
+const codexLeg = (code: number, lines: readonly object[] = []) => {
+  const decoder = codexDecoder(spec);
+  for (const line of [{ type: "thread.started", thread_id: "th" }, ...lines]) {
+    decoder.decode(JSON.stringify(line));
+  }
+  return decoder.exit(code);
+};
+
+const failedTurn = (message: string): object[] => [
+  { type: "error", message },
+  { type: "turn.failed", error: { message } },
+];
+
+describe("the codex decoder's end", () => {
+  it("reads a clean exit as no report, for the report tool to settle", () => {
+    expect(finished(codexLeg(0)).end?.kind).toBe("no_report");
+  });
+
+  it("reads exit 130 as interrupted", () => {
+    expect(finished(codexLeg(130)).end?.kind).toBe("interrupted");
+  });
+
+  it("reads a failed turn through the provider classifier, its words the detail", () => {
+    const refused =
+      "The 'gpt-x' model is not supported when using Codex with a ChatGPT account.";
+    expect(finished(codexLeg(1, failedTurn(refused))).end).toMatchObject({
+      kind: "model_unavailable",
+      detail: refused,
+    });
+  });
+
+  it("reads a failed turn it doesn't know as unknown", () => {
+    expect(finished(codexLeg(1, failedTurn("something odd"))).end?.kind).toBe(
+      "unknown",
+    );
+  });
+
+  it("leaves an exit no line explains to stderr", () => {
+    expect(codexLeg(1)).toEqual([]);
   });
 });
 

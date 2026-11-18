@@ -13,8 +13,8 @@ defaults:
 `ork run --driver` overrides both. With none named, a run uses the driver that's
 ready on the machine running it, and `claude-code` (your own `claude`) when more
 than one is ready. `claude-code`, `open-code` and `command-code` are all proven
-on real sessions ([Drivers](../drivers.md),
-[Accounts and credentials](../accounts.md)).
+on real sessions; `codex` is built but not proven yet, so no run takes it
+([Drivers](../drivers.md), [Accounts and credentials](../accounts.md)).
 
 `ork validate` and `ork run` refuse a node its driver can't serve, naming both
 ([troubleshooting](../troubleshooting/setup.md)).
@@ -39,8 +39,8 @@ same, with a chart. Both point at what is worth a look: spend on loop rounds, on
 failed sessions, on one costly node, or a cold prompt cache.
 
 A dollar total that leaves out a session on a driver with no price
-(`command-code` today) is marked: `ork usage`, `ork ps` and the run summary
-print it as `$1.2000 (partial)` with the counted tokens beside it
+(`command-code` and `codex`) is marked: `ork usage`, `ork ps` and the run
+summary print it as `$1.2000 (partial)` with the counted tokens beside it
 (`1.5k tokens`), the browser view as `≥ $1.20` with the tokens next to it, and a
 node on such a driver shows its tokens where the cost would be. The Usage
 panel's totals also show the tokens counted (input, output and cache write;

@@ -62,7 +62,8 @@ project, nothing waits.
   it go when a slot is free. The slot is given back when the call ends, on the
   session's next call, or when the session ends. OpenCode and Command Code
   sessions don't take slots for their Bash calls yet
-  ([L257](../../../specs/gaps/machine-limits.md)).
+  ([L257](../../../specs/gaps/machine-limits.md)), and neither do Codex's
+  ([G40](../../../specs/gaps.md#gaps)).
 
 A wait is never silent. `ork ps` shows the run as `waiting for slot`, and
 `ork logs`, `ork tree` and the Now column of `ork ui` say

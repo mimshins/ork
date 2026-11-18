@@ -65,6 +65,7 @@ const DRIVER_NAMES: { readonly [Id in Driver]: Id } = {
   "claude-code": "claude-code",
   "open-code": "open-code",
   "command-code": "command-code",
+  codex: "codex",
 };
 
 export const DriverIdSchema = z.enum(DRIVER_NAMES);

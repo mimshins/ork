@@ -5,7 +5,8 @@
  *   paged result with the footer. A paused run or node holds an `extract` call
  *   as it holds `read_input`: the hold is the driver's hook on every tool call
  *   (Claude Code's `PreToolUse` with matcher `*`, Command Code's mod,
- *   OpenCode's rules), and the tool has no code of its own for it.
+ *   OpenCode's rules), and the tool has no code of its own for it. Codex has no
+ *   hold (its hook decides locally only), so it holds nothing.
  */
 
 import { execFileSync } from "node:child_process";
@@ -25,7 +26,12 @@ const human: HumanChannel = {
   permit: () => Promise.resolve({ allow: true }),
 };
 
-const DRIVERS: readonly Driver[] = ["claude-code", "open-code", "command-code"];
+const DRIVERS: readonly Driver[] = [
+  "claude-code",
+  "open-code",
+  "command-code",
+  "codex",
+];
 
 const toolsOf = (driver: Driver, cwd?: string, denyRead?: string[]) =>
   orkTools({
