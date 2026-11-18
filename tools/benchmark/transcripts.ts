@@ -137,10 +137,12 @@ const readSession = (dir: string, file: string): Session | null => {
     if (priced > 0) for (const m of mine) m.usd *= reported / priced;
   }
   const pushes = main.flatMap(e => {
+    const at = Date.parse(text(e["timestamp"]) ?? "");
+    // An entry with no time (a summary) can name a push; it marks no window.
+    if (Number.isNaN(at)) return [];
     const shown = JSON.stringify(
       rec(e["message"])["content"] ?? e["toolUseResult"] ?? "",
     );
-    const at = Date.parse(text(e["timestamp"]) ?? "");
     return pushesIn(shown).map(p => Object.assign({ at }, p));
   });
   return { id, messages, spans: workingSpans(main), pushes };
