@@ -20,6 +20,7 @@ import {
 
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
+import { isBadArguments } from "../tools/tool.ts";
 import { addUsage } from "./claude-code-events.ts";
 
 type Json = Record<string, unknown>;
@@ -159,7 +160,17 @@ export const commandCodeDecoder = (): LegDecoder => {
       return [{ type: "tool.result", id, isError: false }];
     }
     if (typeof type === "string" && REFUSED.has(type)) {
-      return [{ type: "tool.result", id, isError: true }];
+      // An Ork tool's answer to arguments it refused: the agent's mistake.
+      const theirs =
+        type === "tool_errored" && isBadArguments(str(event["error"]));
+      return [
+        {
+          type: "tool.result",
+          id,
+          isError: true,
+          ...(theirs ? { fault: "arguments" as const } : {}),
+        },
+      ];
     }
     // Unknown frames are ignored, as Command Code's docs ask.
     return [];

@@ -1,14 +1,15 @@
 /**
  * @file Tests that arguments an Ork tool refuses are marked as the agent's
  *   mistake: the tool's answer starts with `BAD_ARGUMENTS`, and the Claude Code
- *   and OpenCode decoders set the `tool.result`'s `fault` from it, and only
- *   from it.
+ *   OpenCode and Command Code decoders set the `tool.result`'s `fault` from it,
+ *   and only from it.
  */
 
 import type { HumanChannel } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
 import { normalize } from "../src/adapters/claude-code-events.ts";
+import { commandCodeDecoder } from "../src/adapters/command-code-events.ts";
 import { decodeOpenCodeLine } from "../src/adapters/open-code-events.ts";
 import { orkTools } from "../src/index.ts";
 import { BAD_ARGUMENTS } from "../src/tools/tool.ts";
@@ -17,6 +18,20 @@ const human: HumanChannel = {
   ask: () => Promise.resolve(""),
   permit: () => Promise.resolve({ allow: true }),
 };
+
+/** What the Command Code decoder makes of one tool frame. */
+const frame = (type: string, error: string) =>
+  commandCodeDecoder().decode(
+    JSON.stringify({
+      type: "event",
+      event: {
+        type,
+        toolCallId: "t",
+        toolName: "mcp__ork__extract",
+        error,
+      },
+    }),
+  ).events;
 
 const claudeResult = (content: unknown, isError: boolean) =>
   normalize({
@@ -82,5 +97,17 @@ describe("arguments an Ork tool refuses", () => {
       id: "t",
       isError: true,
     });
+  });
+
+  it("are the agent's fault on Command Code, only in a tool_errored frame", () => {
+    expect(frame("tool_errored", `${BAD_ARGUMENTS}\nsteps: Required`)).toEqual([
+      { type: "tool.result", id: "t", isError: true, fault: "arguments" },
+    ]);
+    expect(frame("tool_errored", "git failed")).toEqual([
+      { type: "tool.result", id: "t", isError: true },
+    ]);
+    expect(frame("tool_denied", BAD_ARGUMENTS)).toEqual([
+      { type: "tool.result", id: "t", isError: true },
+    ]);
   });
 });
