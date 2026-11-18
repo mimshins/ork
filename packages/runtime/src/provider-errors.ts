@@ -73,6 +73,11 @@ const WORDS: readonly (readonly [EndKind, RegExp])[] = [
     "provider_unavailable",
     /\boverloaded\b|\bservice unavailable\b|\bbad gateway\b|\bECONNRESET\b|\bECONNREFUSED\b|\bETIMEDOUT\b|\bENOTFOUND\b|\bEAI_AGAIN\b|\bfetch failed\b|\bsocket hang up\b|\bnetwork error\b/iu,
   ],
+  // A driver that will not start in this folder: the node's setup, not Ork.
+  [
+    "invalid_node",
+    /\bNot inside a trusted directory\b|\bOrk runs its own Codex hook\b/u,
+  ],
   [
     "model_unavailable",
     /\bassistant message prefill\b|\bInvalid `signature` in `thinking` block\b|\bmodel(?: \S+)? (?:not found|does not exist|is not supported)\b|\bdoes not support\b|\bunknown model\b/iu,

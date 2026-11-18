@@ -32,7 +32,9 @@ Codex takes nothing mid-turn, so a message or answer sent during a leg waits for
 its end, and the next leg is `exec resume <id> <message>`. A leader's question
 fork is `exec fork <id> <message>`, and the new `thread.started` line gives the
 fork's id. A node outside a git repository is refused by Codex itself: Ork never
-passes `--skip-git-repo-check`.
+passes `--skip-git-repo-check`. That refusal, and Ork's own over a user or
+system hooks file (below), end the node as `invalid_node` (its setup), not as a
+crash filed as an Ork bug (measured on the gate run).
 
 ## The flags of a leg
 

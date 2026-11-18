@@ -166,6 +166,17 @@ const FIXTURES: readonly (readonly [string, number | undefined, string])[] = [
   // OpenCode's own errors.
   ["ProviderAuthError\nInvalid API key", undefined, "auth"],
   ["MessageAbortedError\nAborted", undefined, "interrupted"],
+  // Codex refusing to start in the node's folder: the setup, not Ork.
+  [
+    "Not inside a trusted directory and --skip-git-repo-check was not specified.",
+    undefined,
+    "invalid_node",
+  ],
+  [
+    "/home/x/.codex/hooks.json exists: Ork runs its own Codex hook with --dangerously-bypass-hook-trust, which would run that file's hooks untrusted too.",
+    undefined,
+    "invalid_node",
+  ],
   // A status alone, and a bare refusal.
   ["Service Unavailable", 503, "provider_unavailable"],
   ["Payment Required", 402, "out_of_credits"],
