@@ -152,13 +152,16 @@ const reached = (cap: number | undefined, used: number): boolean =>
  * the session had; otherwise the node's own cap in the other unit may have
  * stopped it. A resumed turn's dollars are its own: its cost is the session's
  * total (ADR-046) while its cap is what was left, so `priorCostUsd` comes off,
- * read as `ownSpend` reads it (a lower total counted again from zero).
+ * read as `ownSpend` reads it (a lower total counted again from zero). A unit
+ * blames the run only when `spentIn` does not say it is unspent: a cap other
+ * nodes' reserves shrank is the node's own (ADR-077).
  */
 const runSpent = (
   run: RunCaps,
   asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">,
   outcome: SessionOutcome,
   priorCostUsd: number,
+  spentIn: ExecuteContext["budgetSpentIn"],
 ): string | undefined => {
   const total = outcome.usage.costUsd;
   const turnCostUsd = total < priorCostUsd ? total : total - priorCostUsd;
@@ -166,12 +169,14 @@ const runSpent = (
     run.tokens !== undefined &&
     (reached(asked.budgetTokens, countedTokens(outcome.usage)) ||
       asked.budgetUsd === undefined);
-  if (tokens)
+  if (tokens && spentIn?.("tokens") !== false)
     return `the run's budget of ${String(run.tokens)} tokens is spent`;
   const usd =
     run.usd !== undefined &&
     (reached(asked.budgetUsd, turnCostUsd) || asked.budgetTokens === undefined);
-  return usd ? `the run's budget of $${String(run.usd)} is spent` : undefined;
+  return usd && spentIn?.("usd") !== false
+    ? `the run's budget of $${String(run.usd)} is spent`
+    : undefined;
 };
 
 /**
@@ -182,7 +187,7 @@ const runSpent = (
  * node that still succeeded is left alone.
  */
 export const limitWatch = (
-  context: Pick<ExecuteContext, "quota">,
+  context: Pick<ExecuteContext, "quota" | "budgetSpentIn">,
   run: RunCaps = {},
 ) => {
   let why: string | undefined;
@@ -222,7 +227,13 @@ export const limitWatch = (
               context.quota?.().blocked ??
               "a session reached what was left of a quota";
           } else if (spent) {
-            runWhy = runSpent(run, asked, outcome, priorCostUsd);
+            runWhy = runSpent(
+              run,
+              asked,
+              outcome,
+              priorCostUsd,
+              context.budgetSpentIn,
+            );
           }
         },
       };

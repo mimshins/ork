@@ -83,6 +83,14 @@ export const createSpend = (
       ? undefined
       : budgetTokens - committedTokens() - reserves.total("tokens");
   /**
+   * The run's budget in `unit` is spent: what sessions spent and reported is at
+   * or above it, reserves not counted (ADR-077). `false` with no budget there.
+   */
+  const spentIn = (unit: "usd" | "tokens"): boolean =>
+    unit === "usd"
+      ? budgetUsd !== undefined && committed() >= budgetUsd
+      : budgetTokens !== undefined && committedTokens() >= budgetTokens;
+  /**
    * A running session said what it has spent so far, and the counted tokens of
    * the process that just ended.
    */
@@ -136,6 +144,7 @@ export const createSpend = (
     tokensLeft,
     /** What the limits across runs allow now. */
     quota: (): RunLimits => limits?.() ?? {},
+    spentIn,
     /**
      * What stops anything new from starting: a quota first, as a budget can be
      * raised.
@@ -145,13 +154,13 @@ export const createSpend = (
       if (blocked !== undefined) {
         return { status: "quota_exhausted", reason: blocked };
       }
-      if (budgetUsd !== undefined && committed() >= budgetUsd) {
+      if (spentIn("usd")) {
         return {
           status: "budget_exhausted",
           reason: `the run's budget of $${String(budgetUsd)} is spent`,
         };
       }
-      return budgetTokens !== undefined && committedTokens() >= budgetTokens
+      return spentIn("tokens")
         ? {
             status: "budget_exhausted",
             reason: `the run's budget of ${String(budgetTokens)} tokens is spent`,
@@ -179,3 +188,29 @@ export const spendOf = (
   budgetTokens?: number,
 ) =>
   createSpend(budgetUsd, options.replay?.earlier, options.limits, budgetTokens);
+
+/**
+ * What a limit that cut a node off does: the run `stop`s, no edge acts on the
+ * failure, and a resume goes on. A cap that others' reserves shrank stops the
+ * run only once its budget, or a quota, is spent (ADR-077), read after the node
+ * settled; until then the result loses `limited`, a plain `budget_limit`
+ * failure left to its edges and rules.
+ */
+export const limitOf = (
+  result: NodeResult,
+  spentOut: () => { status: RunStatus; reason: string } | null,
+  stop: (status: RunStatus, reason: string) => void,
+): NodeResult => {
+  if (result.limited === undefined) return result;
+  if (result.stopsAs !== "budget_exhausted") {
+    stop(result.stopsAs ?? "quota_exhausted", result.limited);
+    return result;
+  }
+  const out = spentOut();
+  if (out !== null) {
+    stop(out.status, out.reason);
+    return result;
+  }
+  const { limited: _limited, stopsAs: _stopsAs, ...own } = result;
+  return own;
+};

@@ -1,6 +1,9 @@
 # ADR-077 — Set a session's cap aside from the run's budget as it starts
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-104](./ADR-104-reserve-never-ends-a-run.md) (a node never blames the run
+  for a remainder a reserve shrank, and a worker offered less than its own cap
+  waits for a worker's reserve to free)
 - **Date:** 2026-11-10
 - **Topic:** scheduler, budgets
 - **RFC:** waived — the maintainer decided this directly after build run

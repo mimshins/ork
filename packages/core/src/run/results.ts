@@ -24,6 +24,7 @@ import {
 } from "./ended.ts";
 import { createSessions, type FreshStart } from "./fresh-session.ts";
 import type { Activation, Replay, RunOptions } from "./handle.ts";
+import { limitOf, spendOf } from "./spending.ts";
 import type {
   KeptWorktree,
   NodeOutput,
@@ -46,7 +47,7 @@ export {
   stoppedEnd,
 };
 export type { EndKind };
-export { spendOf } from "./spending.ts";
+export { limitOf, spendOf };
 export { createGatherer } from "./gather.ts";
 export { createSessions };
 

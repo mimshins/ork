@@ -176,7 +176,7 @@ ork run <workflow> --in-place
 
 It is handy for a quick try, but parallel writers share the same files; they
 claim what they edit
-([claims](./leaders-and-delegation.md#claims-parallel-writers-stay-apart)),
+([claims](./leaders-and-delegation/messages-questions-and-budget.md#claims-parallel-writers-stay-apart)),
 which keeps them apart only as far as they follow it.
 
 ## Running Ork from a git hook

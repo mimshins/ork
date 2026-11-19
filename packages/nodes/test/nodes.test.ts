@@ -1524,12 +1524,12 @@ describe("how a node ends", () => {
   });
 
   it("says what a node that never started ran into", () => {
-    expect(
-      notStarted("budget_limit", "nothing is left of the run's budget"),
-    ).toMatchObject({
+    const why =
+      "nothing is left to start with: the run's budget is spent or set aside by running sessions";
+    expect(notStarted("budget_limit", why)).toMatchObject({
       ok: false,
       error: "reached its budget",
-      output: { summary: "not started: nothing is left of the run's budget" },
+      output: { summary: `not started: ${why}` },
     });
   });
 

@@ -137,7 +137,7 @@ describe("a run's budgetTokens reserves, end to end", () => {
     ).toContainEqual([
       false,
       "budget_limit",
-      "not started: nothing is left of the run's tokens",
+      "not started: nothing is left to start with: the run's tokens are spent or set aside by running sessions",
     ]);
   });
 });

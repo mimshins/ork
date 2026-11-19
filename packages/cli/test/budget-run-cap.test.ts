@@ -1,10 +1,11 @@
 /**
  * @file End-to-end tests, with fake claude, for a run's budget reached inside a
- *   session: the run ends `budget_exhausted` in tokens and in dollars, a stop
- *   by the node's own lower cap still fails it, and a node still queued at the
- *   stop counts as skipped in the run summary. A run resumed after its run cap
- *   stopped it continues once the cap is lifted, and stops again with no
- *   session while it is still spent.
+ *   session: the run ends `budget_exhausted` in tokens and in dollars once it
+ *   is spent, a stop at a cap before then, or by the node's own lower cap,
+ *   fails only the node, and a node still queued at the stop counts as skipped
+ *   in the run summary. A run resumed after its run cap stopped it continues
+ *   once the cap is lifted, and stops again with no session while it is still
+ *   spent.
  */
 
 import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
@@ -33,15 +34,23 @@ const quiet = (): void => {};
 const agent = (id: string, extra = "") =>
   `  ${id}: { type: agent.worker, isolation: shared, prompt: Write${extra} }\n`;
 
-/** Runs `nodes` under `limits`, with fake claude playing `scenario`. */
-const runCapped = async (limits: string, scenario: string, nodes: string) => {
+/**
+ * Runs `nodes` under `limits`, with fake claude playing `scenario` and `extra`
+ * in its environment.
+ */
+const runCapped = async (
+  limits: string,
+  scenario: string,
+  nodes: string,
+  extra: Record<string, string> = {},
+) => {
   const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-run-cap-")));
   const home = mkdtempSync(path.join(tmpdir(), "ork-home-"));
   writeFileSync(
     path.join(dir, "cap.ork.yaml"),
     `schemaVersion: 1\nname: cap\nlimits: { ${limits} }\nnodes:\n${nodes}`,
   );
-  const env = { ...process.env, FAKE_SCENARIO: scenario };
+  const env = { ...process.env, FAKE_SCENARIO: scenario, ...extra };
   const finished = await runWorkflowFile({
     file: "cap.ork.yaml",
     cwd: dir,
@@ -80,10 +89,24 @@ describe("a run's budget reached inside a session", () => {
       "budgetUsd: 0.5",
       "end:budget_limit",
       agent("write"),
+      { FAKE_CLAUDE_COST: "0.5" },
     );
     expect(result).toMatchObject({
       status: "budget_exhausted",
       reasons: ["the run's budget of $0.5 is spent"],
+    });
+  });
+
+  it("fails only the node when its session stops at its cap before the run is spent", async () => {
+    // Fake claude reports $0.01 spent: the run's $0.5 is not (ADR-077).
+    const result = await runCapped(
+      "budgetUsd: 0.5",
+      "end:budget_limit",
+      agent("write"),
+    );
+    expect(result).toMatchObject({
+      status: "failed",
+      reasons: ["write: reached its budget (used $0.01 of $0.50)"],
     });
   });
 

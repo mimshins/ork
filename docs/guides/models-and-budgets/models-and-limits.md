@@ -54,13 +54,17 @@ limits:
 ```
 
 - Each session gets the smaller of its own budget and what is left of the run's,
-  less what sessions running beside it were given, and with none left waits for
-  one to finish. A session that doesn't fit is refused ("nothing is left of the
-  run's tokens", or dollars). Once the budget is spent, no new session starts
+  less what sessions running beside it were given. With none left, or less than
+  its own budget, it waits for a sibling to finish and then starts with its own
+  budget; with no sibling to wait for it starts with what is left, or is refused
+  ("nothing is left to start with: the run's budget is spent or set aside by
+  running sessions", or tokens). Once the budget is spent, no new session starts
   and the run ends as `budget_exhausted`, also when a session reaches the run's
-  budget mid-way: no `when: status == 'fail'` edge fires, and `ork resume`
-  continues that session. Dollars and tokens are set aside side by side, each
-  against its own limit, and `ork resume` goes on from what was already used.
+  budget mid-way, but only when the budget is spent: no `when: status == 'fail'`
+  edge fires, and `ork resume` continues that session. A session that runs out
+  of what its siblings left it fails as its own `budget_limit`, and the run goes
+  on. Dollars and tokens are set aside side by side, each against its own limit,
+  and `ork resume` goes on from what was already used.
 - **Give a leader a cap of its own.** A leader with none sets aside all that is
   left of the run's budget as it starts, and holds it while it delegates, so the
   nodes it owns are refused. `ork validate` and `ork run` warn about it

@@ -82,10 +82,13 @@ no failure edge fires. Raise it, then `ork resume`: a session cut off mid-way
 continues. Or use cheaper models for checks
 ([models, effort and budgets](../models-and-budgets.md)).
 
-**Workers are refused "nothing is left of the run's" budget while little was
-spent.** Their leader has no cap of its own, so it holds the rest of the run's
-budget. Give it a `budgetUsd` or `budgetTokens`; `ork validate` warns about it
-(`budget.leader`).
+**Workers are refused "nothing is left to start with: the run's budget is spent
+or set aside by running sessions" while little was spent.** Either their leader
+has no cap of its own, so it holds the rest of the run's budget (give it a
+`budgetUsd` or `budgetTokens`; `ork validate` warns about it, `budget.leader`),
+or sibling workers' budgets are set aside. In that case a worker with its own
+cap waits for a sibling to finish and then starts, so workers run one after
+another; raise the run's budget to run them together.
 
 **A node fails as `Timed out`, or the run ends `timed_out`.** It used all of its
 `timeout`; time waiting on you doesn't count. Raise it, or handle it with

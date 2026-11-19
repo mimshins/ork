@@ -286,28 +286,42 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   it is spent no session or [call](./scheduler/calls.md) starts and the run ends
   `budget_exhausted`. A session whose cap was the run's remainder (the node has
   no cap of its own in that unit, or the remainder was below it) and that ends
-  `budget_limit` stops the run the same way, as a quota does: the node keeps its
-  `budget_limit` end, the run ends `budget_exhausted` ("the run's budget of $N
-  is spent", or "N tokens"), no failure edge fires, and `ork resume` continues
-  the session. A stop by the node's own, lower cap is still a failure that edges
-  can route. A unit (tokens or dollars) blames the run's cap only when the
-  session reached that unit's cap, or when it was the session's only cap: a
-  node's own cap in one unit stays a node failure even under a run budget in the
-  other. A $0 `costUsd` means unreported
-  ([L280](./gaps/budget-tokens-limits.md)), not spent, so a token-capped session
-  never reads as reaching a dollar cap; claude-code's `costUsd` is cumulative
-  across a resume ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)),
-  so a resumed turn blames the run's dollar budget only for its own spend, the
-  total minus what the session had spent before the turn
+  `budget_limit` stops the run the same way, as a quota does, but only when the
+  run's budget is spent in that unit (`budgetSpentIn`, and the scheduler checks
+  again after the node settles): the node keeps its `budget_limit` end, the run
+  ends `budget_exhausted` ("the run's budget of $N is spent", or "N tokens"), no
+  failure edge fires, and `ork resume` continues the session. A stop by the
+  node's own, lower cap is still a failure that edges can route, and so is a
+  stop at a remainder that other nodes' reserves shrank while the run is not
+  spent: the node's own `budget_limit`, with no `limited` and no stop
+  ([ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). A unit (tokens
+  or dollars) blames the run's cap only when the session reached that unit's
+  cap, or when it was the session's only cap: a node's own cap in one unit stays
+  a node failure even under a run budget in the other. A $0 `costUsd` means
+  unreported ([L280](./gaps/budget-tokens-limits.md)), not spent, so a
+  token-capped session never reads as reaching a dollar cap; claude-code's
+  `costUsd` is cumulative across a resume
+  ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)), so a resumed turn
+  blames the run's dollar budget only for its own spend, the total minus what
+  the session had spent before the turn
   ([`limitWatch`](../packages/nodes/src/session-turns.ts)). A session sets its
   cap aside as it starts, so sessions running together are never offered the
-  same part; one with nothing left waits for a worker beside it to finish, never
-  for a leader ([ADR-077](../decisions/ADR-077-reserve-session-caps.md)).
+  same part; one with nothing left, or offered less than its own cap, waits for
+  a worker beside it to finish, never for a leader, and with no worker's reserve
+  to wait on it starts with what is left
+  ([ADR-077](../decisions/ADR-077-reserve-session-caps.md),
+  [ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). Two details keep
+  the wait honest: `startBudgets` marks its wrapped `budgetFreed` as waited only
+  when the wait freed something (else a short offer waits again for ever), and
+  the executor must call `runtimeFor` after `startBudgets` and before the
+  session sets its own cap, which the reserve-sampling test in
+  `budget-reserves.test.ts` relies on.
 - `limits.budgetTokens` caps the run in counted tokens (input, output and cache
   write) on any driver, the same way and beside the dollars: reserves hold both,
-  a session that doesn't fit is refused ("nothing is left of the run's tokens"),
-  and a resumed run starts from the tokens already used. Neither unit converts
-  to the other; whichever is reached first ends the run
+  a session that doesn't fit is refused ("nothing is left to start with: the
+  run's tokens are spent or set aside by running sessions"), and a resumed run
+  starts from the tokens already used. Neither unit converts to the other;
+  whichever is reached first ends the run
   ([tokens](./usage/tokens.md#where-a-token-cap-applies)). A `workflow.call`
   passes no token budget to its run ([L278](./gaps/budget-tokens-limits.md)).
 - [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a

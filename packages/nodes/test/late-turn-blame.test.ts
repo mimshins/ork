@@ -73,8 +73,12 @@ const finished = async function* (
  * A worker under a run budget of $1 and its own cap of 1000 tokens, whose first
  * report fails its check and whose resumed turn ends as `resumed`. The run's
  * budget has not yet counted the node's spend, as the scheduler's has not.
+ * `hooks` add to its context, such as `budgetSpentIn`.
  */
-const resumedUnderRunBudget = async (resumed: SessionOutcome) => {
+const resumedUnderRunBudget = async (
+  resumed: SessionOutcome,
+  hooks: Partial<ExecuteContext> = {},
+) => {
   const specs: SessionSpec[] = [];
   const runtime: AgentRuntime = {
     driver: "claude-code",
@@ -127,6 +131,7 @@ const resumedUnderRunBudget = async (resumed: SessionOutcome) => {
     },
     emit: () => {},
     signal: new AbortController().signal,
+    ...hooks,
   };
   const result = await execute(context);
   return { result, specs };
@@ -163,5 +168,15 @@ describe("a resumed turn's blame for the run's budget", () => {
       stopsAs: "budget_exhausted",
       limited: "the run's budget of $1 is spent",
     });
+  });
+
+  it("does not stop the run when it says its budget is not spent", async () => {
+    // Others' reserves shrank the turn's cap: the run's $1 is not spent (ADR-077).
+    const { result } = await resumedUnderRunBudget(capped(1, 10), {
+      budgetSpentIn: () => false,
+    });
+    expect(result.ok).toBe(false);
+    expect(result).not.toHaveProperty("stopsAs");
+    expect(result).not.toHaveProperty("limited");
   });
 });

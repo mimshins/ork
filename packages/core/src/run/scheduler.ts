@@ -30,6 +30,7 @@ import {
   createSummaries,
   finishedEvent,
   createGatherer,
+  limitOf,
   renderOutputs,
   spendOf,
   runResult,
@@ -219,7 +220,7 @@ export const startRun = (options: RunOptions): RunHandle => {
       const fresh = contextDeps.sessions.decide(activation);
       onEvent(startedEvent(activation, type, round, agent, fresh));
     }
-    const result = gather(
+    const gathered = gather(
       activation,
       spend.count(
         id,
@@ -227,10 +228,9 @@ export const startRun = (options: RunOptions): RunHandle => {
         recorded !== null,
       ),
     );
-    // A limit cut it off: no edge acts on its failure, and a resume goes on.
-    if (result.limited !== undefined)
-      stop(result.stopsAs ?? "quota_exhausted", result.limited);
+    // Settled first: until then its cost is in `spent` and in flight both.
     spend.settled(id);
+    const result = limitOf(gathered, spend.spentOut, stop);
     holds.finished(id);
     ports.finished(id);
     clock.leave(id);

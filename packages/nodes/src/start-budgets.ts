@@ -40,8 +40,8 @@ type StartContext = Pick<
 
 /**
  * What is `left` now, with `own` (the node's cap) set aside through `reserve`
- * in the same step; with nothing left, it waits for a worker's reserve to
- * free.
+ * in the same step. With nothing left, or less than its own cap, it waits for a
+ * worker's reserve to free; with none to wait on it starts with what is left.
  */
 const startWith = async (
   context: StartContext,
@@ -50,12 +50,15 @@ const startWith = async (
   reserve: ((amount: number | undefined) => void) | undefined,
 ): Promise<number | undefined> => {
   const now = left();
-  if (now !== undefined && now <= 0) {
+  const short = now !== undefined && own !== undefined && now < own;
+  if (now !== undefined && (now <= 0 || short)) {
     // Hold nothing while waiting: a node waiting on this one would wait for ever.
     context.reserveBudget?.(0);
     context.reserveTokens?.(0);
     const freed = await context.budgetFreed?.(context.signal);
-    return freed === true ? startWith(context, left, own, reserve) : now;
+    if (freed === true) return startWith(context, left, own, reserve);
+    // An aborted run sets nothing aside: the wait ended because it stopped.
+    if (now <= 0 || context.signal?.aborted) return now;
   }
   reserve?.(own === undefined || now === undefined ? now : Math.min(own, now));
   return now;
@@ -65,8 +68,8 @@ const startWith = async (
  * What a node's first session may spend, set aside from the run's budget in the
  * same step that reads it (ADR-077), so a node starting beside it is never
  * offered the same part: the least of what is left and the node's own
- * `budgetUsd`. With nothing left, it waits for a worker running beside it to
- * finish, as long as one may.
+ * `budgetUsd`. With nothing left, or less than its own cap, it waits for a
+ * worker running beside it to finish, as long as one may.
  */
 export const budgetToStart = (
   context: StartContext,
@@ -147,19 +150,31 @@ export const startBudgets = async (
 ): Promise<NodeResult | null> => {
   const usd = await budgetToStart(context);
   if (usd !== undefined && usd <= 0) {
-    return notStarted("budget_limit", "nothing is left of the run's budget");
+    return notStarted(
+      "budget_limit",
+      "nothing is left to start with: the run's budget is spent or set aside by running sessions",
+    );
   }
   if (usd !== undefined) planOptions.budgetLeftUsd = usd;
   const waited = { done: false };
   const tokens = await tokensToStart({
     ...context,
+    // A wait lets the dollars go. One that freed something reads both again;
+    // one that did not starts with what is left, so it sets them aside again.
     budgetFreed: async signal => {
-      waited.done = true;
-      return (await context.budgetFreed?.(signal)) ?? false;
+      const freed = (await context.budgetFreed?.(signal)) ?? false;
+      waited.done ||= freed;
+      if (!freed && usd !== undefined) {
+        context.reserveBudget?.(Math.min(ownCaps(context).usd ?? usd, usd));
+      }
+      return freed;
     },
   });
   if (tokens !== undefined && tokens <= 0) {
-    return notStarted("budget_limit", "nothing is left of the run's tokens");
+    return notStarted(
+      "budget_limit",
+      "nothing is left to start with: the run's tokens are spent or set aside by running sessions",
+    );
   }
   // A wait for tokens let the dollars go: read both again, together.
   if (waited.done) {

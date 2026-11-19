@@ -16,7 +16,9 @@ view show it; and [why a node stopped](../../docs/guides/why-a-node-stopped.md)
 lists every kind (a core test fails when a kind has no section there). Why a
 closed set: [ADR-079](../../decisions/ADR-079-closed-set-of-end-kinds.md). What
 is left is in [the register](../gaps/end-kinds-limits.md) (L241 and L243 to
-L248). The token cap of RFC-015 ends `budget_limit` too
+L248). The legacy classifier keeps the old "nothing is left of the run's budget"
+string on purpose: it reads the stored ends of old runs, so don't reword it with
+the live start texts. The token cap of RFC-015 ends `budget_limit` too
 ([below](#the-token-cap)). A session Ork stopped, with no report, ends
 `interrupted` on every driver, whatever its tool printed after the stop
 ([below](#a-session-ork-stopped)).

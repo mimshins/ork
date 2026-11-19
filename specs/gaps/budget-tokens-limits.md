@@ -80,3 +80,15 @@ Found fixing QA run c9c908b9's budget findings:
   crashed, or that a provider error ended without a result, still records zero
   usage, though the steps it ran were decoded
   ([session ends](../runtime/session-ends.md#the-token-cap)).
+
+Found building the fix for build run 9be5c519 (a reserve ended an unspent run):
+
+- **L463 · A worker may wait for a reserve when a quota shrank its offer.** A
+  worker with its own cap that is offered less than it waits for a worker's
+  reserve to free
+  ([ADR-104](../../decisions/ADR-104-reserve-never-ends-a-run.md)); the offer
+  includes what a quota leaves, so a worker held below its cap by a quota, not a
+  reserve, also waits, and starts once a reserve frees. Telling the two apart
+  would need the start to know which limit set the offer. Under a tight run
+  budget workers also run one after another, behind a running worker's reserve,
+  rather than together ([budget](../scheduler.md#budget-and-concurrency)).

@@ -85,6 +85,7 @@ export const nodeContext = (
       );
     },
     budgetFreed: signal => deps.spend.freed(id, signal),
+    budgetSpentIn: deps.spend.spentIn,
     quota: deps.spend.quota,
     ownSpend: (sessionId, total) => deps.spend.ownOf(id, sessionId, total),
     human: deps.human,

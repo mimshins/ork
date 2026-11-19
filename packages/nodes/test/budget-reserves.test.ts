@@ -32,75 +32,87 @@ const usage = {
   durationMs: 1,
 };
 
-/** A run's budget as the scheduler keeps it: spent, and what is set aside. */
+/**
+ * Reserves in one unit as the scheduler keeps them: a wait is worth it only
+ * while another node that is not a leader holds one (`reserves.freed`).
+ */
+const reserveBook = () => {
+  const reserves = new Map<string, number>();
+  const leaders = new Set<string>();
+  const waiters: (() => void)[] = [];
+  const reserve = (id: string, amount: number | undefined) => {
+    const before = reserves.get(id) ?? 0;
+    reserves.set(id, amount ?? 0);
+    if ((amount ?? 0) < before) for (const wake of waiters.splice(0)) wake();
+  };
+  const held = () => [...reserves.values()].reduce((a, b) => a + b, 0);
+  const freed = (id: string): Promise<boolean> =>
+    [...reserves].some(
+      ([other, amount]) => other !== id && amount > 0 && !leaders.has(other),
+    )
+      ? new Promise(resolve => {
+          waiters.push(() => {
+            resolve(true);
+          });
+        })
+      : Promise.resolve(false);
+  return { reserves, leaders, reserve, held, freed };
+};
+
+/**
+ * A run's budget as the scheduler keeps it: spent, and what is set aside.
+ * `spentIn` is the `budgetSpentIn` hook, for a test to add.
+ */
 const budgetBook = (budgetUsd: number) => {
   let spent = 0;
-  const reserves = new Map<string, number>();
-  const waiters: (() => void)[] = [];
-  const left = () =>
-    budgetUsd - spent - [...reserves.values()].reduce((a, b) => a + b, 0);
-  const reserve = (id: string, usd: number | undefined) => {
-    const before = reserves.get(id) ?? 0;
-    reserves.set(id, usd ?? 0);
-    if ((usd ?? 0) < before) for (const wake of waiters.splice(0)) wake();
-  };
+  const { reserves, leaders, reserve, held, freed } = reserveBook();
+  const left = () => budgetUsd - spent - held();
   const hooks = (id: string): Partial<ExecuteContext> => ({
     budgetLeftUsd: left(),
     budgetLeftNow: left,
     reserveBudget: usd => {
       reserve(id, usd);
     },
-    budgetFreed: () =>
-      new Promise(resolve => {
-        waiters.push(() => {
-          resolve(true);
-        });
-      }),
+    budgetFreed: () => freed(id),
     emit: (event: RuntimeEvent) => {
       if (event.type === "session.finished")
         spent += event.outcome.usage.costUsd;
     },
   });
-  return { hooks, reserves };
+  const spentIn = (unit: "usd" | "tokens") =>
+    unit === "usd" && spent >= budgetUsd;
+  return { hooks, reserves, leaders, reserve, spentIn };
 };
 
 /** A run's `limits.budgetTokens` as the scheduler keeps it. */
 const tokenBook = (budgetTokens: number) => {
   let used = 0;
-  const reserves = new Map<string, number>();
-  const waiters: (() => void)[] = [];
-  const left = () =>
-    budgetTokens - used - [...reserves.values()].reduce((a, b) => a + b, 0);
+  const { reserves, leaders, reserve, held, freed } = reserveBook();
   const hooks = (id: string): Partial<ExecuteContext> => ({
-    tokensLeftNow: left,
+    tokensLeftNow: () => budgetTokens - used - held(),
     reserveTokens: tokens => {
-      const before = reserves.get(id) ?? 0;
-      reserves.set(id, tokens ?? 0);
-      if ((tokens ?? 0) < before) for (const wake of waiters.splice(0)) wake();
+      reserve(id, tokens);
     },
-    budgetFreed: () =>
-      [...reserves].every(([other, held]) => other === id || held === 0)
-        ? Promise.resolve(false)
-        : new Promise(resolve => {
-            waiters.push(() => {
-              resolve(true);
-            });
-          }),
+    budgetFreed: () => freed(id),
     emit: (event: RuntimeEvent) => {
       if (event.type === "session.finished")
         used += countedTokens(event.outcome.usage);
     },
   });
-  return { hooks, reserves };
+  const spentIn = (unit: "usd" | "tokens") =>
+    unit === "tokens" && used >= budgetTokens;
+  return { hooks, reserves, leaders, reserve, spentIn };
 };
 
 /**
  * A run's budget in dollars and tokens together, as the scheduler keeps it: a
- * wait is worth it only while another node holds a reserve of either unit.
+ * wait is worth it only while another node, not a leader, holds a reserve of
+ * either unit.
  */
 const bothBook = (budgetUsd: number, budgetTokens: number) => {
   const spent = { usd: 0, tokens: 0 };
   const reserves = new Map<string, { usd: number; tokens: number }>();
+  const leaders = new Set<string>();
   const waiters: (() => void)[] = [];
   const held = (unit: "usd" | "tokens") =>
     [...reserves.values()].reduce((sum, r) => sum + r[unit], 0);
@@ -120,7 +132,10 @@ const bothBook = (budgetUsd: number, budgetTokens: number) => {
       reserve(id, "tokens", tokens);
     },
     budgetFreed: () =>
-      [...reserves].some(([other, r]) => other !== id && r.usd + r.tokens > 0)
+      [...reserves].some(
+        ([other, r]) =>
+          other !== id && !leaders.has(other) && r.usd + r.tokens > 0,
+      )
         ? new Promise(resolve => {
             waiters.push(() => {
               resolve(true);
@@ -133,7 +148,7 @@ const bothBook = (budgetUsd: number, budgetTokens: number) => {
       spent.tokens += countedTokens(event.outcome.usage);
     },
   });
-  return { hooks };
+  return { hooks, reserves, leaders, reserve };
 };
 
 /** A runtime whose sessions stay open until `finish` lets the oldest one go. */
@@ -207,6 +222,12 @@ const usedUp = (asked: SessionSpec[], used = usage): AgentRuntime => ({
 
 const WORKER: Node = { type: "agent.worker", prompt: "Build", budgetUsd: 3 };
 
+const NO_DOLLARS =
+  "nothing is left to start with: the run's budget is spent or set aside by running sessions";
+
+const NO_TOKENS =
+  "nothing is left to start with: the run's tokens are spent or set aside by running sessions";
+
 const contextFor = (
   id: string,
   hooks: Partial<ExecuteContext>,
@@ -251,7 +272,7 @@ const tick = () =>
   });
 
 describe("nodes running at the same time under a run's budget", () => {
-  it("never offers two sessions the same dollars, and the third waits", async () => {
+  it("never offers two sessions the same dollars, and one offered less than its cap waits", async () => {
     const book = budgetBook(5);
     const { runtime, specs, finish } = heldRuntime();
     const execute = claudeExecutor({
@@ -263,16 +284,19 @@ describe("nodes running at the same time under a run's budget", () => {
       execute(contextFor(id, book.hooks(id))),
     );
     await tick();
-    // a takes its own cap, b what is left of the budget, c nothing yet.
-    expect(specs.map(s => s.budgetUsd)).toEqual([3, 2]);
+    // a takes its own cap; b and c are offered 2 of their 3 and wait for a.
+    expect(specs.map(s => s.budgetUsd)).toEqual([3]);
 
     finish();
     await tick();
-    // a spent 0.5 of its 3 and let the rest go: c gets 5 - 0.5 - 2.
-    expect(specs.map(s => s.budgetUsd)).toEqual([3, 2, 2.5]);
+    // a spent 0.5 of its 3 and let the rest go: b gets its 3, c waits for b.
+    expect(specs.map(s => s.budgetUsd)).toEqual([3, 3]);
     expect(book.reserves.get("a")).toBe(0);
 
     finish();
+    await tick();
+    // b spent 0.5: c gets its 3 of the 4 left.
+    expect(specs.map(s => s.budgetUsd)).toEqual([3, 3, 3]);
     finish();
     const results = await Promise.all(runs);
     expect(results.map(r => r.ok)).toEqual([true, true, true]);
@@ -287,7 +311,7 @@ describe("nodes running at the same time under a run's budgetTokens", () => {
     budgetTokens: 6,
   };
 
-  it("sets each session's cap aside, and the third waits for one to end", async () => {
+  it("sets each session's cap aside, and one offered less than its cap waits", async () => {
     const book = tokenBook(10);
     const { runtime, specs, finish } = heldRuntime();
     const execute = claudeExecutor({
@@ -299,15 +323,18 @@ describe("nodes running at the same time under a run's budgetTokens", () => {
       execute(contextFor(id, book.hooks(id), capped)),
     );
     await tick();
-    // a takes its own cap, b what is left of the run's tokens, c nothing yet.
-    expect(specs.map(s => s.budgetTokens)).toEqual([6, 4]);
+    // a takes its own cap; b and c are offered 4 of their 6 and wait for a.
+    expect(specs.map(s => s.budgetTokens)).toEqual([6]);
 
     finish();
     await tick();
-    // a used 2 of its 6 and let the rest go: c gets 10 - 2 - 4.
-    expect(specs.map(s => s.budgetTokens)).toEqual([6, 4, 4]);
+    // a used 2 of its 6 and let the rest go: b gets its 6, c waits for b.
+    expect(specs.map(s => s.budgetTokens)).toEqual([6, 6]);
 
     finish();
+    await tick();
+    // b used 2: c gets its 6 of the 6 left.
+    expect(specs.map(s => s.budgetTokens)).toEqual([6, 6, 6]);
     finish();
     const results = await Promise.all(runs);
     expect(results.map(r => r.ok)).toEqual([true, true, true]);
@@ -328,7 +355,22 @@ describe("nodes running at the same time under a run's budgetTokens", () => {
     expect(result).toMatchObject({
       ok: false,
       end: { kind: "budget_limit" },
-      output: { summary: "not started: nothing is left of the run's tokens" },
+      output: { summary: `not started: ${NO_TOKENS}` },
+    });
+  });
+
+  it("refuses the same in dollars", async () => {
+    const { runtime, specs } = heldRuntime();
+    const result = await claudeExecutor({
+      runtimeFor: () => Promise.resolve(runtime),
+      readyDriver: "claude-code",
+      inPlace: true,
+    })(contextFor("a", budgetBook(0).hooks("a")));
+    expect(specs).toEqual([]);
+    expect(result).toMatchObject({
+      ok: false,
+      end: { kind: "budget_limit" },
+      output: { summary: `not started: ${NO_DOLLARS}` },
     });
   });
 });
@@ -358,7 +400,7 @@ describe("nodes waiting on a run's budget in dollars and tokens", () => {
       "budget_limit",
     ]);
     expect(results[1]?.output).toMatchObject({
-      summary: "not started: nothing is left of the run's tokens",
+      summary: `not started: ${NO_TOKENS}`,
     });
   });
 
@@ -448,5 +490,167 @@ describe("a session that reaches the run's budget", () => {
     );
     expect([result.limited, result.stopsAs]).toEqual([undefined, undefined]);
     expect(result.end?.kind).toBe("budget_limit");
+  });
+});
+
+/** A book's hooks for `a`, with its `budgetSpentIn`. */
+const spentHooks = (
+  book: ReturnType<typeof budgetBook | typeof tokenBook>,
+) => ({
+  ...book.hooks("a"),
+  budgetSpentIn: book.spentIn,
+});
+
+describe("a session that reaches a cap others' reserves shrank (ADR-077)", () => {
+  const worker: Node = { type: "agent.worker", prompt: "Build" };
+
+  it("is the node's own budget_limit in dollars while the run is not spent", async () => {
+    const book = budgetBook(2);
+    book.reserve("b", 1.5);
+    const result = await capped(spentHooks(book), worker, { budgetUsd: 2 });
+    expect(result).toMatchObject({ ok: false, end: { kind: "budget_limit" } });
+    expect([result.limited, result.stopsAs]).toEqual([undefined, undefined]);
+  });
+
+  it("is the node's own budget_limit in tokens while the run is not spent", async () => {
+    const book = tokenBook(200);
+    book.reserve("b", 150);
+    const result = await capped(spentHooks(book), worker, {
+      budgetTokens: 200,
+    });
+    expect(result).toMatchObject({ ok: false, end: { kind: "budget_limit" } });
+    expect([result.limited, result.stopsAs]).toEqual([undefined, undefined]);
+  });
+
+  it("still stops the run in dollars once the run is spent", async () => {
+    const result = await capped(
+      spentHooks(budgetBook(2)),
+      worker,
+      { budgetUsd: 2 },
+      { ...usage, costUsd: 2 },
+    );
+    expect(result).toMatchObject({
+      limited: "the run's budget of $2 is spent",
+      stopsAs: "budget_exhausted",
+    });
+  });
+
+  it("still stops the run in tokens once the run is spent", async () => {
+    const result = await capped(
+      spentHooks(tokenBook(200)),
+      worker,
+      { budgetTokens: 200 },
+      { ...usage, inputTokens: 199 },
+    );
+    expect(result).toMatchObject({
+      limited: "the run's budget of 200 tokens is spent",
+      stopsAs: "budget_exhausted",
+    });
+  });
+});
+
+/** Starts node `a` with `hooks`; its session stays open until `finish`. */
+const startHeld = (hooks: Partial<ExecuteContext>, node: Node) => {
+  const { runtime, specs, finish } = heldRuntime();
+  const done = claudeExecutor({
+    runtimeFor: () => Promise.resolve(runtime),
+    readyDriver: "claude-code",
+    inPlace: true,
+  })(contextFor("a", hooks, node));
+  return { done, specs, finish };
+};
+
+describe("a worker offered less than its own cap", () => {
+  const own: Node = { type: "agent.worker", prompt: "Build", budgetUsd: 8 };
+  const ownTokens: Node = {
+    type: "agent.worker",
+    prompt: "Build",
+    budgetTokens: 8,
+  };
+
+  it("waits for a worker's reserve to free, then starts with its own cap", async () => {
+    const book = budgetBook(20);
+    book.reserve("w", 15);
+    const { done, specs, finish } = startHeld(book.hooks("a"), own);
+    await tick();
+    expect(specs).toEqual([]);
+    book.reserve("w", 0);
+    await tick();
+    expect(specs.map(s => s.budgetUsd)).toEqual([8]);
+    finish();
+    expect((await done).ok).toBe(true);
+  });
+
+  it("waits the same in tokens", async () => {
+    const book = tokenBook(20);
+    book.reserve("w", 15);
+    const { done, specs, finish } = startHeld(book.hooks("a"), ownTokens);
+    await tick();
+    expect(specs).toEqual([]);
+    book.reserve("w", 0);
+    await tick();
+    expect(specs.map(s => s.budgetTokens)).toEqual([8]);
+    finish();
+    expect((await done).ok).toBe(true);
+  });
+
+  it("never waits on a leader's reserve: it starts with what is left", async () => {
+    const usd = budgetBook(20);
+    usd.leaders.add("l");
+    usd.reserve("l", 15);
+    const tokens = tokenBook(20);
+    tokens.leaders.add("l");
+    tokens.reserve("l", 15);
+    const dollars = startHeld(usd.hooks("a"), own);
+    const counted = startHeld(tokens.hooks("a"), ownTokens);
+    await tick();
+    expect(dollars.specs.map(s => s.budgetUsd)).toEqual([5]);
+    expect(counted.specs.map(s => s.budgetTokens)).toEqual([5]);
+  });
+
+  it("starts with the true remainder when no reserve is out", async () => {
+    const dollars = startHeld(budgetBook(5).hooks("a"), own);
+    const counted = startHeld(tokenBook(5).hooks("a"), ownTokens);
+    await tick();
+    expect(dollars.specs.map(s => s.budgetUsd)).toEqual([5]);
+    expect(counted.specs.map(s => s.budgetTokens)).toEqual([5]);
+  });
+
+  it("does not apply to a node with no cap of its own", async () => {
+    const book = budgetBook(20);
+    book.reserve("w", 15);
+    const { specs } = startHeld(book.hooks("a"), {
+      type: "agent.worker",
+      prompt: "Build",
+    });
+    await tick();
+    expect(specs.map(s => s.budgetUsd)).toEqual([5]);
+  });
+
+  it("keeps its dollars set aside when a wait for tokens frees nothing", async () => {
+    // Only a leader holds tokens: the worker starts with 4 of its 6.
+    const book = bothBook(10, 10);
+    book.leaders.add("l");
+    book.reserve("l", "tokens", 6);
+    const node: Node = {
+      type: "agent.worker",
+      prompt: "Build",
+      budgetUsd: 1,
+      budgetTokens: 6,
+    };
+    // What it holds once its budgets are read, before the session sets its cap.
+    const held: unknown[] = [];
+    const { runtime, specs } = heldRuntime();
+    void claudeExecutor({
+      runtimeFor: () => {
+        held.push({ ...book.reserves.get("a") });
+        return Promise.resolve(runtime);
+      },
+      readyDriver: "claude-code",
+      inPlace: true,
+    })(contextFor("a", book.hooks("a"), node));
+    await tick();
+    expect(specs.map(s => [s.budgetUsd, s.budgetTokens])).toEqual([[1, 4]]);
+    expect(held).toEqual([{ usd: 1, tokens: 4 }]);
   });
 });

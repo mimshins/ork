@@ -22,7 +22,7 @@ import type {
   SessionPorts,
   SessionUsage,
 } from "../runtime/types.ts";
-import type { RunLimits } from "../usage/quota.ts";
+import type { BudgetHooks } from "./budget-hooks.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
 import type { DecisionEvent, EachEvent } from "./decision-events.ts";
@@ -30,7 +30,7 @@ import type { NodeEvent } from "./node-events.ts";
 import type { WatchEvent } from "./watch-events.ts";
 import type { Checkout, KeptWorktree, Workspace } from "./workspace-types.ts";
 
-export type { Checkout, KeptWorktree, Workspace };
+export type { BudgetHooks, Checkout, KeptWorktree, Workspace };
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -65,7 +65,8 @@ export type Brief = { from: string; text: string };
 /** One entry of a fanned node's list, for the activation that runs it. */
 export type NodeItem = { of: string; index: number; value: unknown };
 
-export type ExecuteContext = {
+/** What a node is given to run; its budget hooks are `BudgetHooks`. */
+export type ExecuteContext = BudgetHooks & {
   runId: string;
   id: string;
   /** For a spawned worker, the declared node it is an instance of. */
@@ -109,22 +110,6 @@ export type ExecuteContext = {
   projectRoot: string;
   /** Ork's folder for the project, which lessons are read from. */
   orkDir?: string;
-  /** What is left of `limits.budgetUsd`, when the run has one. */
-  budgetLeftUsd: number | undefined;
-  /** What is left of the run's own budget now, with what others have spent. */
-  budgetLeftNow?: () => number | undefined;
-  /** Sets aside its session's cap from the run's budget; 0 lets it go. */
-  reserveBudget?: (usd: number | undefined) => void;
-  /** What is left of the run's `limits.budgetTokens` now (RFC-015). */
-  tokensLeftNow?: () => number | undefined;
-  /** Sets aside its session's token cap from the run's; 0 lets it go. */
-  reserveTokens?: (tokens: number | undefined) => void;
-  /** Waits until another node's reserve frees; `false` when none can. */
-  budgetFreed?: (signal: AbortSignal) => Promise<boolean>;
-  /** What the limits across runs allow now. */
-  quota?: () => RunLimits;
-  /** What a session has spent in this activation, from its reported total. */
-  ownSpend?: (sessionId: string, total: number) => number;
   human: HumanChannel;
   /** The leader a Claude node's questions go to first (ADR-063). */
   owner?: OwnerPort;

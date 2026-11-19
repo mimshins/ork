@@ -80,14 +80,18 @@ reports usage once a turn, leaves it unset
   the run's, and what is left of the day quota; it is set aside as the session
   starts, as dollars are ([budget](../scheduler.md#budget-and-concurrency),
   [ADR-077](../../decisions/ADR-077-reserve-session-caps.md)): reserves hold
-  dollars and tokens side by side. A session that doesn't fit waits for a
-  reserve to free, or is refused with "nothing is left of the run's tokens".
-  Once spent, the run ends `budget_exhausted`, also when a session whose cap was
-  the run's remainder reaches it: no failure edge fires, and `ork resume`
-  continues that session ([budget](../scheduler.md#budget-and-concurrency)). A
-  resumed run starts from the tokens already used. A resumed turn blames the
-  run's dollar budget only for its own spend, as claude-code's cost is
-  cumulative across a resume
+  dollars and tokens side by side. A session that doesn't fit, or is offered
+  less than its own cap, waits for a worker's reserve to free; with none to wait
+  on, it starts with what is left, or is refused with "nothing is left to start
+  with: the run's tokens are spent or set aside by running sessions". Once
+  spent, the run ends `budget_exhausted`, also when a session whose cap was the
+  run's remainder reaches it, but only when the run's tokens are spent: no
+  failure edge fires, and `ork resume` continues that session. A remainder that
+  other nodes' reserves shrank is the node's own `budget_limit`
+  ([ADR-104](../../decisions/ADR-104-reserve-never-ends-a-run.md),
+  [budget](../scheduler.md#budget-and-concurrency)). A resumed run starts from
+  the tokens already used. A resumed turn blames the run's dollar budget only
+  for its own spend, as claude-code's cost is cumulative across a resume
   ([ADR-046](../../decisions/ADR-046-usage-ledger-and-prune.md),
   [budget](../scheduler.md#budget-and-concurrency)).
 - **A day:** `quotas.dayTokens`, below.

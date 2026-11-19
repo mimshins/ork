@@ -50,7 +50,7 @@ changing until 1.0.0.
 - **A leader can answer its children's questions.** With `questions: owner`, a
   child's question goes to a copy of its leader's session first, which answers
   it or passes it on to you
-  ([leaders](../guides/leaders-and-delegation.md#a-leader-can-answer-its-childrens-questions)).
+  ([leaders](../guides/leaders-and-delegation/messages-questions-and-budget.md#a-leader-can-answer-its-childrens-questions)).
 - **The driver is chosen when you run.** A workflow that names no Claude driver
   runs on the one that's ready on your machine, so a committed workflow works on
   every teammate's; `ork run` says which.
