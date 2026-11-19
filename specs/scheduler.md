@@ -139,7 +139,9 @@ in a later round doesn't wait on a branch the loop didn't go back to.
 - `session: resume` or `fresh` on a leader or worker (or its agent) chooses
   either way ([ADR-033](../decisions/ADR-033-session-resume-on-any-node.md)): a
   reviewer with `session: resume` checks its own earlier findings in each round
-  ([results.ts](../packages/core/src/run/results.ts), `resumeOf`).
+  ([results.ts](../packages/core/src/run/results.ts), `resumeOf`). A loop
+  re-entry always resumes such a session; only a delegated task can start fresh
+  ([fresh sessions](./scheduler/fresh-sessions.md)).
 
 ## Delegation
 
@@ -148,7 +150,10 @@ list of tasks, run them in parallel, and return when every child has reported:
 
 - **`delegate([{ child, brief, description? }])`** runs declared children (its
   own `agent.leader`/`agent.worker` children). The child's session gets its own
-  `prompt` followed by `## Task from \`<leader>\`` and the brief.
+  `prompt` followed by ``## Task from `<leader>` `` and the brief. A child that
+  resumes gets only ``## New task from `<leader>` ``, unless the
+  `sessions.freshOver` rule starts its next task
+  [fresh](./scheduler/fresh-sessions.md).
 - **`spawn_worker([{ template, brief, description? }])`** runs a new instance of
   a child worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers`
   (default 0, and then the tool is not offered). An instance works like its
@@ -355,6 +360,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 - [Calling workflows](./scheduler/calls.md)
 - [Running a node once per item](./scheduler/for-each.md)
 - [Steps around a session](./scheduler/steps.md)
+- [Fresh sessions for a builder's next task](./scheduler/fresh-sessions.md)
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)
   - [Run events](./scheduler/resuming-and-events.md#run-events)

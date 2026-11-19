@@ -26,6 +26,7 @@ import { createHolds, createStops } from "./holds.ts";
 import { createRunPorts, runControls } from "./ports.ts";
 import {
   closeWorkspace,
+  createSessions,
   createSummaries,
   finishedEvent,
   createGatherer,
@@ -51,7 +52,6 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
-  const sessionIds = new Map<string, string>();
   const spend = spendOf(limits.budgetUsd, options, limits.budgetTokens);
   const running = new Set<string>();
   const { summary, record, counted } = createSummaries(options.replay);
@@ -177,13 +177,13 @@ export const startRun = (options: RunOptions): RunHandle => {
     perform: activation => perform(activation),
   };
 
-  const contextDeps: ContextDeps = {
+  const contextDeps = {
     options,
     runId,
     runDir,
     human,
     outputs,
-    sessionIds,
+    sessions: createSessions(graph.workflow, nodeOf),
     running,
     holds,
     stops,
@@ -193,7 +193,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     runChild: createRunChild(starts),
     spend,
     summary,
-  };
+  } satisfies ContextDeps;
 
   const { execute, locks } = createExecute({
     options,
@@ -216,7 +216,8 @@ export const startRun = (options: RunOptions): RunHandle => {
     const type = nodeOf(activation)?.type ?? "control.split";
     if (recorded === null) {
       const agent = graph.agents.get(activation.template ?? id);
-      onEvent(startedEvent(activation, type, round, agent));
+      const fresh = contextDeps.sessions.decide(activation);
+      onEvent(startedEvent(activation, type, round, agent, fresh));
     }
     const result = gather(
       activation,
@@ -234,7 +235,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     ports.finished(id);
     clock.leave(id);
     outputs[id] = result.output;
-    if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
+    contextDeps.sessions.ended(activation, result, recorded !== null);
     record(id, result, recorded !== null);
     if (recorded === null) {
       options.replay?.ran(result);

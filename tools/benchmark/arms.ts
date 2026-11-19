@@ -4,9 +4,11 @@
  *   rule. Each name is `<prefix>-<task>-<arm>-<n>`; its `summary.json` gives
  *   status, cost, working minutes and sessions, and the carried-weight report
  *   (carried.ts) gives the weight of reads, searches and diffs by role group,
- *   turns, and the calls of each kind with Ork's refusals. Prints a Markdown
- *   table of the runs and of each task and arm's medians; `--json` prints the
- *   rows instead. Like carried.ts, its output holds only names and numbers.
+ *   turns, and the calls of each kind with Ork's refusals, and the fresh starts
+ *   the sessions rule made with the would-fires (sessions.ts). Prints a
+ *   Markdown table of the runs and of each task and arm's medians; `--json`
+ *   prints the rows instead. Like carried.ts, its output holds only names and
+ *   numbers.
  */
 
 import { readFileSync, rmSync } from "node:fs";
@@ -57,6 +59,8 @@ export type Row = {
   turns: number;
   reading: { implement: number; review: number; all: number };
   calls: { extract: number; around: number; read: number; refused: number };
+  /** Fresh starts by the rule, and delegations that were over the threshold. */
+  fresh: { fires: number; would: number };
 };
 
 /** `<prefix>-<task>-<arm>-<n>` into its task and arm. */
@@ -90,6 +94,7 @@ export const rowOf = (
       else if (AROUND.has(kind)) calls.around += k.calls;
     }
   }
+  const sessions = rec(summary["fresh_sessions"]);
   return {
     name,
     ...taskArm(name),
@@ -101,6 +106,10 @@ export const rowOf = (
     turns: carried.turns.median,
     reading,
     calls,
+    fresh: {
+      fires: count(sessions["fires"]),
+      would: count(sessions["would_fires"]),
+    },
   };
 };
 
@@ -120,7 +129,7 @@ const k = (n: number): string => `${r1(n / 1000).toLocaleString("en")}k`;
 /** The runs table, then each task and arm's medians. */
 export const armsMarkdown = (rows: readonly Row[]): string => {
   const head =
-    "| Task | Arm | Run | Status | Cost | Working min | Sessions | Median turns | Reading weight (implement / review / all) | extract / shell reads / Read calls | Refused |";
+    "| Task | Arm | Run | Status | Cost | Working min | Sessions | Median turns | Reading weight (implement / review / all) | extract / shell reads / Read calls | Refused | Fresh starts / would-fires |";
   const runs = rows.map(r =>
     line([
       r.task,
@@ -134,6 +143,7 @@ export const armsMarkdown = (rows: readonly Row[]): string => {
       `${k(r.reading.implement)} / ${k(r.reading.review)} / ${k(r.reading.all)}`,
       `${String(r.calls.extract)} / ${String(r.calls.around)} / ${String(r.calls.read)}`,
       r.calls.refused,
+      `${String(r.fresh.fires)} / ${String(r.fresh.would)}`,
     ]),
   );
   const groups = [...new Set(rows.map(r => `${r.task}\u0000${r.arm}`))];
@@ -151,19 +161,20 @@ export const armsMarkdown = (rows: readonly Row[]): string => {
       r1(m(r => r.turns)),
       `${k(m(r => r.reading.implement))} / ${k(m(r => r.reading.review))} / ${k(m(r => r.reading.all))}`,
       `${String(m(r => r.calls.extract))} / ${String(m(r => r.calls.around))} / ${String(m(r => r.calls.read))}`,
+      `${String(m(r => r.fresh.fires))} / ${String(m(r => r.fresh.would))}`,
     ]);
   });
   return [
     "## Runs",
     "",
     head,
-    `|${" --- |".repeat(11)}`,
+    `|${" --- |".repeat(12)}`,
     ...runs,
     "",
     "## Medians",
     "",
-    "| Task | Arm | Runs | Cost | Working min | Median turns | Reading weight (implement / review / all) | extract / shell reads / Read calls |",
-    `|${" --- |".repeat(8)}`,
+    "| Task | Arm | Runs | Cost | Working min | Median turns | Reading weight (implement / review / all) | extract / shell reads / Read calls | Fresh starts / would-fires |",
+    `|${" --- |".repeat(9)}`,
     ...medians,
     "",
   ].join("\n");

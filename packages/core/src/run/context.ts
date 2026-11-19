@@ -24,7 +24,12 @@ export type ContextDeps = {
   runId: string;
   runDir: string;
   outputs: Record<string, NodeOutput>;
-  sessionIds: Map<string, string>;
+  /** Each node's session in this process, and whether it starts fresh now. */
+  sessions: {
+    ids: Map<string, string>;
+    isFresh: (id: string) => boolean;
+    handover: (id: string) => string | undefined;
+  };
   running: Set<string>;
   /** What the run has spent, and what is left of its budget and any quota. */
   spend: ReturnType<typeof createSpend>;
@@ -108,13 +113,20 @@ export const nodeContext = (
   if (machine !== undefined) context.machine = machine;
   if (activation.brief !== undefined) context.brief = activation.brief;
   if (activation.item !== undefined) context.item = activation.item;
+  // A delegated worker over `sessions.freshOver` starts its task fresh.
   const resume =
     options.replay?.cutOff?.(activation) ??
-    resumeOf(
-      deps.nodeOf(activation),
-      deps.sessionIds.get(id) ?? options.replay?.previousSession?.(activation),
-    );
+    (deps.sessions.isFresh(id)
+      ? undefined
+      : resumeOf(
+          deps.nodeOf(activation),
+          deps.sessions.ids.get(id) ??
+            options.replay?.previousSession?.(activation),
+        ));
   if (resume !== undefined) context.resume = resume;
+  const handover =
+    resume === undefined ? deps.sessions.handover(id) : undefined;
+  if (handover !== undefined) context.handover = handover;
   if (deps.nodeOf(activation)?.type === "agent.leader") {
     context.ownership = createOwnership({
       graph,

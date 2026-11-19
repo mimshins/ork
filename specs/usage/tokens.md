@@ -54,6 +54,19 @@ tokens", "Output tokens" and "Tokens counted"
 `100 in / 20 out (80 cached)` is a different line, a session's own figures from
 the driver, and keeps its words.
 
+A session's usage may also carry **context** (`contextTokens`): the prompt of
+its last model request alone, not a sum over its turns. It says how large a
+resume of that session would start. It is unset when the driver gives no
+per-request usage, and is not counted, charged or shown. When legs of a session
+combine (`addUsage`, `sumUsage`, `withUsageOf`, `combine`) it takes the later
+leg's value, or the earlier one's when the later leg has none. After
+`ork resume` no figure is known until a new session reports one, so the rule
+decides nothing: the safe direction. Status: the field is in the runtime port
+([outcome.ts](../../packages/core/src/runtime/outcome.ts)), and the
+`claude-code`, `open-code` and `command-code` decoders set it; `codex`, which
+reports usage once a turn, leaves it unset
+([per driver](../runtime/session-ends.md#the-token-cap)).
+
 ## Where a token cap applies
 
 - **A session:** `budgetTokens` on a node, in `defaults` or in an agent file (a

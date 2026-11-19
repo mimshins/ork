@@ -4,18 +4,17 @@
  *   `format-tool.ts`'s and the run summary `format-result.ts`'s.
  */
 
-import {
-  type AnsweredBy,
-  maskSecrets,
-  type RunEvent,
-  type RuntimeEvent,
-} from "@krapht/ork-core";
+import type { AnsweredBy, RunEvent, RuntimeEvent } from "@krapht/ork-core";
 
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { widthOf } from "../term/layout.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
 import { formatFinished } from "./format-end.ts";
-import { isMachineEvent, machineLine } from "./format-machine.ts";
+import {
+  formatStarted,
+  isMachineEvent,
+  machineLine,
+} from "./format-machine.ts";
 import { formatOutcome } from "./format-outcome.ts";
 import { formatRunResult } from "./format-result.ts";
 import { indent, toolLines, wrapped } from "./format-tool.ts";
@@ -136,15 +135,9 @@ export const formatRunEvent = (
     ];
   }
   if (event.type === "node.started") {
-    const round = event.round > 1 ? ` (round ${String(event.round)})` : "";
-    const owner = event.owner === undefined ? "" : `, for ${event.owner}`;
-    const named =
-      event.description === undefined
-        ? ""
-        : ` · ${maskSecrets(event.description)}`;
-    return [
-      `${tag(event.id)} ${style("dim", `${event.nodeType}${round}${owner}${named}`)}`,
-    ];
+    return formatStarted(event, tag(event.id), blank(event.id), text =>
+      style("dim", text),
+    );
   }
   if (event.type === "node.event") {
     const inner = event.event;

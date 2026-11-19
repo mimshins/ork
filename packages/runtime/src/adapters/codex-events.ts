@@ -27,7 +27,7 @@ import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { classifyProviderError } from "../provider-errors.ts";
 import { errorEnd } from "../session-end.ts";
 import { isBadArguments } from "../tools/tool.ts";
-import { addUsage } from "./claude-code-events.ts";
+import { addUsage } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
 

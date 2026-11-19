@@ -97,6 +97,17 @@ export type ResolvedGitRules = {
   worktrees: string;
 };
 
+/** When a delegated builder's next task starts a fresh session. */
+export const SessionsRuleSchema = z.strictObject({
+  freshOver: z
+    .union([z.number().int().min(1), z.literal("never")])
+    .optional()
+    .describe(
+      "Default: never. A number of tokens: when an owner delegates a worker with session: resume its next task and the context of its last session, which ended done, is over this many tokens, the task starts a fresh session with a note of its earlier tasks instead of resuming. never: always resume. Loop re-entries, leaders and sessions that did not end done keep resuming.",
+    ),
+});
+export type SessionsRule = z.infer<typeof SessionsRuleSchema>;
+
 /** The rules a project sets, and a workflow overrides key by key. */
 export const RulesSchema = z.strictObject({
   git: GitRulesSchema.optional(),
@@ -115,6 +126,7 @@ export const RulesSchema = z.strictObject({
     .describe(
       "Default: extract, sessions read files, search and see git output only through Ork's extract tool: a shell line that starts by reading files is refused with the extract call to make. open: sessions may also read through the shell.",
     ),
+  sessions: SessionsRuleSchema.optional(),
 });
 export type Rules = z.infer<typeof RulesSchema>;
 

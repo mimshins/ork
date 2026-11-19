@@ -488,7 +488,7 @@ export const NODES = [
     facts: [
       "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
       "Built: every state change is a run event; `ork run` stores each in the event store, then prints it.",
-      "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session, as does any node with `session: resume`.",
+      "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session, as does any node with `session: resume`, except that a delegated worker over `sessions.freshOver` tokens of context (off by default) starts its next task fresh, with a handover note.",
       "Built: a loop out of rounds asks its live owner over the message bus, else you.",
       "Built: with `questions: owner` on a leader, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers or passes it on (ADR-063).",
       "Built: in a later round of a loop, an edge whose source can't run any more counts as not taken, so a join behind it fires; a run left with a node still waiting fails with an `ork engine error:` reason rather than succeeding.",

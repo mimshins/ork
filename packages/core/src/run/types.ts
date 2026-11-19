@@ -85,6 +85,7 @@ export type ExecuteContext = {
   brief?: Brief;
   /** A leader's previous session, resumed on re-entry (ADR-019). */
   resume?: string;
+  handover?: string;
   /** For a leader: its children, through `delegate` and `spawn_worker`. */
   ownership?: Ownership;
   /** The node's place on the run's message bus. */

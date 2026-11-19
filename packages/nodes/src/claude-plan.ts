@@ -26,6 +26,7 @@ export const planOptionsOf = (
   };
   if (context.checkout !== undefined) planOptions.checkout = context.checkout;
   if (context.brief !== undefined) planOptions.brief = context.brief;
+  if (context.handover !== undefined) planOptions.handover = context.handover;
   if (context.template !== undefined) planOptions.template = context.template;
   if (context.item !== undefined) planOptions.item = context.item;
   if (context.ownership !== undefined) {

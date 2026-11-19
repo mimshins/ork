@@ -29,6 +29,12 @@ export type NodeEvent =
       agent?: AgentRef;
       /** For an item of a fanned node, which node and which entry. */
       item?: { of: string; index: number };
+      /**
+       * The `sessions.freshOver` rule started this delegated task in a fresh
+       * session: the last session's context, and the rule's threshold. Absent
+       * when it resumed, started fresh anyway, or on runs from before.
+       */
+      fresh?: { contextTokens: number; over: number };
     }
   | { type: "node.event"; id: string; event: RuntimeEvent }
   | {

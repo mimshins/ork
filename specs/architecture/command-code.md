@@ -83,7 +83,10 @@ a throwaway `HOME` (no model session), the headless docs
   `Edit`, `write_file` as `Write`, `web_fetch` as `WebFetch`). The result line's
   `success`, `max_turns` (exit code 8) and `error` become `success`,
   `error_max_turns` and `error_during_execution`; usage is tokens, never
-  dollars. Its report comes through Ork's `report` tool.
+  dollars. The session's context (`contextTokens`) is the last
+  `model_request_end`'s prompt (`inputTokens` + `cacheReadTokens` +
+  `cacheWriteTokens`), since the result line's usage is a sum. Its report comes
+  through Ork's `report` tool.
 - **Deny by default** (a yolo run, `ork run --yolo`, allows what the node's
   `deny` and `only` don't refuse;
   [ADR-094](../../decisions/ADR-094-yolo-runs.md)): Command Code reads

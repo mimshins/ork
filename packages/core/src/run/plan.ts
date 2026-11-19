@@ -56,6 +56,8 @@ export type PlanOptions = {
   checkout?: Checkout;
   /** The task the node's owner delegated; it follows the node's own prompt. */
   brief?: Brief;
+  /** A fresh start's note of earlier tasks; it comes before the task. */
+  handover?: string;
   /** For a spawned worker, the declared node it is an instance of. */
   template?: string;
   /** For an item of a fanned node, what its prompt reads as `{{item}}`. */
@@ -173,6 +175,7 @@ export const planNodeSession = (
   const rendered = brief.text;
   const prompt = [
     rendered,
+    options.handover ?? "",
     options.brief === undefined
       ? ""
       : `## Task from \`${options.brief.from}\`\n\n${options.brief.text}`,

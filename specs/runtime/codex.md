@@ -195,7 +195,8 @@ three descriptors, not only `codex`.
   per turn. Two legs add as one. Usage comes once, at a turn's end, so
   `budgetTokens` stops a session between legs
   ([session ends](./session-ends.md#the-token-cap)); a node with only
-  `budgetUsd` is warned.
+  `budgetUsd` is warned. The context (`contextTokens`) stays unset, a limit: a
+  turn's `input_tokens` may sum its requests (not measured).
 - **Ends.** `turn.failed` and `error` text go through the shared provider
   classifier: "The '<model>' model is not supported when using Codex with a
   ChatGPT account." ends `model_unavailable`. Exit 130 is `interrupted`; exit 0

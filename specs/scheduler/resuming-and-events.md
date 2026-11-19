@@ -14,7 +14,10 @@ under the same run id, with a `Replay` built from the run's events:
 - A node's results are handed back up to its first that failed or never
   finished; from there it runs. A new result marks its output, and an activation
   whose input carries one (directly, or in a join's `results`) runs too.
-  Delegated runs are never handed back: their leader's session runs them.
+  Delegated runs are never handed back: their leader's session runs them. A
+  delegated builder's sessions before the resume are not known, so it starts
+  fresh with no `fresh` on its `node.started`
+  ([fresh sessions](./fresh-sessions.md)).
 - **A run resumed more than once is one history.** A result a later resume
   recorded extends the node's results, and a new run of a round replaces what
   that round and later ones recorded, so a source that succeeded in an earlier
@@ -109,6 +112,11 @@ waits for a machine-wide slot adds `slot.waiting` (with who holds the slots) and
 whose locked nodes a resume runs again under the lock); a `once: true` check
 that did not run adds `verify.skipped` with the command, the time of the earlier
 pass and who ran it ([check once](../check-once.md#in-a-workflow)).
+
+A `node.started` also carries `fresh` (`contextTokens`, `over`) when the
+`sessions.freshOver` rule started a delegated task in a
+[fresh session](./fresh-sessions.md) instead of resuming; it is absent
+otherwise, and on runs from before.
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
 the reasons the run did not succeed, and the worktrees it left for the user. It

@@ -18,6 +18,7 @@ import {
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd, sessionEnd } from "../session-end.ts";
 import { isBadArguments } from "../tools/tool.ts";
+import { addUsage, promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
 
@@ -230,6 +231,8 @@ export const claudeDecoder = (): LegDecoder => {
   let accepted: unknown;
   /** Each model response's usage, by message id: its blocks repeat it. */
   const responses = new Map<string, SessionUsage>();
+  /** The prompt of the last main-thread response (no `parent_tool_use_id`). */
+  let context: number | undefined;
   /** The leg's usage so far, when `message` is a model response. */
   const usageSoFar = (message: unknown): SessionUsage | undefined => {
     const inner = get(message, "message");
@@ -237,9 +240,27 @@ export const claudeDecoder = (): LegDecoder => {
     if (get(message, "type") !== "assistant" || typeof id !== "string") {
       return undefined;
     }
-    responses.set(id, { ...usageOf({ usage: get(inner, "usage") }), turns: 1 });
-    return [...responses.values()].reduce((a, b) => addUsage(a, b));
+    const own = usageOf({ usage: get(inner, "usage") });
+    responses.set(id, { ...own, turns: 1 });
+    // A sub-agent's request is its own, smaller prompt, not the session's.
+    const main = typeof get(message, "parent_tool_use_id") !== "string";
+    if (main && isObject(get(inner, "usage"))) {
+      context = promptOf(own);
+    }
+    const sum = [...responses.values()].reduce((a, b) => addUsage(a, b));
+    return withContext(sum, context);
   };
+  /** An end, with the session's context: `claude`'s result does not give it. */
+  const withEndContext = (event: RuntimeEvent): RuntimeEvent =>
+    event.type === "session.finished"
+      ? {
+          ...event,
+          outcome: {
+            ...event.outcome,
+            usage: withContext(event.outcome.usage, context),
+          },
+        }
+      : event;
   return {
     decode: line => {
       const message = parseLine(line);
@@ -262,7 +283,7 @@ export const claudeDecoder = (): LegDecoder => {
           ? { ...message, structured_output: accepted }
           : message;
       return {
-        events: normalize(kept),
+        events: normalize(kept).map(event => withEndContext(event)),
         deferred: isDeferredResult(message),
         ...(usage === undefined ? {} : { usage }),
       };
@@ -270,20 +291,6 @@ export const claudeDecoder = (): LegDecoder => {
     exit: () => [],
   };
 };
-
-/**
- * Two legs of one session, as one: the tokens of both, and the later leg's
- * cost, which is already the session's total (ADR-046).
- */
-export const addUsage = (a: SessionUsage, b: SessionUsage): SessionUsage => ({
-  costUsd: Math.max(a.costUsd, b.costUsd),
-  inputTokens: a.inputTokens + b.inputTokens,
-  outputTokens: a.outputTokens + b.outputTokens,
-  cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
-  cacheWriteTokens: a.cacheWriteTokens + b.cacheWriteTokens,
-  turns: a.turns + b.turns,
-  durationMs: a.durationMs + b.durationMs,
-});
 
 /** `claude` reports dollars (a client-side estimate) and tokens. */
 export const claudeUsage: UsageReader = { dollars: true, combine: addUsage };

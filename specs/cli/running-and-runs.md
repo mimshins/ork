@@ -36,9 +36,13 @@ with the built-in node types
   with no commit stops it too, saying to make a first commit or pass
   `--in-place`. `--in-place` runs every node in this checkout instead.
 - stdout gets one transcript line per event, prefixed with the node id
-  (`builder │ …`): each start (with its round), session text and tool calls,
-  each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`; a node that failed
-  reads `✗ fail` whatever its report said, and a child that did not merge reads
+  (`builder │ …`): each start (with its round; when the
+  [`sessions.freshOver` rule](../scheduler/fresh-sessions.md) started a
+  delegated builder in a fresh session, a second line,
+  `starts a fresh session: context <N> tokens over <M>`, and `--json` carries
+  the event's `fresh` field as stored), session text and tool calls, each result
+  (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`; a node that failed reads `✗ fail`
+  whatever its report said, and a child that did not merge reads
   `! pass, merge conflict`), skips and exhausted loops, worktree changes
   (`⎇ created …`, `merged`, `removed worktree of <branch> (branch kept)`), the
   line for a question (`decision <id>; answer here or with ork decide` when this

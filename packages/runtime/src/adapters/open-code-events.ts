@@ -20,6 +20,7 @@ import {
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
 import { isBadArguments, ORK_SERVER, toolId } from "../tools/tool.ts";
+import { promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
 
@@ -69,7 +70,7 @@ const parseLine = (line: string): unknown => {
 const stepUsage = (part: unknown): SessionUsage => {
   const tokens = get(part, "tokens");
   const cache = get(tokens, "cache");
-  return {
+  const usage = {
     costUsd: num(get(part, "cost")),
     inputTokens: num(get(tokens, "input")),
     // Reasoning is billed as output.
@@ -79,18 +80,26 @@ const stepUsage = (part: unknown): SessionUsage => {
     turns: 1,
     durationMs: 0,
   };
+  return { ...usage, contextTokens: promptOf(usage) };
 };
 
-/** Two spans of one session, as one: OpenCode reports each step's own cost. */
-export const sumUsage = (a: SessionUsage, b: SessionUsage): SessionUsage => ({
-  costUsd: a.costUsd + b.costUsd,
-  inputTokens: a.inputTokens + b.inputTokens,
-  outputTokens: a.outputTokens + b.outputTokens,
-  cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
-  cacheWriteTokens: a.cacheWriteTokens + b.cacheWriteTokens,
-  turns: a.turns + b.turns,
-  durationMs: a.durationMs + b.durationMs,
-});
+/**
+ * Two spans of one session, as one: OpenCode reports each step's own cost; the
+ * context is the later span's.
+ */
+export const sumUsage = (a: SessionUsage, b: SessionUsage): SessionUsage =>
+  withContext(
+    {
+      costUsd: a.costUsd + b.costUsd,
+      inputTokens: a.inputTokens + b.inputTokens,
+      outputTokens: a.outputTokens + b.outputTokens,
+      cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
+      cacheWriteTokens: a.cacheWriteTokens + b.cacheWriteTokens,
+      turns: a.turns + b.turns,
+      durationMs: a.durationMs + b.durationMs,
+    },
+    b.contextTokens ?? a.contextTokens,
+  );
 
 export const openCodeUsage: UsageReader = { dollars: true, combine: sumUsage };
 

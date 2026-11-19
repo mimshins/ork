@@ -79,7 +79,9 @@ own.
 Ork is built to keep sessions small:
 
 - Workers start a fresh session for each task; only leaders are long-lived, and
-  a leader resumes its session instead of starting over.
+  a leader resumes its session instead of starting over. A `session: resume`
+  worker can [start its next task fresh](../fresh-builder-sessions.md) once its
+  session is long.
 - Owners pass briefs, not transcripts, and children return short summaries.
 - What Ork adds to the prompt is ordered so nodes share a cached prefix
   ([Skills and context](../skills-and-context.md)).

@@ -80,10 +80,10 @@ branch.
 
 ## Leaders keep their session
 
-A worker starts fresh every time it runs. A leader does not: when it is sent
-round a loop again, or delegated to again by its own owner, it **resumes** its
-last session with only the new input as the next message. It keeps its plan and
-its prompt cache, which saves tokens on long jobs.
+A worker starts fresh every time it runs. A leader **resumes** its last session
+when sent round a loop or delegated to again, with only the new input as the
+next message, keeping its plan and prompt cache; a long `session: resume` worker
+can [start fresh](./fresh-builder-sessions.md).
 
 `session` changes either, for a node that runs again in a loop:
 

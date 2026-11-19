@@ -142,6 +142,15 @@ total so far, when its transcript saved one, while its tokens, turns and
 duration are that process's own; a crash's result may carry zero
 ([usage](./usage.md#what-a-resumed-session-spent)).
 
+The usage may also carry `contextTokens`: the prompt of the session's last model
+request (input + cache read + cache write, the
+[prompt figure](./usage/tokens.md#prompt-output-and-counted-on-screen)), the
+size of the context a resume would read again. It is optional and unset when a
+driver gives no per-request usage; two legs of one session keep the later leg's
+value, never a sum. The `claude-code`, `open-code` and `command-code` decoders
+set it; `codex` leaves it unset
+([per driver](./runtime/session-ends.md#the-token-cap)).
+
 ## How a session is spawned
 
 ([session-leg.ts](../packages/runtime/src/session-leg.ts),

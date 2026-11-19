@@ -1,6 +1,7 @@
 # ADR-033 — Any Claude node can resume its session on re-entry
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-103](./ADR-103-fresh-session-for-the-next-task.md)
 - **Date:** 2026-10-31
 - **Topic:** engine / sessions
 - **RFC:** waived — part of the project-rules decision; the options are below

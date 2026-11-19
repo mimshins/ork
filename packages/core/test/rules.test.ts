@@ -106,6 +106,22 @@ describe("project rules under a workflow", () => {
     });
   });
 
+  it("let a workflow's sessions rule win over the project's, and leave it off by default", () => {
+    const nodes = ["nodes:", "  a: { type: agent.worker, prompt: go }"];
+    const effective = (lines: string[], project: Project) =>
+      applyProject(workflowOf([...lines, ...nodes]), { project }).rules
+        ?.sessions;
+    const project: Project = {
+      schemaVersion: 1,
+      sessions: { freshOver: 100000 },
+    };
+    expect(effective([], project)).toEqual({ freshOver: 100000 });
+    expect(
+      effective(["rules: { sessions: { freshOver: never } }"], project),
+    ).toEqual({ freshOver: "never" });
+    expect(effective([], { schemaVersion: 1 })).toBeUndefined();
+  });
+
   it("deny the heavy commands to a node with verify:, and only to it", () => {
     const workflow = applyProject(
       workflowOf([

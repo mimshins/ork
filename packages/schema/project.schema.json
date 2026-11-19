@@ -86,6 +86,26 @@
         "open"
       ]
     },
+    "sessions": {
+      "type": "object",
+      "properties": {
+        "freshOver": {
+          "description": "Default: never. A number of tokens: when an owner delegates a worker with session: resume its next task and the context of its last session, which ended done, is over this many tokens, the task starts a fresh session with a note of its earlier tasks instead of resuming. never: always resume. Loop re-entries, leaders and sessions that did not end done keep resuming.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "string",
+              "const": "never"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "defaults": {
       "description": "Defaults for every workflow in the project; a workflow's own win.",
       "type": "object",

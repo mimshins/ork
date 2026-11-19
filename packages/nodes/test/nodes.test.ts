@@ -816,6 +816,22 @@ describe("Claude nodes", () => {
     expect(merged.usage.costUsd).toBe(5);
   });
 
+  it("keeps the later process's context, not a sum, and the first's when the later has none", () => {
+    const first = outcome(null);
+    const withContext = (contextTokens: number) => ({
+      ...first,
+      usage: { ...first.usage, contextTokens },
+    });
+    expect(
+      withUsageOf(withContext(90_000), withContext(120_000)).usage
+        .contextTokens,
+    ).toBe(120_000);
+    expect(withUsageOf(withContext(90_000), first).usage.contextTokens).toBe(
+      90_000,
+    );
+    expect(withUsageOf(first, first).usage).not.toHaveProperty("contextTokens");
+  });
+
   it("tells a session cut off by the run to carry on, and a re-entered one its round", () => {
     expect(resumeMessage(1, null)).toContain("Ork was stopped");
     expect(resumeMessage(2, { statuses: [] })).toContain("## Round 2");

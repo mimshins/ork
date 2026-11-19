@@ -93,6 +93,11 @@ limits:
 
 - **What counts:** input, output and cache-write tokens. Cache reads never
   count: they are most of what a long session reads, and cost a fraction.
+- **A fresh start counts more.** A worker started fresh by
+  [`sessions.freshOver`](../fresh-builder-sessions.md) writes its start to the
+  cache again, and the cache reads it saves never count, so the same work counts
+  more tokens against these caps and the token quota. Command Code and Codex
+  show no price, so Ork cannot show the saving there.
 - **A session stops** once its counted tokens reach the cap, and ends as
   `budget_limit` ([why a node stopped](../why-a-node-stopped.md#budget-limit)).
   Ork checks at each usage report the tool prints, so a session can pass the cap

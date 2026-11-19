@@ -216,12 +216,19 @@ session already handed in through Ork's `report` tool still decides its end.
 A tool can't be stopped between its reports, so a session can pass the cap by up
 to one report:
 
-| Driver         | Checked at                                       | Can pass the cap by                                                       |
-| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
-| `claude-code`  | each `assistant` message's usage, per message id | one model response; its output count may lag a little; result lines exact |
-| `open-code`    | each `step_finish`                               | one step                                                                  |
-| `command-code` | each `model_request_end`                         | one model request                                                         |
-| `codex`        | each `turn.completed`                            | one turn (usage arrives once, at a turn's end)                            |
+| Driver         | Checked at                                       | Can pass the cap by                                                       | Context (`contextTokens`)                                                            |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `claude-code`  | each `assistant` message's usage, per message id | one model response; its output count may lag a little; result lines exact | the last main-thread `assistant` message's prompt (one with no `parent_tool_use_id`) |
+| `open-code`    | each `step_finish`                               | one step                                                                  | the last `step_finish`: `tokens.input` + `cache.read` + `cache.write`                |
+| `command-code` | each `model_request_end`                         | one model request                                                         | the last `model_request_end`: `inputTokens` + `cacheReadTokens` + `cacheWriteTokens` |
+| `codex`        | each `turn.completed`                            | one turn (usage arrives once, at a turn's end)                            | unset: no per-request usage ([Codex](./codex.md#output-usage-and-ends))              |
+
+The context column is the session's `contextTokens`
+([usage](../usage/tokens.md#prompt-output-and-counted-on-screen)): the decoder
+keeps it from the same reports the cap is checked at and puts it on the
+session's end, and on the usage a stopped leg keeps. It is the prompt of the
+last model request (input + cache read + cache write); two legs keep the later
+leg's ([tests](../../packages/runtime/test/context-tokens.test.ts)).
 
 None of the four prints a cost mid-session, so a session stopped at its token
 cap records $0 and a run's dollar limit under-counts it

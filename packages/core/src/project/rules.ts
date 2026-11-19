@@ -161,18 +161,15 @@ export const applyProject = (
   const { project } = options;
   if (project === undefined) return workflow;
   const git = dropUndefined({ ...project.git, ...workflow.rules?.git });
-  const allow = union(
-    project.permissions?.allow,
-    workflow.rules?.permissions?.allow,
-  );
-  const deny = union(
-    project.permissions?.deny,
-    workflow.rules?.permissions?.deny,
-  );
-  const permissions = dropUndefined({ allow, deny });
+  const own = workflow.rules?.permissions;
+  const permissions = dropUndefined({
+    allow: union(project.permissions?.allow, own?.allow),
+    deny: union(project.permissions?.deny, own?.deny),
+  });
   const rules = dropUndefined({
     links: workflow.rules?.links ?? project.links,
     reading: workflow.rules?.reading ?? project.reading,
+    sessions: workflow.rules?.sessions ?? project.sessions,
     git: Object.keys(git).length === 0 ? undefined : git,
     permissions:
       Object.keys(permissions).length === 0 ? undefined : permissions,

@@ -104,8 +104,11 @@ printed errors otherwise, or `error_driver` with the stderr's last block when it
 printed none. Its [end](./session-ends.md) comes from the same: an `error` line
 (its name, status code and body) through the shared provider classifier, exit
 130 as `interrupted`, and every step used without a report as `turn_limit`, else
-`no_report`. Legs add up, cost included: each reports only its own steps. Tool
-names come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
+`no_report`. Legs add up, cost included: each reports only its own steps. The
+session's context (`contextTokens`) is the last `step_finish`'s prompt,
+`tokens.input` + `cache.read` + `cache.write`, the later leg's when there are
+two; whether a sub-agent's steps reach the stream is not verified. Tool names
+come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
 `mcp__ork__report`), the words a node's rules use.
 
 **The version floor.** On 2026-11-18, sessions of `opencode` 2.1.0 saw none of

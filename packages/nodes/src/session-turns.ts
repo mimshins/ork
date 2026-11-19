@@ -28,8 +28,12 @@ export const withUsageOf = (
   first: SessionOutcome,
   later: SessionOutcome,
 ): SessionOutcome => {
-  const sum = (key: keyof SessionUsage) => first.usage[key] + later.usage[key];
+  const sum = (key: Exclude<keyof SessionUsage, "contextTokens">) =>
+    first.usage[key] + later.usage[key];
+  // The context is one request's prompt, so the later process's wins, never a sum.
+  const context = later.usage.contextTokens ?? first.usage.contextTokens;
   const usage: SessionUsage = {
+    ...(context === undefined ? {} : { contextTokens: context }),
     costUsd: Math.max(first.usage.costUsd, later.usage.costUsd),
     inputTokens: sum("inputTokens"),
     outputTokens: sum("outputTokens"),

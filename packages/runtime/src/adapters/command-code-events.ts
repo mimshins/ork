@@ -21,7 +21,7 @@ import {
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
 import { isBadArguments } from "../tools/tool.ts";
-import { addUsage } from "./claude-code-events.ts";
+import { addUsage, promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
 
@@ -128,6 +128,7 @@ export const commandCodeDecoder = (): LegDecoder => {
       turns,
       durationMs: 0,
     };
+    own.contextTokens = promptOf(own);
     used = used === undefined ? own : { ...addUsage(used, own), turns };
     return used;
   };
@@ -194,15 +195,19 @@ export const commandCodeDecoder = (): LegDecoder => {
         // Command Code holds no report to a schema: Ork's `report` tool does.
         report: null,
         text: str(line["finalText"]),
-        usage: {
-          costUsd: 0,
-          inputTokens: num(usage["inputTokens"]),
-          outputTokens: num(usage["outputTokens"]),
-          cacheReadTokens: num(usage["cacheReadTokens"]),
-          cacheWriteTokens: num(usage["cacheWriteTokens"]),
-          turns,
-          durationMs: num(line["durationMs"]),
-        },
+        // The result line has no context: the last request's is the session's.
+        usage: withContext(
+          {
+            costUsd: 0,
+            inputTokens: num(usage["inputTokens"]),
+            outputTokens: num(usage["outputTokens"]),
+            cacheReadTokens: num(usage["cacheReadTokens"]),
+            cacheWriteTokens: num(usage["cacheWriteTokens"]),
+            turns,
+            durationMs: num(line["durationMs"]),
+          },
+          used?.contextTokens,
+        ),
         errors: error === "" ? [] : [error],
       },
     };

@@ -78,6 +78,9 @@ runs and worktrees in plain words.
 - [Project rules](./guides/project-rules.md): `.ork/project.yaml`: never commit,
   merge or not, your own branch names, permissions and defaults for every
   workflow.
+- [A fresh session for a builder's next task](./guides/fresh-builder-sessions.md):
+  start a long-running builder's next task clean, once its session is over a
+  size you set.
 - [Working across projects](./guides/working-across-projects.md): run workflows
   in several repositories, and let their sessions message each other.
 

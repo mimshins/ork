@@ -132,12 +132,16 @@ rules:
   git: { merge: never }
   permissions: { deny: ["Bash(rm *)"] }
   reading: open # extract (the default) | open
+  sessions: { freshOver: 100000 } # never (the default) | tokens
 ```
 
-Its `git` keys and `reading` win; permissions add up. `reading: extract` refuses
-a shell line that starts by reading files, naming the `extract` call to make;
-`open` allows it
+Its `git` keys, `reading` and `sessions` win; permissions add up.
+`reading: extract` refuses a shell line that starts by reading files, naming the
+`extract` call to make; `open` allows it
 ([extract](./skills-and-context.md#reading-part-of-a-file-extract)).
+`sessions.freshOver` starts a worker's next delegated task in a fresh session
+once its context is over that many tokens; `never` is off, and `ork validate`
+refuses `0` or a word ([guide](./fresh-builder-sessions.md)).
 
 ## What a run asks of the machine
 

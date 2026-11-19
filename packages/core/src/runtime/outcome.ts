@@ -14,6 +14,12 @@ export type SessionUsage = {
   cacheWriteTokens: number;
   turns: number;
   durationMs: number;
+  /**
+   * The prompt of the session's last model request: input + cache read + cache
+   * write (the "prompt" figure of specs/usage/tokens.md). Unset when the driver
+   * gives no per-request usage. Two legs of one session keep the later leg's.
+   */
+  contextTokens?: number;
 };
 
 export type SessionOutcome = {

@@ -578,6 +578,71 @@ describe("delegation in worktrees", () => {
   });
 });
 
+/**
+ * A leader that delegates `fix` two tasks in turn; `fix`'s first session writes
+ * `src/one.ts` and ends over the rule, and its second records what it finds in
+ * its checkout.
+ */
+const twoTasks = () => {
+  const second: Record<string, unknown> = {};
+  const executor: NodeExecutor = async context => {
+    if (context.ownership !== undefined) {
+      await context.ownership.delegate([{ child: "fix", brief: "one" }]);
+      await context.ownership.delegate([{ child: "fix", brief: "two" }]);
+      return { ok: true, output: { status: "pass", summary: "led" } };
+    }
+    if (context.brief?.text === "one") write(context.cwd, "src/one.ts", "1\n");
+    else {
+      second["resume"] = context.resume;
+      second["branch"] = context.checkout?.branch;
+      second["one"] = existsSync(path.join(context.cwd, "src/one.ts"));
+      second["log"] = sh(context.cwd, "log", "--format=%s");
+    }
+    return {
+      ok: true,
+      output: { status: "pass", summary: "ok" },
+      sessionId: context.resume ?? `s-${String(context.brief?.text)}`,
+      usage: {
+        costUsd: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        turns: 1,
+        durationMs: 0,
+        contextTokens: 500,
+      },
+    };
+  };
+  return { executor, second };
+};
+
+describe("a fresh session for a delegated builder's next task", () => {
+  it("works in the same worktree and branch, with the first task's commit", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: owned",
+        "rules: { sessions: { freshOver: 10 } }",
+        "nodes:",
+        "  lead: { type: agent.leader }",
+        "  fix: { type: agent.worker, parent: lead, session: resume }",
+      ].join("\n"),
+    );
+    const { executor, second } = twoTasks();
+    const { result } = await runIn(root, graph, executor);
+
+    expect(result.status).toBe("succeeded");
+    expect(second).toMatchObject({
+      resume: undefined,
+      branch: "ork/r1/fix",
+      one: true,
+    });
+    expect(second["log"]).toContain("\nork: fix (run r1)\n");
+  });
+});
+
 describe("ork worktrees", () => {
   it("lists Ork's branches from git and cleans them safely", async () => {
     const root = repo();

@@ -2,10 +2,12 @@
  * @file A benchmark's numbers from a run tree: cost and tokens in total and by
  *   node, turns, working and waiting minutes, decisions, the agents its nodes
  *   used, the commits its tool nodes printed, the CPU seconds Ork's tool
- *   commands used, and one CSV row per session.
+ *   commands used, the fresh-session counts (sessions.ts), and one CSV row per
+ *   session.
  */
 
 import { count, type Json, r1, r4, rec, text } from "./json.ts";
+import { freshSessionsOf } from "./sessions.ts";
 import { activations, WAITS, workingMs } from "./timing.ts";
 import type { StoredEvent, Tree, Usage } from "./tree.ts";
 
@@ -167,6 +169,7 @@ export const summarize = (tree: Tree) => {
       })),
     agents: agentsOf(tree.events),
     tool_cpu_seconds: toolCpuOf(tree),
+    fresh_sessions: freshSessionsOf(tree),
   };
 };
 

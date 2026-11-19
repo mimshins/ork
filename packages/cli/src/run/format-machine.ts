@@ -1,9 +1,16 @@
 /**
- * @file How a node's waits for the machine read in `ork logs`: a slot for a
- *   heavy command (ADR-080) and a lock (RFC-016), each naming who holds it.
+ * @file How a node's start and its waits for the machine read in `ork logs`: a
+ *   start (with a second line when the `sessions.freshOver` rule began a fresh
+ *   session), a slot for a heavy command (ADR-080) and a lock (RFC-016), each
+ *   naming who holds it.
  */
 
-import { lockWaitLine, type RunEvent, slotWaitLine } from "@krapht/ork-core";
+import {
+  lockWaitLine,
+  maskSecrets,
+  type RunEvent,
+  slotWaitLine,
+} from "@krapht/ork-core";
 
 import type { Format } from "./view.ts";
 
@@ -32,4 +39,30 @@ export const machineLine = (
     return style("dim", `▸ holds ${event.lock}`);
   }
   return style("dim", `▸ let ${event.lock} go`);
+};
+
+/** The lines for a node's start; `tag` leads the first, `blank` the next. */
+export const formatStarted = (
+  event: Extract<RunEvent, { type: "node.started" }>,
+  tag: string,
+  blank: string,
+  dim: (text: string) => string,
+): string[] => {
+  const round = event.round > 1 ? ` (round ${String(event.round)})` : "";
+  const owner = event.owner === undefined ? "" : `, for ${event.owner}`;
+  const named =
+    event.description === undefined
+      ? ""
+      : ` · ${maskSecrets(event.description)}`;
+  const { fresh } = event;
+  const because =
+    fresh === undefined
+      ? []
+      : [
+          `${blank} ${dim(`starts a fresh session: context ${String(fresh.contextTokens)} tokens over ${String(fresh.over)}`)}`,
+        ];
+  return [
+    `${tag} ${dim(`${event.nodeType}${round}${owner}${named}`)}`,
+    ...because,
+  ];
 };

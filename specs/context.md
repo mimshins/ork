@@ -128,6 +128,11 @@ as before: an agent can fill a node and still be a subagent a session calls.
 **Token-saving practices built into the engine:**
 
 - **Fresh agent per task:** workers start clean; only leaders are long-lived.
+- **A fresh session for a long builder's next task** (off by default): with
+  `sessions.freshOver` set, a `session: resume` worker whose context is over it
+  starts its next delegated task clean, with a note of its earlier tasks, so
+  later turns stop re-reading its whole transcript
+  ([fresh sessions](./scheduler/fresh-sessions.md)).
 - **Briefs, not transcripts:** owners pass context packets and children return
   short summaries. A tool's output over 64 KiB is cut, and the whole kept in a
   run file referenced by path; a Claude report names big outputs as files under

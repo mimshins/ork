@@ -54,8 +54,8 @@ in `carried.json` from `pnpm benchmark`, or alone from
   `<prefix>-<task>-<arm>-<n>` side by side: per run, cost, working minutes,
   median turns, the weight of the reading kinds (shell reads, searches, git
   reads, Read, `extract`) for the writing roles, the review roles and in all,
-  and the calls of `extract`, shell reads and Read with the refusals; then each
-  task and arm's medians.
+  and the calls of `extract`, shell reads and Read with the refusals, and the
+  fresh starts and would-fires below; then each task and arm's medians.
 - **The baseline:** this script on the RFC's four build runs (`f7f49775`,
   `8d0a6287`, `3867d943`, `aedbdc3d`): 55 sessions; shell reads 57%, searches
   17%, the Read tool 9% and git reads 9% make 92%. That is the weight an extract
@@ -74,6 +74,32 @@ in `carried.json` from `pnpm benchmark`, or alone from
   output. Compare runs of the same work with it, beside cost.
 - **Private:** only names of roles and kinds and numbers are written; no path,
   command, file name or result text.
+
+## Fresh sessions
+
+The `sessions.freshOver` rule starts a builder's next delegated task in a fresh
+session once its last session's context is over a threshold
+([fresh sessions](../specs/scheduler/fresh-sessions.md)). `summary.json` has a
+`fresh_sessions` block, read from the run's events, so an A/B of the rule can
+check each pair:
+
+- **`fires`:** activations whose `node.started` carries `fresh`, in total and
+  per `<workflow>.<node>`.
+- **`contexts`:** per node, the context (`contextTokens` of the node's last
+  finished activation) at each delegated start of a worker after an activation
+  that ended `done`, in order. A node a run resumed (`run.resumed`) forgets its
+  earlier sessions, as the scheduler does.
+- **`would_fires`:** those delegations whose context is over `over`, the
+  threshold. A run with the rule `never` records them too, so a pair counts only
+  when the `never` run has at least one would-fire and the other run a fire.
+- **`over`:** the `fresh.over` a fire recorded, else 100,000 (a run with the
+  rule `never` records no threshold). Nodes without a fire or a delegation with
+  a known context are left out.
+- **Runs from before the rule** have no `contextTokens` or `fresh`: all zeros. A
+  driver that reports no context (Codex) gives no would-fires either.
+
+`pnpm benchmark:arms` shows "fresh starts / would-fires" per run and the median
+per task and arm.
 
 ## The manual baseline
 

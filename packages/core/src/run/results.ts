@@ -22,6 +22,7 @@ import {
   scrubbedEnd,
   stoppedEnd,
 } from "./ended.ts";
+import { createSessions, type FreshStart } from "./fresh-session.ts";
 import type { Activation, Replay, RunOptions } from "./handle.ts";
 import type {
   KeptWorktree,
@@ -47,6 +48,7 @@ export {
 export type { EndKind };
 export { spendOf } from "./spending.ts";
 export { createGatherer } from "./gather.ts";
+export { createSessions };
 
 /** Control nodes pass their input through; a join's input is its output. */
 export const passThrough = (input: NodeOutput | undefined): NodeResult => ({
@@ -70,6 +72,7 @@ export const startedEvent = (
   nodeType: NodeType,
   round: number,
   agent?: AgentRef,
+  fresh?: FreshStart,
 ): RunEvent => {
   const event: RunEvent = {
     type: "node.started",
@@ -77,6 +80,7 @@ export const startedEvent = (
     nodeType,
     round,
   };
+  if (fresh !== undefined) event.fresh = fresh;
   if (activation.brief !== undefined) event.owner = activation.brief.from;
   if (activation.description !== undefined) {
     event.description = activation.description;
