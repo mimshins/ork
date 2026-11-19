@@ -294,16 +294,18 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   node's own, lower cap is still a failure that edges can route, and so is a
   stop at a remainder that other nodes' reserves shrank while the run is not
   spent: the node's own `budget_limit`, with no `limited` and no stop
-  ([ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). A unit (tokens
-  or dollars) blames the run's cap only when the session reached that unit's
-  cap, or when it was the session's only cap: a node's own cap in one unit stays
-  a node failure even under a run budget in the other. A $0 `costUsd` means
-  unreported ([L280](./gaps/budget-tokens-limits.md)), not spent, so a
-  token-capped session never reads as reaching a dollar cap; claude-code's
-  `costUsd` is cumulative across a resume
-  ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)), so a resumed turn
-  blames the run's dollar budget only for its own spend, the total minus what
-  the session had spent before the turn
+  ([ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). That check
+  (`limitOf`) reads only `stopsAs: budget_exhausted`: a quota (`limited` with no
+  `stopsAs`) still stops the run `quota_exhausted`, and `stopsAs: failed` still
+  stops it as failed. A unit (tokens or dollars) blames the run's cap only when
+  the session reached that unit's cap, or when it was the session's only cap: a
+  node's own cap in one unit stays a node failure even under a run budget in the
+  other. A $0 `costUsd` means unreported
+  ([L280](./gaps/budget-tokens-limits.md)), not spent, so a token-capped session
+  never reads as reaching a dollar cap; claude-code's `costUsd` is cumulative
+  across a resume ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)),
+  so a resumed turn blames the run's dollar budget only for its own spend, the
+  total minus what the session had spent before the turn
   ([`limitWatch`](../packages/nodes/src/session-turns.ts)). A session sets its
   cap aside as it starts, so sessions running together are never offered the
   same part; one with nothing left, or offered less than its own cap, waits for
