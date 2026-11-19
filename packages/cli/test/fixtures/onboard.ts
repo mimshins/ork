@@ -32,6 +32,7 @@ import { finish, finishText } from "../../src/onboard/verbs-finish.ts";
 import type { DriverChecks } from "../../src/run/ready-driver.ts";
 import { formatBrief } from "../../src/onboard/verbs-format.ts";
 import {
+  pathWithoutDrivers,
   readyOnly,
   type Script,
   scriptedRuntime,
@@ -137,7 +138,7 @@ const orkWrapper = (missing?: string): string => {
   const cacheEnv = cache === undefined ? "" : `NODE_COMPILE_CACHE="${cache}" `;
   writeFileSync(
     file,
-    `#!/bin/sh\n${lost}${cacheEnv}ORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
+    `#!/bin/sh\n${lost}${cacheEnv}PATH="${pathWithoutDrivers("$PATH")}" ORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
   );
   chmodSync(file, 0o755);
   return file;

@@ -2,10 +2,12 @@
  * @file Driver checks for tests: which agent drivers are "ready", so a run of
  *   a workflow that names no driver picks one without running a real `claude`
  *   or reading the machine's environment; and a scripted runtime that plays
- *   the two onboarding built-ins' sessions without a model.
+ *   the two onboarding built-ins' sessions without a model; and a `PATH` on
+ *   which a child `ork` finds no agent CLI, as on CI.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
@@ -17,6 +19,27 @@ import type {
 import type { DriverCheck, DriverId } from "@krapht/ork-integrations";
 
 import type { DriverChecks } from "../../src/index.ts";
+
+/** The programs the drivers' doctor checks run (`claude`, then `<program> --version`). */
+const DRIVER_PROGRAMS = ["claude", "opencode", "cmd", "codex"] as const;
+
+/**
+ * `path` with a folder in front where each driver's program exits 127, as on a
+ * machine without it: a child `ork`'s driver checks (`ork __onboard finish`)
+ * then never wait on this machine's own agent CLIs, each up to its 15 s
+ * timeout, which a test's own 15 s cannot hold.
+ */
+export const pathWithoutDrivers = (
+  pathNow: string = process.env["PATH"] ?? "",
+): string => {
+  const dir = mkdtempSync(path.join(tmpdir(), "ork-no-drivers-"));
+  for (const program of DRIVER_PROGRAMS) {
+    writeFileSync(path.join(dir, program), "#!/bin/sh\nexit 127\n", {
+      mode: 0o755,
+    });
+  }
+  return `${dir}${path.delimiter}${pathNow}`;
+};
 
 const check = (id: DriverId, ready: boolean): DriverCheck => ({
   id,

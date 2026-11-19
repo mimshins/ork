@@ -30,10 +30,11 @@ import {
   isAllowedPath,
 } from "../src/onboard/finish-git.ts";
 import { finish, finishText } from "../src/onboard/verbs-finish.ts";
+import { pathWithoutDrivers } from "./fixtures/drivers.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
-const PATH_NOW = process.env["PATH"] ?? "";
+const PATH_NOW = pathWithoutDrivers();
 
 const git = (cwd: string, ...args: string[]): string =>
   execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
