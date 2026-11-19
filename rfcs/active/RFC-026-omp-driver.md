@@ -1,6 +1,6 @@
 # RFC-026 — The omp driver: oh-my-pi's `omp` CLI as the fifth driver
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-19
 - **Supersedes:** —
 - **Superseded by:** —
@@ -11,12 +11,14 @@
   established
 - [Options](#options): 1 how a session runs, 2 Ork's tools, 3 permissions, 4 a
   clean session, 5 usage and cost, 6 credentials and the doctor check, 7 names
-- [Decision](#decision): decisions 1 and 8 taken; 2 to 7 open, with
-  recommendations
+- [Decision](#decision): the maintainer's eight decisions, accepted 2026-11-19
 - [Consequences](#consequences)
-- [Open questions](#open-questions): the spike, as one numbered list
+- [Open questions](#open-questions): the spike as it was approved and run, and
+  what the build and the gate run must still answer
 - [Spike, free steps, 2026-11-19](#spike-free-steps-2026-11-19): what the steps
   that call no model showed
+- [Spike, paid steps, 2026-11-19](#spike-paid-steps-2026-11-19): what real turns
+  showed, and what is still unmeasured
 
 ## Context
 
@@ -230,7 +232,7 @@ claim for the spike (see [Open questions](#open-questions)).
 `--trusted-extension`, `--yolo`, `--provider-session-id` and
 `--prompt-cache-key` are in the shipped `cli-reference.md` and absent from
 `omp --help`. The free steps of the spike found that 18.22.2 accepts
-`--trusted-extension`; `--fork` is still to try.
+`--trusted-extension`, and the paid steps that it accepts `--fork`.
 
 ### What could not be established
 
@@ -379,8 +381,12 @@ Added after the free steps of the spike, which found it.
   by trying: the other one tried (a root `plugin.json` with a root `mcp.json`)
   did not connect. A plugin can also carry skills, commands and hooks, so the
   folder must hold nothing else. As 2B, the tools are tools only with
-  `tools.xdev: false`. Whether the model can call a plugin's tool, and whether a
-  server that is down stops the leg, are still for the paid steps.
+  `tools.xdev: false`.
+- **Measured on the paid steps:** the model called the plugin's tool, named
+  `mcp__<plugin>_<server>_<tool>`; a two-minute call was waited for; a server
+  that is down ends the leg before any model request
+  (`OMP_MCP_REQUIRE_READY=1`). A header taken from the environment puts the
+  token in the agent's shell, so it is better written in the file.
 
 Not offered: a private agent directory per run (`PI_CODING_AGENT_DIR`) holding
 Ork's `mcp.json`. The agent directory is also where the login lives, so the
@@ -430,6 +436,10 @@ allow, Ork's own tools always through.
   holding a paused node's call
   ([ADR-041](../../decisions/ADR-041-pause-continue-stop.md)) may be possible
   where Codex's hook could not (G40).
+- **Measured on the paid steps:** a refusal reaches the model with its reason
+  and is on the JSON lines; the handler saw `bash`, `read`, `write` and an MCP
+  call; it fails closed after 30 seconds, and with a longer
+  `extensionHandlers.toolCallTimeoutMs` it held a call for 40 seconds.
 - **Cons:** code Ork writes against `omp`'s extension API, which runs in `omp`'s
   process and can change between versions. `--trusted-extension` is not in
   `omp --help`. `eval`'s helper calls emit no `tool_call`, and subagents are
@@ -469,6 +479,7 @@ spike:
 | Subagents (`task`), and `eval`'s `agent()` | off; `subagents: false`                           | left out of `--tools`; `tools.approval.task: deny` and `tools.approval.eval: deny`                                                     |
 | Advisor                                    | off                                               | never `--advisor`; `advisor.enabled: false`                                                                                            |
 | Judge, Spotlight, other auxiliary calls    | off                                               | `--no-judge --no-spotlight --offline --no-title`; `spotlight.experiment.enabled: false`; `prewalk.auto` and `task.autoParallel` off    |
+| A thinking level chosen by a side request  | off                                               | `--thinking <level>` on every leg (the node's `effort`, or a fixed default)                                                            |
 | Prewalk, `--plan-yolo`, model fallback     | off: a node runs the model it names               | `--no-prewalk`; never `--plan-yolo`; `retry.modelFallback: false`; `retry.waitForUsageReset: false`                                    |
 | Auto-resume                                | off: a new session never continues an old         | `autoResume: false`, and Ork's own `--session-dir`                                                                                     |
 | LSP                                        | off: no formatting of files the node did not edit | `--no-lsp`                                                                                                                             |
@@ -524,8 +535,12 @@ the leg and the doctor check alike, because Ork passes the environment through.
 - **Cons:** the dollars are `omp`'s catalogue prices, not a bill: for a
   subscription login they are notional, and for a model whose `pricingStatus` is
   `unknown` the cost is zero, so `budgetUsd` alone would not bind such a node
-  and Ork cannot tell from the capability. Whether the JSON lines carry `cost`
-  as the session file does, and whether side requests appear, is not measured.
+  and Ork cannot tell from the capability.
+- **Measured on the paid steps:** each assistant message on the JSON lines
+  carries its request's tokens and `cost`; `--max-cost` ends the leg with exit 3
+  and a `cost-gate` notice; a side request (`omp` choosing a thinking level) was
+  recorded in the session file and on no line, and passing `--thinking` avoids
+  it.
 
 #### Option 5B — tokens only (`price: false`)
 
@@ -611,88 +626,95 @@ and no run takes it until a maintainer-run, capped session passes.
 
 ## Decision
 
-Two of the eight decisions are taken. The RFC stays `Proposed`, and nothing is
-built before it is `Accepted`.
+Accepted by the maintainer on 2026-11-19, who chose each of the eight decisions
+below. The options above and the two spike sections are the record of how they
+were reached.
 
-**Decided by the maintainer, 2026-11-19:**
+1. **How a session runs: option 1D.** Each leg is one `omp -p --mode json`
+   process; a later message or answer waits for the leg's end and continues the
+   session with `--resume <id>`. `midTurnMessages` and `permissionPrompt` are
+   `false`. The long-lived shape (`omp --mode rpc`, `codex app-server`) goes
+   into one later RFC shared by both drivers, which replaces the follow-up
+   RFC-024 left for Codex alone.
+2. **How Ork's tools reach the agent: option 2E.** A plugin folder, passed with
+   `--plugin-dir`, carries Ork's MCP server, with `tools.xdev: false` so that
+   Ork's tools are offered as tools. The token is written in the plugin's own
+   `.mcp.json` (mode 0600), not passed in the leg's environment.
+3. **How a node's rules are enforced: option 3C, both.** Ork's guard, the
+   `tool_call` handler loaded with `--trusted-extension`, is what refuses a
+   call, and `omp`'s own approval settings are the wall behind it. `eval` and
+   `task` are always left out of `--tools`.
+4. **Where settings and the login come from: option 4C.** The user's environment
+   decides: the user's own `omp` folder, or the `OMP_PROFILE` they set, with
+   Ork's overlay and flags over it. There is no dedicated profile for Ork. What
+   the overlay does not name leaks in, and is recorded as a gap. The table of
+   features turned off stands as proposed, with `--thinking` on every leg.
+5. **Usage: option 5A.** Dollars and tokens: `price: true`, and `--max-cost` on
+   the leg.
+6. **The doctor check: option 6A.** `ork doctor` reads `omp models --json` and
+   counts the models. Checking a node's own model before a run (6C) is a
+   follow-up.
+7. **Names.** The driver id is `omp`. A model is passed as written (fuzzy, exact
+   or `provider/model`), and a node with no model is allowed. `MIN_OMP_VERSION`
+   is 18.22.2. The driver ships `proven: false` first, with a gate run as Codex
+   had.
+8. **The spike.** The free steps and the paid per-leg steps ran, under the
+   maintainer's two approvals and a cap of 5 dollars; see
+   [Spike, free steps](#spike-free-steps-2026-11-19) and
+   [Spike, paid steps](#spike-paid-steps-2026-11-19). Step 13, the RPC turn, was
+   not run: it waits for the later RFC.
 
-- **Decision 1: option 1D.** Each leg is one `omp -p --mode json` process; a
-  later message or answer waits for the leg's end and continues the session with
-  `--resume <id>`. `midTurnMessages` and `permissionPrompt` are `false`. The
-  long-lived shape (`omp --mode rpc`, `codex app-server`) goes into one later
-  RFC shared by both drivers, which replaces the follow-up RFC-024 left for
-  Codex alone.
-- **Decision 8: the free steps of the spike, and only those.** Steps 1 to 4, 14
-  and 15 ran the same day; what they showed is under
-  [Spike, free steps](#spike-free-steps-2026-11-19). Steps 5 to 13, which run
-  real turns, are not approved and are still to run.
+What the build takes from the spike with these decisions. These are measured
+facts the adapter follows, not further decisions:
 
-**Still open,** with a recommendation for each. A recommendation is the
-writer's, not a decision; those the free steps changed say so.
+- The plugin folder and the guard are written for the session in Ork's private
+  folder, outside the checkout, and removed after it. A guard that does not load
+  stops the leg before any model request, and a leg never starts without it.
+- Every leg passes `OMP_MCP_REQUIRE_READY=1`, so a leg whose Ork server is not
+  there ends before any model request, and a request timeout long enough for
+  `delegate` (`OMP_MCP_TIMEOUT_MS`).
+- Ork's tools are named `mcp__<plugin>_<server>_<tool>`; Ork chooses the name by
+  naming its plugin.
+- The session id is the first line's `id`; usage and cost are read from each
+  assistant `message_end`; a leg that cannot start explains itself on stderr.
 
-2. **How Ork's tools reach the agent:** 2A project file, 2B extension package,
-   2C extension tools, 2E plugin folder (2D needs RPC, so decision 1 rules it
-   out for now). _Recommended, changed by the free steps: 2E,_ a plugin folder
-   in Ork's private folder passed by `--plugin-dir`, with `tools.xdev: false`.
-   It was the only measured way that loads Ork's MCP server for one run, takes
-   the token from the leg's environment, and is accepted beside
-   `--trusted-extension`. 2B also loads the server, but `-e` and
-   `--trusted-extension` exclude each other, so it would cost the guard its
-   fail-closed loading. 2C stays the fallback if a paid step shows a plugin's
-   tool cannot be called; not 2A.
-3. **How rules are enforced:** 3A settings only, 3B handler only, 3C both, 3D
-   `--tools` only. _Recommended: 3C, unchanged and now on measured ground for
-   its loading:_ `--trusted-extension` is accepted by 18.22.2, and a guard that
-   throws or is missing stops the process before `omp` even looks for a model,
-   where `-e` only prints a warning and goes on. `--tools` is what takes `eval`
-   and `task` away; a `tools.approval` deny leaves them offered. Still for the
-   paid steps: that a refusal reaches the model, and which calls the handler
-   sees. In every case a leg never starts without its fence.
-4. **Where settings and the login come from:** 4A the user's agent directory
-   with an overlay, 4B a profile for Ork, 4C the user's environment decides.
-   _Recommended: 4C,_ with the leak of unnamed settings recorded as a gap. The
-   free steps showed the flags do remove the user's skills and custom commands,
-   and that a session with no model named takes its model and thinking level
-   from the user's configuration. The table of features turned off is proposed
-   as it stands; say so if any should stay on.
-5. **Usage:** 5A dollars and tokens, 5B tokens only. _Recommended: 5A if the
-   spike finds `cost` on the JSON lines,_ with `--max-cost` passed too and a gap
-   for models with no price.
-6. **The doctor check:** 6A model list, 6B version only, 6C model list and a
-   per-node check. _Recommended: 6A,_ leaving 6C as a follow-up. Measured:
-   `omp models --json` answers in well under a second with or without a login.
-7. **Names:** the id `omp` or `oh-my-pi`; models 7A as written or 7B exact only;
-   refuse or allow a node with no model. _Recommended: `omp`, 7A, allow._ Ship
-   `proven: false` with a gate run, as Codex did.
+What the descriptor declares:
 
-And the rest of decision 8: whether to run the paid steps, with which model and
-under what cap.
-
-What the descriptor would declare under decision 1 and the recommendations, each
-to confirm: `questions: true`; `permissionPrompt: false` and
-`midTurnMessages: false` (decided); `price` by decision 5; `reportSchema: false`
-(no schema flag; Ork's `report` tool); `turnLimit: false` (nothing caps turns,
-so `ork onboard` and `ork:security-audit` would be refused as on `codex`,
-[L454](../../specs/gaps/codex-limits.md)); `mcpServers: false` and
-`subagents: false` until measured; `readDenies` by what the handler can gate;
-`proven: false`; `onePerCheckout: false` (nothing per folder to lease).
+| Capability         | Value   | On what ground                                                                                       |
+| ------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| `questions`        | `true`  | measured: the model called the stand-in for Ork's tool                                               |
+| `permissionPrompt` | `false` | decision 1; `omp`'s own approvals refuse in print mode                                               |
+| `midTurnMessages`  | `false` | decision 1                                                                                           |
+| `price`            | `true`  | decision 5                                                                                           |
+| `reportSchema`     | `false` | no schema flag found; Ork's `report` tool                                                            |
+| `turnLimit`        | `false` | nothing caps turns, so `ork onboard` and `ork:security-audit` are refused, as on `codex` (L454)      |
+| `mcpServers`       | `false` | not measured                                                                                         |
+| `subagents`        | `false` | decision 3: `task` is left out of `--tools`                                                          |
+| `readDenies`       | `true`  | proposed, not decided: measured for `read` only; `false` if the gate run shows `grep` or `glob` pass |
+| `proven`           | `false` | decision 7, until the gate run                                                                       |
+| `onePerCheckout`   | `false` | nothing per folder to lease                                                                          |
 
 ## Consequences
 
-To be completed once the maintainer decides. Whatever is chosen:
+What follows from the decisions:
 
 - **Positive.** A fifth driver, and through it the providers `omp` reaches with
   the user's own logins, without a new credential path in Ork.
 - **Negative.** A second tool (after `codex`) whose fence is code Ork writes for
-  it, or settings Ork must keep true, against a CLI that changes often. With per
-  leg sessions, the same limits as `codex` for messages and approvals.
+  it, with settings Ork must keep true, against a CLI that changes often. With
+  per leg sessions, the same limits as `codex` for messages and approvals.
+- **Gaps to record in `specs/gaps.md` when the driver is built:** no mid-turn
+  message and no approval through Ork (as G39); the user's settings that Ork's
+  overlay does not name; side requests that are on no JSON line; dollars that
+  are catalogue prices, and models with no price; `turnLimit` and the built-in
+  workflows it refuses; a token the same user can read in Ork's private folder.
 - **What a driver must change,** as RFC-024 listed for Codex: a descriptor and
   id (`AGENT_DRIVERS`, `DriverId`, `DRIVER_IDS`) with its doctor check; an
-  adapter, a decoder and (by decision 3) a guard under
-  `packages/runtime/src/adapters/`; the `ADAPTERS` record; a fake `omp` under
-  `packages/runtime/test/fixtures/` with one entry in the contract suite; the
-  regenerated `workflow.schema.json`; the tests that list drivers in `schema`,
-  `core`, `nodes` and `cli`.
+  adapter, a decoder, the guard of decision 3 and the plugin folder of decision
+  2 under `packages/runtime/src/adapters/`; the `ADAPTERS` record; a fake `omp`
+  under `packages/runtime/test/fixtures/` with one entry in the contract suite;
+  the regenerated `workflow.schema.json`; the tests that list drivers in
+  `schema`, `core`, `nodes` and `cli`.
 - **Specs and docs, in the same change:** a new `specs/runtime/omp.md`,
   `specs/runtime.md`, `which-driver.md`, `specs/gaps.md` with a limits chunk as
   [codex-limits.md](../../specs/gaps/codex-limits.md), a guide beside
@@ -700,17 +722,22 @@ To be completed once the maintainer decides. Whatever is chosen:
   accounts, installation and troubleshooting guides, a bullet in the next
   release notes, the interaction map and roadmap, a changeset, and the ADR that
   ships this RFC (`pnpm rfc:close RFC-026`).
-- **Follow-up work.** By decision 1D, one RFC for long-lived protocol drivers
+- **Follow-up work.** By decision 1, one RFC for long-lived protocol drivers
   that replaces the follow-up RFC-024 left for `codex app-server` alone; the
-  gate run that makes the descriptor `proven`.
+  gate run that makes the descriptor `proven`; by decision 6, a check of a
+  node's own model before a run.
 
 ## Open questions
 
-The spike. Nothing above assumes an answer. Steps 1 to 4, 14 and 15 call no
-model and ran on 2026-11-19 ([Spike, free steps](#spike-free-steps-2026-11-19)).
-Steps 5 to 13 run real turns on the maintainer's account, in a scratch git
-repository, each under `--max-cost`; they are still to run and wait for the
-maintainer's approval.
+No decision is open. What the build and the gate run must still answer is the
+list "Still unmeasured" at the end of
+[Spike, paid steps](#spike-paid-steps-2026-11-19), and the two questions at the
+end of this section. The rest of this section is the spike as it was approved
+and run: steps 1 to 4, 14 and 15 call no model
+([Spike, free steps](#spike-free-steps-2026-11-19)); steps 5 to 12 ran real
+turns on the maintainer's account, in a scratch git repository, each under
+`--max-cost`, with the changes the paid section names; step 13 was not run and
+waits for the later RFC.
 
 Set-up, once, in `bash` (`$CLEAN` must split into words; `zsh` passes it as one
 argument and `omp` exits 2 on it):
@@ -752,21 +779,21 @@ Both name `http://127.0.0.1:$PORT/mcp` with the header
    `mcp.json` loaded, the variable resolved); then with the stand-in stopped:
    exit 1 before the turn. The last part could not be answered without a login
    and moves to step 6.
-5. **The JSON lines of a real turn.**
+5. **The JSON lines of a real turn. Ran.**
    `cd "$W" && omp -p --mode json $CLEAN --model "$M" --max-cost 0.50 "Run the shell command 'echo hi', create the file a.txt containing x, then answer with the word done." </dev/null; echo "exit $?"`
    Every line type: the header, assistant text, tool calls and results (`bash`,
    `write`, `edit`), the final message, `usage` and `cost` and whether they come
    per message, the resolved provider and model, and the exit code.
-6. **Ork's tools reach the model, beside the guard.**
+6. **Ork's tools reach the model, beside the guard. Ran.**
    `cd "$W" && OMP_MCP_REQUIRE_READY=1 OMP_MCP_TIMEOUT_MS=0 ORK_OMP_MCP_AUTH="Bearer probe" omp -p --mode json $CLEAN --trusted-extension "$O/guard.ts" --plugin-dir "$O/plugin" --tools read,edit,write,bash,grep,glob --model "$M" --max-cost 0.50 "Call the report tool with status done." </dev/null; echo "exit $?"`
    Whether the model calls `mcp__ork_report` and how the events print it; a call
    that waits two minutes at the stand-in, for `delegate`'s timeout; then, with
    the stand-in stopped, whether the leg exits 1 before any model request (a
    wrong answer here spends one short turn).
-7. **The token and the agent's shell.**
+7. **The token and the agent's shell. Ran.**
    `cd "$W" && ORK_OMP_MCP_AUTH="Bearer probe" omp -p --mode json $CLEAN --model "$M" --max-cost 0.50 "Run the shell command 'env | grep -c ORK_OMP_MCP_AUTH' and answer with the number it prints." </dev/null`
    Whether a variable of the leg reaches a shell command.
-8. **Resume and fork.** With `ID` the session id of step 5:
+8. **Resume and fork. Ran.** With `ID` the session id of step 5:
    `cd "$W" && omp -p --mode json $CLEAN --model "$M" --max-cost 0.50 --resume "$ID" "Which file did you create?" </dev/null`
    and
    `cd "$W" && omp -p --mode json $CLEAN --model "$M" --max-cost 0.50 --fork "$ID" "Which file did you create?" </dev/null`
@@ -775,38 +802,38 @@ Both name `http://127.0.0.1:$PORT/mcp` with the header
    overlay, the guard and the MCP server hold when passed again; whether
    `--append-system-prompt` on a resumed or forked leg takes; and what
    `--resume` does when the id is unknown (exit code, no prompt on a terminal).
-9. **The handler refuses, and the model reads why.**
+9. **The handler refuses, and the model reads why. Ran.**
    `cd "$W" && ORK_OMP_MCP_AUTH="Bearer probe" omp -p --mode json $CLEAN --trusted-extension "$O/guard.ts" --plugin-dir "$O/plugin" --model "$M" --max-cost 0.50 "Run the shell command 'echo forbidden'. If it is refused, say why. Then read the file a.txt, and call the report tool with status done." </dev/null`
    The event a refused call leaves, the reason the model reports, and
    `$O/calls.jsonl`: which tools the handler saw (`bash`, `read`, the MCP call)
    and their inputs. Again with a handler that waits 40 seconds, for the timeout
    and for holding a paused call.
-10. **`omp`'s own approvals in print mode.**
+10. **`omp`'s own approvals in print mode. Ran.**
     `cd "$W" && omp -p --mode json $CLEAN --approval-mode always-ask --config "$O/rules.yml" --model "$M" --max-cost 0.50 "Run 'echo allowed', then run 'echo other', then create b.txt." </dev/null`
     with `rules.yml` allowing only `echo allowed` in `bash.patterns`: which
     calls run, which are refused and how the events say so; whether a read asks
     in `always-ask-cached`; whether `tools.restrictedFolders` refuses a `read`
     of a file in it.
-11. **Usage, the cap and side requests.**
+11. **Usage, the cap and side requests. Ran, with lower caps.**
     `cd "$W" && omp -p --mode json $CLEAN --model "$M" --max-cost 0.01 "Count from 1 to 400, one number per line." </dev/null; echo "exit $?"`
     Exit 3 and the `cost-gate` line; then
     `grep -rc '"model_usage"' "$O/sessions"` and compare what the session files
     record with step 5's summed `usage`, to learn whether side requests are
     missing from the lines.
-12. **Errors.**
+12. **Errors. Ran.**
     `cd "$W" && omp -p --mode json $CLEAN --model "nosuch/model" "hi" </dev/null; echo "exit $?"`
     The line and exit code of a model the account refuses, for
     `model_unavailable`. Authentication, rate-limit and credit errors are not
     provoked.
-13. **One RPC turn** (for the later RFC on long-lived protocol drivers; not
-    needed to build decision 1).
+13. **One RPC turn. Not run** (for the later RFC on long-lived protocol drivers;
+    not needed to build decision 1).
     `cd "$W" && omp --mode rpc --no-ui $CLEAN --model "$M" --max-cost 0.50`,
     then on stdin a `prompt` that runs `sleep 20`, a `steer` while it runs, an
     `abort`, and `get_state`; once without `--no-ui` and with
     `--approval-mode always-ask`, to read the approval request and answer it;
     once with `set_host_tools` and a prompt that calls the host tool.
-14. **Processes left behind. Ran after the free steps; to run again after steps
-    5 to 12.** `omp ps; pgrep -x omp`: whether a leg leaves a daemon, a language
+14. **Processes left behind. Ran after the free steps and again after the paid
+    ones.** `omp ps; pgrep -x omp`: whether a leg leaves a daemon, a language
     server or a background job running after it exits, and whether
     `launch.persist` can be turned off in print mode
     ([ADR-087](../../decisions/ADR-087-node-processes-end-with-ork.md)).
@@ -814,7 +841,7 @@ Both name `http://127.0.0.1:$PORT/mcp` with the header
     `time omp models --json >/dev/null`, and once more with the network off:
     whether it answers from its cache or waits.
 
-Questions that are not for the spike:
+Questions that are not for the spike, and stay open for later:
 
 - Whether `ork onboard` should offer a driver that its built-in workflows refuse
   (they set `maxTurns`); the same question L454 leaves open for `codex`.
@@ -823,10 +850,10 @@ Questions that are not for the spike:
 
 ## Spike, free steps, 2026-11-19
 
-Run by the agent that wrote this RFC, on the maintainer's approval, with `omp`
-18.22.2 in a scratch git repository outside this one, and a stand-in for Ork's
-MCP endpoint that logs each request's method, path and `Authorization` header.
-No prompt reached a model: the print-mode runs used an empty agent folder (no
+Run by the maintainer's agent, on the maintainer's approval, with `omp` 18.22.2
+in a scratch git repository outside this one, and a stand-in for Ork's MCP
+endpoint that logs each request's method, path and `Authorization` header. No
+prompt reached a model: the print-mode runs used an empty agent folder (no
 login), and the runs in the user's own folder sent one RPC `get_state` and
 nothing else. Nothing was signed in or out, no credential file was read, and
 `omp`'s configuration was not changed. Each answer names its step; a run beyond
@@ -922,3 +949,139 @@ What the free steps change:
   usage and cost, resume and fork, whether a refusal reaches the model, whether
   a plugin's tool can be called, whether a server that is down stops the leg,
   and what the user's extensions, rules and context files add to a session.
+
+## Spike, paid steps, 2026-11-19
+
+Run by the maintainer's agent, on the maintainer's approval of the per-leg steps
+under a cap of 5 dollars, with `omp` 18.22.2 and the model
+`anthropic/claude-haiku-5-5` (a small, fast model among the cheapest the login
+lists; the single cheapest was not taken because the list does not say whether a
+model can call tools). Every leg ran in a scratch git repository outside this
+one, against the stand-in for Ork's MCP endpoint, with the fixed prompts of the
+step list, `--tools read,edit,write,bash,grep,glob` and a `--max-cost` of 0.25
+or less. Fifteen legs reached a model and three ended before any request.
+**`omp` reported 0.0080 dollars spent in all.** No transcript or session file is
+kept. Step 13 was not run.
+
+Changes to the listed commands: `--no-extensions` (or the guard) and the six
+tools on every leg, as a driver's leg would have; `--thinking low` from step 6
+on; step 11 with lower caps, because this model is too cheap to reach 0.01.
+
+1. **Step 5: the JSON lines of a turn.** One JSON object a line, nothing on
+   stderr, exit 0, about three seconds for a short turn.
+   - The first line is the header:
+     `{"type":"session","version":3,"id":"<uuid>","timestamp":…,"cwd":…}`. Its
+     `id` is the session id.
+   - Then `agent_start`, and per model request `turn_start`, `message_start`,
+     `message_update` (deltas), `message_end`, `turn_end`; per tool call
+     `tool_execution_start` (`toolCallId`, `toolName`, `args`, `intent`),
+     `tool_execution_update` and `tool_execution_end` (`result.content`,
+     `isError`), with the result again as a `message_end` of role `toolResult`.
+     The built-in tools are named `bash`, `read`, `write`, `edit`, `grep` and
+     `glob`.
+   - Each assistant `message_end` carries `provider`, `model`, `stopReason`
+     (`toolUse` or `stop`) and `usage`: `input`, `output`, `cacheRead`,
+     `cacheWrite`, `totalTokens` and `cost` (the same four and `total`, in
+     dollars). So usage and cost come once per model request, during the leg.
+     The message also carries a `credentialId`, which Ork has no use for and
+     should not record.
+   - There is no result line. The leg ends with `agent_end` (`isTerminal`,
+     `yielded`, and every message again), and the answer is the text of the last
+     assistant message.
+   - Other lines seen: `advisor_cost_changed`, `thinking_level_changed`, and
+     `notice` (below).
+   - With `--session-dir`, the session is `<timestamp>_<id>.jsonl` directly in
+     that folder, with a folder of the same name beside it and a lock file that
+     stays after the leg. Nothing is written in the checkout.
+   - `--append-system-prompt` took on a first leg.
+2. **Step 6: Ork's tool.** With the plugin folder and the guard in one leg, the
+   model called `mcp__ork_session_ork_report` (the plugin was named
+   `ork-session`, the server `ork`, the tool `report`), the stand-in received
+   `tools/call` with `{"status":"done"}` and the bearer header, and the result
+   came back as the tool's result. A call the stand-in answered after two
+   minutes was waited for (`OMP_MCP_TIMEOUT_MS=0`). With the stand-in stopped
+   and `OMP_MCP_REQUIRE_READY=1`, the leg printed its header, then
+   `Error: MCP servers not ready: ork-session:ork` on stderr, and exited 1 after
+   a second with no model request.
+3. **Step 7: the token and the shell.** `env | grep -c ORK_OMP_MCP_AUTH`, run by
+   the agent, printed 1: a variable of the leg reaches the agent's shell.
+4. **Step 8: resume and fork.** `--resume <id>` prints the same session id in
+   its header and the model remembered the file it had created. `--fork <id>` is
+   accepted by 18.22.2 and prints a new id, with `parentSession` naming the
+   source. `--append-system-prompt` given on the resumed leg took there; for the
+   fork the run does not tell. An unknown id ends at once, exit 1, nothing on
+   stdout, `Error: Session "<id>" not found.` on stderr, and asks nothing.
+5. **Step 9: the handler.** For `echo forbidden` the guard returned
+   `{ block: true, reason: "refused by Ork" }`: the lines show
+   `tool_execution_start` and then `tool_execution_end` with `isError: true` and
+   the text `refused by Ork`, the model read it and said so, and the leg went
+   on. So a refused call is on the lines, unlike Codex's. The handler saw `bash`
+   (`command`), `read` (`path`) and the MCP call with their inputs, and `write`
+   by name. A handler that waits 40 seconds was cut off at `omp`'s default: the
+   call failed with `Extension … timed out after 30000ms` and did not run. With
+   `extensionHandlers.toolCallTimeoutMs: 90000` in an overlay the same handler
+   held the call for 40 seconds and then it ran.
+6. **Step 10: `omp`'s own approvals in print mode.** With `always-ask` and one
+   `bash.patterns` rule allowing `echo allowed`, that command ran, and
+   `echo other` and a `write` were refused; the leg went on and exited 0. The
+   refusal the model reads is
+   `Tool "bash" requires approval but no interactive UI available.` followed by
+   options that begin "Set tools.approvalMode: yolo". With `always-ask-cached` a
+   `read` of a file is refused the same way. With `tools.restrictedFolders`
+   naming the folder, both `bash` and `read` were refused with
+   `Reason: Restricted folder: …`.
+7. **Step 11: usage, the cap and side requests.** Caps of 0.01 and 0.001 were
+   never reached: a whole turn of this model costs less. With a cap of 0.0001
+   the first request went out, its tool calls ran, and then the leg printed
+   `{"type":"notice","level":"error","message":"Cost cap reached: …","source":"cost-gate"}`,
+   `agent_end`, and exited 3. One side request was found: on the one leg run
+   without `--thinking`, the session file records a `model_usage` entry
+   (`auto-thinking`, by the `judge` role, 468 tokens) that is on no JSON line,
+   although `--no-judge` and `--offline` were passed. The legs run with
+   `--thinking low` record none.
+8. **Step 12: an unknown model.** `--model nosuch/model` ends at once, exit 1,
+   nothing on stdout, `Model "nosuch/model" not found` on stderr, no request.
+   This is a name `omp` does not know. A model the account refuses, and
+   authentication, rate-limit and credit errors, were not provoked.
+9. **Step 14: processes.** After all legs `omp ps` reports no processes and no
+   broker for the scratch project, and no process is named `omp`. The scratch
+   repository holds only the file the prompts created.
+
+What the paid steps settle:
+
+- **The decoder.** The session id is the first line's `id`; usage and cost are
+  on each assistant `message_end`; the end is `agent_end` and the exit code (0,
+  or 3 at the cost cap); a refused call is a `tool_execution_end` with
+  `isError`. A leg that cannot start prints nothing or only its header on stdout
+  and explains itself on stderr with exit 1: no login, an unknown model, an
+  unknown session, an MCP server that is not ready, a guard that did not load, a
+  missing overlay. So the leg's end kinds are read from stderr.
+- **`price: true`,** and `budgetTokens` can stop a running leg, because usage
+  comes per request.
+- **`readDenies: true`** as far as `read` goes: the handler sees its path.
+- **Decision 2,** option 2E, end to end; and the token belongs in the plugin's
+  file, not the environment.
+- **Decision 3,** option 3C: refusal, coverage, fail-closed timeout, and a held
+  call (which `codex` could not do, G40).
+- **Decision 5,** option 5A; and every leg passes `--thinking`.
+- **The minimum version,** 18.22.2.
+
+Still unmeasured, for the build and the gate run to answer:
+
+- What the handler sees for `edit`, `grep` and `glob`; path-scoped rules; `read`
+  of a URL, an archive or an internal address (`xd://`, `skill://`), and a
+  `write` to `omp`'s own settings address.
+- Whether a fork keeps the instructions of its source or takes new ones.
+- A model the account refuses, and authentication, rate-limit and credit errors.
+- Usage and cost on another provider, on a subscription login, and on a model
+  whose price `omp` does not know.
+- Stopping a leg from outside (`ork stop`, a `budgetTokens` stop): what `omp`
+  does on a signal mid-turn, and whether the session can then be resumed.
+- A background job or a service started by a turn, and whether `launch.persist`
+  can be turned off in print mode (no fixed prompt starts one; the overlay turns
+  background jobs off).
+- What the user's own extensions, rules, context files and MCP servers add to a
+  session, and how the repository's `AGENTS.md` is read.
+- The node's own `.mcp.json` servers (`mcpServers`); a handler holding a call
+  longer than 40 seconds; the doctor check with the network off.
+- The RPC turn (step 13), and everything Ork's adapter adds: the gate run.
