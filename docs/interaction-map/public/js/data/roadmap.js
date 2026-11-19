@@ -349,9 +349,11 @@ export const MILESTONES = [
       {
         id: "readable-gates",
         title: "Readable gates",
-        status: "active",
+        status: "done",
+        commits: ["aa3b231"],
+        date: "2026-11-08",
         detail:
-          "Built, waiting to land. A gate takes a `document` beside a short question, stored on the decision and kept out of events. The Decisions panel renders Markdown (no raw HTML), folds long text, opens the document in a dialog and filters by workflow and run; `ork decide` prints or offers it and takes `--workflow` and `--document`. `feature`'s two gates use all of it, and a gate's text never shows raw JSON (ADR-068, ADR-069).",
+          "A gate takes a `document` beside a short question, stored on the decision and kept out of events. The Decisions panel renders Markdown (no raw HTML), folds long text, opens the document in a dialog and filters by workflow and run; `ork decide` prints or offers it and takes `--workflow` and `--document`. This repository's `plan` and `rfc` gates give their document this way, and a gate's text never shows raw JSON (ADR-068, ADR-069).",
         docs: [
           "decisions/ADR-068-gate-document-and-readable-text.md",
           "decisions/ADR-069-markdown-view-parser.md",
@@ -364,8 +366,9 @@ export const MILESTONES = [
         id: "canary",
         title: "Canary snapshots",
         status: "active",
+        commits: ["742efac"],
         detail:
-          "Built, waiting on the first dispatch after merge. Experimental features on `main` behind an opt-in (`experimental: [...]` in the project, or `ORK_EXPERIMENTAL`), off by default and listed by `ork doctor`, from one registry of names, empty until the first experiment. A manual workflow (dry run by default) publishes a snapshot from `main` as `1.0.0-canary-<date>-<sha>` under the `canary` tag, never `latest`; the update check offers it only to someone running a canary.",
+          "Built and on `main`: experimental features behind an opt-in (`experimental: [...]` in the project, or `ORK_EXPERIMENTAL`), off by default and listed by `ork doctor`, from one registry of names, empty until the first experiment. A manual workflow (dry run by default) publishes a snapshot from `main` as `1.0.0-canary-<date>-<sha>` under the `canary` tag, never `latest`; the update check offers it only to someone running a canary. Left: the first dispatch of the Canary workflow. It has not been run, so no canary is published yet.",
         docs: [
           "decisions/ADR-066-experiments-registry.md",
           "specs/project-rules.md#experiments",
@@ -1084,9 +1087,11 @@ export const MILESTONES = [
       {
         id: "node-ends",
         title: "Every node ends as one known kind",
-        status: "active",
+        status: "done",
+        commits: ["4d2be85"],
+        date: "2026-11-11",
         detail:
-          "Normalized outcomes, built and waiting to land (it becomes done with its commit). A closed set of end kinds (turn limit, budget limit, timed out, not signed in, rate limited, tool missing, command failed, and more), each with Ork's own message, who should act and what to do, set the same way on all three drivers by their adapters and one shared provider-error classifier. `node.finished` carries the end and old runs are read through a legacy mapping. `ork run` and `ork logs` print the kind and message, `--verbose` and `ork logs --node` the scrubbed details; the browser view shows a badge, the hint and a Details button; feedback files by actor. Closes L239 (OpenCode's step cap is a turn limit) and changes L240. Left: no `ork runs show`, no automatic retry of transient kinds (L241, L243 to L248); duplicate feedback records and budget_limit proven on Claude Code only are tracked too.",
+          "Normalized outcomes. A closed set of end kinds (turn limit, budget limit, timed out, not signed in, rate limited, tool missing, command failed, and more), each with Ork's own message, who should act and what to do, set the same way on every driver by their adapters and one shared provider-error classifier. `node.finished` carries the end and old runs are read through a legacy mapping. `ork run` and `ork logs` print the kind and message, `--verbose` and `ork logs --node` the scrubbed details; the browser view shows a badge, the hint and a Details button; feedback files by actor. Closes L239 (OpenCode's step cap is a turn limit) and changes L240. Left: no `ork runs show`, no automatic retry of transient kinds (L241, L243 to L248); duplicate feedback records and budget_limit proven on Claude Code only are tracked too.",
         docs: [
           "docs/guides/why-a-node-stopped.md",
           "specs/runtime/session-ends.md",
@@ -1097,9 +1102,11 @@ export const MILESTONES = [
       {
         id: "terminal-look",
         title: "A terminal look: one kit for every command",
-        status: "active",
+        status: "done",
+        commits: ["9463d8f"],
+        date: "2026-11-11",
         detail:
-          "Built, waiting to land (it becomes done with its commit). One terminal kit with no dependency: colored chips, a stable color per node, wrap and cut, aligned tables, and select, text and yes-or-no prompts on arrow keys that redraw only their own lines and collapse to one line. `ork decide` is a card, `ork run`'s transcript has node chips and short tool lines (`--verbose` whole), and the listings and checks use chips and columns. Not a terminal, `NO_COLOR`, the new `--plain` and `ORK_PLAIN=1` keep plain output and numbered prompts. Left: only tool lines are cut to the width, a live `ork chat` asks line by line, and a screen-reader pass over `--plain` is not done (L249 to L255).",
+          "One terminal kit with no dependency: colored chips, a stable color per node, wrap and cut, aligned tables, and select, text and yes-or-no prompts on arrow keys that redraw only their own lines and collapse to one line. `ork decide` is a card, `ork run`'s transcript has node chips and short tool lines (`--verbose` whole), and the listings and checks use chips and columns. Not a terminal, `NO_COLOR`, the new `--plain` and `ORK_PLAIN=1` keep plain output and numbered prompts. Left: only tool lines are cut to the width, a live `ork chat` asks line by line, and a screen-reader pass over `--plain` is not done (L249 to L255).",
         docs: [
           "specs/cli/terminal.md",
           "docs/guides/terminal.md",
@@ -1109,9 +1116,11 @@ export const MILESTONES = [
       {
         id: "smooth-runs",
         title: "Smooth runs: less CPU, and a machine that stays cool",
-        status: "active",
+        status: "done",
+        commits: ["537fa44", "9ceef42", "d6f71ce", "8854ffc", "6d98161"],
+        date: "2026-11-13",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. A build measured again spent about 75% less on checks. A shell `script:` takes a slot too when one of its commands matches `heavy`; one run through `eval` or a variable is not seen (L363). Left: sessions' own CPU, CPU on Windows, and OpenCode's and Command Code's Bash calls (L256 to L258). `ork doctor` now sweeps the slot ledger too (L259 closed by the integration lock).",
+          "Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. A build measured again spent about 75% less on checks. A shell `script:` takes a slot too when one of its commands matches `heavy`; one run through `eval` or a variable is not seen (L363). Left: sessions' own CPU, CPU on Windows, and Bash calls on drivers other than Claude Code (L256 to L258). `ork doctor` sweeps the slot ledger too (L259, closed by the integration lock).",
         docs: [
           "specs/machine.md",
           "docs/guides/running-workflows/several-runs.md",
@@ -1122,9 +1131,11 @@ export const MILESTONES = [
       {
         id: "check-once",
         title: "Check once: never re-run a passed check on the same files",
-        status: "active",
+        status: "done",
+        commits: ["7c63daa", "a8eecf0"],
+        date: "2026-11-15",
         detail:
-          "Built, waiting to land (it becomes done with its commit). `ork once -- <command>` runs a command unless the same check already passed on identical files (a hash of the working tree, the check's name, Node's version, optionally `HEAD`; `--on <pathspec>` keys it by only the files the pathspecs match), and records a pass in the repository's git folder, shared by its worktrees. `once: true` on a `verify:` or a tool node does the same, with a `verify.skipped` event in `ork logs` and the UI. This repository's `pnpm check` and `pnpm check:changed` go through it (the test step keyed by the files tests read, ADR-092), builders loop on `pnpm check:quick`, the docs node verifies with `check:changed`, and the suite is cheaper: a third of the cores, fake timers, a smaller local fuzz, shared fixture repositories (571 to 303 CPU-s on a loaded machine). Left: the idle target and a re-measured build are not measured, and a skipped tool node has no `json` (L263 to L269, L375 to L377).",
+          "`ork once -- <command>` runs a command unless the same check already passed on identical files (a hash of the working tree, the check's name, Node's version, optionally `HEAD`; `--on <pathspec>` keys it by only the files the pathspecs match), and records a pass in the repository's git folder, shared by its worktrees. `once: true` on a `verify:` or a tool node does the same, with a `verify.skipped` event in `ork logs` and the UI. This repository's `pnpm check` and `pnpm check:changed` go through it (the test step keyed by the files tests read, ADR-092), builders loop on `pnpm check:quick`, the docs node verifies with `check:changed`, and the suite is cheaper: a third of the cores, fake timers, a smaller local fuzz, shared fixture repositories (571 to 303 CPU-s on a loaded machine). Left: the suite is not measured on an idle machine (the target is under 200 CPU-s), and a skipped tool node has no `json` (L263 to L269, L375 to L377).",
         docs: [
           "specs/check-once.md",
           "docs/guides/running-workflows/several-runs.md",
@@ -1136,9 +1147,11 @@ export const MILESTONES = [
       {
         id: "attach",
         title: "`ork attach`, and called runs in the terminal",
-        status: "active",
+        status: "done",
+        commits: ["b639efe"],
+        date: "2026-11-11",
         detail:
-          "Built, waiting to land (it becomes done with its commit). `ork attach <run>` follows a run and every run it called, at any depth, each line under its call path, and asks their decisions on the terminal (stored as `terminal`; first answer wins, and a prompt answered elsewhere is withdrawn). Ctrl-C detaches and leaves the run going. A foreground `ork run` does the same for the runs it calls, so `start`'s plan gate is answered where it was started; Ctrl-C there still stops. `ork logs -f` stays read-only. Left: a foreground `ork resume` does not show its called runs (L324). Closes L59 (ADR-081).",
+          "`ork attach <run>` follows a run and every run it called, at any depth, each line under its call path, and asks their decisions on the terminal (stored as `terminal`; first answer wins, and a prompt answered elsewhere is withdrawn). Ctrl-C detaches and leaves the run going. A foreground `ork run` does the same for the runs it calls, so `start`'s plan gate is answered where it was started; Ctrl-C there still stops. `ork logs -f` stays read-only. Left: a foreground `ork resume` does not show its called runs (L324). Closes L59 (ADR-081).",
         docs: [
           "decisions/ADR-081-attach-and-called-runs-in-the-terminal.md",
           "docs/guides/running-workflows/attaching-to-a-run.md",
@@ -1165,9 +1178,11 @@ export const MILESTONES = [
       {
         id: "follow-order",
         title: "Follow several runs in store order",
-        status: "active",
+        status: "done",
+        commits: ["a03f79a", "eb8a6b0"],
+        date: "2026-11-16",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-020, Option A. `followRuns` (and `followRunTree` with the opt-in `ordered`, which `ork attach` passes) holds each event for one poll (`intervalMs ?? 250` ms) and passes them on sorted by `(at, run, seq)`, the stored backlog and live events alike. With no card up, `ork decide --follow` and `ork attach` ask the earliest opened decision first, and `ork logs -f --all` prints lines in the order stored, each up to one poll later; `ork logs <run>` is unchanged. Held events are all passed on when following ends by itself and dropped on abort. Left (L384): events stored further apart than the window can still arrive in arrival order, the sort relies on a non-decreasing `at` within a run. `ork logs -f --all --limit` counts in the same store order, through the exported `compareStoreOrder`.",
+          "RFC-020, Option A, now Implemented. `followRuns` (and `followRunTree` with the opt-in `ordered`, which `ork attach` passes) holds each event for one poll (`intervalMs ?? 250` ms) and passes them on sorted by `(at, run, seq)`, the stored backlog and live events alike. With no card up, `ork decide --follow` and `ork attach` ask the earliest opened decision first, and `ork logs -f --all` prints lines in the order stored, each up to one poll later; `ork logs <run>` is unchanged. Held events are all passed on when following ends by itself and dropped on abort. Left (L384): events stored further apart than the window can still arrive in arrival order, the sort relies on a non-decreasing `at` within a run. `ork logs -f --all --limit` counts in the same store order, through the exported `compareStoreOrder`.",
         docs: [
           "decisions/ADR-095-follow-runs-in-store-order.md",
           "docs/guides/running-workflows/attaching-to-a-run.md",
@@ -1179,9 +1194,11 @@ export const MILESTONES = [
       {
         id: "agent-types",
         title: "A format for several drivers: `agent.*` and `<driver>.<model>`",
-        status: "active",
+        status: "done",
+        commits: ["f9633ad"],
+        date: "2026-11-12",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Part 1 of RFC-015. The node types are `agent.worker`, `agent.leader` and `agent.subagent` (the `claude.*` names are refused with the way out), and a `model` may name its driver, `claude-code.opus` or `open-code.anthropic/claude-sonnet-5-5`, which pins the node to that tool ahead of `--driver`; plain models still work, and `{{item.model}}` is parsed per item. A driver descriptor says whether it runs subagents. `ork migrate` renames the types in old files, keeping comments (`--dry-run` shows it), and this repository's workflows and examples use the new names. Left: `ork migrate` scans only the workflows folder, `open-code` and `command-code` `subagents` are unmeasured, and written item prefixes are caught at run (L273 to L276). Part 2, token budgets, is its own item below.",
+          "Part 1 of RFC-015. The node types are `agent.worker`, `agent.leader` and `agent.subagent` (the `claude.*` names are refused with the way out), and a `model` may name its driver, `claude-code.opus` or `open-code.anthropic/claude-sonnet-5-5`, which pins the node to that tool ahead of `--driver`; plain models still work, and `{{item.model}}` is parsed per item. A driver descriptor says whether it runs subagents. `ork migrate` renames the types in old files, keeping comments (`--dry-run` shows it), and this repository's workflows and examples use the new names. Left: `ork migrate` scans only the workflows folder, `open-code` and `command-code` `subagents` are unmeasured, and written item prefixes are caught at run (L273 to L276). Part 2, token budgets, is its own item below.",
         docs: [
           "decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md",
           "specs/runtime/which-driver.md",
@@ -1193,9 +1210,11 @@ export const MILESTONES = [
       {
         id: "token-budgets",
         title: "Budgets and quotas in tokens",
-        status: "active",
+        status: "done",
+        commits: ["4abfbbf", "2e3b272"],
+        date: "2026-11-12",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Part 2 of RFC-015, which is now Implemented. `budgetTokens` sits beside `budgetUsd` on a node, in `defaults`, in `limits` and in agent files, and counts input, output and cache-write tokens (never cache reads) on any driver: the session runner stops a session at its cap, ending `budget_limit`, at most one usage report past it, and a run's `limits.budgetTokens` is set aside per session as dollars are. `quotas.dayTokens` caps a project's day, shown in `ork usage`. A dollar limit on a driver with no price is warned about, not refused, and a dollar total that misses such sessions reads partial with tokens beside it (the CLI says `(partial)`, the browser view `≥`). Left: no token budget across a `workflow.call`, `run.started` does not record it, a stopped session records $0, no per-row partial mark, and two checks still read only dollars (L278 to L280, L282 to L285).",
+          "Part 2 of RFC-015, which is now Implemented. `budgetTokens` sits beside `budgetUsd` on a node, in `defaults`, in `limits` and in agent files, and counts input, output and cache-write tokens (never cache reads) on any driver: the session runner stops a session at its cap, ending `budget_limit`, at most one usage report past it, and a run's `limits.budgetTokens` is set aside per session as dollars are. `quotas.dayTokens` caps a project's day, shown in `ork usage`. A dollar limit on a driver with no price is warned about, not refused, and a dollar total that misses such sessions reads partial with tokens beside it (the CLI says `(partial)`, the browser view `≥`). Left: no token budget across a `workflow.call`, `run.started` does not record it, a stopped session records $0, no per-row partial mark, and two checks still read only dollars (L278 to L280, L282 to L285).",
         docs: [
           "decisions/ADR-084-budgets-and-quotas-in-tokens.md",
           "docs/guides/models-and-budgets/models-and-limits.md#budgets-in-tokens",
@@ -1209,9 +1228,11 @@ export const MILESTONES = [
         id: "parallel-issues",
         title:
           "Parallel issues: a lock on integration, a resolver, and `issues`",
-        status: "active",
+        status: "done",
+        commits: ["7bb910c", "f031e5d", "b8609a2"],
+        date: "2026-11-12",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-016, which is now Implemented. A node's `lock: <name>` is held by the run across the nodes that name it, on a machine-wide ledger (`~/.ork/locks`, a `branch:` lock keyed by the origin and the branch): the next run waits, shown with its holder in `ork ps`, `ork tree`, the logs and the UI, and rebases onto what the first pushed. A resume takes the lock again. `ork doctor` clears stale lock and slot records (L259). `examples/resolve-conflict.ork.yaml` is a node group where an agent resolves a rebase conflict and asks you only when it changes behaviour; `examples/issues.ork.yaml` (`ork init --issues`) builds and reviews each issue in its own worktree, integrates them in turn into one branch and opens one pull request that closes them; `build`'s publish holds `branch:main`. Left: L286 to L299 and L313 to L323.",
+          "RFC-016, which is now Implemented. A node's `lock: <name>` is held by the run across the nodes that name it, on a machine-wide ledger (`~/.ork/locks`, a `branch:` lock keyed by the origin and the branch): the next run waits, shown with its holder in `ork ps`, `ork tree`, the logs and the UI, and rebases onto what the first pushed. A resume takes the lock again. `ork doctor` clears stale lock and slot records (L259). `examples/resolve-conflict.ork.yaml` is a node group where an agent resolves a rebase conflict and asks you only when it changes behaviour; `examples/issues.ork.yaml` (`ork init --issues`) builds and reviews each issue in its own worktree, integrates them in turn into one branch and opens one pull request that closes them; `build`'s publish holds `branch:main`. Left: L286 to L299 and L313 to L323.",
         docs: [
           "decisions/ADR-085-lock-field-and-hold.md",
           "specs/integration.md",
@@ -1225,9 +1246,11 @@ export const MILESTONES = [
       {
         id: "follow-ups",
         title: "Follow-ups: what a change leaves for later",
-        status: "active",
+        status: "done",
+        commits: ["dedea75", "6387404", "6d98161"],
+        date: "2026-11-13",
         detail:
-          "Built, waiting to land (it becomes done with its commit). A message to a partner, work for another project's agent, infra steps and a check after deploy are kept as follow-ups, apart from feedback: a `follow_up` session tool (30 a session, duplicates merged), a project rule `followUps: { store, file?, label? }` (Ork's store, a file in the repository, or GitHub issues through your own `gh`), `ork follow-ups list | show | add | done | drop | reopen | due | post | published`, `ork run --follow-ups` (an agent's change as a run's brief; `due` takes every due agent follow-up, and Tab offers the open ones), a due check that reads the pull request an `after-merge` one waits on (every call, and every 10 minutes under `ork watch` and `ork ui`), delivery to another project's list and live session, drafts Ork never sends (a github-channel comment posts only after you confirm its text), the server's routes and due count, the Follow-ups panel, and `build`'s `followups`, gate, `polish`, `polish-review`, `published` and `declare` steps. A follow-up a live run has taken is refused, and its `show` and `list` say which run took it (L364, L365). Left: L300 to L312 and L325.",
+          "A message to a partner, work for another project's agent, infra steps and a check after deploy are kept as follow-ups, apart from feedback: a `follow_up` session tool (30 a session, duplicates merged), a project rule `followUps: { store, file?, label? }` (Ork's store, a file in the repository, or GitHub issues through your own `gh`), `ork follow-ups list | show | add | done | drop | reopen | due | post | published`, `ork run --follow-ups` (an agent's change as a run's brief; `due` takes every due agent follow-up, and Tab offers the open ones), a due check that reads the pull request an `after-merge` one waits on (every call, and every 10 minutes under `ork watch` and `ork ui`), delivery to another project's list and live session, drafts Ork never sends (a github-channel comment posts only after you confirm its text), the server's routes and due count, the Follow-ups panel, and `build`'s `followups`, gate, `polish`, `polish-review`, `published` and `declare` steps. A follow-up a live run has taken is refused, and its `show` and `list` say which run took it (L364, L365). Left: L300 to L312 and L325.",
         docs: [
           "decisions/ADR-086-follow-ups.md",
           "specs/follow-ups.md",
@@ -1239,9 +1262,11 @@ export const MILESTONES = [
       {
         id: "list-filters",
         title: "One way to filter every list command",
-        status: "active",
+        status: "done",
+        commits: ["66f0e61", "6387404", "09cba0c"],
+        date: "2026-11-13",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-017, now Implemented. `ork ps`, `usage`, `decide --list`, `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and `projects` each list by one field table, and the flags, their checks and Tab completion's values are made from it: `--status`, `--kind`, `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--since`, `--until`, with `--ids` (comma-separated, for `$(...)`), a strict `--limit` and `--json`, and one time parser (age or day) shared with `ork usage` and `ork logs`. The machinery and the core record types' tables are in `@krapht/ork-core`. `--all` is removed (`--project all` and `--status all` replace it), a list refuses a flag it doesn't have, `--run` takes a run's prefix, `ps --json` adds `live`, and `ork mcp` refuses an unregistered project and a bad `limit` in the CLI's words. Covers follow-up cc84367e. The server's list routes read the same tables, so the browser view's six list panels share one filter bar and `ork mcp`'s `runs`, `usage` and `decisions` tools take the same fields (L339 closed). Left: L337, L338, L341, L350 to L352, L359, L360.",
+          "RFC-017, now Implemented. `ork ps`, `usage`, `decide --list`, `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and `projects` each list by one field table, and the flags, their checks and Tab completion's values are made from it: `--status`, `--kind`, `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--since`, `--until`, with `--ids` (comma-separated, for `$(...)`), a strict `--limit` and `--json`, and one time parser (age or day) shared with `ork usage` and `ork logs`. The machinery and the core record types' tables are in `@krapht/ork-core`. `--all` is removed (`--project all` and `--status all` replace it), a list refuses a flag it doesn't have, `--run` takes a run's prefix, `ps --json` adds `live`, and `ork mcp` refuses an unregistered project and a bad `limit` in the CLI's words. Covers follow-up cc84367e. The server's list routes read the same tables, so the browser view's six list panels share one filter bar and `ork mcp`'s `runs`, `usage` and `decisions` tools take the same fields (L339 closed). Left: L337, L338, L341, L350 to L352, L359, L360.",
         docs: [
           "decisions/ADR-088-list-filters.md",
           "specs/cli/list-filters.md",
@@ -1254,20 +1279,27 @@ export const MILESTONES = [
       {
         id: "qa-blind-spots",
         title: "Close the QA workflow's blind spots",
-        status: "active",
+        status: "done",
+        commits: ["cb76a79", "38e1091", "ea11dae"],
+        date: "2026-11-15",
         detail:
-          "Built, waiting to land (it becomes done with its commit). The commands that act as you (`ork ui`'s sign-in link, `ork decide`, `attach`, `chat`, `continue`, `watch --accept`) refuse in a run only in the stores that run guards, so a tester can try them under a temp HOME (ADR-089); the fake CLIs answer `ork doctor`'s probes; `tools/qa/kit.ts` sets a tester up (HOME, prefix, stand-ins, a committed starter repo), commits in a throwaway repo, and stops and sweeps; `qa-pass` gets a size rule for surfaces, a `sweep` step and a shared read-only Bash rule. Left: the re-run of QA, on the maintainer's go.",
+          "The commands that act as you (`ork ui`'s sign-in link, `ork decide`, `attach`, `chat`, `continue`, `watch --accept`) refuse in a run only in the stores that run guards, so a tester can try them under a temp HOME (ADR-089); the fake CLIs answer `ork doctor`'s probes; `tools/qa/kit.ts` sets a tester up (HOME, prefix, stand-ins, a committed starter repo), commits in a throwaway repo, and stops and sweeps; `qa-pass` gets a size rule for surfaces, a `sweep` step and a shared read-only Bash rule. QA ran again with the kit, as run bd542734 and as the pass over 1.0.0-alpha.20 (26ac8acf), and what they found is fixed; the second also gave the kit a stand-in `opencode` and let testers read their temp files without a prompt. Left: the kit's limits (L342 to L347, L349).",
         docs: [
           "decisions/ADR-089-guarded-stores-in-run-identity.md",
           "specs/gaps/qa-c9c908b9-limits.md",
+          "specs/gaps/qa-bd542734-limits.md",
+          "docs/whats-new/1.0.0-alpha.21.md",
+          "tools/qa/kit.ts",
         ],
       },
       {
         id: "ui-sign-in-code",
         title: "`ork ui` signs in with a one-time code",
-        status: "active",
+        status: "done",
+        commits: ["4435027"],
+        date: "2026-11-13",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-019, now Implemented. `ork ui` gets a single-use code (60 s) from `POST /api/sign-in` with the token as a bearer and opens `/?code=…`; the cookie holds a separate session secret that the supervisor makes and sends over IPC, so a restart keeps the tab signed in. The API token is no longer on the opener's argv or in the browser, and the exchange redirect collapses leading slashes. Also: `maskSecrets` knows npm, `sk-proj-`, Google, Stripe live and `password=`/`token:` forms, one provider list in core is shared with the audit, and feedback, follow-ups and a person's notes also mask the run's env values (ADR-091). With it, agent-facing hardening: a tool argument fed by `nodes.*.output` that starts with `-` fails the node unless `--` comes before it, `delegate` reserves a child before any await so two calls start it once, and OpenCode allows Ork's tools by exact name, not `ork_*`. Task labels are masked before an 80-code-point clip, masked again where the CLI shows them, and shown on the Monitor's table (ellipsis and tooltip) and on a graph card's third line. Left: one session secret for every browser (G32), the `permission` tool still listed because the real `claude` refuses to start without it (G34), no `-` guard for `inputs.*` (G35), labels counted by code point (G36), a hover-only table tooltip (G37).",
+          "RFC-019, now Implemented. `ork ui` gets a single-use code (60 s) from `POST /api/sign-in` with the token as a bearer and opens `/?code=…`; the cookie holds a separate session secret that the supervisor makes and sends over IPC, so a restart keeps the tab signed in. The API token is no longer on the opener's argv or in the browser, and the exchange redirect collapses leading slashes. Also: `maskSecrets` knows npm, `sk-proj-`, Google, Stripe live and `password=`/`token:` forms, one provider list in core is shared with the audit, and feedback, follow-ups and a person's notes also mask the run's env values (ADR-091). With it, agent-facing hardening: a tool argument fed by `nodes.*.output` that starts with `-` fails the node unless `--` comes before it, `delegate` reserves a child before any await so two calls start it once, and OpenCode allows Ork's tools by exact name, not `ork_*`. Task labels are masked before an 80-code-point clip, masked again where the CLI shows them, and shown on the Monitor's table (ellipsis and tooltip) and on a graph card's third line. Left: one session secret for every browser (G32), the `permission` tool still listed because the real `claude` refuses to start without it (G34), no `-` guard for `inputs.*` (G35), labels counted by code point (G36), a hover-only table tooltip (G37).",
         docs: [
           "decisions/ADR-090-ork-ui-signs-in-with-a-code.md",
           "decisions/ADR-091-shared-secret-patterns-and-scrubber-in-core.md",
@@ -1317,9 +1349,12 @@ export const MILESTONES = [
         id: "extract-tool",
         title: "`extract`: read less, carry less",
         status: "active",
+        commits: ["3195072", "9607eeb", "5625b0e", "5c3919a", "ac86476"],
         detail:
-          "Built. RFC-023, option 2a, and RFC-025 (accepted). Every session gets one read-only tool, `extract`: a `read`, `files`, `search` or `git` diff, show or log step, then `head`, `tail`, `match` (literal or regex) or `count` cuts, up to eight such programs a call, in-process with no shell and no model-written code, returning only the extract (16,000 characters, a count footer). It refuses a path outside the session's folder and secret-looking files, and Ork's notes to every node say to prefer it over `cat`, `sed`, `rg` and whole-file reads. `pnpm benchmark` now also writes `carried.json`, the carried weight (characters of a result times later turns) by role and kind, with turns and calls to `extract`. RFC-025 (ADR-101) also refuses shell reads and withholds Grep, Glob and, for nodes that cannot edit, text Reads, on every driver. Left: the before and after benchmark with `carried.json`, and shorter sessions.",
+          "Built, and released in full since 1.0.0-alpha.24; what is left is the measurement. RFC-023, option 2a, and RFC-025, both Implemented. Every session gets one read-only tool, `extract`: a `read`, `files`, `search` or `git` diff, show or log step, then `head`, `tail`, `match` (literal or regex) or `count` cuts, up to eight such programs a call, in-process with no shell and no model-written code, returning only the extract (16,000 characters, a count footer). It refuses a path outside the session's folder and secret-looking files, and Ork's notes to every node say to prefer it over `cat`, `sed`, `rg` and whole-file reads. `pnpm benchmark` now also writes `carried.json`, the carried weight (characters of a result times later turns) by role and kind, with turns and calls to `extract`. RFC-025 (ADR-101) also refuses shell reads and withholds Grep, Glob and, for nodes that cannot edit, text Reads, on every driver. Measured so far: an A/B of the reading rule (`reading: open` against `reading: extract`, 8 runs) was inconclusive, as sessions already read through `extract` in both arms and neither cost more; a comparison of 5 runs before `extract` and 6 after, from history, was inconclusive on cost too (cost per turn about a quarter lower after, but the tasks differ and carried weight per turn shows no consistent drop). Shorter sessions (RFC-023's option 5) are estimated from past runs' transcripts: a turn cap is not worth building; starting an owned builder's next task in a fresh session past about 100k tokens of context could save about 7% of builder cost, and is not built. Left: a controlled before and after of `extract` itself, the same tasks with the tool off and on, with `carried.json`.",
         docs: [
+          "benchmarks/rfc-025-reading/README.md",
+          "benchmarks/rfc-023-option-5/README.md",
           "rfcs/archived/RFC-023-extract-tool-for-session-reads.md",
           "rfcs/archived/RFC-025-extract-only-reading.md",
           "decisions/ADR-101-extract-only-reading.md",
@@ -1336,10 +1371,10 @@ export const MILESTONES = [
         id: "codex-driver",
         title: "The `codex` driver",
         status: "done",
-        commits: ["3c68367", "b56c05e", "f1610f2", "966d11a"],
+        commits: ["3c68367", "b56c05e", "f1610f2", "966d11a", "1c418e5"],
         date: "2026-11-18",
         detail:
-          "Built and proven on a real session (the gate run, 2026-11-18, codex-cli 0.169.0, a ChatGPT account, token caps). RFC-024 (closed with ADR-102): OpenAI's `codex` as the fourth driver, one `codex exec --json` per leg (`exec resume` and `exec fork` for follow-ups), Ork's tools over `-c mcp_servers.ork.*` with the token in the leg's environment only and kept out of Codex's shell (`shell_environment_policy.exclude`), the sandbox as the outer wall (`read-only` for a node denied writing, else `workspace-write`, never wider) and a per-session `PreToolUse` hook that holds the node's rules, deny by default, in a private folder outside the checkout. It fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call is killed at once. The gate run measured Ork's tools reaching the model (from Codex's code mode too), the hook refusing, a resumed leg keeping both, `input_tokens` including the cached part, and the API refusing Ork's report schemas under `--output-schema`. Tokens only; a node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped read deny is refused. Left: `codex app-server` for mid-turn messages and Ork-answered approvals, and the limits (G39 to G44, L438 to L454).",
+          "Built and proven on a real session (the gate run, 2026-11-18, codex-cli 0.169.0, a ChatGPT account, token caps), and released in 1.0.0-alpha.25. RFC-024 (closed with ADR-102): OpenAI's `codex` as the fourth driver, one `codex exec --json` per leg (`exec resume` and `exec fork` for follow-ups), Ork's tools over `-c mcp_servers.ork.*` with the token in the leg's environment only and kept out of Codex's shell (`shell_environment_policy.exclude`), the sandbox as the outer wall (`read-only` for a node denied writing, else `workspace-write`, never wider) and a per-session `PreToolUse` hook that holds the node's rules, deny by default, in a private folder outside the checkout. It fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call is killed at once. The gate run measured Ork's tools reaching the model (from Codex's code mode too), the hook refusing, a resumed leg keeping both, `input_tokens` including the cached part, and the API refusing Ork's report schemas under `--output-schema`. Tokens only; a node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped read deny is refused. Left: `codex app-server` for mid-turn messages and Ork-answered approvals, and the limits (G39 to G44, L438 to L454).",
         docs: [
           "decisions/ADR-102-codex-driver.md",
           "specs/runtime/codex.md",
@@ -1353,8 +1388,12 @@ export const MILESTONES = [
         title: "Prove it costs less",
         status: "planned",
         detail:
-          "Once the core features above are in, run the same real jobs by hand and through Ork, and compare cost per completed task and the quality of the result. First record what a run lacks today: each session's peak context, compaction, and cache rewrites after idle time, and measure what the 1-hour prompt cache leaders now get saves against its dearer writes. The results decide what to build for hours-long runs, such as skipping unchanged work, or disposable sessions with a capped memory on the node, and whether Ork can claim to cost less. It also sets what the gaps review carried here: the link and `ork send` caps (L51, L52, L89), and a size threshold for a Claude report's fields (L171).",
-        docs: ["specs/usage.md", "specs/gaps.md#limits"],
+          "Once the core features above are in, run the same real jobs by hand and through Ork, and compare cost per completed task and the quality of the result. First record what a run lacks today: each session's peak context, compaction, and cache rewrites after idle time, and measure what the 1-hour prompt cache leaders now get saves against its dearer writes. The results decide what to build for hours-long runs, such as skipping unchanged work, or disposable sessions with a capped memory on the node, and whether Ork can claim to cost less. It also sets what the gaps review carried here: the link and `ork send` caps (L51, L52, L89), and a size threshold for a Claude report's fields (L171). Not started. The published benchmarks of Ork building itself are not this comparison: their manual cost is an estimate, a rate from this repository's history applied to each change's size.",
+        docs: [
+          "specs/usage.md",
+          "specs/gaps.md#limits",
+          "benchmarks/README.md",
+        ],
       },
       {
         id: "gaps-review",
@@ -1455,4 +1494,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-18";
+export const ROADMAP_UPDATED = "2026-11-19";

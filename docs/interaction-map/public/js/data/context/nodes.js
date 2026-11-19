@@ -388,9 +388,16 @@ export const NODES = [
       "Built: `model`, `effort`, `maxTurns`, `budgetUsd` and `budgetTokens` (each capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
       "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
       "`readonly` adds the write tools to the deny list; `git status` runs without asking (`diff`, `log` and `show` too under `reading: open`; `extract` shows them), other commands ask.",
+      "Built: under `reading: extract`, the default, Ork adds `Grep` and `Glob` to the denied tools unless the node names one in `tools.allow` or `tools.only`, and a node that cannot edit is refused a `Read` of a text file (an image or a PDF is still read); `extract` does that reading.",
       "Built: `tools.only` leaves the session only those built-in tools (`--tools`); Ork's own tools stay. An agent's Claude Code `tools:` and `disallowedTools:` become `tools.only` and `tools.deny`.",
     ],
-    docs: [SCHEMA.nodes, RUNTIME.plan, DESIGN.context],
+    docs: [
+      SCHEMA.nodes,
+      RUNTIME.plan,
+      RUNTIME.toolRules,
+      RUNTIME.extractSpec,
+      DESIGN.context,
+    ],
   },
 
   // ── The session and after ────────────────────────────────────────────────

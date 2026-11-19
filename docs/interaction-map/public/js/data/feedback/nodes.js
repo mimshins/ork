@@ -73,7 +73,8 @@ export const NODES = [
     summary:
       "Reads the local feedback items: what was reported, how often, in which runs, workflows and models. It is also one of the places you rate or annotate a node's result.",
     facts: [
-      "Built: `list` (newest first; `--status all` adds dismissed items), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
+      "Built: `list` (newest first; dismissed and resolved items are hidden, and `--status all` adds them), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
+      "Built: `resolve <item>…` marks items fixed by hand, outside `apply`, resolved; a resolved item goes back to `new` when it is reported again.",
       "Built: `note <run> [<node>] -m <text>` records your note on a run or a node, with `--rating good|bad`; `ork decide --note` notes the node you just answered.",
       "In the browser, **Note…** in the Monitor writes the same note (`POST /api/runs/:id/notes`); all three are checked by one function.",
     ],
@@ -82,6 +83,8 @@ export const NODES = [
       DESIGN.feedback,
       FEEDBACK.cli,
       FEEDBACK.cliTests,
+      FEEDBACK.resolve,
+      FEEDBACK.capture,
       FEEDBACK.human,
       FEEDBACK.noteTests,
       FEEDBACK.noteDialog,
@@ -187,10 +190,17 @@ export const NODES = [
       "Friction Ork can see for itself in the event stream, so it costs nothing and is objective.",
     facts: [
       "Built: a loop out of rounds, a budget that ran out, a tool you denied, an Ork tool that failed, a gate that timed out, and an answer other than the recommended one.",
+      "An Ork tool call whose arguments the tool's schema refused is the agent's context gap (`tool.arguments`), not an Ork bug (`tool.error`), on every driver.",
       "Derived where the run's events are recorded, decisions included, and recorded right after the event that shows them.",
       "A node's end files by who should act: Ork's own bug (an unknown or crashed end, with the scrubbed detail), the workflow's, or the agent's context gap. An account's, provider's or user's end is a setup hint, not feedback, and a report the `report` tool refuses is the agent's.",
     ],
-    docs: [DESIGN.feedback, FEEDBACK.signals, FEEDBACK.tests, FEEDBACK.adr],
+    docs: [
+      DESIGN.feedback,
+      FEEDBACK.capture,
+      FEEDBACK.signals,
+      FEEDBACK.tests,
+      FEEDBACK.adr,
+    ],
   },
   {
     id: "recorder",

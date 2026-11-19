@@ -291,6 +291,33 @@ export const CLI = {
     "packages/cli/src/list/flags.ts",
     "Code: the flags, checks and `--ids` every list shares",
   ),
+  attach: d("packages/cli/src/commands/attach.ts", "Code: `ork attach`"),
+  attachTests: d("packages/cli/test/attach.test.ts", "Tests: `ork attach`"),
+  attachGuide: d(
+    "docs/guides/running-workflows/attaching-to-a-run.md",
+    "Guide: attaching to a run, and following several",
+  ),
+  once: d("packages/cli/src/commands/once.ts", "Code: `ork once`"),
+  followUps: d(
+    "packages/cli/src/commands/follow-ups.ts",
+    "Code: `ork follow-ups`",
+  ),
+  followUpsTests: d(
+    "packages/cli/test/follow-ups-command.test.ts",
+    "Tests: `ork follow-ups`",
+  ),
+  followUpsGuide: d("docs/guides/follow-ups.md", "Guide: follow-ups"),
+  yolo: d("packages/cli/src/run/yolo.ts", "Code: `ork run --yolo`"),
+  yoloTests: d("packages/cli/test/yolo.test.ts", "Tests: a yolo run"),
+  yoloAdr: d(
+    "decisions/ADR-094-yolo-runs.md",
+    "ADR-094: a run that asks no permission, agreed to per start",
+  ),
+  audit: d(
+    "packages/core/workflows/security-audit.ork.yaml",
+    "Code: the built-in `ork:security-audit` workflow",
+  ),
+  auditGuide: d("docs/guides/security-audit.md", "Guide: the security audit"),
   run: d("packages/cli/src/commands/run.ts", "Code: the `ork run` command"),
   human: d(
     "packages/cli/src/human.ts",
@@ -304,6 +331,14 @@ export const CLI = {
 };
 
 export const FEEDBACK = {
+  resolve: d(
+    "packages/cli/src/commands/feedback-resolve.ts",
+    "Code: `ork feedback resolve`",
+  ),
+  capture: d(
+    "specs/feedback/capture.md",
+    "Spec: capturing feedback, its statuses and `ork feedback`",
+  ),
   lessons: d(
     "packages/core/src/feedback/lessons.ts",
     "Code: writing a lesson, marked with its item",
@@ -506,6 +541,18 @@ export const STORE = {
 };
 
 export const CONTROL = {
+  storeOrder: d(
+    "packages/core/src/remote/order-events.ts",
+    "Code: several runs' events in store order",
+  ),
+  storeOrderTests: d(
+    "packages/cli/test/decide-follow.test.ts",
+    "Tests: `ork decide --follow` asks in the order decisions opened",
+  ),
+  storeOrderAdr: d(
+    "decisions/ADR-095-follow-runs-in-store-order.md",
+    "ADR-095: follow several runs in store order",
+  ),
   queue: d("packages/core/src/control/queue.ts", "Code: the decision queue"),
   document: d(
     "decisions/ADR-068-gate-document-and-readable-text.md",
@@ -595,6 +642,10 @@ export const QUESTIONS = {
 
 export const BUS = {
   bus: d("packages/core/src/run/bus.ts", "Code: the message bus"),
+  awaiting: d(
+    "packages/core/src/run/awaiting.ts",
+    "Code: a leader waiting on its children takes no message from them",
+  ),
   contacts: d(
     "packages/core/src/run/contacts.ts",
     "Code: who may write to whom, for the bus and `ork send`",
@@ -1318,6 +1369,30 @@ export const RUNTIME = {
     "Code: the codex hook that holds a node's rules",
   ),
   codexSpec: d("specs/runtime/codex.md", "Spec: the codex driver"),
+  extract: d(
+    "packages/runtime/src/tools/extract.ts",
+    "Code: the `extract` tool",
+  ),
+  extractTests: d(
+    "packages/runtime/test/extract-steps.test.ts",
+    "Tests: `extract`'s steps and programs",
+  ),
+  extractSpec: d(
+    "specs/runtime/extract-tool.md",
+    "Spec: the `extract` tool, shell reads and withheld tools",
+  ),
+  shellReads: d(
+    "packages/runtime/src/tools/shell-reads.ts",
+    "Code: which shell lines start by reading files",
+  ),
+  shellReadsTests: d(
+    "packages/runtime/test/shell-reads.test.ts",
+    "Tests: shell reads refused, with the `extract` call to make",
+  ),
+  toolRules: d(
+    "packages/core/src/run/tool-rules.ts",
+    "Code: the tools Ork withholds under `reading: extract`",
+  ),
   driverGuide: d("docs/guides/drivers.md", "Guide: the drivers"),
   needs: d(
     "packages/core/src/run/driver-needs.ts",
