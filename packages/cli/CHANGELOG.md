@@ -1,5 +1,54 @@
 # @krapht/ork
 
+## 1.0.0-alpha.25
+
+### Minor Changes
+
+- [`3c68367`](https://github.com/mimshins/ork/commit/3c6836706cfebb1f48ebfc3e6ca45d71ecb14604) Thanks [@mimshins](https://github.com/mimshins)! - Add the `codex` driver, built but not proven yet: it runs your own OpenAI
+  `codex exec` per leg, with Ork's tools, a sandbox and a per-session hook that
+  holds the node's tool rules. `ork doctor` shows it as `skip` and `ork run`
+  refuses a node that names it until it has run on a real session.
+
+- [`1c418e5`](https://github.com/mimshins/ork/commit/1c418e5f4ceb437533308df11973d73584fbb22f) Thanks [@mimshins](https://github.com/mimshins)! - The `codex` driver is proven on a real session: `ork doctor` shows it `ok` once
+  `codex` is signed in, and `ork validate` and `ork run` take a node that names it
+  (a run that names no driver still prefers `claude-code`). It reports tokens and
+  no dollars, so cap it with `budgetTokens`; a node that needs `maxTurns`, its own
+  `mcp` servers, sub-agents or a path-scoped read deny is still refused, and so
+  are `ork onboard` and `ork:security-audit`, whose workflows set `maxTurns`.
+
+### Patch Changes
+
+- [`b56c05e`](https://github.com/mimshins/ork/commit/b56c05e851f8d814a7c91a63d3787f36e87a9704) Thanks [@mimshins](https://github.com/mimshins)! - On the `codex` driver, a node denied `Edit` and `Write` outright (a `readonly`
+  node) now runs in Codex's read-only sandbox, so it can't run commands that write
+  files; and a leg that ran tools without Ork's hook is stopped at once instead of
+  running to the end of its turn. Ork's token for its tools is kept out of the
+  shell Codex starts.
+
+- [`8051340`](https://github.com/mimshins/ork/commit/8051340600503398543a37d92c04c550edeb144f) Thanks [@mimshins](https://github.com/mimshins)! - On Command Code too, file an agent's bad arguments to one of Ork's tools as its
+  context gap, not an Ork bug.
+
+- [`17a85a0`](https://github.com/mimshins/ork/commit/17a85a0926283ffc4caf5129524ba439c1e667d0) Thanks [@mimshins](https://github.com/mimshins)! - File what `extract` refuses once it runs (a missing file, a refused path, a
+  `rev:path` revision) as the agent's bad arguments, not as an Ork bug.
+
+- [`dc61780`](https://github.com/mimshins/ork/commit/dc61780e5cd169d5793638b5b85d7a9739b8f33a) Thanks [@mimshins](https://github.com/mimshins)! - `ork doctor` warns about an `opencode` older than 2.3.2, whose sessions never
+  saw Ork's tools, and OpenCode sessions may pipe a command's output through
+  `head`, `tail`, `sed`, `awk` or `grep` again.
+
+- [`39f3118`](https://github.com/mimshins/ork/commit/39f311814414a36073fa760f46327d54ec6f731b) Thanks [@mimshins](https://github.com/mimshins)! - `ork stop` ends a node waiting for a heavy slot at once and never resumes a
+  stopped session. `ork onboard`'s check of a subfolder project skips Command
+  Code's empty `.commandcode/taste/taste.md` at the repository's top, and runs
+  `git diff` with `-c diff.relative=false`, so it works on git older than 2.28.
+
+- [`61588b9`](https://github.com/mimshins/ork/commit/61588b9908eee57e495effb72252534206483798) Thanks [@mimshins](https://github.com/mimshins)! - A session Ork stopped, with no report, ends as interrupted on every driver,
+  whatever result its tool printed as it was cut off (Claude Code's
+  `error_during_execution` no longer reads as an unknown end). `ork onboard`'s
+  check of the writer's files reads, commits and checks a project that is a
+  subfolder of its repository from the project folder, and refuses a file outside
+  it.
+
+- [`647de01`](https://github.com/mimshins/ork/commit/647de011d1978a6c45de5d7de6ea8ec3bc5fe292) Thanks [@mimshins](https://github.com/mimshins)! - Arguments an Ork tool refuses are filed in `ork feedback` as the agent's context
+  gap, not as a bug in Ork.
+
 ## 1.0.0-alpha.24
 
 ### Patch Changes
