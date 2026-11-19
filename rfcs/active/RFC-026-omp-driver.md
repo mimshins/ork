@@ -19,6 +19,8 @@
   that call no model showed
 - [Spike, paid steps, 2026-11-19](#spike-paid-steps-2026-11-19): what real turns
   showed, and what is still unmeasured
+- [Capture legs, 2026-11-19](#capture-legs-2026-11-19): the shape of every line
+  type, and a call held for 120 seconds
 
 ## Context
 
@@ -1071,17 +1073,167 @@ Still unmeasured, for the build and the gate run to answer:
 - What the handler sees for `edit`, `grep` and `glob`; path-scoped rules; `read`
   of a URL, an archive or an internal address (`xd://`, `skill://`), and a
   `write` to `omp`'s own settings address.
-- Whether a fork keeps the instructions of its source or takes new ones.
 - A model the account refuses, and authentication, rate-limit and credit errors.
 - Usage and cost on another provider, on a subscription login, and on a model
   whose price `omp` does not know.
 - Stopping a leg from outside (`ork stop`, a `budgetTokens` stop): what `omp`
-  does on a signal mid-turn, and whether the session can then be resumed.
+  does on a signal mid-turn or while a call is held, and whether the session can
+  then be resumed.
 - A background job or a service started by a turn, and whether `launch.persist`
   can be turned off in print mode (no fixed prompt starts one; the overlay turns
   background jobs off).
 - What the user's own extensions, rules, context files and MCP servers add to a
   session, and how the repository's `AGENTS.md` is read.
 - The node's own `.mcp.json` servers (`mcpServers`); a handler holding a call
-  longer than 40 seconds; the doctor check with the network off.
+  longer than 120 seconds; the doctor check with the network off.
+- The lines of a failed model request, and the values of `stopReason` besides
+  `toolUse` and `stop`.
 - The RPC turn (step 13), and everything Ork's adapter adds: the gate run.
+
+Settled since by the [capture legs](#capture-legs-2026-11-19): a fork and a
+resumed leg do not keep an appended instruction, and a call can be held for 120
+seconds.
+
+## Capture legs, 2026-11-19
+
+Run by the maintainer's agent, on the maintainer's approval of one more paid
+step under a cap of 0.25 dollars, so that the decoder and the fake `omp` can be
+written from real line shapes. Same set-up as the paid steps: `omp` 18.22.2, the
+model `anthropic/claude-haiku-5-5`, a scratch git repository outside this one,
+the stand-in MCP endpoint (now with two tools, `report` and `ask_user`), the
+overlay, the guard loaded with `--trusted-extension`, the plugin folder, the six
+tools, `--thinking low` and a `--max-cost` on every leg. Seven legs: a turn with
+a shell call and a file write, a resume, a resume under a cap, a fork, a turn
+whose shell call the guard refuses, a turn stopped by its cap, and a turn whose
+shell call the guard holds for 120 seconds. Six reached a model. **`omp`
+reported 0.0030 dollars spent in all.** No transcript or session file is kept;
+the shapes below were written by hand from the lines, with types in place of
+values.
+
+### The shape of every line type
+
+One JSON object a line on stdout. `<message>` is one of the three message shapes
+below; `…` stands for keys that depend on the tool.
+
+```text
+session               { type, version: number, id: string, timestamp: string, cwd: string,
+                        parentSession?: string, providerPromptCacheKey?: string }      (the last two on a fork)
+advisor_cost_changed  { type }
+agent_start           { type }
+turn_start            { type }
+message_start         { type, message: <message> }
+message_update        { type, assistantMessageEvent: { type, contentIndex: number, … } }
+    event types       toolcall_start | toolcall_delta { delta: string } | toolcall_end { toolCall: <toolCall block, without intent> }
+                      text_start | text_delta { delta: string } | text_end { content: string }
+                      thinking_start | thinking_delta { delta: string } | thinking_end { content: string }
+message_end           { type, message: <message> }
+tool_execution_start  { type, toolCallId: string, toolName: string, args: { … }, intent: string }
+tool_execution_update { type, toolCallId: string, toolName: string, args: { … },
+                        partialResult: { content: [ { type: "text", text: string } ], details: { … } } }
+tool_execution_end    { type, toolCallId: string, toolName: string,
+                        result: { content: [ { type: "text", text: string } ], details: { … } }, isError: boolean }
+turn_end              { type, message: <assistant message>, toolResults: [ <toolResult message> ] }
+agent_end             { type, messages: [ <message> ], isTerminal: boolean, yielded: boolean }
+notice                { type, level: "error", message: string, source: "cost-gate" }
+
+<message> role "user"
+    { role, content: [ { type: "text", text: string } ], attribution: string, timestamp: number }
+
+<message> role "assistant"
+    { role, content: [ <block> ], api: string, provider: string, model: string,
+      usage: { input: number, output: number, cacheRead: number, cacheWrite: number, totalTokens: number,
+               cost: { input: number, output: number, cacheRead: number, cacheWrite: number, total: number },
+               cttl?: { ephemeral1h: number } },
+      stopReason: "toolUse" | "stop", timestamp: number,
+      requestControls: { messageIndex: number,
+                         tools: { declared: [ string ], deferred: [ ], active: [ string ] },
+                         effort: { topLevel: string, tail: string } },
+      responseId: string, credentialId: number, duration: number, ttft: number, completedAt: number }
+
+<block>
+    { type: "text", text: string }
+    { type: "thinking", thinking: string, thinkingSignature: string }
+    { type: "toolCall", id: string, name: string, arguments: { …, i: string }, intent: string }
+
+<message> role "toolResult"
+    { role, toolCallId: string, toolName: string, content: [ { type: "text", text: string } ],
+      details: { … }, isError: boolean, timestamp: number }
+```
+
+Notes on the listing:
+
+- Tool inputs seen: `bash` `{ command }`, `write` `{ path, content }`, `read`
+  `{ path }`, the stand-in's `report` `{ status }`. In an assistant block the
+  model's `arguments` also carry `i`, a sentence of intent; `args` on the
+  `tool_execution_*` lines do not, and give it as `intent`.
+- `details` keys seen, by tool: `bash` `wallTimeNoticeEmitted`,
+  `timeoutSeconds`, `wallTimeMs`, `trace` (a long trace of the shell's run);
+  `write` `resolvedPath`; `read` `resolvedPath`, `totalLines`, `rowPrefixes`,
+  `displayContent`, `fileSize`, `meta`; an MCP tool `serverName`, `mcpToolName`,
+  `rawContent`, `provider`, `providerName`. Some hold paths.
+- `credentialId`, `responseId` and `thinkingSignature` are `omp`'s and the
+  provider's own; Ork's decoder drops them.
+- `stopReason` was `toolUse` or `stop`; no failed request was seen, so its other
+  values are not known. `api` was `anthropic-messages`.
+- The order in a turn: `message_start` and `message_end` for the user message;
+  `message_start`, `message_update` lines and `message_end` for each assistant
+  message; then, for each call of that message, a `tool_execution_start`, any
+  `tool_execution_update` lines, and a `tool_execution_end` followed by the
+  `toolResult` message; `turn_end`; and so on until `agent_end`. The starts of
+  two calls of one message came together in some legs and one after the other in
+  others, so the decoder pairs lines by `toolCallId`.
+
+### What the legs settle
+
+- **`usage.input` does not include cache reads.** `totalTokens` is the sum of
+  `input`, `output`, `cacheRead` and `cacheWrite`, on every assistant message
+  seen.
+- **A resumed leg prints only its own messages.** Its header repeats the
+  session's `id`; the lines and `agent_end.messages` hold the new user message
+  and what follows, not the earlier legs. A fork does the same, under a new
+  `id`.
+- **`--append-system-prompt` is not kept.** A resumed leg and a fork run without
+  it did not follow the instruction the first leg had appended; the paid steps
+  showed a resumed leg follows the one it is given. So every leg passes Ork's
+  instructions again.
+- **`--max-cost` counts the whole session.** A resumed leg capped at half of
+  what the session had already spent ended at once: exit 3 and three lines
+  (`session`, `advisor_cost_changed`, `notice`), with no `agent_start` and no
+  `agent_end`. A cap reached during a leg prints `notice` and then `agent_end`,
+  whose messages end with the tool results. So the leg's `--max-cost` is the
+  session's budget, not the leg's, and exit 3 may come without an `agent_end`.
+- **A refused call** is `tool_execution_start`, then `tool_execution_end` with
+  `isError: true` and the guard's reason as its text, then its `toolResult`
+  message, as any call.
+- **The `tool_call` event** the guard receives has `type`, `toolName`,
+  `toolCallId` and `input`; `input` is the tool's own input, without `i`.
+- **An Ork tool with an underscore** keeps it: with the plugin named
+  `ork-session` and the server `ork`, the session offers
+  `mcp__ork_session_ork_ask_user` and `mcp__ork_session_ork_report` (read from
+  an RPC `get_state`, with no model call).
+- **`omp --version`** prints `omp/18.22.2` and a newline.
+- **Thinking levels** `omp --help` lists: `off`, `minimal`, `low`, `medium`,
+  `high`, `xhigh`, `max`, `auto`. `medium` is one.
+- **One entry of `omp models --json`** has `provider`, `kind`, `id`, `selector`,
+  `name`, `contextWindow`, `maxTokens`, `reasoning`, `thinking` (a list of
+  levels), `input` (a list of `text`, `image`), `cost` (`input`, `output`,
+  `cacheRead`, `cacheWrite`) and `pricingStatus` (`fixed` or `unknown`).
+
+### Holding a call for 120 seconds
+
+With `extensionHandlers.toolCallTimeoutMs: 200000` in an overlay, the guard held
+a `bash` call for 120 seconds and then let it go. The call ran, the leg went on
+and exited 0 with nothing on stderr.
+
+- **Nothing else timed out.** After the hold the model's next requests went
+  through (the cache was still read), and the stand-in received the `report`
+  call.
+- **The lines are silent during a hold.** The last line before it is the
+  `message_update` whose event is `toolcall_end`, which carries the held call's
+  name and arguments. The assistant `message_end`, with that request's usage,
+  and the `tool_execution_start` lines come only after the guard answers. So
+  while a call is held Ork sees no line, and reads that request's usage late.
+- **Calls of one message are asked one after another.** The second call of the
+  same message (`read`) reached the guard only when the first was released.
+- Not measured: a hold longer than 120 seconds, and stopping a leg while a call
+  is held.
