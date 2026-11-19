@@ -873,9 +873,9 @@ the step's own command is called a variant. Steps 5 to 13 were not run.
    only:
    - _With no flags_ (variant, with `--no-session`): 11 tools are offered
      directly (`read`, `bash`, `edit`, `eval`, `glob`, `grep`, `task`, `wait`,
-     `todo`, `web_search`, `write`); 77 slash commands, of which 48 are
-     built-in, 24 come from skills, 3 are custom and 2 are `omp`'s own (they
-     remain under the flags below); the system prompt's first part is about
+     `todo`, `web_search`, `write`); the slash commands are the built-in ones,
+     `omp`'s own two (they remain under the flags below), and those the user's
+     skills and custom commands add; the system prompt's first part is about
      9,900 characters, with a skills section and a section of `xd://` devices.
    - _With `--no-extensions $CLEAN`:_ 50 commands (the built-in ones and `omp`'s
      own two), so the skills and the custom commands are gone, and so is the
