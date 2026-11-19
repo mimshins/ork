@@ -1384,6 +1384,20 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "omp-driver",
+        title: "The `omp` driver",
+        status: "active",
+        detail:
+          "Built, not yet proven on a real session. RFC-026 (closed with ADR-105): oh-my-pi's `omp` as the fifth driver, one `omp -p --mode json` per leg (`--resume` and `--fork` for follow-ups), Ork's tools through a private plugin folder with the token in its `.mcp.json` only, a settings overlay that allows only the offered built-ins and Ork's tools, and a guard Ork writes (`--trusted-extension`) that refuses what the node's rules refuse and any edit outside the worktree. Unlike `codex`, it holds a paused node's next call and takes `heavy` slots; a pause past the 60-minute window refuses the call and asks the model to make it again. Dollars and tokens: `--max-cost` is Ork's own ledger of the session's spend plus `budgetUsd`. The contract suite passes on a fake `omp`. Left: the capped gate run that sets `proven`, and the limits (G45 to G49, L464 to L482).",
+        docs: [
+          "specs/runtime/omp.md",
+          "specs/gaps/omp-limits.md",
+          "decisions/ADR-105-omp-driver.md",
+          "docs/guides/drivers/omp.md",
+          "packages/runtime/src/adapters/omp.ts",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

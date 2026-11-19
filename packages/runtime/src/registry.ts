@@ -14,6 +14,7 @@ import type { CliAdapter } from "./adapter.ts";
 import { claudeCodeAdapter } from "./adapters/claude-code.ts";
 import { codexAdapter } from "./adapters/codex.ts";
 import { commandCodeAdapter } from "./adapters/command-code.ts";
+import { ompAdapter } from "./adapters/omp.ts";
 import { openCodeAdapter } from "./adapters/open-code.ts";
 import { driverFailure } from "./session-end.ts";
 import { createSessionRuntime } from "./session-runner.ts";
@@ -43,6 +44,7 @@ export const ADAPTERS: Record<DriverId, CliAdapter | null> = {
   "open-code": openCodeAdapter,
   "command-code": commandCodeAdapter,
   codex: codexAdapter,
+  omp: ompAdapter,
 };
 
 /**

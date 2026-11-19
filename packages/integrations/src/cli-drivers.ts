@@ -1,12 +1,13 @@
 /**
  * @file The drivers Ork finds by `<program> --version` (`open-code`,
- *   `command-code`, `codex`): one shared doctor check, the version comparison
- *   it uses, and each driver's descriptor. `drivers.ts` registers them. Ork
- *   never handles the user's login (ADR-004).
+ *   `command-code`, `codex`, `omp`): one shared doctor check, the version
+ *   comparison it uses, and each driver's descriptor. `drivers.ts` registers
+ *   them. Ork never handles the user's login (ADR-004).
  */
 
 import type { AgentDriver, DriverId } from "./drivers.ts";
-import { firstLine } from "./json.ts";
+import type { Exec } from "./integration.ts";
+import { field, firstLine, parseJson } from "./json.ts";
 
 /**
  * The first OpenCode found to honour a server's `codemode: false`, so Ork's
@@ -16,6 +17,12 @@ export const MIN_OPENCODE_VERSION = "2.3.2";
 
 /** The first Codex that has every flag Ork passes to `codex exec` (RFC-024). */
 export const MIN_CODEX_VERSION = "0.169.0";
+
+/**
+ * The `omp` the capture legs of RFC-026 ran: the first with every flag and line
+ * shape the driver relies on.
+ */
+export const MIN_OMP_VERSION = "18.22.2";
 
 /** Whether `claude --version` output names a version below `min`. */
 export const olderThan = (text: string, min: string): boolean => {
@@ -35,7 +42,8 @@ export const olderThan = (text: string, min: string): boolean => {
  * A driver whose tool Ork finds by `<program> --version`. While `proven` is
  * false its check is `skip`, never `ok`, so `readyDriver` never takes it and
  * `ork doctor` does not count it as a ready driver. Its login is the tool's own
- * and never read (ADR-004), so the detail only names the command to run.
+ * and never its credential files (ADR-004), so the detail only names the
+ * command to run, or what the tool's own check printed.
  */
 const installedCli = (
   id: DriverId,
@@ -44,6 +52,7 @@ const installedCli = (
   {
     min,
     loginStatus,
+    loginOutput,
     ...rest
   }: Pick<
     AgentDriver,
@@ -56,6 +65,13 @@ const installedCli = (
      * status is read, never its output or the credential files (ADR-004).
      */
     loginStatus?: string[];
+    /**
+     * A login check whose output is read, for a tool with no status command:
+     * `read` gives the detail's words (`logged in (12 models)`), or `null` for
+     * not signed in. A command that fails is not signed in. The output must
+     * carry no secret; the credential files are never read (ADR-004).
+     */
+    loginOutput?: { args: string[]; read: (stdout: string) => string | null };
   },
 ): AgentDriver => ({
   id,
@@ -86,7 +102,8 @@ const installedCli = (
         hint: min.why,
       };
     }
-    if (loginStatus !== undefined && !(await exec(program, loginStatus)).ok) {
+    const signedIn = await loginWords(exec, program, loginStatus, loginOutput);
+    if (signedIn === null) {
       return {
         name,
         status: rest.proven ? "warn" : "skip",
@@ -99,12 +116,32 @@ const installedCli = (
       name,
       status: rest.proven ? "ok" : "skip",
       detail:
-        loginStatus === undefined
+        signedIn === undefined
           ? `${firstLine(version.stdout)}${unproven}; sign in with \`${login}\` if a session asks`
-          : `${firstLine(version.stdout)}, logged in${unproven}`,
+          : `${firstLine(version.stdout)}, ${signedIn}${unproven}`,
     };
   },
 });
+
+/**
+ * What a driver's login check says: the detail's words, `null` for not signed
+ * in, or `undefined` when the driver has no check.
+ */
+const loginWords = async (
+  exec: Exec,
+  program: string,
+  status: string[] | undefined,
+  output:
+    | { args: string[]; read: (stdout: string) => string | null }
+    | undefined,
+): Promise<string | null | undefined> => {
+  if (status !== undefined) {
+    return (await exec(program, status)).ok ? "logged in" : null;
+  }
+  if (output === undefined) return undefined;
+  const found = await exec(program, output.args);
+  return found.ok ? output.read(found.stdout) : null;
+};
 
 export const openCode = installedCli(
   "open-code",
@@ -183,3 +220,42 @@ export const codex = installedCli("codex", "codex", "codex login", {
     readDenies: false,
   },
 });
+
+/** `omp models --json`'s count of models: none is not signed in. */
+const ompModels = (stdout: string): string | null => {
+  const models = field(parseJson(stdout), "models");
+  if (!Array.isArray(models) || models.length === 0) return null;
+  return `logged in (${models.length} model${models.length === 1 ? "" : "s"})`;
+};
+
+/**
+ * RFC-026's descriptor, proven or not: the doctor check reads `proven` when it
+ * is made, so a test of the proven check needs its own copy.
+ */
+export const ompDriver = (proven: boolean): AgentDriver =>
+  installedCli("omp", "omp", "omp login", {
+    label: "the `omp` CLI of oh-my-pi",
+    proven,
+    onePerCheckout: false,
+    min: {
+      version: MIN_OMP_VERSION,
+      why: "Update omp: an older one may lack flags and line shapes Ork relies on.",
+    },
+    // `omp` has no status command: the models its logins reach, only counted.
+    loginOutput: { args: ["models", "--json"], read: ompModels },
+    capabilities: {
+      questions: true,
+      permissionPrompt: false,
+      price: true,
+      midTurnMessages: false,
+      reportSchema: false,
+      turnLimit: false,
+      mcpServers: false,
+      subagents: false,
+      // Held by `--tools`: a path-scoped read deny offers none of the read tools.
+      readDenies: true,
+    },
+  });
+
+// Not yet proven: no run takes it until a capped gate run passes.
+export const omp = ompDriver(false);

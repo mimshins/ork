@@ -192,6 +192,7 @@ describe("the driver for nodes that name none", () => {
       "Get the claude-code driver ready.",
       "Get the command-code driver ready.",
       "Get the codex driver ready.",
+      "Get the omp driver ready.",
       "See `ork doctor`.",
     ]);
   });
@@ -304,7 +305,7 @@ describe("--driver", () => {
       "--driver `cli` was retired; use `claude-code`",
     );
     expect(badDriver("x")).toBe(
-      "--driver must be one of claude-code, open-code, command-code, codex, got `x`",
+      "--driver must be one of claude-code, open-code, command-code, codex, omp, got `x`",
     );
   });
 });

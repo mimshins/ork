@@ -1,14 +1,12 @@
 # Installation
 
 Ork is a command-line tool, `ork`, that runs on your own machine. This page
-covers what you need, how to install Ork, and how to check that everything
-works.
+covers what you need, how to install it, and how to check it works.
 
 Rather have your coding agent install and set up Ork? See
 [With your agent](./with-your-agent.md).
 
-> **Ork is in alpha.** It is published on npm as `@krapht/ork`; expect the
-> workflow format and commands to change until 1.0.0.
+> **Ork is in alpha.** Expect the workflow format and commands to change.
 
 ## What you need
 
@@ -22,9 +20,8 @@ Rather have your coding agent install and set up Ork? See
 
 How to get Node and git on your system: [Your platform](#your-platform).
 
-**Optional**, only when a workflow uses them. Ork works without any of these;
-install one only if your workflows have a node of its type. A front-end project
-that never touches AWS never needs `aws`.
+**Optional**, only when a workflow uses them: install one only if your workflows
+have a node of its type. A front-end project never needs `aws`.
 
 | Tool  | Needed for                                 | Check                         |
 | ----- | ------------------------------------------ | ----------------------------- |
@@ -69,8 +66,8 @@ and git should work.
 - Node: your distribution's packages are often older than 24, so prefer
   [nodejs.org](https://nodejs.org/en/download), NodeSource, or a version manager
   (`fnm`, `nvm`).
-- git: your package manager. `gh` or `aws`, if a workflow needs them: your
-  package manager, or each tool's own installer.
+- git, `gh` or `aws` (if a workflow needs them): your package manager, or the
+  tool's own installer.
 
 ### Windows
 
@@ -100,12 +97,12 @@ ork doctor
 ```
 
 `ork doctor` shows your Ork version against the last update check, then checks
-Node, git, whether you are in a git repository with a commit, each agent driver,
-each optional integration, and which
+Node, git, your repository and its first commit, each agent driver, each
+optional integration, and which
 [experiments](../guides/project-rules.md#trying-an-experiment) are on. It uses
 each tool's own login check and never prints a token. At least one agent driver
-has to be ready; a missing `gh` or `aws` is fine unless a workflow has a node
-that needs it. Example output (`--plain`: `✓` and `-`):
+has to be ready; a missing `gh` or `aws` is fine unless a node needs it. Example
+output (`--plain`: `✓` and `-`):
 
 ```
  OK    ork                          1.0.0-alpha.10 (the latest as of 2026-11-10)
@@ -116,6 +113,8 @@ that needs it. Example output (`--plain`: `✓` and `-`):
  OK    claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
  OK    opencode (open-code driver)  v2.1.0; sign in with `opencode auth login` if a session asks
  SKIP  cmd (command-code driver)    cmd CLI not found
+ SKIP  codex (codex driver)         codex CLI not found
+ SKIP  omp (omp driver)             omp CLI not found, unproven: not yet proven on a real session
  SKIP  gh                           optional, not installed (needed only for tool.gh nodes)
  SKIP  aws                          optional, not installed (needed only for tool.aws nodes)
  OK    git identity                 user.name and user.email are set
@@ -123,9 +122,10 @@ that needs it. Example output (`--plain`: `✓` and `-`):
  OK    experiments                  none on
 ```
 
-The `claude-code` and `open-code` drivers are ready, and `cmd`, `codex` (`skip`
-even when installed, until proven) and the optional tools are not: a working
-setup. When nothing required is missing, that is all it prints. Else it ends:
+The `claude-code` and `open-code` drivers are ready, and `cmd`, `codex`, `omp`
+and the optional tools are not: a working setup. `omp` is not yet proven, so it
+shows `skip` even when installed ([Drivers](../guides/drivers.md)). When nothing
+required is missing, that is all it prints. Else it ends:
 
 ```
 Not ready: Ork needs Node, git, and at least one agent driver.
@@ -133,9 +133,9 @@ Not ready: Ork needs Node, git, and at least one agent driver.
 
 A workflow that names no driver, like the one `ork init` writes, runs on the one
 ready here, and `ork run` says which. A driver named by the node, its agent,
-`defaults` (workflow or `.ork/project.yaml`), or `--driver claude-code` wins.
-With none ready, `ork run` stops before any session starts. `ork resume` keeps
-the run's driver.
+`defaults` (workflow or `.ork/project.yaml`), or `--driver` wins. With none
+ready, `ork run` stops before any session starts; `ork resume` keeps the run's
+driver.
 
 ## Updating
 

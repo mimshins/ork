@@ -4,7 +4,9 @@
  *   paused. A pause that outlasts the hold window answers `defer`, which ends
  *   the session's turn with the call still pending; the session runner resumes
  *   the session once the node continues, and the same call's hook then lets it
- *   run. Nothing is cut short.
+ *   run. Nothing is cut short. A driver whose tool cannot leave a call pending
+ *   (`omp`) answers `defer` by refusing the call with a request to make it
+ *   again, which waits a window again, in the same leg.
  */
 
 import type { HoldPort } from "@krapht/ork-core";

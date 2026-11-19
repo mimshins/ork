@@ -34,7 +34,7 @@ How the report reaches Ork depends on the driver's `reportSchema` capability
   itself (`reportSchema: true`; `claude-code`'s `--json-schema`). The report is
   read from the tool's result line.
 - **Ork's `report` tool**, where it can't (`reportSchema: false`; `open-code`,
-  `command-code` and `codex`). The session runner serves it on Ork's MCP
+  `command-code`, `codex` and `omp`). The session runner serves it on Ork's MCP
   endpoint only then, preapproved, with the node's report schema as its input
   schema. Zod checks each call against that schema (`z.fromJSONSchema`; Ork adds
   no other validator). A report that breaks it comes back as a tool error naming

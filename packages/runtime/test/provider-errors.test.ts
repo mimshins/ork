@@ -3,8 +3,8 @@
  *   providers send them (Anthropic's `{"type":"error","error":{…}}`, the
  *   OpenAI-style `{"error":{"code",…}}`, Claude Code's `API Error: <status>`
  *   lines, OpenCode's `commandcode` provider, including gaps L240's two
- *   refusals, and Codex's `turn.failed` text): type first, status next, words
- *   last.
+ *   refusals, Codex's `turn.failed` text, and `omp`'s stderr): type first,
+ *   status next, words last.
  */
 
 import { describe, expect, it } from "vitest";
@@ -177,6 +177,10 @@ const FIXTURES: readonly (readonly [string, number | undefined, string])[] = [
     undefined,
     "invalid_node",
   ],
+  // `omp`'s own stderr: no login leaves no default model; a name it cannot
+  // resolve is a model the node asked for (RFC-026).
+  ["No default model selected", undefined, "auth"],
+  ['Model "nope/x" not found', undefined, "model_unavailable"],
   // A status alone, and a bare refusal.
   ["Service Unavailable", 503, "provider_unavailable"],
   ["Payment Required", 402, "out_of_credits"],

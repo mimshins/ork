@@ -21,7 +21,7 @@ import type { DriverCheck, DriverId } from "@krapht/ork-integrations";
 import type { DriverChecks } from "../../src/index.ts";
 
 /** The programs the drivers' doctor checks run (`claude`, then `<program> --version`). */
-const DRIVER_PROGRAMS = ["claude", "opencode", "cmd", "codex"] as const;
+const DRIVER_PROGRAMS = ["claude", "opencode", "cmd", "codex", "omp"] as const;
 
 /**
  * `path` with a folder in front where each driver's program exits 127, as on a
@@ -58,9 +58,9 @@ export const readyOnly =
   (...ready: DriverId[]): DriverChecks =>
   () =>
     Promise.resolve(
-      (["open-code", "claude-code", "command-code", "codex"] as const).map(id =>
-        check(id, ready.includes(id)),
-      ),
+      (
+        ["open-code", "claude-code", "command-code", "codex", "omp"] as const
+      ).map(id => check(id, ready.includes(id))),
     );
 
 /**
@@ -76,7 +76,7 @@ export const openCodeReady = readyOnly("open-code");
  * Refusals have their own tests, with descriptors that lack things.
  */
 export const standInDrivers: readonly DriverNeeds[] = (
-  ["claude-code", "open-code", "command-code", "codex"] as const
+  ["claude-code", "open-code", "command-code", "codex", "omp"] as const
 ).map(id => ({
   id,
   proven: true,

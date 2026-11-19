@@ -32,7 +32,8 @@
         "claude-code",
         "open-code",
         "command-code",
-        "codex"
+        "codex",
+        "omp"
       ]
     },
     "skills": {

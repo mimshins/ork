@@ -1042,7 +1042,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session, and `omp`, built and not yet proven. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
@@ -1124,7 +1124,7 @@ export const NODES = [
     summary:
       "Runs a node through your installed `claude` command in headless mode, with JSON streams in and out. Uses whatever login that `claude` has, or `ANTHROPIC_API_KEY`, Bedrock, Vertex or Foundry; `ork doctor` says which.",
     facts: [
-      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it.",
+      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it; `omp` (RFC-026) is built and waits for its gate run.",
       "An adapter of small strategies (command, event decoder, MCP wiring, permissions, usage, context layers, hold hook), run by the session runner every driver shares.",
       "`--input-format stream-json --output-format stream-json --verbose`.",
       "The report comes back through `--json-schema`; Ork's tools through `--mcp-config`.",
@@ -1159,6 +1159,7 @@ export const NODES = [
     facts: [
       "Each driver is a `CliAdapter` registered under its id: `Command`, `EventDecoder`, `McpWiring` (a flag, a config file, or a per-folder lease), `PermissionPolicy`, `UsageReader`, `ContextLayers` and an optional hold hook.",
       "Does Ork's MCP endpoint, the legs (one process each), holding a paused node's call, interrupt and the timeouts once, so a new tool is an adapter and not an edit to the engine.",
+      "Holding a paused node's call works on `claude-code` and `omp`: on `claude-code` a pause past the window ends the turn and the call waits for the next leg; `omp` can't leave a call pending, so its guard refuses it and the model makes it again.",
       "A message to a tool that can't take one mid-turn is delivered by resuming the session in the next leg.",
       "Adding a driver id with no registered adapter or descriptor does not compile.",
       "Settles how every session ended as one of a closed set of kinds (turn limit, auth, rate limited, tool missing, and so on): the decoder names what only its tool shows, the shared provider classifier reads the rest, and a failure to run is `tool_missing` or `driver_crashed`. The raw text is kept, scrubbed, as the end's detail.",
@@ -1189,7 +1190,7 @@ export const NODES = [
       "One set of tests that every adapter passes against a fake of its tool, so a driver keeps the same promises: events, reports, denials, cleanup, usage, interrupt and messages.",
     facts: [
       "Covers: events normalized; a report that fits kept and one that breaks the schema rejected; a denied tool stays denied; Ork's endpoint reached and then gone; usage counted; an interrupt ends the session; a mid-session message arrives.",
-      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`, `fake-codex`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
+      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`, `fake-codex`, `fake-omp`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
       "Runs on fakes, so CI needs no account. A real session is the maintainer's gate, outside the suite.",
     ],
     docs: [RUNTIME.contract, RUNTIME.runner, DESIGN.packages],
@@ -1206,7 +1207,7 @@ export const NODES = [
     summary:
       "How a node ends with a report on a driver that can't return structured output: the model calls `report`, Ork checks it against the node's schema, and a bad one comes back to the model with the violations.",
     facts: [
-      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`, `codex`); `claude-code` uses `--json-schema`.",
+      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`, `codex`, `omp`); `claude-code` uses `--json-schema`.",
       "The session ends with the last report it accepted; one that breaks the schema is refused and the model tries again.",
       "A schema it can't read falls back to any object with a valid `status` and `summary` (gap L237).",
     ],
@@ -1285,6 +1286,34 @@ export const NODES = [
       RUNTIME.codex,
       RUNTIME.codexHook,
       RUNTIME.codexSpec,
+      RUNTIME.driverGuide,
+    ],
+  },
+  {
+    id: "ompDriver",
+    title: "omp driver",
+    sub: "`omp -p --mode json` · guard + plugin",
+    zone: "runtime",
+    x: 1720,
+    y: 840,
+    status: "built",
+    pkg: "runtime",
+    src: "packages/runtime/src/adapters/omp.ts",
+    summary:
+      "Built, not yet proven on a real session (RFC-026): until its gate run passes, `ork validate` and `ork run` refuse a node on it and `ork doctor` shows it `skip`. Runs a node through your `omp` (oh-my-pi), one process per leg, with Ork's tools through a private plugin folder and a guard Ork writes as the fence.",
+    facts: [
+      "Each leg is `omp -p --mode json` with `omp`'s extras off, `--tools` holding only the built-ins the node's rules can allow, `--thinking` (the node's effort, else `medium`) and Ork's instructions on every leg; a message waits for the leg's end and the next leg is `--resume <id>`, a question fork `--fork <id>`.",
+      "Ork's MCP server comes through a plugin folder (`--plugin-dir`), its token in the plugin's `.mcp.json` (0600) and in no argument or variable; a settings overlay (`--config`) allows the offered tools and each Ork tool by name and denies the rest, `eval` and `task` always. Sessions go to `~/.ork/omp/sessions`.",
+      "Deny by default: the guard (`--trusted-extension`, the only extension) refuses what the node's rules refuse, a tool it doesn't know, and an edit outside the worktree, `--yolo` included. It fails closed: a guard, overlay or Ork server that doesn't load ends the leg before any model call.",
+      "Holds a paused node's next call by asking Ork's hold endpoint, and takes `heavy` slots the same way. A pause past the 60-minute window refuses the call and asks the model to make it again; a stop writes a marker the guard checks, so a held call never runs.",
+      "Dollars and tokens: `--max-cost` is what Ork's own ledger says the session spent plus `budgetUsd`, since `omp` counts the whole session. A node with `mcp` servers, sub-agents or `maxTurns` is refused; a path-scoped `Read` deny holds, as none of the read tools is offered.",
+      "Unmeasured until the gate run: what `omp` does on a stop mid-turn, a hold of most of the window, and the user's own `omp` setup in a session (gaps G45 to G49, L464 to L482).",
+    ],
+    docs: [
+      RUNTIME.omp,
+      RUNTIME.ompGuard,
+      RUNTIME.ompSpec,
+      RUNTIME.ompLimits,
       RUNTIME.driverGuide,
     ],
   },

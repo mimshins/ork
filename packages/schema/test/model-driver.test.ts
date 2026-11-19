@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { driverOf } from "../src/index.ts";
 
-const DRIVERS = ["claude-code", "open-code", "command-code", "codex"];
+const DRIVERS = ["claude-code", "open-code", "command-code", "codex", "omp"];
 
 describe("driverOf", () => {
   it("splits a registered driver id from the model", () => {
@@ -29,6 +29,10 @@ describe("driverOf", () => {
       driver: "open-code",
       model: "anthropic/claude-sonnet-5-5",
     });
+    expect(driverOf("omp.openai/gpt-5.2", DRIVERS)).toEqual({
+      driver: "omp",
+      model: "openai/gpt-5.2",
+    });
   });
 
   it("keeps a plain model whole, even with a dot or a slash", () => {
@@ -37,6 +41,9 @@ describe("driverOf", () => {
       model: "deepseek/deepseek-v4.1-flash",
     });
     expect(driverOf("gpt-5.1", DRIVERS)).toEqual({ model: "gpt-5.1" });
+    expect(driverOf("openai/gpt-5.2", DRIVERS)).toEqual({
+      model: "openai/gpt-5.2",
+    });
   });
 
   it("does not take a driver that is not registered", () => {

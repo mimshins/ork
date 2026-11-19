@@ -63,8 +63,8 @@ leg's value, or the earlier one's when the later leg has none. After
 `ork resume` no figure is known until a new session reports one, so the rule
 decides nothing: the safe direction. Status: the field is in the runtime port
 ([outcome.ts](../../packages/core/src/runtime/outcome.ts)), and the
-`claude-code`, `open-code` and `command-code` decoders set it; `codex`, which
-reports usage once a turn, leaves it unset
+`claude-code`, `open-code`, `command-code` and `omp` decoders set it; `codex`,
+which reports usage once a turn, leaves it unset
 ([per driver](../runtime/session-ends.md#the-token-cap)).
 
 ## Where a token cap applies
@@ -113,9 +113,10 @@ passes by what the running sessions were given ([L99](./limits.md)).
 
 ## Partial totals
 
-A driver with no `price` capability (`command-code` and `codex` today,
-[drivers](../runtime/which-driver.md)) reports no dollars, so its sessions add
-$0 to a dollar total. A total that leaves some out is **partial**:
+A driver with no `price` capability (`command-code` and `codex` today; `omp` has
+one, with catalogue prices, [drivers](../runtime/which-driver.md)) reports no
+dollars, so its sessions add $0 to a dollar total. A total that leaves some out
+is **partial**:
 
 - `UsageTotals` (and each group) has `tokens` and `partial`; `RunRecord` and
   `RunResult` have `tokens` and, when a session ran on an unpriced driver,

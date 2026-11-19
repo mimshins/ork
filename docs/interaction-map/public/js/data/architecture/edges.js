@@ -506,6 +506,17 @@ export const EDGES = [
     docs: [DESIGN.runtime],
   },
   {
+    id: "runner-omp",
+    from: "sessionRunner",
+    to: "ompDriver",
+    kind: "local",
+    label: "strategies · plugin · guard",
+    detail:
+      "The `omp` adapter supplies its own strategies, with a private plugin folder as its MCP wiring (the token in its `.mcp.json`), a settings overlay, and a guard that holds the node's rules and asks the runner's hold endpoint before each call. Built, not yet proven on a real session.",
+    status: "built",
+    docs: [DESIGN.runtime],
+  },
+  {
     id: "contract-runner",
     from: "contractSuite",
     to: "sessionRunner",

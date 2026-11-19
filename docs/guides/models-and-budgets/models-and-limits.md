@@ -106,9 +106,9 @@ limits:
   `budget_limit` ([why a node stopped](../why-a-node-stopped.md#budget-limit)).
   Ork checks at each usage report the tool prints, so a session can pass the cap
   by up to one step: a model response on `claude-code`, a step on `open-code`, a
-  model request on `command-code`, a whole turn on `codex` (it reports once, at
-  a turn's end, so Ork stops it between its stretches). A report the node had
-  already handed in still decides how it ended.
+  model request on `command-code` and `omp`, a whole turn on `codex` (it reports
+  once, at a turn's end, so Ork stops it between its stretches). A report the
+  node had already handed in still decides how it ended.
 - **A run's** `limits.budgetTokens` sets each session's cap aside, as the
   dollars do. A node's own cap wins over `defaults.budgetTokens`, then the
   smaller of that and what is left of the run's applies.
@@ -129,3 +129,10 @@ limits:
   command-code". Add `budgetTokens`. A run that mixes priced and unpriced
   drivers shows its dollar total as partial, with tokens beside it
   ([what you spent](./driver-and-usage.md#what-you-spent)).
+- **`omp` reports dollars, but from catalogue prices.** `budgetUsd` stops it
+  (`omp` exits at its cap), counted per stretch of a session as on the other
+  drivers. A subscription login gets notional dollars, and a model `omp` has no
+  price for counts as $0, so `budgetUsd` alone does not bind it: add
+  `budgetTokens`. A request in flight can pass the cap
+  ([omp](../drivers/omp.md#what-the-dollars-mean)). `omp` is not yet proven, so
+  a node on it is refused for now.

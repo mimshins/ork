@@ -68,6 +68,21 @@ Nothing is cut short. What happens depends on what the paused part is doing:
   - On continue, the driver resumes the session with no new message. The pending
     call runs, and the session goes on, still one session with one result, its
     usage the sum of both legs.
+- **An `omp` session** waits before its next tool call too, in the session's
+  guard extension, which asks the same `/hold` endpoint over HTTP before every
+  call the node's rules allow (Ork's own tools included) and waits, with no
+  timeout of its own. The turn in flight finishes first, and the lines are
+  silent while the call waits
+  ([the page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
+  - **A long pause** is not a deferral: `omp` cannot leave a call pending across
+    processes. After the hold window (60 minutes) the endpoint answers `defer`,
+    and the guard refuses the call with "Ork paused this node, so this call did
+    not run. Make the same call again; it waits until the node continues. Do
+    nothing else." The model asks again, the call waits another window, and on
+    continue it runs, in the same leg with no resume. Each window a pause
+    outlasts costs one model request, counted toward the node's budgets.
+  - **A stop** while a call is held writes a `stopped` marker at once, so the
+    call does not run whatever the endpoint answers; the leg ends `interrupted`.
 - **Nothing new starts.** Queued activations wait, and so does a leader's
   delegated child before it starts. A tool node (`tool.shell`, `tool.gh`,
   `tool.aws`) runs to its end, and a [`workflow.call`](./scheduler/calls.md)'s
@@ -89,8 +104,9 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **`ork continue` with no node** releases the run's pause, and every node's.
 - **`ork continue --node n`** releases one node paused by name. Under a whole
   run's pause, it is refused.
-- **What goes on next.** A held session's hook answers at once. A deferred
-  session is resumed. Queued activations start.
+- **What goes on next.** A held session's hook answers at once (on `omp`, its
+  guard's waiting call runs). A deferred session is resumed. Queued activations
+  start.
 
 ## Stopping one node
 
@@ -161,6 +177,11 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). Then the claude-code driver's hold never fires, and a
   node pauses only at its next activation ([L29](./scheduler/limits.md)).
+- **`omp` has no true deferral.** A pause past its hold window costs a model
+  request per window, because the call is refused and asked for again rather
+  than left pending. `claude-code` is the one driver that ends its turn and
+  resumes. `command-code` and `codex` have no hold: a pause reaches them at a
+  leg's end (see [omp's limits](./gaps/omp-limits.md)).
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or
   a node's stop: `ork pause`, `ork continue`, `ork stop --node` and the API's
   routes refuse a `node-…` run with "stop the whole run instead", as links,

@@ -17,8 +17,10 @@ The command does the free steps itself (preconditions, the driver, `ork init`'s
 file steps, a survey of the repository, the questions, a digest of past runs,
 the cost preview) and runs two workflows Ork ships between them,
 `ork:onboard-propose` and `ork:onboard-write`, on whichever driver is ready (not
-`codex`, which refuses their `maxTurns`: [L454](../gaps/codex-limits.md)). Each
-paid step has its own cap, and Ork never merges.
+`codex`, which refuses their `maxTurns`: [L454](../gaps/codex-limits.md); nor
+`omp`, unproven and with no turn limit: its limits are in
+[omp-limits](../gaps/omp-limits.md)). Each paid step has its own cap, and Ork
+never merges.
 
 ```
 ork onboard [--driver <id>] [--review | --fresh]

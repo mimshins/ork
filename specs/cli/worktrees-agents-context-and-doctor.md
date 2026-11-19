@@ -141,9 +141,17 @@ and `cmd login`, are named, never read), `skip` with how to install it when it
 is missing. `codex` is checked with `codex --version` (a warning below 0.169.0)
 and then `codex login status`, whose exit status alone is read: `ok` when it is
 0, a warning with "sign in with `codex login`" when not, and `skip` with how to
-install it when `codex` is missing. A driver whose descriptor is not `proven` is
-listed as `skip` with "unproven", and never counts as a ready driver; every
-driver today is proven.
+install it when `codex` is missing. `omp` is checked with `omp --version` (a
+warning below 18.22.2) and then `omp models --json`, whose output is parsed and
+never kept: one model or more is `ok` ("logged in (N models)"); an empty list, a
+failing command or output that is not that JSON is a warning with "sign in with
+`omp login`". Ork never runs `omp auth`, `omp token` or `omp usage`.
+`omp models --json` can take about 15 seconds in a fresh home (measured), so
+`ork doctor`, and any command that runs this check (`ork run --driver omp`, a
+ready-driver look), may wait that long. A driver whose descriptor is not
+`proven` is listed as `skip` with "unproven", and never counts as a ready
+driver; `omp` is the only one today (its gate run is pending,
+[its page](../runtime/omp-output.md#the-doctor-check)).
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

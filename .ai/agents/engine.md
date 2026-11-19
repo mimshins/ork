@@ -25,7 +25,8 @@ source of truth; a socket per run is the fast path).
   through the existing owner-failure rules, with no new outcome.
 - **Every built driver.** A behavior works on the claude-code driver, and on
   `open-code` and `command-code` (RFC-014) and `codex` (RFC-024), all proven,
-  or the driver that can't do it yet has the gap written in `specs/gaps.md`. Tests use the
+  and on `omp` (RFC-026, built, not yet proven), or the driver that can't do it
+  yet has the gap written in `specs/gaps.md`. Tests use the
   fake runtime, so CI needs no account.
 - **Mechanism, not policy.** Side effects (commits, merges, branch names) are
   project rules with defaults, never hard-coded.

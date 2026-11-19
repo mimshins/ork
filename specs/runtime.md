@@ -6,8 +6,10 @@ the [`open-code`](./runtime/open-code.md) and
 [`command-code`](./architecture/command-code.md) drivers and the
 [`codex`](./runtime/codex.md) driver are built and proven on a real session
 ([code](../packages/runtime/src/index.ts),
-[tests](../packages/runtime/test/runtime.test.ts)), and run one node at a time
-by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
+[tests](../packages/runtime/test/runtime.test.ts)); the
+[`omp`](./runtime/omp.md) driver is built and not yet proven (its gate run is
+pending, so a run refuses it). Drivers run one node at a time by
+[`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 [ADR-004](../decisions/ADR-004-no-credentials.md),
 [ADR-005](../decisions/ADR-005-one-runtime-port-two-drivers.md),
 [ADR-010](../decisions/ADR-010-reports-as-structured-output.md),
@@ -23,7 +25,7 @@ by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 
 | Type             | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AgentRuntime`   | `{ driver: "claude-code" \| "open-code" \| "command-code" \| "codex"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `AgentRuntime`   | `{ driver: "claude-code" \| "open-code" \| "command-code" \| "codex" \| "omp"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause)) and its `MachinePort` (priority, slots for heavy Bash calls; [machine](./machine.md))                                                                                                                                                                                                                                                                                                                                                                                      |
 | `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules (`allow`, `deny`, `only`: the only built-in tools, `strictMcp`: no MCP server but Ork's, `--strict-mcp-config`), permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`, `fork` (with `resume`, a copy of that session: `--fork-session`; [leader questions](./messaging/leader-questions.md)), `promptCache` (`1h` for a leader), `machineClaude` (load the machine's MCP servers and auto-memory; [what a session loads](./runtime/what-a-session-loads.md)), `yolo` (`ork run --yolo`: allow what the tool rules don't deny; [ADR-094](../decisions/ADR-094-yolo-runs.md)) |
 | `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -59,12 +61,17 @@ descriptor has `capabilities` (`questions`, `permissionPrompt`, `price`,
 `proven: true`, since their gate runs (2026-11-10). `codex` runs the user's own
 `codex exec` per leg ([its page](./runtime/codex.md); the sandbox and a
 per-session hook hold the node's rules) and is `proven: true` since its gate run
-(2026-11-18). `readDenies: false` (`codex`) means a `deny` on a `Read`, `Glob`
-or `Grep` path can't hold, so `ork validate` and `ork run` refuse a node that
-has one for that driver. A descriptor with `proven: false` is refused and never
-counts as ready. The session runner sets `PWD` to the session's folder, which
-OpenCode reads as its own. The ids `sdk` and `cli` are retired: naming one is
-refused ("use `claude-code`"); a stored run's are read as `claude-code`
+(2026-11-18). `omp` runs the user's own `omp -p --mode json` per leg
+([its page](./runtime/omp.md); a guard extension Ork writes, `omp`'s approval
+settings and `--tools` hold the node's rules, and the guard holds a paused
+node's call) and is `proven: false`, built and awaiting its gate run.
+`readDenies: false` (`codex`) means a `deny` on a `Read`, `Glob` or `Grep` path
+can't hold, so `ork validate` and `ork run` refuse a node that has one for that
+driver; `omp` holds it by leaving its read tools out of `--tools`. A descriptor
+with `proven: false` is refused and never counts as ready. The session runner
+sets `PWD` to the session's folder, which OpenCode reads as its own. The ids
+`sdk` and `cli` are retired: naming one is refused ("use `claude-code`"); a
+stored run's are read as `claude-code`
 ([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
 
 | Concern               | `claude-code` ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts))                                                                                                                                                                                           |
@@ -147,8 +154,8 @@ request (input + cache read + cache write, the
 [prompt figure](./usage/tokens.md#prompt-output-and-counted-on-screen)), the
 size of the context a resume would read again. It is optional and unset when a
 driver gives no per-request usage; two legs of one session keep the later leg's
-value, never a sum. The `claude-code`, `open-code` and `command-code` decoders
-set it; `codex` leaves it unset
+value, never a sum. The `claude-code`, `open-code`, `command-code` and `omp`
+decoders set it; `codex` leaves it unset
 ([per driver](./runtime/session-ends.md#the-token-cap)).
 
 ## How a session is spawned
@@ -192,4 +199,5 @@ benchmark ([register](./gaps.md#limits)).
 - [What a session loads](./runtime/what-a-session-loads.md)
 - [The `open-code` driver](./runtime/open-code.md)
 - [The `codex` driver](./runtime/codex.md)
+- [The `omp` driver](./runtime/omp.md)
 - [The `extract` tool](./runtime/extract-tool.md)

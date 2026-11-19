@@ -75,6 +75,10 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 | `codex`        | `turn.failed` or `error` text; exit 130        | the classifier, else `unknown`; `interrupted`                 |
 |                | "not supported when using Codex"               | `model_unavailable`                                           |
 |                | no key caps its turns                          | never `turn_limit`                                            |
+| `omp`          | exit 3 (`--max-cost`, the `cost-gate` notice)  | `budget_limit`, the notice's words as detail                  |
+|                | exit 130; exit 0 with no report                | `interrupted`; `no_report`                                    |
+|                | exit 1 (stderr; a request's `stopReason`)      | the classifier, else `driver_crashed`                         |
+|                | no key caps its turns                          | never `turn_limit`                                            |
 | every driver   | counted tokens reach `budgetTokens`            | `budget_limit` (Ork stops it, below)                          |
 |                | the program is not installed (`ENOENT`)        | `tool_missing`                                                |
 |                | a start that failed with a provider's words    | the classifier                                                |
@@ -224,6 +228,7 @@ to one report:
 | `open-code`    | each `step_finish`                               | one step                                                                  | the last `step_finish`: `tokens.input` + `cache.read` + `cache.write`                |
 | `command-code` | each `model_request_end`                         | one model request                                                         | the last `model_request_end`: `inputTokens` + `cacheReadTokens` + `cacheWriteTokens` |
 | `codex`        | each `turn.completed`                            | one turn (usage arrives once, at a turn's end)                            | unset: no per-request usage ([Codex](./codex.md#output-usage-and-ends))              |
+| `omp`          | each assistant `message_end`                     | one model request (a held call's request is counted late)                 | the last assistant `message_end`: `input` + `cacheRead` + `cacheWrite`               |
 
 The context column is the session's `contextTokens`
 ([usage](../usage/tokens.md#prompt-output-and-counted-on-screen)): the decoder
@@ -232,10 +237,13 @@ session's end, and on the usage a stopped leg keeps. It is the prompt of the
 last model request (input + cache read + cache write); two legs keep the later
 leg's ([tests](../../packages/runtime/test/context-tokens.test.ts)).
 
-None of the four prints a cost mid-session, so a session stopped at its token
-cap records $0 and a run's dollar limit under-counts it
-([L280](../gaps/budget-tokens-limits.md)). Claude Code's own `--max-budget-usd`
-stays, so on `claude-code` both caps bind.
+Of the five, only `omp` prints a cost mid-session (`cost.total` on each
+assistant message). The other four stop a session at its token cap with $0
+recorded, so a run's dollar limit under-counts it
+([L280](../gaps/budget-tokens-limits.md)); an `omp` session stopped at its token
+cap records the dollars decoded so far. Claude Code's own `--max-budget-usd`
+stays, so on `claude-code` both caps bind; `omp`'s `--max-cost` binds the same
+way ([its page](./omp-output.md#budgets)).
 
 A stopped session keeps what it used. The leg holds the last usage its decoder
 read, with the earlier legs' added, and an `interrupted` end (`driverFailure`)

@@ -1,6 +1,6 @@
 # RFC-026 — The omp driver: oh-my-pi's `omp` CLI as the fifth driver
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-19
 - **Supersedes:** —
 - **Superseded by:** —

@@ -48,13 +48,18 @@ the files, the check's name, a time and who ran it
 | `update-check.json`              | when Ork last asked for a newer version, and the answer                                                                      |
 | `sockets/`                       | one socket per live run, so commands reach it at once                                                                        |
 | `watch/`                         | `ork watch`'s own files, when you use it                                                                                     |
+| `omp/sessions/`                  | the session files of [`omp`](./drivers/omp.md) nodes: whole transcripts, one lock file per stretch; never pruned             |
+| `omp/spent/`                     | one small file of dollar figures per `omp` session, so a resumed session gets its own budget; never pruned                   |
 
 `~/.ork/` is readable only by you: Ork creates it, and the sockets folder, with
 mode `0700`, and `state.db` with `0600`, and tightens an older `~/.ork/` that
 others could read the next time it opens the store. A `claude-code` session's
 MCP servers and settings go to it in files in a private temporary folder, not on
 its command line where other users' `ps` could see them, and the files are
-removed when the session ends.
+removed when the session ends; an `omp` session's plugin, settings and guard,
+with a copy of Ork's token, are kept the same way. `omp/sessions/` is `0700`.
+Ork never prunes `omp/sessions/` or `omp/spent/` (`ork prune` leaves them):
+delete them yourself once you no longer resume those sessions.
 
 The browser keeps its own few things for `ork ui`: your layout, theme, what
 you've read, and a banner you dismissed.

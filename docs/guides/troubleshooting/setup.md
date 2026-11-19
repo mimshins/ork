@@ -35,8 +35,9 @@ worker waits for it, so neither would finish. Give the worker
 
 **`node … runs on driver …, which is not yet proven on a real session`.** A
 driver is refused until a real session has proven it, and `ork doctor` shows it
-as `skip` even when installed. All four of Ork's drivers are proven today; name
-one of them, or no driver.
+as `skip` even when installed. `claude-code`, `open-code`, `command-code` and
+`codex` are proven; `omp` is built and not yet proven, so name another driver,
+or no driver ([omp](../drivers/omp.md)).
 
 **`node … denies …, but driver codex has no read tool to gate`.** Codex can read
 outside the worktree, so a deny on a `Read`, `Glob` or `Grep` path could not
@@ -47,6 +48,12 @@ driver ([Codex](../drivers/codex.md#what-holds-a-node-to-its-rules)).
 (`~/.codex/hooks.json`, `$CODEX_HOME/hooks.json` or `/etc/codex/hooks.json`)
 would run untrusted beside Ork's, so a Codex node ends before it starts. Move
 the file away ([Codex](../drivers/codex.md#if-a-node-stops-before-it-starts)).
+
+**`Trusted extension failed to load …`, `Config overlay not found …`,
+`No default model selected`, `MCP servers not ready`.** An `omp` node ended
+before its first model request: Ork's guard or settings for the session could
+not load, `omp` is not signed in (`omp login`), or Ork's tool server did not
+answer ([omp](../drivers/omp.md#if-a-node-stops-before-it-starts)).
 
 **`No agent driver is ready here, and … name none.`** Neither your `claude`
 login nor an API key or cloud provider is set up, and the nodes it names don't

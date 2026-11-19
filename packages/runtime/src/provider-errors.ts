@@ -67,7 +67,7 @@ const WORDS: readonly (readonly [EndKind, RegExp])[] = [
   ["rate_limited", /\brate.?limit(?:ed)?\b|\btoo many requests\b/iu],
   [
     "auth",
-    /\binvalid (?:x-)?api.?key\b|\bnot (?:logged|signed) in\b|\bplease run \/login\b|\bunauthori[sz]ed\b|\bOAuth token has expired\b/iu,
+    /\binvalid (?:x-)?api.?key\b|\bnot (?:logged|signed) in\b|\bplease run \/login\b|\bunauthori[sz]ed\b|\bOAuth token has expired\b|\bNo default model selected\b/iu,
   ],
   [
     "provider_unavailable",

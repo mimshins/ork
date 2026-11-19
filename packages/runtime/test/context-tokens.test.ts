@@ -2,7 +2,8 @@
  * @file Each driver's decoder sets a session's context (`contextTokens`): the
  *   prompt of its last model request, input + cache read + cache write. Claude
  *   Code skips a sub-agent's requests; Codex, with no per-request usage, leaves
- *   it unset. Two legs of one session keep the later leg's.
+ *   it unset; `omp` reads its last assistant message. Two legs of one session
+ *   keep the later leg's.
  */
 
 import type {
@@ -17,6 +18,7 @@ import type { LegDecoder } from "../src/adapter.ts";
 import { claudeDecoder } from "../src/adapters/claude-code-events.ts";
 import { codexDecoder } from "../src/adapters/codex-events.ts";
 import { commandCodeDecoder } from "../src/adapters/command-code-events.ts";
+import { ompDecoder, ompUsage } from "../src/adapters/omp-events.ts";
 import { openCodeDecoder, sumUsage } from "../src/adapters/open-code-events.ts";
 import { addUsage } from "../src/adapters/session-usage.ts";
 
@@ -89,6 +91,17 @@ const request = (inputTokens: number) => ({
   },
 });
 
+/** An `omp` assistant message whose prompt is `input` + 33 cached. */
+const ompRequest = (input: number) => ({
+  type: "message_end",
+  message: {
+    role: "assistant",
+    content: [],
+    stopReason: "toolUse",
+    usage: { input, output: 4, cacheRead: 30, cacheWrite: 3, cost: {} },
+  },
+});
+
 describe("a session's context", () => {
   it("is claude-code's last main-thread response, sub-agents' skipped", () => {
     const outcome = ended(claudeDecoder(), [
@@ -120,6 +133,16 @@ describe("a session's context", () => {
     expect(outcome.usage.contextTokens).toBe(112);
   });
 
+  it("is omp's last assistant message_end", () => {
+    const outcome = ended(ompDecoder(spec), [
+      { type: "session", id: "s" },
+      ompRequest(100),
+      ompRequest(400),
+      { type: "message_end", message: { role: "user", content: [] } },
+    ]);
+    expect(outcome.usage.contextTokens).toBe(433);
+  });
+
   it("is unset on codex, which reports usage once a turn", () => {
     const outcome = ended(codexDecoder(spec), [
       { type: "thread.started", thread_id: "th" },
@@ -133,6 +156,7 @@ describe("two legs of one session", () => {
   it.each([
     ["addUsage", addUsage],
     ["sumUsage", sumUsage],
+    ["ompUsage.combine", ompUsage.combine],
   ])("keep the later leg's context in %s", (_name, combine) => {
     expect(combine(usage(9000), usage(12_000)).contextTokens).toBe(12_000);
     expect(combine(usage(9000), usage()).contextTokens).toBe(9000);

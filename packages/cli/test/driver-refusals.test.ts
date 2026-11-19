@@ -45,14 +45,15 @@ const unproven = standInDrivers.map(d =>
 const unasked = () => Promise.reject(new Error("the drivers' checks ran"));
 
 /**
- * Every driver's check but none `ok`: `codex` is `skip` (its tool missing), the
- * rest `warn`.
+ * Every driver's check but none `ok`: `codex` and `omp` are `skip` (their tool
+ * missing), the rest `warn`.
  */
 const notReady = AGENT_DRIVERS.map(({ id }) => ({
   id,
   result: {
     name: id,
-    status: id === "codex" ? ("skip" as const) : ("warn" as const),
+    status:
+      id === "codex" || id === "omp" ? ("skip" as const) : ("warn" as const),
     detail: "not ready",
   },
 }));
@@ -125,6 +126,69 @@ describe("ork validate on the codex driver", () => {
     );
     expect(found.map(d => d.severity)).toEqual(["warning"]);
     expect(found[0]?.message).toContain("driver `codex` reports no dollars");
+  });
+});
+
+/** The real descriptors, with `omp` proven, to read what it can't do. */
+const ompProven = AGENT_DRIVERS.map(d =>
+  d.id === "omp" ? Object.assign({}, d, { proven: true }) : d,
+);
+
+describe("ork validate on the omp driver", () => {
+  it("refuses an omp node while the driver is not yet proven", async () => {
+    const found = await driverDiagnostics(
+      workflowOf(yamlOf("    model: omp.openai/gpt-5.2\n")),
+      { drivers: AGENT_DRIVERS, checks: unasked },
+    );
+    expect(found.map(d => d.message)).toEqual([
+      "node `build` runs on driver `omp`, which is not yet proven on a real session",
+    ]);
+  });
+
+  it.each([
+    [
+      "its own MCP servers",
+      "    mcp: [docs]\n",
+      "node `build` names MCP servers (`mcp`), but driver `omp` does not load a node's own MCP servers",
+    ],
+    [
+      "a turn limit",
+      "    maxTurns: 4\n",
+      "node `build` sets maxTurns, but driver `omp` has no turn limit",
+    ],
+  ])(
+    "refuses a node that needs %s, once proven",
+    async (_need, extra, message) => {
+      const found = await driverDiagnostics(
+        workflowOf(yamlOf(`    driver: omp\n${extra}`)),
+        { drivers: ompProven, checks: unasked },
+      );
+      expect(found.map(d => d.message)).toEqual([message]);
+    },
+  );
+
+  it("refuses a sub-agent in an omp session, once proven", async () => {
+    const found = await driverDiagnostics(
+      workflowOf(
+        "schemaVersion: 1\nname: notes\nnodes:\n  lead:\n    type: agent.leader\n    driver: omp\n    prompt: go\n  helper:\n    type: agent.subagent\n    parent: lead\n    description: helps\n    prompt: help\n",
+      ),
+      { drivers: ompProven, checks: unasked },
+    );
+    expect(found.map(d => d.message)).toContain(
+      "sub-agent `helper` runs in `lead`'s session on driver `omp`, which does not run subagents",
+    );
+  });
+
+  it("accepts a path-scoped read deny and a dollar budget, with no warning", async () => {
+    const found = await driverDiagnostics(
+      workflowOf(
+        yamlOf(
+          '    driver: omp\n    budgetUsd: 1\n    tools:\n      deny: ["Read(./secrets/**)"]\n',
+        ),
+      ),
+      { drivers: ompProven, checks: unasked },
+    );
+    expect(found).toEqual([]);
   });
 });
 

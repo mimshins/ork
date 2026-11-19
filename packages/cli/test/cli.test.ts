@@ -29,6 +29,13 @@ import {
   validateFile,
 } from "../src/index.ts";
 import { confirm } from "../src/output.ts";
+import { pathWithoutDrivers } from "./fixtures/drivers.ts";
+
+/**
+ * The child `ork`'s `PATH`: no agent CLI of this machine's, whose doctor check
+ * (`omp models --json` in a fresh `~`) can outlast a test.
+ */
+const PATH_NOW = pathWithoutDrivers();
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
@@ -56,7 +63,7 @@ const validateWithTriggers = (triggers: string, ...args: string[]) => {
     cwd: repo,
     encoding: "utf8",
     env: {
-      PATH: process.env["PATH"] ?? "",
+      PATH: PATH_NOW,
       HOME: home,
       ORK_NO_UPDATE_CHECK: "1",
     },
@@ -74,7 +81,7 @@ const validateText = (text: string, ...args: string[]) => {
     cwd: dir,
     encoding: "utf8",
     env: {
-      PATH: process.env["PATH"] ?? "",
+      PATH: PATH_NOW,
       HOME: dir,
       ORK_NO_UPDATE_CHECK: "1",
     },
@@ -91,7 +98,7 @@ const validateInProject = (project: string, ...args: string[]) => {
     cwd: dir,
     encoding: "utf8",
     env: {
-      PATH: process.env["PATH"] ?? "",
+      PATH: PATH_NOW,
       HOME: dir,
       ORK_NO_UPDATE_CHECK: "1",
     },
@@ -142,7 +149,7 @@ const validateBare = () => {
     cwd: dir,
     encoding: "utf8",
     env: {
-      PATH: process.env["PATH"] ?? "",
+      PATH: PATH_NOW,
       HOME: dir,
       ORK_NO_UPDATE_CHECK: "1",
     },
@@ -513,7 +520,7 @@ const initBare = () => {
       cwd: dir,
       encoding: "utf8",
       env: {
-        PATH: process.env["PATH"] ?? "",
+        PATH: PATH_NOW,
         HOME: dir,
         ORK_NO_UPDATE_CHECK: "1",
       },

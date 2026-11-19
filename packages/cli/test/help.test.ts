@@ -99,6 +99,7 @@ describe("ork --help", () => {
       "open-code",
       "command-code",
       "codex",
+      "omp",
     ]);
   });
 
@@ -119,7 +120,7 @@ describe("ork --help, grouped", () => {
     expect(at.every(index => index > 0)).toBe(true);
     expect(at).toEqual(at.toSorted((a, b) => a - b));
     expect(text).toMatch(
-      /^Orchestrate coding agents on your machine\.\nDocs: https:/u,
+      /^Orchestrate coding agents \(Claude Code, OpenCode, Command Code, Codex, omp\) on your machine\.\nDocs: https:/u,
     );
     expect(text).toContain("Usage: ork <command> [flags]");
     expect(text).toContain(
@@ -143,6 +144,13 @@ describe("ork --help, grouped", () => {
     const onboard = await help(await subcommandNamed("onboard"), main);
     for (const flag of ["--driver", "--review", "--fresh"]) {
       expect(onboard).toContain(flag);
+    }
+  });
+
+  it("describes ork doctor by every agent tool, not claude alone", async () => {
+    const text = await help(await subcommandNamed("doctor"), main);
+    for (const tool of ["claude", "opencode", "cmd", "codex", "omp"]) {
+      expect(text).toContain(tool);
     }
   });
 

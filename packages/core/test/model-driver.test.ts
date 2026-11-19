@@ -131,6 +131,18 @@ describe("a model that names its driver", () => {
     expect(planned(w, "build").spec.model).toBe("gpt-5.5-codex");
   });
 
+  it("runs an `omp.` model on omp and hands the rest to `--model` as written", () => {
+    expect(modelDriver("omp.openai/gpt-5.2")).toEqual({
+      driver: "omp",
+      model: "openai/gpt-5.2",
+    });
+    const w = workflowOf(WORKER("omp.openai/gpt-5.2"));
+    expect(nodeDriver(nodeOf(w, "build"), w, { override: "open-code" })).toBe(
+      "omp",
+    );
+    expect(planned(w, "build").spec.model).toBe("openai/gpt-5.2");
+  });
+
   it("pins a node through `defaults.model`, so it names a driver", () => {
     const w = workflowOf([
       "defaults: { model: open-code.anthropic/claude-sonnet-5-5 }",

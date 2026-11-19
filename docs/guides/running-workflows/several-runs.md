@@ -57,13 +57,14 @@ project, nothing waits.
   and `&`. It drops a leading `VAR=value` and a `then`, `do` or `else` before
   matching. One slot is held for the whole script, and its `timeout` counts from
   the slot.
-- A Claude Code session's own Bash call that matches `heavy`. Ork holds the call
-  before it starts, as it does for a [pause](./controlling-a-run.md), and lets
-  it go when a slot is free. The slot is given back when the call ends, on the
-  session's next call, or when the session ends. OpenCode and Command Code
-  sessions don't take slots for their Bash calls yet
-  ([L257](../../../specs/gaps/machine-limits.md)), and neither do Codex's
-  ([G40](../../../specs/gaps.md#gaps)).
+- A Claude Code or `omp` session's own Bash call that matches `heavy`. Ork holds
+  the call before it starts, as it does for a [pause](./controlling-a-run.md),
+  and lets it go when a slot is free. The slot is given back when the call ends,
+  on the session's next call, or when the session ends. On `omp`, a slot that
+  does not come in time makes the model repeat the call, which keeps waiting for
+  the same slot. OpenCode and Command Code sessions don't take slots for their
+  Bash calls yet ([L257](../../../specs/gaps/machine-limits.md)), and neither do
+  Codex's ([G40](../../../specs/gaps.md#gaps)).
 
 A wait is never silent. `ork ps` shows the run as `waiting for slot`, and
 `ork logs`, `ork tree` and the Now column of `ork ui` say

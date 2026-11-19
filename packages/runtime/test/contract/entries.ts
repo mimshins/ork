@@ -20,6 +20,7 @@ import {
   claudeCodeAdapter,
   codexAdapter,
   commandCodeAdapter,
+  ompAdapter,
   openCodeAdapter,
 } from "../../src/index.ts";
 
@@ -108,5 +109,15 @@ export const CONTRACT: readonly ContractEntry[] = [
     ends: TOOL_ENDS.filter(kind => kind !== "turn_limit"),
     cannot: ["turn_limit"],
     modelError: "not supported when using Codex",
+  },
+  {
+    driver: "omp",
+    adapter: ompAdapter,
+    fakeTool: fixture("fake-omp.mjs"),
+    capabilities: capabilitiesOf("omp"),
+    // No turn cap; `--max-cost` ends a session at its dollar cap (exit 3).
+    ends: [...TOOL_ENDS.filter(kind => kind !== "turn_limit"), "budget_limit"],
+    cannot: ["turn_limit"],
+    modelError: "not found",
   },
 ];

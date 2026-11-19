@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L463, and the next chore is
+closes it. Ids are never reused: the next limit is L483, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -60,6 +60,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building `extract`](./gaps/extract-limits.md)
 - [Limits found building the `codex` driver](./gaps/codex-limits.md)
 - [Limits found building a fresh session for a builder's next task](./gaps/fresh-session-limits.md)
+- [Limits found building the `omp` driver](./gaps/omp-limits.md)
 
 ## Gaps
 
@@ -251,6 +252,39 @@ Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
   the sandbox, but no key to turn Codex's own web search off was found on
   0.169.0 (`codex --help`, `codex features list`), and none was guessed. A node
   that must not search the web should not run on this driver.
+
+Found building the `omp` driver (spec: [runtime/omp.md](./runtime/omp.md),
+RFC-026, 2026-11-19; the limits found with them are L464 to L482, in
+[their chunk](./gaps/omp-limits.md)):
+
+- **G45 · `omp` takes no message mid-turn and asks no approval through Ork.**
+  The driver runs `omp -p --mode json` per leg, so a message waits for the leg's
+  end (`midTurnMessages: false`), and print mode asks nothing, so there is no
+  `permissionPrompt`. `omp --mode rpc` could do both; it is a later RFC shared
+  with `codex app-server`.
+- **G46 · A long pause is not a true deferral on `omp`.** `claude-code` ends the
+  leg at a long pause and resumes it on `ork continue`; `omp` cannot leave a
+  call pending across processes, and the runner's deferred resume would send the
+  spec's prompt again as a new message. So the guard holds the call for a window
+  and, past it, asks the model to repeat the call, at one request per window
+  (L464). Ending the leg and resuming it needs a change to the session runner.
+- **G47 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not
+  supported on `omp`.** `mcpServers`, `subagents` and `turnLimit` are `false`
+  and `ork validate` refuses a node that needs one. Ork's plugin is the only MCP
+  server of a session, any other `mcp__` name is refused by the guard, `task` is
+  never offered, and no flag caps a session's turns.
+- **G48 · A node's own `omp.<provider>/<model>` is not checked before the run.**
+  The doctor counts the models `omp models --json` lists, but a node's model, a
+  fuzzy name or a role is passed as written, so a model the account does not
+  have fails when the session starts (`Model "<x>" not found`). Checking it
+  against that list before a run, and recording the model `omp` resolved (L475),
+  is a follow-up.
+- **G49 · `ork onboard` and `ork:security-audit` are refused on `omp`.** Their
+  built-in workflows set `maxTurns`, which `omp` cannot hold, so `ork run`
+  refuses them before any session starts, while `ork onboard` may offer a ready
+  `omp` among its drivers (as L454 for `codex`). Dropping the built-ins'
+  `maxTurns` for the token caps, or not offering a driver the built-ins refuse,
+  would close both.
 
 ## Limits
 

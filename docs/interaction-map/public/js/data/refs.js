@@ -1369,6 +1369,13 @@ export const RUNTIME = {
     "Code: the codex hook that holds a node's rules",
   ),
   codexSpec: d("specs/runtime/codex.md", "Spec: the codex driver"),
+  omp: d("packages/runtime/src/adapters/omp.ts", "Code: the omp adapter"),
+  ompGuard: d(
+    "packages/runtime/src/adapters/omp-guard.ts",
+    "Code: the omp guard that holds a node's rules and a paused call",
+  ),
+  ompSpec: d("specs/runtime/omp.md", "Spec: the omp driver"),
+  ompLimits: d("specs/gaps/omp-limits.md", "Limits: the omp driver"),
   extract: d(
     "packages/runtime/src/tools/extract.ts",
     "Code: the `extract` tool",

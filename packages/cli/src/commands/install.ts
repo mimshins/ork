@@ -1,7 +1,7 @@
 /**
  * @file This installation of Ork: its name and version for the root command;
  *   `ork doctor`, which prints Ork's version against the last update check and
- *   the environment checks (Node, git, the user's own claude, gh and aws
+ *   the environment checks (Node, git, the user's own agent tools, gh and aws
  *   logins, the project's links) and fails when no agent driver can run; and
  *   `ork upgrade`, which asks the npm registry for the latest version and, when
  *   it is newer, upgrades Ork the way it was installed after the user agrees
@@ -47,14 +47,15 @@ export { formatCheck };
 export const ORK_META = {
   name: "ork",
   version: ORK_VERSION,
-  description: "Orchestrate coding agents on your machine",
+  description:
+    "Orchestrate coding agents (Claude Code, OpenCode, Command Code, Codex, omp) on your machine",
 };
 
 export const doctor = defineCommand({
   meta: {
     name: "doctor",
     description:
-      "Check Node, git, and your own claude, gh, and aws logins (Ork stores no credentials)",
+      "Check Node, git, your own agent tools (claude, opencode, cmd, codex, omp), gh, and aws logins (Ork stores no credentials)",
   },
   run: async () => {
     const { results, ok } = await runChecks(

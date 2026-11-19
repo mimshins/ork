@@ -4,7 +4,7 @@ _Part of [Runtime: the agent drivers](../runtime.md)._
 
 Status: **Built**: the tool, its steps and programs, containment and refusals,
 the refusal of shell reads, and the withheld tools (RFC-025), served on
-`claude-code`, `open-code`, `command-code` and `codex`
+`claude-code`, `open-code`, `command-code`, `codex` and `omp`
 ([extract.ts](../../packages/runtime/src/tools/extract.ts),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
@@ -31,12 +31,12 @@ model-written code, no shell, no sandbox.
 Every session whose spec has a folder: the session runner sets `cwd` (the spec's
 `cwd`) and `denyRead` (the `Read(...)` patterns of `tools.deny`) on the tool
 context, and the tool is offered only when `cwd` is set. It is preapproved, one
-line in `ORK_TOOLS`, and the four drivers serve it as they serve every Ork tool
-(`mcp__ork__extract`, OpenCode's `ork_extract`). Every session's harness
-instructions carry the whole rule in one line: read, search and see git output
-through it, several calls in one turn rather than one chained shell command, and
-a whole-file Read only to edit. It ships with Ork, so a project's own context
-need not repeat it.
+line in `ORK_TOOLS`, and the five drivers serve it as they serve every Ork tool
+(`mcp__ork__extract`, OpenCode's `ork_extract`, `omp`'s
+`mcp__ork_session_ork_extract`). Every session's harness instructions carry the
+whole rule in one line: read, search and see git output through it, several
+calls in one turn rather than one chained shell command, and a whole-file Read
+only to edit. It ships with Ork, so a project's own context need not repeat it.
 
 **Loaded up front.** Claude Code defers MCP tools behind a tool search, and a
 session that has not searched for `extract` reads with Read and the shell
@@ -104,6 +104,11 @@ filters another command's output, which `extract` can't read, so
   text read when the node is `extract-only`, with the reason, from the matcher
   it shares with the `command-code` mod; Codex has no read tool to gate
   ([the page](./codex.md#the-hook)).
+- **`omp`**: the session's guard refuses the `bash` read, and a `read` of a text
+  file when the node is `extract-only`, with the reason, from the same shared
+  matcher; `grep` and `glob` are not in `--tools` unless the node names them,
+  and a path-scoped `Read`, `Grep` or `Glob` deny leaves out all three read
+  tools ([the page](./omp-rules.md#what-holds-a-node-to-its-rules)).
 
 A `readonly` node then runs only `git status` without asking; `git diff`, `log`
 and `show` come back under `reading: open`.
@@ -118,8 +123,9 @@ edit (`readonly`, or a `tools.only` with no `Edit` or `Write`) is
 `extract-only`: a `Read` of a text file is refused too, with the `extract` call
 to make, while an image or a PDF (which `extract` cannot read) is still read. A
 node that edits keeps `Read`, which Claude Code's `Edit` needs first. On
-`claude-code` the hook refuses the Read, on `command-code` the mod does, and on
-`open-code` a `read` deny with the image and PDF types allowed after it.
+`claude-code` the hook refuses the Read, on `command-code` the mod does, on
+`omp` the guard does, and on `open-code` a `read` deny with the image and PDF
+types allowed after it.
 
 ## Where it may read
 

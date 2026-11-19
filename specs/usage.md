@@ -43,7 +43,12 @@ it is resumed, and its total then includes the part that was cut off.
 Claude Code reports a resumed session's cost as the session's total so far,
 carried over from its transcript, while its tokens, turns and duration are that
 process's own. So a row's cost is what the session reported minus what it had
-reported before; the other numbers are used as they are.
+reported before; the other numbers are used as they are. An `omp` session does
+the same by Ork's own count: `omp` prints each request's dollars but no total,
+so the adapter keeps a ledger of what each session has spent
+(`~/.ork/omp/spent/<session id>`) and a resumed leg starts its cost from it, so
+the leg reports the session's total
+([the `omp` page](./runtime/omp-output.md#budgets)).
 
 Two reports read differently. A total of zero is a crash or startup error saying
 nothing, so it adds nothing and the session's total stands. A total below the

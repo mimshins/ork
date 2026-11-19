@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  type AgentDriver,
   type Exec,
   aws,
   AGENT_DRIVERS,
@@ -16,8 +17,10 @@ import {
   integrationFor,
   MIN_CLAUDE_VERSION,
   MIN_CODEX_VERSION,
+  MIN_OMP_VERSION,
   MIN_OPENCODE_VERSION,
   olderThan,
+  ompDriver,
   readyDriver,
 } from "../src/index.ts";
 
@@ -287,6 +290,104 @@ describe("the codex driver", () => {
         { id: "claude-code", result: claude },
       ]),
     ).toMatchObject({ ok: true, driver: "claude-code" });
+  });
+});
+
+/** A command that prints `stdout`, or fails on `null`. */
+const answer = (stdout: string | null) =>
+  Promise.resolve(
+    stdout === null ? { ok: false, stdout: "" } : { ok: true, stdout },
+  );
+
+/**
+ * `omp`'s check with an `omp` whose `--version` and `models --json` answer as
+ * given (`null`: the command fails), on `driver` (the real one by default).
+ * Returns the result and every command run.
+ */
+const ompCheck = async (
+  version: string | null,
+  models: string | null,
+  driver: AgentDriver = AGENT_DRIVERS[4],
+) => {
+  const calls: string[] = [];
+  const exec: Exec = (program, args) => {
+    const call = [program, ...args].join(" ");
+    calls.push(call);
+    return answer(call === "omp --version" ? version : models);
+  };
+  return { result: await driver.doctor(exec, {}), calls };
+};
+
+const OMP_MODELS = JSON.stringify({
+  models: [{ id: "openai/gpt-5.2" }, { id: "anthropic/claude-opus-5-5" }],
+});
+
+describe("the omp driver", () => {
+  it("is the fifth, not yet proven, and declares what it does itself", () => {
+    const omp = AGENT_DRIVERS[4];
+    expect(omp.id).toBe("omp");
+    expect([omp.proven, omp.onePerCheckout]).toEqual([false, false]);
+    expect(omp.capabilities).toEqual({
+      questions: true,
+      permissionPrompt: false,
+      price: true,
+      midTurnMessages: false,
+      reportSchema: false,
+      turnLimit: false,
+      mcpServers: false,
+      subagents: false,
+      readDenies: true,
+    });
+    expect(MIN_OMP_VERSION).toBe("18.22.2");
+  });
+
+  it("is skipped with no hint when omp is missing, while unproven", async () => {
+    const { result } = await ompCheck(null, OMP_MODELS);
+    expect(result).toMatchObject({ status: "skip" });
+    expect(result.detail).toContain("omp CLI not found");
+    expect(result.hint).toBeUndefined();
+  });
+
+  it("warns about an omp older than the minimum, saying why", async () => {
+    const { result } = await ompCheck("omp/18.22.1\n", OMP_MODELS);
+    expect(result).toMatchObject({
+      status: "warn",
+      detail: `omp/18.22.1, older than ${MIN_OMP_VERSION}`,
+    });
+    expect(result.hint).toContain("Update omp");
+  });
+
+  it.each([
+    ["no models", JSON.stringify({ models: [] })],
+    ["a failed command", null],
+    ["output that is not the JSON", "Error: no providers"],
+  ])("is not logged in on %s, and skipped while unproven", async (_, out) => {
+    const { result } = await ompCheck("omp/18.22.2\n", out);
+    expect(result.status).toBe("skip");
+    expect(result.detail).toContain("omp/18.22.2, not logged in");
+    expect(result.detail).toContain("sign in with `omp login`");
+    expect(result.hint).toBeUndefined();
+  });
+
+  it("is logged in with a count of models, skipped while unproven", async () => {
+    const { result } = await ompCheck("omp/18.22.2\n", OMP_MODELS);
+    expect(result.status).toBe("skip");
+    expect(result.detail).toContain("omp/18.22.2, logged in (2 models)");
+  });
+
+  it("is ready once proven, so a run may take it", async () => {
+    const proven = ompDriver(true);
+    const one = JSON.stringify({ models: [{ id: "openai/gpt-5.2" }] });
+    const { result } = await ompCheck("omp/18.22.2\n", one, proven);
+    expect(result).toMatchObject({
+      status: "ok",
+      detail: "omp/18.22.2, logged in (1 model)",
+    });
+  });
+
+  it("runs only omp --version and omp models --json", async () => {
+    const { calls } = await ompCheck("omp/18.22.2\n", OMP_MODELS);
+    expect(calls).toEqual(["omp --version", "omp models --json"]);
   });
 });
 

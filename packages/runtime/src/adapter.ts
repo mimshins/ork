@@ -138,7 +138,9 @@ export type ContextLayers = {
 /**
  * Holding a paused node's next tool call (ADR-041), when the tool can: its
  * hook's answer to "go" or "defer", and how long a call may wait before it is
- * deferred instead.
+ * deferred instead. A driver whose tool cannot leave a call pending (`omp`)
+ * answers "defer" by refusing the call with a request to make it again; its
+ * decoder marks no line `deferred`, so the leg goes on.
  */
 export type HoldHook = {
   answer: (answer: "go" | "defer") => Record<string, unknown>;

@@ -12,10 +12,11 @@ called and detached runs): the first that applies wins.
 
 1. **The driver the model names.** A `model` of `<driver>.<model>`
    (`claude-code.opus`, `open-code.anthropic/claude-sonnet-5-5`,
-   `command-code.deepseek/deepseek-v4.1-flash`, `codex.gpt-5.1`) pins its
-   session to that driver, and the rest goes to that tool as written (`-m` on
-   `codex`; a node with no model runs Codex's own default for the account).
-   `--driver` does not override it.
+   `command-code.deepseek/deepseek-v4.1-flash`, `codex.gpt-5.1`,
+   `omp.openai/gpt-5.2`) pins its session to that driver, and the rest goes to
+   that tool as written (`-m` on `codex`, `--model` on `omp`, which also reads a
+   fuzzy name or a role the user configured; a node with no model runs the
+   tool's own default for the account). `--driver` does not override it.
 2. **`--driver`.**
 3. **The node's `driver`** (or its agent's).
 4. **The workflow's `defaults.driver`** (the project's `.ork/project.yaml`
@@ -58,10 +59,11 @@ driver.
 An `agent.subagent` runs inside its leader's session, so it needs the leader's
 driver to run subagents: the `subagents` capability of the
 [descriptor](../runtime.md#the-drivers). `claude-code` has it; `open-code`,
-`command-code` and `codex` do not, for now. `ork validate` and `ork run` refuse
-the leader's node, naming the sub-agent and the driver: "sub-agent `helper` runs
-in `lead`'s session on driver `open-code`, which does not run subagents". A
-sub-agent whose model names another driver than its leader's is refused too.
+`command-code`, `codex` and `omp` do not, for now. `ork validate` and `ork run`
+refuse the leader's node, naming the sub-agent and the driver: "sub-agent
+`helper` runs in `lead`'s session on driver `open-code`, which does not run
+subagents". A sub-agent whose model names another driver than its leader's is
+refused too.
 
 ## The ready driver
 
@@ -77,10 +79,13 @@ sub-agent whose model names another driver than its leader's is refused too.
   a doctor check of `skip`, never `ok`, whatever is installed; with
   `--driver <id>` the run stops as above, and a node or model prefix naming it
   is refused by `ork validate` and `ork run` ("not yet proven on a real
-  session"). Every driver today is proven; `codex` was, on its gate run
-  (2026-11-18, [the page](./codex.md#measured-on-the-gate-run)), and comes last
-  in registry order, so a signed-in `codex` is taken only when no other driver
-  is ready.
+  session"). `omp` is the one driver not yet proven (its gate run is pending,
+  [its page](./omp.md)), so it is skipped by the doctor and refused by name,
+  whatever is installed. The others are proven; `codex` was, on its gate run
+  (2026-11-18, [the page](./codex.md#measured-on-the-gate-run)), and comes after
+  the first three in registry order, so a signed-in `codex` is taken only when
+  no other proven driver is ready. `omp` comes last, so once proven it is taken
+  only when none of the others is.
 - **`ork run` looks once, before anything starts**, and only when a session node
   names no driver and `--driver` isn't given
   ([ready-driver.ts](../../packages/cli/src/run/ready-driver.ts)). It says so in

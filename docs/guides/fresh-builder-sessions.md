@@ -36,9 +36,9 @@ All of these must hold, or the node resumes as it always has:
   or reported `fail` is most likely asked to finish or fix that task, so it
   resumes, whatever its size.
 - The size of that session, its context, is over `freshOver`. The context is the
-  prompt of the session's last model request. `claude-code`, `open-code` and
-  `command-code` report it; `codex` does not, so a `codex` worker always
-  resumes.
+  prompt of the session's last model request. `claude-code`, `open-code`,
+  `command-code` and `omp` report it; `codex` does not, so a `codex` worker
+  always resumes.
 
 Ork decides this by counting, with no model turn.
 

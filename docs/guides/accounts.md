@@ -16,6 +16,7 @@ against your Claude plan's limits; a budget caps each run
 | OpenCode     | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
 | Command Code | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
 | Codex        | the `codex` driver, running your own `codex`                                                                                 | `codex login`                                                            |
+| omp          | the `omp` driver, running your own `omp` (built, not yet proven)                                                             | `omp login`                                                              |
 | GitHub       | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
 | AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
@@ -26,12 +27,14 @@ never a token.
 
 Ork runs agents through a **driver**: the CLI of an agent tool, run headless
 ([Drivers](./drivers.md) says what each does and refuses). `claude-code`, your
-own `claude`, `open-code`, your own `opencode`, and `command-code`, your own
-`cmd`, have each run a real session; `codex`, your own `codex`, has not yet.
-`ork doctor` finds the `opencode`, `cmd` and `codex` binaries (it does not read
-their logins), and lists one it can't find as `skip`. A workflow that names no
-driver runs on the one that's ready, and `ork run` says which. A driver the
-workflow or a node names, or `--driver` on `ork run`, wins.
+own `claude`, `open-code`, your own `opencode`, `command-code`, your own `cmd`,
+and `codex`, your own `codex`, have each run a real session; `omp`, your own
+`omp`, is built and has not yet, so a node on it is refused until it has.
+`ork doctor` finds the `opencode`, `cmd`, `codex` and `omp` binaries (it does
+not read their logins, except that it counts the models `omp models --json`
+lists), and lists one it can't find as `skip`. A workflow that names no driver
+runs on the one that's ready, and `ork run` says which. A driver the workflow or
+a node names, or `--driver` on `ork run`, wins.
 
 The ids `sdk` and `cli` of earlier versions are retired: a workflow, a
 `.ork/project.yaml` or `--driver` that names one is refused with a message
@@ -80,6 +83,15 @@ account), headless. Log in with `codex login`; Ork runs `codex login status` and
 reads only its exit status, never Codex's own login files (`auth.json`).
 `OPENAI_API_KEY` is not counted as a login. Ork's token for its own tools is
 kept out of the shell Codex starts ([Codex](./drivers/codex.md)).
+
+### The omp driver (`driver: omp`)
+
+Runs your own `omp` (oh-my-pi's coding agent, built against 18.22.2), headless.
+Log in with `omp login`; Ork never reads `omp`'s login files and never runs
+`omp auth`, and `ork doctor` shows only the number of models your logins reach.
+Your `OMP_PROFILE` or `PI_CODING_AGENT_DIR` decides the login. It is **built and
+not yet proven**: `ork validate` and `ork run` refuse an `omp` node until a real
+session has proven it ([omp](./drivers/omp.md)).
 
 ## Secrets in workflows
 

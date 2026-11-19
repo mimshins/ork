@@ -115,7 +115,8 @@
             "claude-code",
             "open-code",
             "command-code",
-            "codex"
+            "codex",
+            "omp"
           ]
         },
         "model": {
@@ -487,7 +488,8 @@
               "claude-code",
               "open-code",
               "command-code",
-              "codex"
+              "codex",
+              "omp"
             ]
           },
           "skills": {
@@ -760,7 +762,8 @@
                   "claude-code",
                   "open-code",
                   "command-code",
-                  "codex"
+                  "codex",
+                  "omp"
                 ]
               },
               "skills": {
@@ -1325,7 +1328,8 @@
                   "claude-code",
                   "open-code",
                   "command-code",
-                  "codex"
+                  "codex",
+                  "omp"
                 ]
               },
               "skills": {
@@ -1950,7 +1954,8 @@
                   "claude-code",
                   "open-code",
                   "command-code",
-                  "codex"
+                  "codex",
+                  "omp"
                 ]
               },
               "skills": {

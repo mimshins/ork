@@ -89,4 +89,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [023](./archived/RFC-023-extract-tool-for-session-reads.md)    | An extract tool for what sessions read: Code Mode without code     | Implemented |
 | [024](./archived/RFC-024-codex-driver.md)                      | The Codex driver: OpenAI's `codex` CLI as the fourth driver        | Implemented |
 | [025](./archived/RFC-025-extract-only-reading.md)              | Make `extract` the way sessions read, on every driver              | Implemented |
-| [026](./active/RFC-026-omp-driver.md)                          | The omp driver: oh-my-pi's `omp` CLI as the fifth driver           | Accepted    |
+| [026](./archived/RFC-026-omp-driver.md)                        | The omp driver: oh-my-pi's `omp` CLI as the fifth driver           | Implemented |

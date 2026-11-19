@@ -86,21 +86,22 @@ const ABLE = {
 };
 
 /**
- * Command Code and Codex without a turn limit, Codex without read denies, the
- * others able.
+ * Command Code, Codex and omp without a turn limit, Codex without read denies,
+ * the others able. All proven here, so a run takes each.
  */
 const DRIVERS: DriverNeeds[] = [
   "claude-code" as const,
   "open-code" as const,
   "command-code" as const,
   "codex" as const,
+  "omp" as const,
 ].map(id => ({
   id,
   proven: true,
   onePerCheckout: false,
   capabilities: {
     ...ABLE,
-    turnLimit: id !== "command-code" && id !== "codex",
+    turnLimit: id !== "command-code" && id !== "codex" && id !== "omp",
     readDenies: id !== "codex",
   },
 }));
@@ -216,6 +217,14 @@ describe("a session's driver from its model", () => {
     expect(result.status).toBe("succeeded");
     expect(started).toEqual([
       { nodeId: "build", driver: "codex", model: "gpt-5.5-codex" },
+    ]);
+  });
+
+  it("runs an `omp.` model on omp, handing `--model` the rest as written", async () => {
+    const { result, started } = await run(worker("omp.openai/gpt-5.2"));
+    expect(result.status).toBe("succeeded");
+    expect(started).toEqual([
+      { nodeId: "build", driver: "omp", model: "openai/gpt-5.2" },
     ]);
   });
 

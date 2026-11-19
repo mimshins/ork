@@ -13,8 +13,9 @@ defaults:
 `ork run --driver` overrides both. With none named, a run uses the driver that's
 ready on the machine running it, and `claude-code` (your own `claude`) when more
 than one is ready. `claude-code`, `open-code`, `command-code` and `codex` are
-all proven on real sessions ([Drivers](../drivers.md),
-[Accounts and credentials](../accounts.md)).
+all proven on real sessions; `omp` is built and not yet proven, so a node on it
+is refused ([Drivers](../drivers.md),
+[Accounts and credentials](../accounts.md), [omp](../drivers/omp.md)).
 
 `ork validate` and `ork run` refuse a node its driver can't serve, naming both
 ([troubleshooting](../troubleshooting/setup.md)).

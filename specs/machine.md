@@ -1,7 +1,7 @@
 # The machine runs share: slots, priority and CPU
 
-Status: **Built** for Ork's tool commands and for a Claude Code session's Bash
-calls; OpenCode and Command Code are not covered yet
+Status: **Built** for Ork's tool commands and for a Claude Code or `omp`
+session's Bash calls; OpenCode, Command Code and Codex are not covered yet
 ([L257](./gaps/machine-limits.md)). A build measured again spent about 75% less
 on checks ([numbers](../benchmarks/method.md#a-build-measured-again)). Code:
 [slot ledger](../packages/core/src/machine/slot-ledger.ts),
@@ -104,6 +104,16 @@ Bash call that matches `heavy`. Waiting is a hold
 ([ADR-041](../decisions/ADR-041-pause-continue-stop.md)): the hook waits within
 the hold window and defers past it, as a pause does. The post-call hook releases
 the slot; so does the session's next call, and its end.
+
+On `omp` the same hold request takes the slot: the session's guard asks Ork's
+`/hold` endpoint before each call, and `heavy.before` runs for a `Bash` call
+after the pause check, within the same window. A slot that does not come in time
+is the `defer` answer, which the guard turns into a refusal asking the model to
+make the same call again; it keeps waiting for the same slot. The guard frees
+the slot at once with a `PostToolUse` request from its `tool_result` handler,
+which `omp` fires after a call that ran; a call refused first fires none, so the
+session's next call and its end are the backstop, as on Claude Code
+([the `omp` page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
 
 ## Priority
 

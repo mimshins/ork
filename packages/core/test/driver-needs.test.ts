@@ -68,12 +68,14 @@ const warnings = (workflow: Workflow, driver: DriverNeeds): string[] =>
     w => w.message,
   );
 
-/** The real codex descriptor, so the refusals read are its capabilities'. */
-const realCodex = (): DriverNeeds => {
-  const real = AGENT_DRIVERS.find(d => d.id === "codex");
-  if (real === undefined) throw new Error("no codex descriptor");
+/** A real descriptor, so the refusals read are its capabilities'. */
+const realDriver = (id: DriverNeeds["id"]): DriverNeeds => {
+  const real = AGENT_DRIVERS.find(d => d.id === id);
+  if (real === undefined) throw new Error(`no ${id} descriptor`);
   return real;
 };
+
+const realCodex = (): DriverNeeds => realDriver("codex");
 
 describe("what a node needs of its driver", () => {
   it("refuses maxTurns on a driver with no turn limit, naming both", () => {
@@ -182,6 +184,36 @@ describe("what a node needs of its driver", () => {
     expect(warnings(workflowOf(`${BARE}    budgetUsd: 2\n`), codex)).toEqual([
       "node `build` sets only budgetUsd, but driver `codex` reports no dollars: only budgetTokens applies on codex",
     ]);
+  });
+
+  it("refuses an omp node while the real descriptor is unproven", () => {
+    expect(messages(workflowOf(BARE), realDriver("omp"))).toEqual([
+      "node `build` runs on driver `omp`, which is not yet proven on a real session",
+    ]);
+  });
+
+  it("refuses what the omp descriptor does not do once proven: turns, its own MCP servers, sub-agents; not a path-scoped read deny", () => {
+    const omp = { ...realDriver("omp"), proven: true };
+    const w = workflowOf(`  lead:
+    type: agent.leader
+    prompt: go
+    maxTurns: 5
+    mcp: [docs]
+    tools:
+      deny: ["Read(./secrets/**)"]
+  helper:
+    type: agent.subagent
+    parent: lead
+    description: helps
+`);
+    expect(messages(w, omp).map(m => m.split(",")[0])).toEqual([
+      "node `lead` sets maxTurns",
+      "node `lead` names MCP servers (`mcp`)",
+      "sub-agent `helper` runs in `lead`'s session on driver `omp`",
+    ]);
+    const priced = workflowOf(`${BARE}    budgetUsd: 2\n`);
+    expect(messages(priced, omp)).toEqual([]);
+    expect(warnings(priced, omp)).toEqual([]);
   });
 
   it("refuses an owner and a node it owns sharing a one-per-checkout driver's checkout", () => {

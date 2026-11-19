@@ -17,7 +17,7 @@ ork/
     schema/          Zod schemas → JSON Schema; YAML load/save with stable formatting; migrations
     core/            graph compiler & validator, scheduler, context compiler, message bus,
                      decision queue, event store (SQLite + JSONL), worktree manager
-    runtime/  AgentRuntime: adapters (strategies) + one session runner; claude-code (claude -p stream-json); command-code (cmd -p json); open-code (opencode run --format json); codex (codex exec --json, one process per leg, sandbox + hook)
+    runtime/  AgentRuntime: adapters (strategies) + one session runner; claude-code (claude -p stream-json); command-code (cmd -p json); open-code (opencode run --format json); codex (codex exec --json, one process per leg, sandbox + hook); omp (omp -p --mode json, one process per leg, guard extension + approval overlay; not yet proven)
     nodes/           built-in node-type registry (each: schema, defaults, execute(), UI metadata)
     server/          node:http JSON API + SSE streams, typed contract and client; loopback + token (ADR-039)
     cli/             `ork` bin (citty): init, validate, run, ps, logs, chat, decide, ui, doctor, context
@@ -94,3 +94,4 @@ ork/
 
 - [Command Code](./architecture/command-code.md)
 - [Codex](./runtime/codex.md)
+- [omp](./runtime/omp.md)
