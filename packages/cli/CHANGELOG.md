@@ -1,5 +1,72 @@
 # @krapht/ork
 
+## 1.0.0-alpha.28
+
+### Minor Changes
+
+- [`8f16740`](https://github.com/mimshins/ork/commit/8f16740b12811f5fb47892bb52efc836f30a8744) Thanks [@mimshins](https://github.com/mimshins)! - A remote `git.base` such as `origin/main` is now fetched before a run starts
+  (`git.fetch: auto`, or `never` to skip it; a failed fetch stops the run), and
+  `git.readonly: base` makes a readonly node with no owner and no upstream
+  worktree read one shared worktree at the base instead of the checkout
+
+- [`b643aa1`](https://github.com/mimshins/ork/commit/b643aa1a4a7aa7a8d6b649566969dc3ca4db2011) Thanks [@mimshins](https://github.com/mimshins)! - A node's `model` and `effort` can be a template on any agent node. They read
+  `inputs.*` and the output of a node that runs before it
+  (`model: "{{nodes.pick.output.json.model}}"`), and a `forEach` node's item as
+  before. `ork validate` accepts it and checks the reads like a prompt's
+  (`ref.input`, `ref.node`, `ref.field`, `template.not-upstream`); it still
+  refuses `item` off a fanned node and any template in `defaults`. The value is
+  read when the node's session starts. A value that is not one word, starts with
+  `-` or ends with `.` fails the node, and so does a read of an earlier node's
+  output that comes out empty; an empty input or item value uses the default as
+  before. A rendered `claude-code.opus` picks the driver, and a node set to resume
+  whose driver changed starts a fresh session, recorded as `driverChanged` on its
+  `node.started`. A sub-agent's templated model is read when its leader's session
+  starts. New example: `examples/pick-a-model.ork.yaml`.
+
+- [`5109550`](https://github.com/mimshins/ork/commit/51095506e60dc4483e852880bc1bb122b7354a42) Thanks [@mimshins](https://github.com/mimshins)! - Run `omp` as one long-lived `omp --mode rpc` process for each stretch, which Ork
+  talks to in both directions. A message to an `omp` node (`ork chat`, `ork send`)
+  now reaches the model before the turn ends instead of waiting for the stretch to
+  end, a stop sends an abort, and a permission question from `omp` comes to you in
+  `ork decide` (Ork never answers "approve for this session"). The session ends
+  when `omp` says it has settled. A paused node's call now waits 9 minutes; past
+  that Ork ends the stretch, and `ork continue` resumes the session with a message
+  asking the model to make the held call again, so a long pause costs one resume
+  instead of one model request each hour. A message that `omp` splits into chunks
+  above its frame limit ends the stretch with a line saying so. `omp` is still
+  built and not yet proven, so `ork validate` and `ork run` still refuse it.
+
+- [`ef99e87`](https://github.com/mimshins/ork/commit/ef99e87cb2de6abc3783dcbd9c93be0fa2dd1594) Thanks [@mimshins](https://github.com/mimshins)! - Keep Ork sessions apart from a project's own agent process. Every Claude session
+  says it is one node of an Ork workflow, `AskUserQuestion` is denied unless a
+  node names it, and `rules.agents: isolate` denies `Agent(<name>)` for the agents
+  of other nodes. A new default-on `quiet` practice tells nodes never to write
+  about Ork into repository files, commits or pull requests
+  (`practices: { quiet: false }` turns it off). In a project registered from
+  outside, a context path into `.ork/` reads `~/.ork/projects/<id>/`;
+  `knowledge: ork-only` limits `ork feedback apply` to the project's `.ork/` and
+  refuses it for an attached project. `ork init` and `ork migrate --agents` warn
+  about linked tool folders, and `ork doctor` and `ork migrate` flag a `CLAUDE.md`
+  or `AGENTS.md` under `.ork/`.
+
+### Patch Changes
+
+- [`c7ee0db`](https://github.com/mimshins/ork/commit/c7ee0db0d6e36c53f6fb5a65e68bd207173fc325) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` warns (`verify.heavy`) when a worker a leader can spawn, or a
+  `forEach` node, has a `verify:` that runs one of the project's heavy commands,
+  since each copy queues for one of the machine's heavy slots.
+
+- [`5b955f9`](https://github.com/mimshins/ork/commit/5b955f9d1d3e7e1ea7c3007a1677005048947d2f) Thanks [@mimshins](https://github.com/mimshins)! - On `claude-code`, a shell line is read through loops, subshells and wrappers and
+  allowed without a question when the node's rules or Ork's shipped reads
+  (`ork logs`, `jq`, `head`, …) cover every command. A read-only node is refused,
+  with a message, a command its rules do not allow; `unlisted: ask` on a node, a
+  workflow's `rules.permissions` or the project's `permissions` brings the prompt
+  back. A permission for a readable line also offers allow for this node, this run
+  or always, and "always" adds the rule to `permissions.allow` of the project's
+  rules file, keeping its comments. A rule allowed 3 times across 2 runs is filed
+  as a `permission.suggest` feedback item. The Codex, Command Code and omp guards
+  read loops and subshells with the same reader.
+
+- [`5ff6fb5`](https://github.com/mimshins/ork/commit/5ff6fb5b063ff75576cb9e5d728bd78e81ac9871) Thanks [@mimshins](https://github.com/mimshins)! - A plan's limit no longer reads "is close" when Claude Code warns at the top of
+  its event while the window itself says it is fine.
+
 ## 1.0.0-alpha.27
 
 ### Minor Changes
