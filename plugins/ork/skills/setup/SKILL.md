@@ -24,7 +24,9 @@ ork doctor
   and one agent driver. Don't run `git init` or a commit without asking.
 - **A driver not ready:** they log in themselves, with `claude auth login`, or
   by setting `ANTHROPIC_API_KEY` or a cloud provider in their own shell (either
-  makes the claude-code driver ready). Never ask for a key, never take one pasted to you, and
+  makes the claude-code driver ready), or with another driver's own tool
+  (`opencode auth login`, `cmd login`, `codex login`). Never ask for a key,
+  never take one pasted to you, and
   never write one into a file or a command. `gh` and `aws` are optional, and
   their logins are their own too (`gh auth login`, `aws sso login`).
 

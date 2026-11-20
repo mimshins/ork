@@ -165,8 +165,9 @@ The [guides](../README.md#guides) explain the rest, such as
   ```
 
   Instead of a `claude` login, you can set `ANTHROPIC_API_KEY` (or Bedrock,
-  Vertex or Foundry) in your own shell. Don't paste a key into a conversation
-  with an agent: it ends up in the transcript. See
+  Vertex or Foundry) in your own shell, or log in to another driver's tool
+  (`opencode auth login`, `cmd login`, `codex login`). Don't paste a key into a
+  conversation with an agent: it ends up in the transcript. See
   [Accounts and credentials](../guides/accounts.md).
 
 - **Spend without asking.** An agent following Ork's skills starts a run only

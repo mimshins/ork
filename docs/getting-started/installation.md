@@ -3,8 +3,7 @@
 Ork is a command-line tool, `ork`, that runs on your own machine. This page
 covers what you need, how to install it, and how to check it works.
 
-Rather have your coding agent install and set up Ork? See
-[With your agent](./with-your-agent.md).
+Rather have your agent set Ork up? See [With your agent](./with-your-agent.md).
 
 > **Ork is in alpha.** Expect the workflow format and commands to change.
 
@@ -20,8 +19,7 @@ Rather have your coding agent install and set up Ork? See
 
 How to get Node and git on your system: [Your platform](#your-platform).
 
-**Optional**, only when a workflow uses them: install one only if your workflows
-have a node of its type. A front-end project never needs `aws`.
+**Optional**, only if your workflows have a node of its type:
 
 | Tool  | Needed for                                 | Check                         |
 | ----- | ------------------------------------------ | ----------------------------- |
@@ -34,13 +32,15 @@ For the agents (Ork uses your own login, never stores it; see
 - **The `claude-code` driver**: your own
   [Claude Code](https://code.claude.com/docs) (`claude`), version **2.1.281 or
   later**, so it reads `AGENTS.md` (`ork doctor` warns on an older one). It runs
-  with `claude`'s own login, or with `ANTHROPIC_API_KEY`, or with Amazon
-  Bedrock, Google Vertex or Microsoft Foundry (`CLAUDE_CODE_USE_BEDROCK=1`,
+  with `claude`'s own login, `ANTHROPIC_API_KEY`, or Amazon Bedrock, Google
+  Vertex or Microsoft Foundry (`CLAUDE_CODE_USE_BEDROCK=1`,
   `CLAUDE_CODE_USE_VERTEX=1` or `CLAUDE_CODE_USE_FOUNDRY=1`, with that cloud's
   own credentials).
+- **Or another driver**, with its tool's own login: `opencode` 2.3.2+
+  (`open-code`), Command Code's `cmd` (`command-code`) or OpenAI's `codex`
+  0.169.0+ (`codex`). oh-my-pi's `omp` is built, not yet proven: runs refuse it.
 
-Ork is free. What the agents use is billed to your API key or cloud account, or
-counts against your Claude plan's limits.
+Ork is free. What the agents use is billed to your own key, account or plan.
 
 ## Your platform
 
@@ -111,7 +111,7 @@ output (`--plain`: `✓` and `-`):
  OK    git repo                     inside a work tree
  OK    git commits                  HEAD exists
  OK    claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
- OK    opencode (open-code driver)  v2.1.0; sign in with `opencode auth login` if a session asks
+ OK    opencode (open-code driver)  v2.3.2; sign in with `opencode auth login` if a session asks
  SKIP  cmd (command-code driver)    cmd CLI not found
  SKIP  codex (codex driver)         codex CLI not found
  SKIP  omp (omp driver)             omp CLI not found, unproven: not yet proven on a real session

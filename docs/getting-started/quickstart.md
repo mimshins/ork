@@ -38,10 +38,10 @@ Next: ork onboard writes workflows that fit this project; or edit .ork/workflows
 `ork init` never overwrites a file. It adds `.ork/runs/` to `.gitignore` under
 `# Ork run state`: run state never belongs in git (to keep Ork out of git
 entirely, see [`ork register`](../guides/projects.md)). It links the agents and
-skills folders of a `.claude/` or `.opencode/` folder to `.ork/`
-([agents](../guides/agents.md#linking-your-tools-to-ork)), and keeps one that is
-a real folder (`kept … is a real folder, left as it is`). On a terminal it
-offers Ork's skills for Claude Code; either answer is fine
+skills folders of a `.claude/`, `.opencode/`, `.agents/` or `.ai/` folder to
+`.ork/` ([agents](../guides/agents.md#linking-your-tools-to-ork)), and keeps one
+that is a real folder (`kept … is a real folder, left as it is`). On a terminal
+it offers Ork's skills for Claude Code; either answer is fine
 ([Ork from Claude Code](../guides/claude-code.md)). With no commit yet it warns
 (`! git: no commit yet…`) and still writes the files.
 

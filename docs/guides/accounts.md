@@ -31,10 +31,11 @@ own `claude`, `open-code`, your own `opencode`, `command-code`, your own `cmd`,
 and `codex`, your own `codex`, have each run a real session; `omp`, your own
 `omp`, is built and has not yet, so a node on it is refused until it has.
 `ork doctor` finds the `opencode`, `cmd`, `codex` and `omp` binaries (it does
-not read their logins, except that it counts the models `omp models --json`
-lists), and lists one it can't find as `skip`. A workflow that names no driver
-runs on the one that's ready, and `ork run` says which. A driver the workflow or
-a node names, or `--driver` on `ork run`, wins.
+not read their logins, except that it reads the exit status of
+`codex login status` and counts the models `omp models --json` lists), and lists
+one it can't find as `skip`. A workflow that names no driver runs on the one
+that's ready, and `ork run` says which. A driver the workflow or a node names,
+or `--driver` on `ork run`, wins.
 
 The ids `sdk` and `cli` of earlier versions are retired: a workflow, a
 `.ork/project.yaml` or `--driver` that names one is refused with a message
@@ -63,7 +64,7 @@ It requires Claude Code 2.1.281 or later.
 
 ### The open-code driver (`driver: open-code`)
 
-Runs your own `opencode` (tested against 2.1.0), headless. Log in with
+Runs your own `opencode` (2.3.2 or later), headless. Log in with
 `opencode auth login`; Ork never reads that login, and a missing one shows up in
 the first session. Ork gives the session a private config with its tool
 connection, and removes it when the session ends

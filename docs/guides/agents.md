@@ -39,7 +39,10 @@ From lowest to highest precedence, when two have the same name:
 Your project's existing agents work as they are: if `.claude/agents/reviewer.md`
 exists, a node can say `agent: reviewer`. Linked folders are followed, so a
 project that keeps one `.ai/agents/` folder and links `.claude/agents` and
-`.opencode/agents` to it has each agent once.
+`.opencode/agents` to it has each agent once. Ork doesn't look in
+`.commandcode/agents` or `.codex/agents` for an `agent:`; Command Code and Codex
+load those folders themselves in their own sessions
+([what each driver loads](./drivers.md)).
 
 ```console
 $ ork agents list           # --source project|user|builtin, --ids, --limit, --json

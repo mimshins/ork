@@ -144,7 +144,8 @@ reaches them. **Why now:** this is the engine, and it runs without Claude.
 - `runtime/`: [types.ts](./packages/core/src/runtime/types.ts), the port: an
   interface the engine defines and the agent drivers implement. A driver is how
   Ork starts an agent session by running that tool's own CLI headless: `claude`
-  (`claude-code`), `opencode` (`open-code`) or `cmd` (`command-code`).
+  (`claude-code`), `opencode` (`open-code`), `cmd` (`command-code`), `codex`
+  (`codex`) or `omp` (`omp`, built, not yet proven).
 - `context/resolve.ts`, `store/recorder.ts` and `worktree/manager.ts`.
 - The built-in workflows (`ork:security-audit`, `ork:onboard-propose`,
   `ork:onboard-write`) live in

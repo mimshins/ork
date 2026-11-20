@@ -62,7 +62,10 @@ Held only by a prompt:
 ## What each driver loads
 
 Both built-in workflows ask a session to ignore your project's own instructions
-and skills, since your repository is data here. Only `claude-code` applies it:
+and skills, since your repository is data here. Only `claude-code` applies it.
+`codex` and `omp` don't run these workflows at all: they can't hold the turn
+limit the workflows set, so the run is refused before any session starts
+([Onboarding](../onboarding.md)).
 
 | Driver         | Your project's instructions and skills in these sessions                                                                                                |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |

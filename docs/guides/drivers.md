@@ -100,7 +100,7 @@ A node asks for something its driver does not do. Each refusal names both:
 - An `agent.subagent` under a leader whose driver does not run subagents.
 - A `deny` on a `Read`, `Glob` or `Grep` path, on `codex`: it has no read tool
   to gate, so the deny could not hold.
-- A driver that is not yet proven (none today).
+- A driver that is not yet proven (`omp`, today).
 
 `ork validate` checks against `--driver` if you give it, else against the driver
 a run would take. `ork run` checks again with the real driver before any session
@@ -179,8 +179,11 @@ your other entries as they were.
 Ork's and the ones the node names. Command Code still loads your own skills,
 memory and MCP servers; Ork blocks the calls a node did not allow, but those
 servers start. Codex ignores your config and turns plugins off, but still shows
-your own skills ([Codex](./drivers/codex.md#what-a-codex-session-loads)). A
-project's own `.mcp.json` is never touched.
+your own skills ([Codex](./drivers/codex.md#what-a-codex-session-loads)). `omp`
+starts with its skills, rules and other tools' files and MCP servers off, but
+keeps the rest of your own `omp` settings
+([omp](./drivers/omp.md#what-an-omp-session-loads)). A project's own `.mcp.json`
+is never touched.
 
 ## What the onboarding sessions read
 

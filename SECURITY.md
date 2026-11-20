@@ -1,10 +1,10 @@
 # Reporting Security Issues
 
 Ork runs AI agents and command-line tools on your machine, with your own
-accounts (`claude`, `opencode`, `cmd`, `gh`, `aws`). A vulnerability here can
-let a workflow, an agent, or a web page do more on that machine than you
-allowed, so please report it privately and give us time to fix it before you
-disclose it.
+accounts (`claude`, `opencode`, `cmd`, `codex`, `omp`, `gh`, `aws`). A
+vulnerability here can let a workflow, an agent, or a web page do more on that
+machine than you allowed, so please report it privately and give us time to fix
+it before you disclose it.
 
 ## How to let us know
 
@@ -46,11 +46,18 @@ driver is given it, and what removes it:
   removes it when the session ends, and after a crash the next Command Code
   session or `ork doctor` removes it. Only the `ork` entry is touched; your
   other entries stay as they were.
+- **`codex`:** an environment variable of the `codex` process only
+  (`ORK_CODEX_MCP_TOKEN`), never an argument or a file, and kept out of any
+  shell Codex starts. Nothing with the token is written to disk.
+- **`omp`** (built, not yet proven): a private folder (0700, files 0600) outside
+  the checkout, holding the token in the session's plugin `.mcp.json` and, when
+  the session can be held, `hold.json`. It goes when the session ends or fails,
+  and a crashed session's folder is swept later.
 
 The token is never written to logs, events or artifacts (it is masked), and a
 project's own `.mcp.json` is never changed. A driver with no permission prompt
-(`open-code`, `command-code`) denies every tool a node did not allow, so an
-unattended session can't run a shell command it was never given
+(`open-code`, `command-code`, `codex`) denies every tool a node did not allow,
+so an unattended session can't run a shell command it was never given
 ([Drivers](./docs/guides/drivers.md#permissions-denied-unless-allowed)).
 
 ## Scope
@@ -69,9 +76,9 @@ example:
   artifacts, or a workflow file;
 - the build and release supply chain of this repository.
 
-Out of scope: vulnerabilities in Claude Code, OpenCode, Command Code, `gh`, or
-`aws` themselves (report them to their maintainers), and what an agent does with
-permissions you granted it.
+Out of scope: vulnerabilities in Claude Code, OpenCode, Command Code, Codex,
+omp, `gh`, or `aws` themselves (report them to their maintainers), and what an
+agent does with permissions you granted it.
 
 We will investigate all legitimate reports and do our best to fix the problem
 quickly.

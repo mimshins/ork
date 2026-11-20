@@ -62,7 +62,8 @@ asks for every field the schema declares.
 The node used all of its `maxTurns` (OpenCode's `steps`, Command Code's exit 8,
 Claude Code's `error_max_turns`). **Who acts:** the workflow. **What to do:**
 raise `maxTurns`, or give the node a smaller task. After `ork resume` the node
-has the whole new `maxTurns` again.
+has the whole new `maxTurns` again. `codex` and `omp` have no turn limit, so
+`ork validate` refuses `maxTurns` on them ([drivers](./drivers.md)).
 
 ## Budget limit
 

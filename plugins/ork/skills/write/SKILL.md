@@ -121,8 +121,10 @@ list: see [One node per item](#one-node-per-item).
 - A node runs when any edge into it is taken; only a join waits. A node with no
   way in taken is skipped, and so is what follows it.
 - Templates, `{{inputs.x}}`, `{{nodes.a.output.field}}`, `{{run.id}}`, go in
-  `prompt`, `instructions`, `command`, `cwd` and `question`. Each value stays
-  one argument of a command, so it can't inject one.
+  `prompt`, `instructions`, `command`, `cwd` and `question`, and in an agent
+  node's `model` and `effort` (read when its session starts, so a script node
+  can pick the model). Each value stays one argument of a command, so it can't
+  inject one.
 
 ## One node per item
 

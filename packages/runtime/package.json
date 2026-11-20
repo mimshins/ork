@@ -2,7 +2,7 @@
   "name": "@krapht/ork-runtime",
   "version": "0.0.0",
   "private": true,
-  "description": "Agent drivers for Ork: the headless claude, opencode and cmd CLIs",
+  "description": "Agent drivers for Ork: the headless claude, opencode, cmd, codex and omp CLIs",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
