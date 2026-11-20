@@ -2,7 +2,8 @@
  * @file Tests for a model that names its driver (`claude-code.opus`, RFC-015):
  *   the prefix picks the session's driver over `--driver`, the tool gets the
  *   rest, a plain model stays plain, a prefix against the node's `driver` fails
- *   compiling, and a sub-agent is refused on a driver without subagents.
+ *   compiling, a sub-agent is refused on a driver without subagents, and a
+ *   sub-agent's rendered model that names a driver is a plan's pin.
  */
 
 import { mkdtempSync } from "node:fs";
@@ -19,7 +20,10 @@ import {
   modelDriver,
   namingNoDriver,
   nodeDriver,
+  type NodeOutput,
+  pinClashes,
   planNodeSession,
+  type SubagentPin,
 } from "../src/index.ts";
 
 const workflowOf = (lines: string[]): Workflow => {
@@ -247,5 +251,86 @@ describe("a sub-agent and its leader's driver", () => {
       "lead",
     );
     expect(plan.spec.agents?.["helper"]?.model).toBe("haiku");
+  });
+});
+
+/** `lead` with sub-agent `helper` whose model is `model`, beside `pick`. */
+const RENDERED = (model: string) =>
+  workflowOf([
+    "inputs: { m: { type: string, default: '' } }",
+    "nodes:",
+    "  pick: { type: agent.worker, prompt: Pick }",
+    "  lead: { type: agent.leader, prompt: go }",
+    "  helper:",
+    "    type: agent.subagent",
+    "    parent: lead",
+    "    description: helps",
+    `    model: "${model}"`,
+  ]);
+
+/** The plan of `lead`, with these inputs and outputs. */
+const plannedLead = (
+  workflow: Workflow,
+  run: {
+    inputs?: Record<string, string>;
+    outputs?: Record<string, NodeOutput>;
+  },
+) => {
+  const root = mkdtempSync(path.join(tmpdir(), "ork-model-driver-"));
+  const plan = planNodeSession(workflow, "lead", {
+    cwd: root,
+    inputs: run.inputs ?? {},
+    inPlace: true,
+    home: root,
+    ...(run.outputs === undefined ? {} : { outputs: run.outputs }),
+  });
+  if (!plan.ok) throw new Error(plan.error);
+  return plan;
+};
+
+const OPEN_CODE_PIN: SubagentPin[] = [
+  { id: "helper", model: "open-code.x", driver: "open-code" },
+];
+
+describe("a sub-agent's rendered model that names a driver", () => {
+  it("pins `open-code.x` from an input", () => {
+    const plan = plannedLead(RENDERED("{{inputs.m}}"), {
+      inputs: { m: "open-code.x" },
+    });
+    expect(plan.subagentPins).toEqual(OPEN_CODE_PIN);
+  });
+
+  it("pins `open-code.x` from an earlier output", () => {
+    const plan = plannedLead(RENDERED("{{nodes.pick.output.model}}"), {
+      outputs: { pick: { model: "open-code.x" } },
+    });
+    expect(plan.subagentPins).toEqual(OPEN_CODE_PIN);
+  });
+
+  it("pins `claude-code.haiku`, which a claude-code owner passes, the tool getting `haiku`", () => {
+    const plan = plannedLead(RENDERED("{{inputs.m}}"), {
+      inputs: { m: "claude-code.haiku" },
+    });
+    expect(plan.subagentPins).toEqual([
+      { id: "helper", model: "claude-code.haiku", driver: "claude-code" },
+    ]);
+    expect(plan.spec.agents?.["helper"]?.model).toBe("haiku");
+    expect(pinClashes("lead", "claude-code", plan.subagentPins)).toEqual([]);
+  });
+
+  it("pins nothing for a plain model", () => {
+    const plan = plannedLead(RENDERED("{{inputs.m}}"), {
+      inputs: { m: "deepseek/deepseek-v4.1-flash" },
+    });
+    expect(plan.subagentPins).toEqual([]);
+    expect(plan.spec.agents?.["helper"]?.model).toBe(
+      "deepseek/deepseek-v4.1-flash",
+    );
+  });
+
+  it("names the clash in `ork validate`'s words", () => {
+    expect(pinClashes("lead", "claude-code", OPEN_CODE_PIN)).toEqual([
+      "sub-agent `helper` runs in `lead`'s session on driver `claude-code`, but its model `open-code.x` names driver `open-code`",
+    ]);
   });
 });

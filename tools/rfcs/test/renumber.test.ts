@@ -157,6 +157,28 @@ describe("renumberText", () => {
       "RFC-029 RFC-0270 RFC-029-a.md RFC-026",
     );
   });
+
+  it("matches a four-digit number whole, not as the start of a longer one", () => {
+    expect(renumberText("RFC-1000 RFC-10001 RFC-100", 1000, 1001)).toBe(
+      "RFC-1001 RFC-10001 RFC-100",
+    );
+  });
+
+  it("replaces the number at the end of the text", () => {
+    expect(renumberText("see RFC-027", 27, 29)).toBe("see RFC-029");
+  });
+
+  it("replaces the number before `.`, `)` and `,`", () => {
+    expect(renumberText("RFC-027. (RFC-027) RFC-027, RFC-027", 27, 29)).toBe(
+      "RFC-029. (RFC-029) RFC-029, RFC-029",
+    );
+  });
+
+  it("leaves a longer number alone", () => {
+    expect(renumberText("RFC-0270 RFC-02700 RFC-0271.", 27, 29)).toBe(
+      "RFC-0270 RFC-02700 RFC-0271.",
+    );
+  });
 });
 
 describe("renumberIndex", () => {
@@ -264,6 +286,35 @@ describe("renumber", () => {
     git(w.ours, "fetch", "-q", "origin", "side");
     const done = renumber(w.ours, ["origin/side", "origin/main"]);
     expect(done.map(d => d.to)).toEqual([32]);
+  });
+
+  it("moves a number only the last ref, named with a slash, holds, above every ref", () => {
+    const w = world();
+    commitOurs(w);
+    git(w.upstream, "checkout", "-q", "-b", "side");
+    put(w.upstream, "rfcs/active/RFC-029-side.md", rfc("029", "Side"));
+    git(w.upstream, "add", "-A");
+    git(w.upstream, "commit", "-q", "-m", "side");
+    git(w.upstream, "push", "-q", "origin", "side");
+    git(w.upstream, "checkout", "-q", "main");
+    git(w.upstream, "checkout", "-q", "-b", "feature/tip");
+    put(w.upstream, `rfcs/active/${THEIRS}`, rfc("027", "Theirs"));
+    git(w.upstream, "add", "-A");
+    git(w.upstream, "commit", "-q", "-m", "tip");
+    git(w.upstream, "push", "-q", "origin", "feature/tip");
+    git(w.ours, "fetch", "-q", "origin", "side", "feature/tip");
+    const done = renumber(w.ours, ["origin/side", "origin/feature/tip"]);
+    expect(done).toEqual([
+      {
+        from: 27,
+        to: 30,
+        path: "rfcs/active/RFC-030-ours.md",
+        reason: "RFC-027 is on origin/feature/tip",
+      },
+    ]);
+    expect(git(w.ours, "rev-parse", "HEAD~1")).toBe(
+      git(w.ours, "rev-parse", "origin/feature/tip"),
+    );
   });
 
   it("changes nothing when the number is free", () => {

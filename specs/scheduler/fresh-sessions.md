@@ -111,11 +111,14 @@ be told before the node starts (its model fails to render), the session resumes
 as before and the plan fails as it would.
 
 The fresh activation's `node.started` carries `driverChanged: { from, to }`, the
-two drivers (`ork logs` prints no line for it yet:
-[L515](../gaps/fresh-session-limits.md)). A delegated task also gets the
-handover note, as under `freshOver`. On `ork resume` the earlier driver is read
-from the run's recorded events; when it cannot be read, the session resumes as
-before. A run recorded before this has no `driverChanged`.
+two drivers. `ork logs` and the live stream print it under the start line as
+`starts a fresh session: driver changed from <from> to <to>`, after the
+`freshOver` line when both apply; `--json` carries the field as stored, and the
+browser view ignores it ([L515](../gaps/fresh-session-limits.md)). A delegated
+task also gets the handover note, as under `freshOver`. On `ork resume` the
+earlier driver is read from the run's recorded events; when it cannot be read,
+the session resumes as before. A run recorded before this has no
+`driverChanged`.
 
 ## What carries over, and what does not
 

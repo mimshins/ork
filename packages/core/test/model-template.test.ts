@@ -217,4 +217,22 @@ describe("a template model as written", () => {
       "sub-agent `helper`: model: {{nodes.pick.output.model}} gave nothing: node pick has no output or an empty one",
     );
   });
+
+  it("warns, naming the sub-agent, when its leader runs alone", () => {
+    const workflow = workflowOf([
+      "nodes:",
+      "  pick: { type: agent.worker, prompt: Pick }",
+      "  lead: { type: agent.leader, prompt: Lead }",
+      "  helper:",
+      "    type: agent.subagent",
+      "    parent: lead",
+      "    description: Helps",
+      `    ${FROM_PICK}`,
+    ]);
+    const result = planned(workflow, {}, "lead");
+    expect(result.warnings).toEqual([
+      "sub-agent `helper`: `model: {{nodes.pick.output.model}}` reads node pick, which is empty when the node runs alone, so the default applies",
+    ]);
+    expect(result.subagentPins).toEqual([]);
+  });
 });

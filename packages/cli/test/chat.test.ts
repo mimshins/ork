@@ -24,7 +24,11 @@ import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import { resumeChat, runWorkflowFile } from "../src/index.ts";
-import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
+import {
+  openCodeReady,
+  readyOnly,
+  standInDrivers,
+} from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -66,6 +70,23 @@ const REVIEW = [
   "      items:",
   "        - { concern: correctness, model: opus }",
   "        - { concern: tests, model: sonnet }",
+  "",
+].join("\n");
+
+/** A leader whose sub-agent's model names claude-code. */
+const LEAD = [
+  "schemaVersion: 1",
+  "name: lead",
+  "nodes:",
+  "  lead:",
+  "    type: agent.leader",
+  "    isolation: shared",
+  '    prompt: "Lead"',
+  "  helper:",
+  "    type: agent.subagent",
+  "    parent: lead",
+  "    description: helps",
+  "    model: claude-code.haiku",
   "",
 ].join("\n");
 
@@ -311,5 +332,47 @@ describe("ork chat", () => {
       ["review.0", "opus"],
       ["review.1", "sonnet"],
     ]);
+  });
+
+  it("refuses to resume a session whose sub-agent's model names another driver", async () => {
+    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-chat-")));
+    writeFileSync(path.join(dir, "lead.ork.yaml"), LEAD);
+    const store: EventStore = openStore(":memory:");
+    const run = await runWorkflowFile({
+      file: "lead.ork.yaml",
+      cwd: dir,
+      inputs: [],
+      inPlace: true,
+      json: false,
+      runtime: fake,
+      driverChecks: readyOnly("claude-code"),
+      drivers: standInDrivers,
+      human: gateWaits,
+      store,
+      home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
+      intervalMs: 60_000,
+      out: () => {},
+      err: () => {},
+    });
+    expect(run.result?.status).toBe("succeeded");
+    const started: string[] = [];
+    expect(
+      await resumeChat({
+        store,
+        run: runOf(store),
+        node: "lead",
+        body: "Again",
+        driver: "open-code",
+        runtime: driver => {
+          started.push(driver);
+          return fake();
+        },
+        human: gateWaits,
+        out: () => {},
+      }),
+    ).toBe(
+      "sub-agent `helper` runs in `lead`'s session on driver `open-code`, but its model `claude-code.haiku` names driver `claude-code`",
+    );
+    expect(started).toEqual([]);
   });
 });

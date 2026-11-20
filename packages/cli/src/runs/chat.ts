@@ -16,6 +16,7 @@ import {
   type EventStore,
   type HumanChannel,
   nodeSession,
+  pinClashes,
   planNodeSession,
   type RunRecord,
   placeFiles,
@@ -142,6 +143,9 @@ export const resumeChat = async (
     }
     driver = ready.driver;
   }
+  // A sub-agent's rendered model may name another driver than the session's.
+  const clashes = pinClashes(template ?? node, driver, plan.subagentPins);
+  if (clashes.length > 0) return clashes.join("; ");
 
   const record = appendRecorder(store, run.id, runDir);
   record({

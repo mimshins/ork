@@ -34,6 +34,21 @@ What lands on `main` is listed here until it ships.
   without a `/` (`*.ts`) now matches names at any depth, so it can return more
   files than before; add the folder (`src/*.ts`) to match the whole path.
 
+- **A sub-agent on another driver fails its leader, and `ork logs` says why a
+  session started fresh.** A sub-agent whose rendered `model` names another
+  driver than its leader's session (`open-code.x` under `claude-code`, whether
+  the driver comes from the model, `--driver` or the ready one) used to lose its
+  prefix without a word; it now fails the leader's node, naming both drivers, in
+  `ork run`, `ork run --node` and `ork chat`. A start that began fresh because
+  the driver changed prints
+  `starts a fresh session: driver changed from <from> to <to>` under the start
+  line, in `ork logs` and the live stream; `--json` is unchanged
+  ([choosing a model](../guides/writing-workflows/choosing-a-model.md#a-model-on-another-driver)).
+  Upgrade: a workflow whose sub-agent model rendered another driver's prefix now
+  fails; drop the prefix or use the leader's driver. A session recorded before
+  this fix may have dropped the prefix too, so `ork chat` on it now refuses when
+  the sub-agent's model clashes with the session's driver.
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

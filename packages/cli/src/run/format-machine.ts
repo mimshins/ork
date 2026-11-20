@@ -1,8 +1,8 @@
 /**
  * @file How a node's start and its waits for the machine read in `ork logs`: a
- *   start (with a second line when the `sessions.freshOver` rule began a fresh
- *   session), a slot for a heavy command (ADR-080) and a lock (RFC-016), each
- *   naming who holds it.
+ *   start (with a line more when the `sessions.freshOver` rule or a changed
+ *   driver began a fresh session), a slot for a heavy command (ADR-080) and a
+ *   lock (RFC-016), each naming who holds it.
  */
 
 import {
@@ -54,13 +54,19 @@ export const formatStarted = (
     event.description === undefined
       ? ""
       : ` · ${maskSecrets(event.description)}`;
-  const { fresh } = event;
-  const because =
-    fresh === undefined
+  const { fresh, driverChanged } = event;
+  const because = [
+    ...(fresh === undefined
       ? []
       : [
           `${blank} ${dim(`starts a fresh session: context ${String(fresh.contextTokens)} tokens over ${String(fresh.over)}`)}`,
-        ];
+        ]),
+    ...(driverChanged === undefined
+      ? []
+      : [
+          `${blank} ${dim(`starts a fresh session: driver changed from ${driverChanged.from} to ${driverChanged.to}`)}`,
+        ]),
+  ];
   return [
     `${tag} ${dim(`${event.nodeType}${round}${owner}${named}`)}`,
     ...because,

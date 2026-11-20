@@ -37,26 +37,26 @@ with the built-in node types
   `--in-place`. `--in-place` runs every node in this checkout instead.
 - stdout gets one transcript line per event, prefixed with the node id
   (`builder │ …`): each start (with its round; when the
-  [`sessions.freshOver` rule](../scheduler/fresh-sessions.md) started a
-  delegated builder in a fresh session, a second line,
-  `starts a fresh session: context <N> tokens over <M>`, and `--json` carries
-  the event's `fresh` field as stored), session text and tool calls, each result
-  (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`; a node that failed reads `✗ fail`
-  whatever its report said, and a child that did not merge reads
-  `! pass, merge conflict`), skips and exhausted loops, worktree changes
-  (`⎇ created …`, `merged`, `removed worktree of <branch> (branch kept)`), the
-  line for a question (`decision <id>; answer here or with ork decide` when this
-  terminal answers, `ork decide` when none does; a detached run prints one line
-  saying its terminal is off), and a fanned node's list in plain words
-  (`build │ 5 items`, or `! 12 items, over maxItems 10`; an item's lines carry
-  its id, `build.2`); then the run summary: status, total cost, how many nodes
-  ran, were kept from an earlier run (on a resume) and were skipped, how many
-  failures an edge handled (`2 ran, 1 kept, 1 skipped, 1 failure handled`; the
-  kept count is left out when 0), the workflow's declared `outputs:`, one per
-  key under the summary line (`  integrated: #1`; a multi-line value goes
-  indented under its key, an empty one reads `(empty)`, and one over 20 lines or
-  2,000 characters is cut with `… cut; full value: ork logs <run> --json`; the
-  values are scrubbed of escape sequences, as they come from sessions;
+  [fresh-session rules](../scheduler/fresh-sessions.md) started a session fresh,
+  a line more: `starts a fresh session: context <N> tokens over <M>`, or
+  `driver changed from <X> to <Y>`; `--json` carries `fresh` and `driverChanged`
+  as stored), session text and tool calls, each result (`✓ pass: …`, `✓ exit 0`,
+  `✓ merge (user)`; a node that failed reads `✗ fail` whatever its report said,
+  and a child that did not merge reads `! pass, merge conflict`), skips and
+  exhausted loops, worktree changes (`⎇ created …`, `merged`,
+  `removed worktree of <branch> (branch kept)`), the line for a question
+  (`decision <id>; answer here or with ork decide` when this terminal answers,
+  `ork decide` when none does; a detached run prints one line saying its
+  terminal is off), and a fanned node's list in plain words (`build │ 5 items`,
+  or `! 12 items, over maxItems 10`; an item's lines carry its id, `build.2`);
+  then the run summary: status, total cost, how many nodes ran, were kept from
+  an earlier run (on a resume) and were skipped, how many failures an edge
+  handled (`2 ran, 1 kept, 1 skipped, 1 failure handled`; the kept count is left
+  out when 0), the workflow's declared `outputs:`, one per key under the summary
+  line (`  integrated: #1`; a multi-line value goes indented under its key, an
+  empty one reads `(empty)`, and one over 20 lines or 2,000 characters is cut
+  with `… cut; full value: ork logs <run> --json`; the values are scrubbed of
+  escape sequences, as they come from sessions;
   [outputs-text.ts](../../packages/core/src/run/outputs-text.ts)), the worktrees
   left for you (branch, path, why), the reasons it did not succeed, and a
   warning for each node that never ran with messages nobody read. `ork logs` and

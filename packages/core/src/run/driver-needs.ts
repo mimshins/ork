@@ -16,7 +16,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { driverQueues } from "./driver-queues.ts";
-import { modelDriver, nodeDriver } from "./driver.ts";
+import { modelDriver, nodeDriver, subagentClash } from "./driver.ts";
 
 /** The part of a driver descriptor a refusal reads. */
 export type DriverNeeds = Pick<
@@ -89,16 +89,22 @@ const subagentRefusals = (
   Object.entries(workflow.nodes).flatMap(([child, node]) => {
     if (node.type !== "agent.subagent" || node.parent !== id) return [];
     const runs = `sub-agent \`${child}\` runs in \`${id}\`'s session on driver \`${driver.id}\``;
-    const pinned =
-      node.model === undefined ? undefined : modelDriver(node.model).driver;
+    const model = node.model;
+    const named = model === undefined ? undefined : modelDriver(model).driver;
     return [
       ...(driver.capabilities.subagents
         ? []
         : [`${runs}, which does not run subagents`]),
-      ...(pinned === undefined || pinned === driver.id
+      ...(model === undefined || named === undefined || named === driver.id
         ? []
         : [
-            `${runs}, but its model \`${node.model ?? ""}\` names driver \`${pinned}\``,
+            subagentClash({
+              id: child,
+              owner: id,
+              driver: driver.id,
+              model,
+              named,
+            }),
           ]),
     ].map(message => ({ node: child, message }));
   });

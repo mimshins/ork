@@ -37,6 +37,41 @@ export const modelDriver = (
 };
 
 /**
+ * Why sub-agent `id` can't run in `owner`'s session on `driver`: its `model`
+ * names driver `named`. One wording for `ork validate` and a planned session.
+ */
+export const subagentClash = (clash: {
+  id: string;
+  owner: string;
+  driver: string;
+  model: string;
+  named: Driver;
+}): string =>
+  `sub-agent \`${clash.id}\` runs in \`${clash.owner}\`'s session on driver \`${clash.driver}\`, but its model \`${clash.model}\` names driver \`${clash.named}\``;
+
+/**
+ * Why `owner`'s session can't start on `driver`: each sub-agent whose rendered
+ * model (a plan's `subagentPins`) names another driver. Every caller that
+ * starts a planned session checks this once it knows the driver.
+ */
+export const pinClashes = (
+  owner: string,
+  driver: Driver,
+  pins: readonly { id: string; model: string; driver: Driver }[],
+): string[] =>
+  pins
+    .filter(pin => pin.driver !== driver)
+    .map(pin =>
+      subagentClash({
+        id: pin.id,
+        owner,
+        driver,
+        model: pin.model,
+        named: pin.driver,
+      }),
+    );
+
+/**
  * The model a node asks for as written: its own (or its agent's), else the
  * default.
  */

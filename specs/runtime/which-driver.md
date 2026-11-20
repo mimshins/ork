@@ -74,10 +74,22 @@ driver to run subagents: the `subagents` capability of the
 refuse the leader's node, naming the sub-agent and the driver: "sub-agent
 `helper` runs in `lead`'s session on driver `open-code`, which does not run
 subagents". A sub-agent whose model names another driver than its leader's is
-refused too, when the model is written so. A sub-agent's templated model is
-rendered when its leader's session is planned; a rendered prefix naming another
-driver is stripped and the model passed to the leader's driver, not refused
-([L514](../gaps/for-each-limits.md)).
+refused too: `ork validate` refuses a written one, and `ork run` also refuses a
+templated one, which is rendered when its leader's session is planned (the plan
+reports each rendered prefix as `subagentPins`). The leader's driver is the one
+the session resolves (the model's prefix, `--driver`, the node's, the workflow's
+or the ready one), so `--driver open-code` or the ready driver counts as well as
+a written prefix. The node fails `invalid_node`: "sub-agent `helper` runs in
+`lead`'s session on driver `claude-code`, but its model `open-code.x` names
+driver `open-code`". Every starter of a session applies the one check,
+`pinClashes` in core's `driver.ts`: `sessionDriverOf`, `runNode` and
+`resumeChat`. An `owner-asks` fork deletes `spec.agents`, so it needs none, and
+`explain` only reports. The wording lives in `subagentClash`, shared with
+`ork validate`'s `subagentRefusals`; a written clash is reported by both the
+unfit-driver check and the pin check, so a caller dedupes the messages (a
+`Set`). Resuming a recorded session re-checks the pins, so an older run can be
+refused. A rendered prefix naming the leader's own driver passes, and the tool
+gets the model without it. A plain model (`deepseek/x`) names no driver.
 
 ## The ready driver
 

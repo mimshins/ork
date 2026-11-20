@@ -93,7 +93,9 @@ the outputs so far.
   without the earlier outputs. The node takes its default model and the run says
   the read was empty.
 - A sub-agent's templated `model` is read when its leader's session starts. An
-  empty one keeps the leader's model, and an invalid one fails the leader.
+  empty one keeps the leader's model, and an invalid one fails the leader. A
+  sub-agent's read of an earlier output that comes out empty fails the leader
+  too, except in a node run alone, where it is a warning.
 
 `ork usage` and the run's transcript show the model a session really used.
 
@@ -106,9 +108,18 @@ template pins no driver: write the prefix yourself,
 front. A node `driver:` that disagrees with the rendered prefix fails the node
 when it runs.
 
+A sub-agent runs in its leader's session, so it runs on the leader's driver. A
+sub-agent whose rendered model names another driver fails the leader's node:
+``sub-agent `helper` runs in `lead`'s session on driver `claude-code`, but its model `open-code.x` names driver `open-code` ``.
+This holds whether the leader's driver comes from its model's prefix, `--driver`
+or the ready driver. A rendered `claude-code.haiku` under a `claude-code` leader
+passes, and the tool gets `haiku`.
+
 A session belongs to the driver it started on. A node with `session: resume`, or
 a leader, whose model now names another driver starts a fresh session instead
-and the node's start event records the two drivers (`driverChanged`);
+and the node's start event records the two drivers (`driverChanged`) and
+`ork logs` says so under the start line
+(`starts a fresh session: driver changed from claude-code to open-code`);
 `ork resume` does the same. A different model on the same driver still resumes.
 A fresh session starts without the old one's history, as in
 [a fresh session for a builder's next task](../fresh-builder-sessions.md#what-the-fresh-session-knows).

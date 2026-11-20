@@ -92,6 +92,15 @@ const resumeOf = (store: EventStore): Partial<RunWorkflowOptions> => {
   return { runId: record.id, resume: ready.state, inputs: [] };
 };
 
+/** A resume of a run recorded before `git.fetch`, which kept no `baseRef`. */
+const withoutBaseRef = (
+  given: Partial<RunWorkflowOptions>,
+): Partial<RunWorkflowOptions> => {
+  if (given.resume === undefined) throw new Error("no resume state");
+  const { baseRef: _dropped, ...settings } = given.resume.settings;
+  return { ...given, resume: { ...given.resume, settings } };
+};
+
 /** A first run of GATED that fails at `gate`, and what a resume needs. */
 const failedOnce = async () => {
   const dir = projectWith(GATED, true);
@@ -104,8 +113,9 @@ const failedOnce = async () => {
   const runId = String(first.result?.runId);
   state.gate = 0;
   state.read = path.join(`${dir}-worktrees`, `ork-${runId}-_readonly`);
-  const resume = () => run(dir, { ...shared, ...resumeOf(store) });
-  return { dir, first, state, resume };
+  const resume = (change = (given: Partial<RunWorkflowOptions>) => given) =>
+    run(dir, { ...shared, ...change(resumeOf(store)) });
+  return { dir, first, state, store, resume };
 };
 
 const run = async (
@@ -216,5 +226,23 @@ describe("a remote git.base", () => {
     const again = await s.resume();
     expect(again.exitCode).toBe(0);
     expect(s.state.heads).toEqual([started]);
+  });
+
+  it("resolves locally, with no fetch, when a run started before git.fetch has no recorded base", async () => {
+    const s = await failedOnce();
+    const recorded = resumeOf(s.store).resume?.settings.baseRef;
+    expect(recorded).toBeDefined();
+    // The remote moves on, and this clone has it; the origin is then cut off.
+    writeFileSync(path.join(s.dir, "later.txt"), "later\n");
+    sh(s.dir, "add", "-A");
+    sh(s.dir, "commit", "-q", "-m", "later");
+    sh(s.dir, "push", "-q", "origin", "HEAD:main");
+    cutOff(s.dir);
+    const local = sh(s.dir, "rev-parse", "origin/main").trim();
+    expect(local).not.toBe(recorded);
+    const again = await s.resume(withoutBaseRef);
+    expect(again.err.join("\n")).not.toContain("git fetch");
+    expect(again.exitCode).toBe(0);
+    expect(s.state.heads).toEqual([local]);
   });
 });

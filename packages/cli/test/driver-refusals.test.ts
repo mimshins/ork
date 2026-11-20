@@ -15,7 +15,7 @@ import { AGENT_DRIVERS, readyDriver } from "@krapht/ork-integrations";
 import { parseWorkflow, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
-import { runWorkflowFile } from "../src/index.ts";
+import { runNode, runWorkflowFile } from "../src/index.ts";
 import { driverArg, driverDiagnostics } from "../src/run/driver-check.ts";
 import { readyOnly, standInDrivers } from "./fixtures/drivers.ts";
 
@@ -328,6 +328,47 @@ describe("ork run's driver check", () => {
     expect(done.err.join("\n")).toContain(
       "node `build` sets maxTurns, but driver `open-code` has no turn limit",
     );
+  });
+});
+
+/** `lead` with sub-agent `helper`, whose model is the input `m`. */
+const PINNED_HELPER =
+  "schemaVersion: 1\nname: notes\ninputs:\n  m: { type: string }\nnodes:\n  lead:\n    type: agent.leader\n    isolation: shared\n    prompt: go\n  helper:\n    type: agent.subagent\n    parent: lead\n    description: helps\n    model: '{{inputs.m}}'\n";
+
+describe("ork run --node's sub-agent check", () => {
+  it("refuses a sub-agent whose rendered model names another driver, before the session starts", async () => {
+    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-refuse-")));
+    writeFileSync(path.join(dir, "notes.ork.yaml"), PINNED_HELPER);
+    const err: string[] = [];
+    const started: string[] = [];
+    const done = await runNode({
+      file: "notes.ork.yaml",
+      cwd: dir,
+      nodeId: "lead",
+      inputs: ["m=open-code.x"],
+      inPlace: true,
+      json: false,
+      runtime: driver => {
+        started.push(driver);
+        return Promise.reject(new Error("no session may start"));
+      },
+      driverChecks: readyOnly("claude-code"),
+      drivers: standInDrivers,
+      store: openStore(":memory:"),
+      home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
+      out: () => {
+        // The transcript isn't what this checks.
+      },
+      err: line => {
+        err.push(line);
+      },
+    });
+    expect(done.exitCode).toBe(1);
+    expect(started).toEqual([]);
+    const line =
+      "sub-agent `helper` runs in `lead`'s session on driver `claude-code`, but its model `open-code.x` names driver `open-code`";
+    expect(err).toContain(line);
+    expect(err.filter(l => l === line)).toHaveLength(1);
   });
 });
 

@@ -182,6 +182,39 @@ describe("a clean detached worktree on the current branch", () => {
   });
 });
 
+/** A detached `ork-<run>-_readonly` worktree that `run` recorded. */
+const readonlyOf = (
+  where: ReturnType<typeof place>,
+  run: string,
+  running: boolean,
+) => {
+  const folder = path.join(path.dirname(where.root), `ork-${run}-_readonly`);
+  git(where.root, "worktree", "add", "--quiet", "--detach", folder);
+  recordRun(
+    where.home,
+    where.root,
+    run,
+    [{ node: "_readonly", path: folder }],
+    running,
+  );
+  return folder;
+};
+
+describe("a leftover _readonly worktree", () => {
+  it("is listed by run, and clean --yes removes it, not a live run's", () => {
+    const where = place();
+    const left = readonlyOf(where, "r7", false);
+    const live = readonlyOf(where, "r6", true);
+    expect(ork(where, "list").stdout).toContain("r7/_readonly (detached)");
+    const out = ork(where, "clean", "--yes");
+    expect(out.status).toBe(0);
+    expect(existsSync(left)).toBe(false);
+    expect(git(where.root, "worktree", "list")).not.toContain(left);
+    expect(existsSync(live)).toBe(true);
+    expect(git(where.root, "worktree", "list")).toContain(live);
+  });
+});
+
 describe("a fanned node's item worktrees", () => {
   it("are listed by item id, and one is removed by its listed name", () => {
     const where = place();

@@ -30,7 +30,13 @@ import type {
   Ownership,
   SessionSpec,
 } from "../runtime/types.ts";
-import { AGENT_TOOL, modelOf, renderBrief, subagentsOf } from "./brief.ts";
+import {
+  AGENT_TOOL,
+  modelOf,
+  renderBrief,
+  type SubagentPin,
+  subagentsOf,
+} from "./brief.ts";
 import { driverContradiction, modelDriver, namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
 import { readingOf, toolRules } from "./tool-rules.ts";
@@ -95,6 +101,11 @@ export type PlanResult =
        * it; it wins over `--driver`. `spec.model` is the rest.
        */
       pinned: Driver | undefined;
+      /**
+       * Each sub-agent whose rendered model names a driver; the caller fails
+       * the session when one differs from the driver it resolves.
+       */
+      subagentPins: SubagentPin[];
       /** The MCP servers the session loads beside Ork's, by name. */
       mcp: string[];
       warnings: string[];
@@ -231,6 +242,7 @@ export const planNodeSession = (
     options.outputs,
   );
   if (!agents.ok) return { ok: false, error: agents.error };
+  warnings.push(...agents.warnings);
   if (agents.agents !== undefined) {
     spec.agents = agents.agents;
     // A session restricted to some tools still needs the one subagents use.
@@ -264,6 +276,7 @@ export const planNodeSession = (
     spec,
     driver: namedDriver(node, workflow),
     pinned: model?.driver,
+    subagentPins: agents.pins,
     mcp,
     warnings,
     context,

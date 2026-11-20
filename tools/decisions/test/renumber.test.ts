@@ -139,6 +139,26 @@ afterEach(() => {
   }
 });
 
+/** `line` with ADR `number` moved up by one, as a clash on a ref would. */
+const bumped = (line: string, number: number): string => {
+  const one = planAdrs(
+    [
+      {
+        path: `decisions/ADR-${number}-a.md`,
+        file: `ADR-${number}-a.md`,
+        number,
+      },
+    ],
+    [{ ref: "origin/main", taken: new Map([[number, ["ADR-x.md"]]]) }],
+    new Map(),
+  );
+  return renumberAdrLine(
+    line,
+    one,
+    from => one.find(move => move.number === from)?.to,
+  );
+};
+
 describe("renumberAdrLine", () => {
   const moves = planAdrs(
     [
@@ -178,6 +198,28 @@ describe("renumberAdrLine", () => {
     const none = new Map<number, number>();
     expect(renumberAdrLine("See ADR-107.", moves, n => none.get(n))).toBe(
       "See ADR-107.",
+    );
+  });
+
+  it("matches a four-digit number whole, not as the start of a longer one", () => {
+    expect(bumped("ADR-1000 ADR-10001 ADR-100", 1000)).toBe(
+      "ADR-1001 ADR-10001 ADR-100",
+    );
+  });
+
+  it("replaces the number at the end of the line", () => {
+    expect(bumped("see ADR-107", 107)).toBe("see ADR-108");
+  });
+
+  it("replaces the number before `.`, `)` and `,`", () => {
+    expect(bumped("ADR-107. (ADR-107) ADR-107, ADR-107", 107)).toBe(
+      "ADR-108. (ADR-108) ADR-108, ADR-108",
+    );
+  });
+
+  it("leaves a longer number alone", () => {
+    expect(bumped("ADR-1070 ADR-10700 ADR-0107", 107)).toBe(
+      "ADR-1070 ADR-10700 ADR-0107",
     );
   });
 });
@@ -316,6 +358,35 @@ describe("renumber", () => {
       "[109](./ADR-109-second.md)",
     ]);
     expect(rows[2]).toContain("Amended by 109");
+  });
+
+  it("moves a number only the last ref, named with a slash, holds, above every ref", () => {
+    const w = world();
+    commit(w.ours, { "decisions/ADR-107-ours.md": adr("107", "Ours") }, [
+      row("107", "ours", "Ours"),
+    ]);
+    git(w.upstream, "checkout", "-q", "-b", "side");
+    commit(w.upstream, { "decisions/ADR-109-side.md": adr("109", "Side") });
+    git(w.upstream, "push", "-q", "origin", "side");
+    git(w.upstream, "checkout", "-q", "main");
+    git(w.upstream, "checkout", "-q", "-b", "feature/tip");
+    commit(
+      w.upstream,
+      { "decisions/ADR-107-theirs.md": adr("107", "Theirs") },
+      [row("107", "theirs", "Theirs")],
+    );
+    git(w.upstream, "push", "-q", "origin", "feature/tip");
+    git(w.ours, "fetch", "-q", "origin", "side", "feature/tip");
+    const done = renumber(w.ours, ["origin/side", "origin/feature/tip"]);
+    expect(done).toEqual([
+      {
+        kind: "adr",
+        from: 107,
+        to: 110,
+        path: "decisions/ADR-110-ours.md",
+        reason: "ADR-107 is taken on origin/feature/tip",
+      },
+    ]);
   });
 
   it("moves an added limit id upstream took and raises the next-id line", () => {

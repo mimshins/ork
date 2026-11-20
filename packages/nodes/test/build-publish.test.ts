@@ -815,6 +815,16 @@ describe("build's final check and its repair", () => {
     expect(git(dir, "show", "HEAD:app.txt")).toBe("fixed\n");
   });
 
+  it("amends a real change even when the repair also calls it a flake", () => {
+    const dir = tempRepo();
+    writeFileSync(path.join(dir, "app.txt"), "fixed\n");
+    const { code, stdout } = sh(dir, scriptOf("amend"), { FLAKE: "true" });
+    expect(code).toBe(0);
+    expect(stdout).not.toContain("the check will run again");
+    expect(git(dir, "rev-list", "--count", "HEAD").trim()).toBe("1");
+    expect(git(dir, "show", "HEAD:app.txt")).toBe("fixed\n");
+  });
+
   it("goes on to run the check again when the repair found a flake and changed nothing", () => {
     const { code, stdout } = sh(tempRepo(), scriptOf("amend"), {
       FLAKE: "true",

@@ -23,7 +23,8 @@ What was left simpler:
   item's `model` written in the file (`claude-code.opus`) is checked for its
   driver when the item runs, not when `ork validate` compiles it; a rendered
   `{{item.model}}` always was. A sub-agent's own `driver` is not compared with
-  its leader's, only its model's prefix is.
+  its leader's, only its model's prefix is (written, or rendered when the
+  session starts).
 - **L276 · TypeScript identifiers keep the old name.** `isClaudeNode`,
   `claudeExecutor` and `packages/nodes/src/claude.ts` still say `claude` though
   they serve every agent node. A rename touches many files for no change in

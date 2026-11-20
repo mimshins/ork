@@ -168,7 +168,11 @@ that maps an issue's labels to a model name. Built
   takes the default and warns that the read is empty when the node runs alone.
 - **A sub-agent's `model`** is rendered when its owner's session is planned: an
   empty render keeps the owner's model, and an invalid one fails the owner's
-  plan, naming the sub-agent.
+  plan, naming the sub-agent. A render that names another driver than the
+  owner's session fails the node
+  ([which driver](../runtime/which-driver.md#sub-agents)). An empty read of an
+  earlier output, in a plan with no outputs, is a warning prefixed
+  `sub-agent <id>:`; with outputs it fails the node.
 - **A changed driver** starts a resumed session fresh
   ([fresh sessions](../scheduler/fresh-sessions.md#a-changed-driver)).
 

@@ -71,6 +71,12 @@ build │ agent.worker, for lead · add the parser
       │ starts a fresh session: context 120000 tokens over 100000
 ```
 
+A session also starts fresh when a node set to resume now runs on another driver
+than its last session did; the line then reads
+`starts a fresh session: driver changed from claude-code to open-code`, under
+the one above when both apply, and `--json` carries `driverChanged`. The browser
+view shows neither.
+
 `ork chat <run> <node>` reaches the node's newest session, the fresh one.
 
 ## What it costs and saves

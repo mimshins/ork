@@ -85,11 +85,6 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   `model: "{{nodes.pick.output.model}}"` as an input of the callee fails there,
   when its node reads the input, not in the caller's `ork validate`. Ork can't
   tell an input is a model without a type for it.
-- **L514 · A sub-agent's rendered model with another driver's prefix is
-  stripped, not refused.** A written prefix other than its leader's driver is
-  refused by `ork validate` and `ork run`; a templated one is rendered when the
-  leader's session is planned, and its prefix is dropped, so the model name goes
-  to the leader's driver.
 - **L315 · `--in-place` runs parallel `worktree` items in one checkout.** The
   flag makes every `worktree` node work in the project checkout
   ([worktrees](../worktrees.md)), so the items of a fanned `isolation: worktree`

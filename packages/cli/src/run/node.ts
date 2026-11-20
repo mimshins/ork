@@ -16,6 +16,7 @@ import {
   inside,
   newRunId,
   parseInputPairs,
+  pinClashes,
   planNodeSession,
   resolveInputs,
   placeFiles,
@@ -174,7 +175,8 @@ export const runNode = async (
   if (driver === undefined) return failed(["No agent driver is ready here."]);
   const only = { override: driver, only: options.nodeId };
   const unfit = unfitLines(workflow, options.drivers, only);
-  if (unfit.length > 0) return failed(unfit);
+  unfit.push(...pinClashes(options.nodeId, driver, plan.subagentPins));
+  if (unfit.length > 0) return failed([...new Set(unfit)]);
   const budget = budgetWarningLines(workflow, options.drivers, only);
   const warnings = [...budget, ...notes.warnings, ...plan.warnings];
   for (const line of noteLines(warnings)) options.err(line);

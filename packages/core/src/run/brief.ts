@@ -12,6 +12,7 @@
 import {
   type ClaudeNode,
   type Defaults,
+  type Driver,
   type Effort,
   isClaudeNode,
   type Workflow,
@@ -138,9 +139,14 @@ const rendered = (
   return brief.ok ? brief.text : (text ?? "").trim();
 };
 
+/** A sub-agent whose rendered model names a driver, which must be its owner's. */
+export type SubagentPin = { id: string; model: string; driver: Driver };
+
 /**
- * The subagents of `owner`'s session, by node id, or none; or why one's model
- * fails (a template that renders no model name).
+ * The subagents of `owner`'s session, by node id, or none; the ones whose
+ * rendered model names a driver (`pins`), for the caller to hold to the
+ * session's driver; and warnings. Or why one's model fails (a template that
+ * renders no model name).
  */
 export const subagentsOf = (
   workflow: Workflow,
@@ -148,10 +154,17 @@ export const subagentsOf = (
   inputs: Values,
   given?: Record<string, NodeOutput>,
 ):
-  | { ok: true; agents: Record<string, SubagentSpec> | undefined }
+  | {
+      ok: true;
+      agents: Record<string, SubagentSpec> | undefined;
+      pins: SubagentPin[];
+      warnings: string[];
+    }
   | { ok: false; error: string } => {
   const outputs = given ?? {};
   const failures: string[] = [];
+  const pins: SubagentPin[] = [];
+  const warnings: string[] = [];
   const entries = Object.entries(workflow.nodes).flatMap(([id, node]) => {
     if (node.type !== "agent.subagent" || node.parent !== owner) return [];
     if (!isClaudeNode(node)) return [];
@@ -161,6 +174,7 @@ export const subagentsOf = (
       failures.push(`sub-agent \`${id}\`: ${models.error}`);
       return [];
     }
+    warnings.push(...models.warnings.map(w => `sub-agent \`${id}\`: ${w}`));
     const role =
       node.agent === undefined
         ? ""
@@ -176,9 +190,13 @@ export const subagentsOf = (
       description: node.description,
       prompt: prompt === "" ? node.description : prompt,
     };
-    // Its driver is its owner's; `driverRefusals` refuses another prefix.
+    // Its driver is its owner's; the caller refuses another prefix.
     if (models.model !== undefined) {
-      spec.model = modelDriver(models.model).model;
+      const named = modelDriver(models.model);
+      spec.model = named.model;
+      if (named.driver !== undefined) {
+        pins.push({ id, model: models.model, driver: named.driver });
+      }
     }
     if (node.maxTurns !== undefined) spec.maxTurns = node.maxTurns;
     if (node.tools?.only !== undefined) spec.tools = node.tools.only;
@@ -190,5 +208,7 @@ export const subagentsOf = (
   return {
     ok: true,
     agents: entries.length === 0 ? undefined : Object.fromEntries(entries),
+    pins,
+    warnings,
   };
 };

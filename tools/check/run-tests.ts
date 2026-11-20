@@ -79,12 +79,19 @@ const retryFiles = (file: string): string[] => {
   }
 };
 
-const main = (args: string[]): number => {
-  if (args.length > 0) return vitest(["run", ...args]);
+/**
+ * The wrapper's run: `run` is the vitest runner (a fake in tests); it returns
+ * the exit code.
+ */
+export const main = (
+  args: string[],
+  run: (args: string[]) => number = vitest,
+): number => {
+  if (args.length > 0) return run(["run", ...args]);
   const dir = mkdtempSync(path.join(tmpdir(), "ork-test-report-"));
   try {
     const file = path.join(dir, "report.json");
-    const code = vitest([
+    const code = run([
       "run",
       "--reporter=default",
       "--reporter=json",
@@ -94,7 +101,7 @@ const main = (args: string[]): number => {
     const files = retryFiles(file);
     if (files.length === 0) return code;
     const rel = files.map(f => path.relative(ROOT, f));
-    const retry = vitest(["run", "--maxWorkers=1", ...rel]);
+    const retry = run(["run", "--maxWorkers=1", ...rel]);
     process.stderr.write(
       retry === 0
         ? `passed only when run alone after timing out under load: ${rel.join(", ")}\n`

@@ -14,6 +14,7 @@ import {
   compileWorkflow,
   type DriverNeeds,
   type RunEvent,
+  type SessionSpec,
   startRun,
 } from "@krapht/ork-core";
 import { type Driver, parseWorkflow } from "@krapht/ork-schema";
@@ -34,44 +35,47 @@ const usage = {
 type Started = { nodeId: string; driver: Driver; model: string | undefined };
 
 /** A runtime per driver that records which driver started which session. */
-const runtimeFor = (started: Started[]) => (driver: Driver) => {
-  const runtime: AgentRuntime = {
-    driver,
-    start: spec => {
-      started.push({ nodeId: spec.nodeId, driver, model: spec.model });
-      const sessionId = `s${String(started.length)}`;
-      return {
-        events: (async function* () {
-          await Promise.resolve();
-          yield {
-            type: "session.started" as const,
-            sessionId,
-            model: spec.model ?? "default",
-          };
-          yield {
-            type: "session.finished" as const,
-            outcome: {
-              subtype: "success" as const,
+const runtimeFor =
+  (started: Started[], specs: SessionSpec[] = []) =>
+  (driver: Driver) => {
+    const runtime: AgentRuntime = {
+      driver,
+      start: spec => {
+        specs.push(spec);
+        started.push({ nodeId: spec.nodeId, driver, model: spec.model });
+        const sessionId = `s${String(started.length)}`;
+        return {
+          events: (async function* () {
+            await Promise.resolve();
+            yield {
+              type: "session.started" as const,
               sessionId,
-              report: {
-                status: "pass",
-                summary: "ok",
-                artifacts: {},
-                fields: {},
+              model: spec.model ?? "default",
+            };
+            yield {
+              type: "session.finished" as const,
+              outcome: {
+                subtype: "success" as const,
+                sessionId,
+                report: {
+                  status: "pass",
+                  summary: "ok",
+                  artifacts: {},
+                  fields: {},
+                },
+                text: "",
+                usage,
+                errors: [],
               },
-              text: "",
-              usage,
-              errors: [],
-            },
-          };
-        })(),
-        send: () => {},
-        interrupt: () => Promise.resolve(),
-      };
-    },
+            };
+          })(),
+          send: () => {},
+          interrupt: () => Promise.resolve(),
+        };
+      },
+    };
+    return Promise.resolve(runtime);
   };
-  return Promise.resolve(runtime);
-};
 
 const ABLE = {
   questions: true,
@@ -106,8 +110,15 @@ const DRIVERS: DriverNeeds[] = [
   },
 }));
 
-/** Runs a workflow of these lines, `--driver` set to `override` if given. */
-const run = async (lines: string[], override?: Driver) => {
+/**
+ * Runs a workflow of these lines, `--driver` set to `override` if given,
+ * `claude-code` the ready driver.
+ */
+const run = async (
+  lines: string[],
+  override?: Driver,
+  inputs: Record<string, string> = {},
+) => {
   const parsed = parseWorkflow(
     [
       "schemaVersion: 1",
@@ -120,20 +131,20 @@ const run = async (lines: string[], override?: Driver) => {
   const { graph, diagnostics } = compileWorkflow(parsed.workflow);
   if (graph === null) throw new Error(JSON.stringify(diagnostics));
   const started: Started[] = [];
+  const specs: SessionSpec[] = [];
   const events: RunEvent[] = [];
+  const claude = claudeExecutor({
+    runtimeFor: runtimeFor(started, specs),
+    readyDriver: "claude-code",
+    ...(override === undefined ? {} : { driver: override }),
+    drivers: DRIVERS,
+    inPlace: true,
+  });
   const result = await startRun({
     graph,
-    inputs: {},
+    inputs,
     cwd: mkdtempSync(path.join(tmpdir(), "ork-model-drivers-")),
-    executors: {
-      "agent.worker": claudeExecutor({
-        runtimeFor: runtimeFor(started),
-        readyDriver: "claude-code",
-        ...(override === undefined ? {} : { driver: override }),
-        drivers: DRIVERS,
-        inPlace: true,
-      }),
-    },
+    executors: { "agent.worker": claude, "agent.leader": claude },
     human: {
       ask: () => Promise.resolve(""),
       permit: () => Promise.resolve({ allow: true }),
@@ -143,7 +154,7 @@ const run = async (lines: string[], override?: Driver) => {
     },
   }).done;
   const sorted = started.toSorted((a, b) => a.nodeId.localeCompare(b.nodeId));
-  return { result, started: sorted, events };
+  return { result, started: sorted, events, specs };
 };
 
 const worker = (model: string, more: string[] = []) => [
@@ -249,5 +260,80 @@ describe("a session's driver from its model", () => {
     expect(JSON.stringify(events)).toContain(
       "`build.0`: model `command-code.deepseek/deepseek-v4.1-flash` names driver `command-code`, but the node sets `driver: claude-code`; remove one, or make them agree",
     );
+  });
+});
+
+/** Leader `lead`, its model `leader` if given, with sub-agent `helper`. */
+const LEAD = (helper: string, leader = "") => [
+  "inputs: { m: { type: string, default: '' } }",
+  "nodes:",
+  "  lead:",
+  "    type: agent.leader",
+  "    prompt: go",
+  ...(leader === "" ? [] : [`    model: ${leader}`]),
+  "  helper:",
+  "    type: agent.subagent",
+  "    parent: lead",
+  "    description: helps",
+  `    model: "${helper}"`,
+];
+
+/** The clash `helper`'s `open-code.x` gives on `driver`. */
+const clash = (driver: Driver) =>
+  `sub-agent \`helper\` runs in \`lead\`'s session on driver \`${driver}\`, but its model \`open-code.x\` names driver \`open-code\``;
+
+const OPEN_CODE = { m: "open-code.x" };
+
+describe("a sub-agent's rendered model and its session's driver", () => {
+  it("fails the session when the leader's written prefix names another driver", async () => {
+    const { result, started, events } = await run(
+      LEAD("{{inputs.m}}", "claude-code.opus"),
+      undefined,
+      OPEN_CODE,
+    );
+    expect(result.status).toBe("failed");
+    expect(started).toEqual([]);
+    expect(JSON.stringify(events)).toContain(clash("claude-code"));
+  });
+
+  it("fails it on the driver `--driver` sets", async () => {
+    const { result, started, events } = await run(
+      LEAD("{{inputs.m}}"),
+      "codex",
+      OPEN_CODE,
+    );
+    expect(result.status).toBe("failed");
+    expect(started).toEqual([]);
+    expect(JSON.stringify(events)).toContain(clash("codex"));
+  });
+
+  it("fails it on the ready driver", async () => {
+    const { result, started, events } = await run(
+      LEAD("{{inputs.m}}"),
+      undefined,
+      OPEN_CODE,
+    );
+    expect(result.status).toBe("failed");
+    expect(started).toEqual([]);
+    expect(JSON.stringify(events)).toContain(clash("claude-code"));
+  });
+
+  it("names a written clash once, though both checks see it", async () => {
+    const { events } = await run(LEAD("open-code.x", "claude-code.opus"));
+    const text = JSON.stringify(events);
+    expect(text).toContain(clash("claude-code"));
+    expect(text).not.toContain(
+      `${clash("claude-code")}; ${clash("claude-code")}`,
+    );
+  });
+
+  it("starts the session when the prefix names its driver, the tool getting the rest", async () => {
+    const { result, specs } = await run(LEAD("{{inputs.m}}"), undefined, {
+      m: "claude-code.haiku",
+    });
+    expect(result.status).toBe("succeeded");
+    expect(specs.map(spec => spec.agents?.["helper"]?.model)).toEqual([
+      "haiku",
+    ]);
   });
 });
