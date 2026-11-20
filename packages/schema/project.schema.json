@@ -130,6 +130,22 @@
       },
       "additionalProperties": false
     },
+    "agents": {
+      "description": "Default: open. isolate: a node's sessions may not start, as a sub-agent, the agents that fill the workflow's other nodes (an `Agent(<name>)` deny per name).",
+      "type": "string",
+      "enum": [
+        "open",
+        "isolate"
+      ]
+    },
+    "knowledge": {
+      "description": "Default: any. ork-only: `ork feedback apply` may write only under the project's `.ork/` folder, and never a CLAUDE.md or AGENTS.md.",
+      "type": "string",
+      "enum": [
+        "any",
+        "ork-only"
+      ]
+    },
     "defaults": {
       "description": "Defaults for every workflow in the project; a workflow's own win.",
       "type": "object",
@@ -209,6 +225,10 @@
                   ]
                 }
               ]
+            },
+            "quiet": {
+              "description": "No writing about Ork into the repo or its PRs. Default: on.",
+              "type": "boolean"
             }
           },
           "additionalProperties": false

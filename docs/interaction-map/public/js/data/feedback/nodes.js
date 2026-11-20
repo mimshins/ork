@@ -311,7 +311,7 @@ export const NODES = [
     summary:
       "`ork feedback apply <item>` runs Ork's own `ork:feedback-apply` workflow, whose worker proposes a fix on a branch; or you accept the item as a lesson. Nothing changes without your answer.",
     facts: [
-      "`ork feedback apply` runs `ork:feedback-apply`, a built-in workflow, in the item's project, with that project's records only; its worker can read and edit files but run no command, and Ork commits its fix on a branch in a worktree.",
+      "`ork feedback apply` runs `ork:feedback-apply`, a built-in workflow, in the item's project, with that project's records only; its worker can read and edit files but run no command, and Ork commits its fix on a branch in a worktree. Where the project sets `knowledge: ork-only`, its edits are limited to `.ork/` (never CLAUDE.md or AGENTS.md), and an attached project is refused, since its Ork folder is not edited in place.",
       "The gate shows the branch's `git diff --stat` and the command to read it all, then the worker's own account; it recommends neither answer, and Ork never merges. Kept, the item is `resolved`; discarded, the branch goes.",
       "`ork feedback accept --lesson` writes a lesson instead, never through a link (ADR-059).",
     ],

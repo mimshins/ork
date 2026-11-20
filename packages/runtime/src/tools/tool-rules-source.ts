@@ -11,12 +11,16 @@
  *   only by a plain `Bash` rule. Ork's own tools (`mcp__ork__*`) always go
  *   through, and the tool's read tools need no rule inside the worktree (by its
  *   real path, links followed), as with Claude Code. A yolo run (`ork run
- *   --yolo`) allows every call the node's `deny` and `only` don't refuse.
+ *   --yolo`) allows every call the node's `deny` and `only` don't refuse. Under
+ *   a write limit (`writeOnly`), an edit whose files are outside those folders
+ *   (links followed), or named CLAUDE.md or AGENTS.md, is refused, yolo or not
+ *   (`write-limit.ts`).
  */
 
 import { readShellLine, type SessionSpec } from "@krapht/ork-core";
 
 import { shellReadReason, textReadReason } from "./shell-reads.ts";
+import { writeOnlyReason } from "./write-limit.ts";
 
 /** What the matcher enforces: the node's lists, and the worktree reads stay in. */
 export type ToolRuleSet = {
@@ -30,6 +34,8 @@ export type ToolRuleSet = {
   refuseReads?: boolean;
   /** A Read of a text file is refused too: the node cannot edit. */
   refuseTextReads?: boolean;
+  /** Edits only under these folders of `cwd`, never CLAUDE.md or AGENTS.md. */
+  writeOnly?: string[];
 };
 
 /** The rules of a session: an `acceptEdits` node may edit without a rule. */
@@ -44,7 +50,22 @@ export const toolRuleSet = (spec: SessionSpec): ToolRuleSet => ({
   ...(spec.yolo === true ? { yolo: true } : {}),
   ...(spec.reading === "open" ? {} : { refuseReads: true }),
   ...(spec.reading === "extract-only" ? { refuseTextReads: true } : {}),
+  ...(spec.writeOnly === undefined ? {} : { writeOnly: spec.writeOnly }),
 });
+
+/**
+ * The files an edit call names, by default: every string under a key that reads
+ * as a path (`path`, `file_path`); `null` for none.
+ */
+const pathKeyFiles = (
+  _name: string,
+  input: Record<string, unknown> | undefined,
+): string[] | null => {
+  const found = Object.entries(input ?? {}).flatMap(([key, value]) =>
+    /path|file/iu.test(key) && typeof value === "string" ? [value] : [],
+  );
+  return found.length === 0 ? null : found;
+};
 
 /** A tool's own words, which the matcher reads a call's name in. */
 export type ToolWords = {
@@ -56,6 +77,12 @@ export type ToolWords = {
   meta: readonly string[];
   /** A rule's word, lower case, and the Ork tool names it covers. */
   covers: Readonly<Record<string, readonly string[]>>;
+  /**
+   * JavaScript source of `(name, input) => string[] | null`: the files an edit
+   * call (Ork's `Edit` or `Write`) names, for the write limit; `null` when it
+   * names none the matcher can read. Default: the strings under path keys.
+   */
+  editPaths?: string;
 };
 
 /**
@@ -72,6 +99,9 @@ import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 const RULES = ${JSON.stringify(rules)};
 const shellReadReason = ${shellReadReason.toString()};
 const textReadReason = ${textReadReason.toString()};
+const writeOnlyReason = ${writeOnlyReason.toString()};
+const editFilesOf = ${words.editPaths ?? pathKeyFiles.toString()};
+const EDITS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
 const META = new Set(${JSON.stringify(words.meta)});
 // Reads a session makes in its worktree without a rule, as Claude Code does.
 const READS = new Set(${JSON.stringify(words.reads)});
@@ -156,9 +186,19 @@ const anyDenied = (name, calls) =>
   calls.some(call => RULES.deny.some(rule => matches(rule, name, call) !== false));
 const allCovered = (rules, name, calls) =>
   calls.every(call => rules.some(rule => matches(rule, name, call) === true));
+// The write limit: an edit's files, links followed, relative to the worktree;
+// one from the home folder is outside it.
+const written = (name, input) => {
+  const paths = editFilesOf(name, input);
+  return paths === null ? null : paths.map(each => each.startsWith("~") ? "../" + each : relative(ROOT, real(resolve(RULES.cwd, each))));
+};
 export const decide = (name, input) => {
   const calls = callsOf(name, input);
   if (anyDenied(name, calls)) return "denied for this node";
+  if (RULES.writeOnly !== undefined && EDITS.has(TOOLS[name] ?? name)) {
+    const why = writeOnlyReason(written(name, input), RULES.writeOnly);
+    if (why !== undefined) return why;
+  }
   if (RULES.refuseReads === true && (TOOLS[name] ?? name) === "Bash" && typeof input?.command === "string") {
     const read = shellReadReason(input.command);
     if (read !== undefined) return { read };

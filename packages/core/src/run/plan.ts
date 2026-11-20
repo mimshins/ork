@@ -80,6 +80,8 @@ export type PlanOptions = {
   pluginDir?: string;
   /** The user layer's home (`~`); tests pass a folder. */
   home?: string;
+  /** The folders, relative to `cwd`, the session may edit under (`SessionSpec`). */
+  writeOnly?: string[];
 };
 
 export type PlanResult =
@@ -213,7 +215,7 @@ export const planNodeSession = (
       ...contextSections(context.files, "node"),
     ].join("\n\n"),
     settingSources: ["project", "local"],
-    tools: toolRules(node, isolation === "readonly", workflow.rules, mcp),
+    tools: toolRules(workflow, declared, node, isolation === "readonly", mcp),
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
     reading: readingOf(node, isolation === "readonly", workflow.rules),
@@ -221,6 +223,7 @@ export const planNodeSession = (
   // A leader is long-lived and waits in `delegate`: an hour's cache keeps its
   // prefix across the wait (specs/context.md, N3).
   if (node.type === "agent.leader") spec.promptCache = "1h";
+  if (options.writeOnly !== undefined) spec.writeOnly = options.writeOnly;
   const agents = subagentsOf(
     workflow,
     declared,

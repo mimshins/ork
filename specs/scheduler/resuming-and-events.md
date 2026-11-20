@@ -49,9 +49,11 @@ under the same run id, with a `Replay` built from the run's events:
   ([how a session ends](../runtime/session-ends.md#runs-from-before)).
 - `run.started` records `budgetUsd`, the tighter of the workflow's budget and
   what a caller left it, for showing a run's spend against.
-- `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
-  which the resumed run starts with; the CLI records `run.resumed` with the
-  nodes that keep results first.
+- `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`,
+  and `writeOnly`, the
+  [write limit](../runtime/write-limit.md#what-carries-it)), which the resumed
+  run starts with; the CLI records `run.resumed` with the nodes that keep
+  results first.
 - `run.started` and `run.resumed` carry `ork`, the version of Ork that started
   or resumed the run, so a benchmark knows what it measured.
 - Decision ids go on from the highest the run stored. A decision the last

@@ -26,7 +26,9 @@ import type {
   SendResult,
 } from "./mailbox.ts";
 import type { SessionOutcome, SessionUsage } from "./outcome.ts";
+import type { SubagentSpec } from "./subagent.ts";
 
+export type { SubagentSpec };
 export type { InboxMessage, Mailbox, MessageVia, RelayPort, SendResult };
 export type { FollowUpPort, FollowUpSink, SessionOutcome, SessionUsage };
 export type { SessionEnd } from "./ends.ts";
@@ -63,18 +65,6 @@ export type ToolRules = {
   only?: string[];
   strictMcp?: boolean;
   unlisted?: "refuse" | "ask";
-};
-
-/** A Claude Code subagent the session can hand work to (`agent.subagent`). */
-export type SubagentSpec = {
-  description: string;
-  /** Its system prompt. */
-  prompt: string;
-  model?: string;
-  /** The only tools it has; all of the session's when unset. */
-  tools?: string[];
-  disallowedTools?: string[];
-  maxTurns?: number;
 };
 
 /** Everything a driver needs to start one session. */
@@ -122,6 +112,12 @@ export type SessionSpec = {
   machineClaude?: boolean;
   /** `ork run --yolo`: allow, with no prompt, every tool its lists don't deny. */
   yolo?: boolean;
+  /**
+   * The folders (relative to `cwd`) the session's edit tools may write under; a
+   * file named CLAUDE.md or AGENTS.md is refused even there. Unset, no limit. A
+   * driver that cannot hold a session to it refuses the session.
+   */
+  writeOnly?: string[];
   /**
    * The named servers' `.mcp.json` entries as written, by name, that load
    * beside Ork's (`mcp:` on a node or `defaults`). Unset means none. Passed to

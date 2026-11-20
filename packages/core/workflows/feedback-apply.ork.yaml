@@ -11,6 +11,10 @@ inputs:
     type: string
     required: true
     description: The item as text, with its records from this project.
+  limit:
+    type: string
+    default: ""
+    description: Where the project lets the worker write, when its `knowledge` rule limits that; empty when it does not.
 defaults:
   budgetUsd: 2
 limits:
@@ -25,6 +29,8 @@ nodes:
       {{inputs.about}}
 
       Propose the smallest change in this repository that would stop this from happening again: a workflow under .ork/workflows, AGENTS.md, CLAUDE.md, a skill, or a doc the sessions read. Change nothing else, and never touch secrets, credentials, settings or hooks. You can read and edit files but not run commands: leave the change in the files, and Ork commits it when the project lets Ork commit. Say in your summary what you changed and why. If nothing in this repository should change, change nothing and report fail with the reason.
+
+      {{inputs.limit}}
     isolation: worktree
     tools:
       only:

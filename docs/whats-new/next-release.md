@@ -78,3 +78,33 @@ What lands on `main` is listed here until it ships. Permissions are described in
   `defaults.model` still takes no template. See
   [choosing a model](../guides/writing-workflows/choosing-a-model.md) and
   [examples/pick-a-model.ork.yaml](../../examples/pick-a-model.ork.yaml).
+
+- **Ork sessions are kept apart from a project's own agent process.** Every
+  Claude session is now told it is one node of an Ork workflow: it does only its
+  step, never starts another step's role agent as a subagent, doesn't wait for a
+  human gate, asks with `ask_user`, and never stages, commits, pushes or posts
+  unless its brief says so. `AskUserQuestion` is denied unless a node names it
+  in `tools.allow`. `rules.agents: isolate`, in `.ork/project.yaml` or a
+  workflow's `rules:`, also denies `Agent(<name>)` and `Task(<name>)` for the
+  agents that fill the workflow's other nodes
+  ([agents](../guides/agents.md#keeping-a-session-to-its-step)). Upgrade: a
+  workflow that relied on `AskUserQuestion` names it in the node's
+  `tools.allow`.
+- **A new `quiet` practice keeps Ork out of your repository's text.** On by
+  default: nodes never write about Ork (its workflows, nodes, gates, runs or
+  tools) into a repository file, a commit message, a pull request or a review
+  comment; Ork's own notes stay in `.ork/`
+  ([built-in practices](../guides/skills-and-context.md#built-in-practices)).
+  Upgrade: this adds a few lines to every agent node's system prompt; set
+  `practices: { quiet: false }` in `defaults` (or on a node) if a project's
+  nodes should write about Ork.
+- **A project registered from outside keeps its context notes beside it.** A
+  context path into `.ork/` (`.ork/context/a.md` in `project.yaml`, or
+  `../context/a.md` from a workflow) reads `~/.ork/projects/<id>/context/a.md`,
+  plain files only. `knowledge: ork-only` in `project.yaml` limits
+  `ork feedback apply` to the project's `.ork/` folder and refuses it in an
+  attached project. `ork init` and `ork migrate --agents` warn that linked tool
+  folders and `.ork/skills` reach every contributor's own agent tool (naming
+  `--no-link` and `--no-skills`), and `ork doctor` and `ork migrate` flag a
+  `CLAUDE.md` or `AGENTS.md` under `.ork/`
+  ([projects](../guides/projects/attached-projects.md#keeping-ork-out-of-your-repositorys-knowledge)).

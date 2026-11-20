@@ -5,6 +5,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
 
 import type { Diagnostic, DiagnosticPath } from "@krapht/ork-schema";
@@ -43,6 +44,28 @@ export const inside = (root: string, target: string): boolean => {
   );
 };
 
+/**
+ * Where a resolved reference is read from. In an attached project (an Ork
+ * folder that isn't `<projectRoot>/.ork`), a path inside `<projectRoot>/.ork/`
+ * reads the same relative path in that folder, so the references an in-repo
+ * project writes work unchanged; `undefined` for anything else.
+ */
+const attachedSource = (
+  file: string,
+  projectRoot: string,
+  orkDir: string | undefined,
+): { file: string; orkDir: string } | undefined => {
+  const dotOrk = path.join(path.resolve(projectRoot), ".ork");
+  if (orkDir === undefined || path.resolve(orkDir) === dotOrk) return undefined;
+  return inside(dotOrk, file)
+    ? { file: path.join(orkDir, path.relative(dotOrk, file)), orkDir }
+    : undefined;
+};
+
+/** A folder for a message: `~/…` under `home`, else as it is. */
+const shownFolder = (dir: string, home: string): string =>
+  inside(home, dir) ? path.join("~", path.relative(home, dir)) : dir;
+
 /** The context files a list of references names, at one layer. */
 export const contextFiles = (
   refs: readonly string[],
@@ -52,27 +75,55 @@ export const contextFiles = (
     workflowDir: string;
     projectRoot: string;
     refRoot?: string | undefined;
+    /** Ork's folder for the project; an attached one's maps `.ork/` refs. */
+    orkDir?: string | undefined;
+    /** `~`, for messages that name the attached folder. */
+    home?: string | undefined;
   },
   diagnostics: Diagnostic[],
 ): ContextFile[] =>
   refs.flatMap((ref, index) => {
     const file = path.resolve(options.workflowDir, ref);
     const where = [...at, index];
-    if (!inside(options.refRoot ?? options.projectRoot, file)) {
+    const source = attachedSource(file, options.projectRoot, options.orkDir);
+    const folder =
+      source === undefined
+        ? ""
+        : shownFolder(source.orkDir, options.home ?? homedir());
+    if (source === undefined) {
+      if (!inside(options.refRoot ?? options.projectRoot, file)) {
+        diagnostics.push(
+          error("ref.context", `${ref} is outside the project`, where),
+        );
+        return [];
+      }
+    } else if (!plainPathInside(source.orkDir, source.file)) {
+      // A link could aim a cloned repository's reference at any file of the person's.
       diagnostics.push(
-        error("ref.context", `${ref} is outside the project`, where),
+        error(
+          "ref.context",
+          `${ref} is a link, or behind one, or leaves ${folder}: Ork reads only plain files inside it`,
+          where,
+        ),
       );
       return [];
     }
-    if (!existsSync(file)) {
-      diagnostics.push(error("ref.context", `${ref} does not exist`, where));
+    const read = source?.file ?? file;
+    if (!existsSync(read)) {
+      diagnostics.push(
+        error(
+          "ref.context",
+          `${ref} does not exist${source === undefined ? "" : ` in ${folder}`}`,
+          where,
+        ),
+      );
       return [];
     }
     return [
       {
         layer,
         name: path.relative(options.projectRoot, file),
-        text: readFileSync(file, "utf8"),
+        text: readFileSync(read, "utf8"),
       },
     ];
   });

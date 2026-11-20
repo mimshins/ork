@@ -149,11 +149,10 @@ const dropUndefined = <T extends object>(value: T): T =>
   ) as T;
 
 /**
- * The workflow with its project's rules under it: git rules key by key and
- * defaults key by key, practices one by one (the workflow's win), permissions
- * added together (but `unlisted`, the workflow's wins), the project's context
- * files before the workflow's, and its heavy commands denied to nodes with
- * `verify:`.
+ * The workflow with its project's rules under it: git rules and defaults key by
+ * key, practices one by one (the workflow's win), permissions added together
+ * (but `unlisted`, the workflow's wins), the project's context files before the
+ * workflow's, and its heavy commands denied to nodes with `verify:`.
  */
 export const applyProject = (
   workflow: Workflow,
@@ -172,6 +171,7 @@ export const applyProject = (
     links: workflow.rules?.links ?? project.links,
     reading: workflow.rules?.reading ?? project.reading,
     sessions: workflow.rules?.sessions ?? project.sessions,
+    agents: workflow.rules?.agents ?? project.agents,
     git: Object.keys(git).length === 0 ? undefined : git,
     permissions:
       Object.keys(permissions).length === 0 ? undefined : permissions,

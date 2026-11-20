@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L516, and the next chore is
+closes it. Ids are never reused: the next limit is L524, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -65,6 +65,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found saying why an Ork tool call failed](./gaps/tool-message-limits.md)
 - [Limits found stopping RFC number clashes and flaky final checks](./gaps/check-flake-limits.md)
 - [Limits found building permissions without asking](./gaps/permissions-limits.md)
+- [Limits found keeping Ork's sessions apart from a project's own agent process](./gaps/session-apart-limits.md)
 
 ## Gaps
 

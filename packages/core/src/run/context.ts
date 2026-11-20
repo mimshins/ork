@@ -18,6 +18,12 @@ import type { Slots } from "./slots.ts";
 import type { createSpend } from "./spending.ts";
 import type { ExecuteContext, NodeOutput, NodeSummary } from "./types.ts";
 
+/** The run's write limit: given, or as its settings recorded it. */
+const writeLimitOf = (options: RunOptions): { writeOnly?: string[] } => {
+  const writeOnly = options.writeOnly ?? options.settings?.writeOnly;
+  return writeOnly === undefined ? {} : { writeOnly };
+};
+
 /** What the scheduler shares with every activation's context. */
 export type ContextDeps = {
   options: RunOptions;
@@ -69,6 +75,7 @@ export const nodeContext = (
     cwd,
     runDir: deps.runDir,
     ...foldersOf(options),
+    ...writeLimitOf(options),
     budgetLeftUsd: deps.spend.left(),
     budgetLeftNow: deps.spend.budgetLeft,
     // A leader's children may wait on a reserve, but never on their leader's.

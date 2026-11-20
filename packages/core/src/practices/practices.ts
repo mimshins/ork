@@ -1,7 +1,7 @@
 /**
- * @file Ork's built-in practices (caveman, ponytail; ADR-021): which ones a
- *   node gets, resolved down the ownership tree, and the text appended to its
- *   session's system prompt unless the project ships the same skill.
+ * @file Ork's built-in practices (caveman, ponytail, quiet; ADR-021): which
+ *   ones a node gets, resolved down the ownership tree, and the text appended
+ *   to its session's system prompt unless the project ships the same skill.
  */
 
 import { existsSync } from "node:fs";
@@ -11,13 +11,16 @@ import type { Practices, Workflow } from "@krapht/ork-schema";
 
 import { CAVEMAN } from "./caveman.ts";
 import { ponytail, type PonytailLevel } from "./ponytail.ts";
+import { QUIET } from "./quiet.ts";
 
 export type ResolvedPractices = {
   caveman: boolean;
   ponytail: PonytailLevel | false;
+  quiet: boolean;
 };
 
-const PRACTICE_NAMES = ["caveman", "ponytail"] as const;
+/** The order the texts reach the system prompt. */
+export const PRACTICE_NAMES = ["caveman", "ponytail", "quiet"] as const;
 
 /**
  * `over` on top of `under`, practice by practice, so that setting one practice
@@ -58,6 +61,7 @@ export const resolvePractices = (
   return {
     caveman: pick("caveman") ?? true,
     ponytail: tail === true ? "full" : tail,
+    quiet: pick("quiet") ?? true,
   };
 };
 
@@ -80,11 +84,12 @@ export const practiceInstructions = (
       skipped.push(name);
       continue;
     }
-    text.push(
-      name === "caveman"
-        ? CAVEMAN
-        : ponytail(practices.ponytail === false ? "full" : practices.ponytail),
-    );
+    if (name === "caveman") text.push(CAVEMAN);
+    else if (name === "quiet") text.push(QUIET);
+    else
+      text.push(
+        ponytail(practices.ponytail === false ? "full" : practices.ponytail),
+      );
   }
   return { text, skipped };
 };

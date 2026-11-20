@@ -46,7 +46,7 @@ const within = (root: string, target: string): string | undefined => {
  * The native call gives the name's case on disk, so `.ENV` on a
  * case-insensitive disk resolves to `.env`, which the deny list matches.
  */
-const realOf = (target: string): string => {
+export const realOf = (target: string): string => {
   const rest: string[] = [];
   let at = target;
   for (;;) {

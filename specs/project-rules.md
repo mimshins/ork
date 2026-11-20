@@ -39,6 +39,8 @@ defaults: # as a workflow's defaults
 context: [docs/process.md] # context files every node reads, from the project root
 experimental: [] # experiments this project turns on
 followUps: { store: store } # where follow-ups are kept: store | file | github
+agents: open # open | isolate: deny the agents of a workflow's other nodes
+knowledge: any # any | ork-only: `ork feedback apply` writes only under .ork/
 ```
 
 `followUps` says where a new [follow-up](./follow-ups.md#keeping-them) is also
@@ -64,6 +66,7 @@ rules:
   practice at a time; a node's own settings (or its agent's) win over both.
   `defaults.mcp` names the MCP servers a node's sessions load
   ([workflow format](./workflow-format.md)).
+- `agents`: the workflow's value wins; `knowledge` has no workflow form.
 - `permissions`: added together, the project's, the workflow's and each node's
   own `tools`; Claude Code lets `deny` win over `allow`. `unlisted` (`refuse` or
   `ask` a shell command no rule covers) is one value: the node's, else the
@@ -131,6 +134,14 @@ refuses links ([messaging](./messaging/links.md)); `reading: open` lets sessions
 read through the shell, which the default `extract` refuses
 ([shell reads](./runtime/extract-tool.md#shell-reads)). A workflow's value wins.
 `sessions.freshOver` is in [sessions rule](./project-rules/sessions.md).
+
+## Agents and knowledge
+
+`agents: isolate` denies a node's sessions the agents that fill the workflow's
+other nodes (`Agent(<name>)` and `Task(<name>)`); a workflow's value wins.
+`knowledge: ork-only`, the project's alone, holds `ork feedback apply` to the
+Ork folder. Both are off by default
+([agents and knowledge](./project-rules/agents-and-knowledge.md)).
 
 ## Quotas
 
@@ -200,3 +211,4 @@ Whatever the rules say, Ork never pushes, and:
 - [Fetching the base](./project-rules/fetch.md)
 - [Permissions without asking](./project-rules/permissions.md)
 - [Sessions rule](./project-rules/sessions.md)
+- [Agents and knowledge rules](./project-rules/agents-and-knowledge.md)

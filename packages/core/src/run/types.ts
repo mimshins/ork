@@ -110,6 +110,8 @@ export type ExecuteContext = BudgetHooks & {
   projectRoot: string;
   /** Ork's folder for the project, which lessons are read from. */
   orkDir?: string;
+  /** The folders, relative to `cwd`, the node's sessions may edit under. */
+  writeOnly?: string[];
   human: HumanChannel;
   /** The leader a Claude node's questions go to first (ADR-063). */
   owner?: OwnerPort;
@@ -221,6 +223,8 @@ export type RunSettings = {
   trigger?: string;
   /** Inputs from what its check reported, which anyone may have written. */
   untrusted?: string[];
+  /** The folders its sessions may edit under, which a resume keeps. */
+  writeOnly?: string[];
 };
 
 export type RunEvent =

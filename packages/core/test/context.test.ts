@@ -10,6 +10,7 @@ import {
   mkdtempSync,
   readFileSync,
   realpathSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -264,6 +265,81 @@ describe("the layer resolver", () => {
       "layers.context.2: ../../x.md is outside the project",
     ]);
   });
+
+  it("reads an attached project's `.ork/` references from its folder, plain files only", () => {
+    const f = fixture();
+    const orkDir = path.join(f.home, ".ork", "projects", "app");
+    const elsewhere = path.join(path.dirname(f.root), "elsewhere");
+    write(orkDir, "context/a.md", "attached a\n");
+    write(orkDir, "context/n.md", "attached n\n");
+    write(f.root, "docs/r.md", "in the repo\n");
+    write(elsewhere, "secret.md", "not for the session\n");
+    symlinkSync(
+      path.join(elsewhere, "secret.md"),
+      path.join(orkDir, "context/link.md"),
+    );
+    symlinkSync(elsewhere, path.join(orkDir, "linked"));
+    const workflow = workflowOf([
+      "layers:",
+      "  context: [../context/a.md, ../context/missing.md, ../context/link.md, ../linked/secret.md, '..']",
+      "nodes:",
+      "  fix:",
+      "    type: agent.worker",
+      "    context: [../context/n.md, ../../docs/r.md, ../../../x.md]",
+    ]);
+    const options = {
+      workflowDir: f.workflowDir,
+      projectRoot: f.root,
+      orkDir,
+      home: f.home,
+    };
+    const shown = path.join("~", ".ork", "projects", "app");
+    const refused = `${shown}: Ork reads only plain files inside it`;
+    expect(messages(contextDiagnostics(workflow, options))).toEqual([
+      `layers.context.1: ../context/missing.md does not exist in ${shown}`,
+      `layers.context.2: ../context/link.md is a link, or behind one, or leaves ${refused}`,
+      `layers.context.3: ../linked/secret.md is a link, or behind one, or leaves ${refused}`,
+      `layers.context.4: .. is a link, or behind one, or leaves ${refused}`,
+      "nodes.fix.context.2: ../../../x.md is outside the project",
+    ]);
+    const stack = resolveContext({
+      ...options,
+      workflow,
+      nodeId: "fix",
+      checkout: f.root,
+    });
+    expect(
+      stack.files
+        .filter(file => file.layer !== "user")
+        .map(file => [file.name, file.text]),
+    ).toEqual([
+      [".ork/context/a.md", "attached a\n"],
+      [".ork/context/n.md", "attached n\n"],
+      ["docs/r.md", "in the repo\n"],
+    ]);
+  });
+
+  it("reads an in-repo project's `.ork/` references in the repository", () => {
+    const f = fixture();
+    write(f.root, ".ork/context/a.md", "in-repo a\n");
+    const stack = resolveContext({
+      workflow: workflowOf([
+        "nodes:",
+        "  fix: { type: agent.worker, context: [../context/a.md] }",
+      ]),
+      nodeId: "fix",
+      workflowDir: f.workflowDir,
+      projectRoot: f.root,
+      orkDir: path.join(f.root, ".ork"),
+      checkout: f.root,
+      home: f.home,
+    });
+    expect(stack.diagnostics).toEqual([]);
+    expect(stack.files.at(-1)).toMatchObject({
+      name: ".ork/context/a.md",
+      text: "in-repo a\n",
+    });
+  });
 });
 
 /** A planned session's spec, or the planning error thrown. */
@@ -299,7 +375,7 @@ describe("a planned session", () => {
     const spec = plannedSpec(
       workflowOf([
         ...LAYERED.slice(0, 3),
-        "defaults: { practices: { caveman: false, ponytail: false } }",
+        "defaults: { practices: { caveman: false, ponytail: false, quiet: false } }",
         ...LAYERED.slice(3),
       ]),
       "fix",

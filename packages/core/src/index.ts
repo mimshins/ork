@@ -62,6 +62,7 @@ export * from "./once/run.ts";
 export * from "./once/store.ts";
 export * from "./practices/caveman.ts";
 export * from "./practices/ponytail.ts";
+export * from "./practices/quiet.ts";
 export * from "./practices/practices.ts";
 export * from "./project/builtin-files.ts";
 export * from "./project/environ.ts";

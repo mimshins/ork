@@ -12,6 +12,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   bundleRefsOf,
+  checkWorkflowText,
+  explainWorkflowText,
   inRepoPlace,
   lessons,
   loadAgents,
@@ -32,6 +34,14 @@ const attached = (root: string): ProjectPlace => {
   mkdirSync(path.join(dir, "workflows"), { recursive: true });
   return { id: "app", root, mode: "attached", dir };
 };
+
+/** An explanation's non-user context files, as name and text; or its error. */
+const filesOf = (result: ReturnType<typeof explainWorkflowText>) =>
+  result.ok
+    ? result.explanation.files
+        .filter(f => f.layer !== "user")
+        .map(f => [f.name, f.text])
+    : result.error;
 
 describe("project places", () => {
   it("find a folder's project: an attached one's folder, its root, or in-repo", () => {
@@ -106,6 +116,54 @@ describe("project places", () => {
         .filter(a => a.source !== "builtin")
         .map(a => [a.name, a.source]),
     ).toEqual([["reviewer", "project"]]);
+  });
+
+  it("read `.ork/` context from the attached project's folder, alike in validate and explain", () => {
+    const root = repo();
+    const place = attached(root);
+    const home = path.resolve(place.dir, "../../..");
+    write(
+      place.dir,
+      "project.yaml",
+      "schemaVersion: 1\ncontext: [.ork/context/a.md]\n",
+    );
+    write(place.dir, "context/a.md", "project notes\n");
+    write(place.dir, "context/b.md", "workflow notes\n");
+    write(root, "docs/r.md", "repo notes\n");
+    const file = path.join(place.dir, "workflows", "t.ork.yaml");
+    const text = [
+      "schemaVersion: 1",
+      "name: t",
+      "layers:",
+      "  context: [../context/b.md, ../../docs/r.md]",
+      "nodes:",
+      "  ok: { type: agent.worker }",
+    ].join("\n");
+    const missing = `${text}\n  fix: { type: agent.worker, context: [../context/gone.md] }`;
+    const registered = [place];
+    const checked = checkWorkflowText(missing, {
+      place,
+      workflowDir: workflowDirOf(place, file),
+      registered,
+      home,
+    });
+    expect(
+      checked.diagnostics
+        .filter(d => d.severity === "error")
+        .map(d => `${d.path.join(".")}: ${d.message}`),
+    ).toEqual([
+      "nodes.fix.context.0: ../context/gone.md does not exist in ~/.ork/projects/app",
+    ]);
+    const explained = explainWorkflowText(text, file, "ok", {
+      registered,
+      home,
+      place,
+    });
+    expect(filesOf(explained)).toEqual([
+      [".ork/context/a.md", "project notes\n"],
+      [".ork/context/b.md", "workflow notes\n"],
+      ["docs/r.md", "repo notes\n"],
+    ]);
   });
 
   it("name new projects after their folder, uniquely, and show paths short", () => {

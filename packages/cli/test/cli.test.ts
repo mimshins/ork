@@ -25,6 +25,8 @@ import {
   formatLinks,
   formatWorktrees,
   initProject,
+  knowledgeChecks,
+  LINK_WARNING,
   linkChecks,
   validateFile,
 } from "../src/index.ts";
@@ -400,6 +402,20 @@ describe("ork init and ork link", () => {
           ".claude/agents is a real folder, left as it is; .claude/skills → .ork/skills",
       },
     ]);
+  });
+
+  it("warns about a CLAUDE.md or AGENTS.md under .ork/, not under runs/", () => {
+    const dir = tempProject();
+    mkdirSync(path.join(dir, ".ork/runs/r1"), { recursive: true });
+    writeFileSync(path.join(dir, ".ork/runs/r1/AGENTS.md"), "output\n");
+    expect(knowledgeChecks(dir)).toEqual([]);
+    mkdirSync(path.join(dir, ".ork/context"), { recursive: true });
+    writeFileSync(path.join(dir, ".ork/context/CLAUDE.md"), "rules\n");
+    expect(knowledgeChecks(dir)).toMatchObject([
+      { status: "warn", detail: ".ork/context/CLAUDE.md" },
+    ]);
+    expect(LINK_WARNING).toContain("--no-link");
+    expect(LINK_WARNING).toContain("--no-skills");
   });
 
   it("has the doctor check links only once a project has .ork/", () => {

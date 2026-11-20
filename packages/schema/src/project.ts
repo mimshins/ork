@@ -141,6 +141,12 @@ export const RulesSchema = z.strictObject({
       "Default: extract, sessions read files, search and see git output only through Ork's extract tool: a shell line that starts by reading files is refused with the extract call to make. open: sessions may also read through the shell.",
     ),
   sessions: SessionsRuleSchema.optional(),
+  agents: z
+    .enum(["open", "isolate"])
+    .optional()
+    .describe(
+      "Default: open. isolate: a node's sessions may not start, as a sub-agent, the agents that fill the workflow's other nodes (an `Agent(<name>)` deny per name).",
+    ),
 });
 export type Rules = z.infer<typeof RulesSchema>;
 
@@ -182,6 +188,12 @@ export type FollowUpsRule = z.infer<typeof FollowUpsRuleSchema>;
 export const ProjectSchema = z.strictObject({
   schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
   ...RulesSchema.shape,
+  knowledge: z
+    .enum(["any", "ork-only"])
+    .optional()
+    .describe(
+      "Default: any. ork-only: `ork feedback apply` may write only under the project's `.ork/` folder, and never a CLAUDE.md or AGENTS.md.",
+    ),
   defaults: DefaultsSchema.optional().describe(
     "Defaults for every workflow in the project; a workflow's own win.",
   ),

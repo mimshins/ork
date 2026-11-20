@@ -25,7 +25,7 @@ import type {
 } from "@krapht/ork-core";
 
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
-import { heavyHook, NEVER_HELD, toolHook } from "./heavy-hook.ts";
+import { heavyHook, hookRefusals, NEVER_HELD, toolHook } from "./heavy-hook.ts";
 import { asStopped } from "./leg-step.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
@@ -85,7 +85,8 @@ export const createSessionRuntime = (
     const { hold } = ports;
     // A shell read is refused in the hook, so a driver that can refuse there
     // gets it on every session that reads only through `extract` (RFC-025).
-    const refuse = spec.reading === "open" ? undefined : adapter.hold?.refuse;
+    const refusals = hookRefusals(spec);
+    const refuse = refusals === undefined ? undefined : adapter.hold?.refuse;
     const hook =
       hold === undefined && refuse === undefined ? undefined : adapter.hold;
     const heavy = heavyHook(ports.machine);
@@ -124,7 +125,7 @@ export const createSessionRuntime = (
               hold: hold ?? NEVER_HELD,
               heavy,
               ...(refuse === undefined ? {} : { refuse }),
-              ...(spec.reading === "extract-only" ? { textReads: true } : {}),
+              ...refusals,
               answer: hook.answer,
               windowMs: options.holdWindowMs ?? hook.windowMs,
               ended: ended.signal,

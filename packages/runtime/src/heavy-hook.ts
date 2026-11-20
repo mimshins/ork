@@ -8,14 +8,17 @@
  *   events, the clock standing still) is the node's machine port.
  */
 
+import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { HoldPort, MachinePort } from "@krapht/ork-core";
+import type { HoldPort, MachinePort, SessionSpec } from "@krapht/ork-core";
 
 import type { HoldHook } from "./adapter.ts";
 import { type HoldAnswer, holdAtTool } from "./hold.ts";
 import type { HoldHandler } from "./mcp-http.ts";
+import { realOf } from "./tools/contain.ts";
 import { shellReadReason, textReadReason } from "./tools/shell-reads.ts";
+import { writeOnlyReason } from "./tools/write-limit.ts";
 
 export type HeavyHook = {
   /** Before a call: "go" once it may run, "defer" while its slot is not free. */
@@ -51,7 +54,7 @@ type Waiting = {
 };
 
 /** The hook for one session; with no machine port, every call goes. */
-export const heavyHook = (machine: MachinePort | undefined): HeavyHook => {
+export const heavyHook = (machine?: MachinePort): HeavyHook => {
   let held: Held | undefined;
   let waiting: Waiting | undefined;
 
@@ -149,6 +152,63 @@ export const readRefusalOf = (
     : undefined;
 };
 
+/** Claude Code's tools that write a file, and the input key naming it. */
+const EDIT_TOOLS: Readonly<Record<string, string>> = {
+  Write: "file_path",
+  Edit: "file_path",
+  MultiEdit: "file_path",
+  NotebookEdit: "notebook_path",
+};
+
+/**
+ * Why a hook's edit is refused under the write limit (`writeOnly`, relative to
+ * `cwd`): its file, links followed, is outside those folders or is named
+ * CLAUDE.md or AGENTS.md. The reason tells the session where it may write.
+ */
+export const writeRefusalOf = (
+  input: unknown,
+  cwd: string,
+  writeOnly: readonly string[],
+): string | undefined => {
+  if (!isRecord(input)) return undefined;
+  const tool = input["tool_name"];
+  const key = typeof tool === "string" ? EDIT_TOOLS[tool] : undefined;
+  if (typeof tool !== "string" || key === undefined) return undefined;
+  const call = input["tool_input"];
+  const file = isRecord(call) ? call[key] : undefined;
+  const root = realOf(path.resolve(cwd));
+  const files =
+    typeof file === "string"
+      ? [
+          file.startsWith("~")
+            ? `../${file}`
+            : path
+                .relative(root, realOf(path.resolve(cwd, file)))
+                .split(path.sep)
+                .join("/"),
+        ]
+      : null;
+  const why = writeOnlyReason(files, writeOnly);
+  return why === undefined
+    ? undefined
+    : `Ork: ${tool} is ${why}. Do not retry it.`;
+};
+
+/**
+ * What a session's hook refuses (shell reads, RFC-025; edits outside the write
+ * limit), from its spec, for {@link toolHook}; `undefined` when nothing.
+ */
+export const hookRefusals = (spec: SessionSpec) =>
+  spec.reading === "open" && spec.writeOnly === undefined
+    ? undefined
+    : {
+        ...(spec.reading === "extract-only" ? { textReads: true } : {}),
+        ...(spec.reading === "open" ? { openReads: true } : {}),
+        ...(spec.writeOnly === undefined
+          ? {}
+          : { writeOnly: { cwd: spec.cwd, folders: spec.writeOnly } }),
+      };
+
 /** A node that is never held: the hook only refuses, it never waits. */
 export const NEVER_HELD: HoldPort = {
   held: () => false,
@@ -161,7 +221,8 @@ const afterCall = (input: unknown): boolean =>
   isRecord(input) && input["hook_event_name"] === "PostToolUse";
 
 /**
- * A session's hook on its tool calls. Before one, a pause holds it (ADR-041),
+ * A session's hook on its tool calls. A shell read (RFC-025) or an edit outside
+ * the write limit is refused first. Before one, a pause holds it (ADR-041),
  * then a heavy Bash call waits for its slot; past the window either defers it
  * (`onDefer`). After a call, its slot is freed.
  */
@@ -177,16 +238,26 @@ export const toolHook =
     refuse?: (reason: string) => Record<string, unknown>;
     /** Refuses a Read of a text file too: the node cannot edit. */
     textReads?: boolean;
+    /** Leaves shell reads alone (`reading: open`); `refuse` is for writes. */
+    openReads?: boolean;
+    /** Refuses an edit outside these folders of `cwd` (`writeOnly`). */
+    writeOnly?: { cwd: string; folders: readonly string[] };
   }): HoldHandler =>
   async (gone, input) => {
     if (afterCall(input)) {
       given.heavy.after();
       return {};
     }
+    const { writeOnly } = given;
     const refused =
       given.refuse === undefined
         ? undefined
-        : readRefusalOf(input, given.textReads === true);
+        : ((given.openReads === true
+            ? undefined
+            : readRefusalOf(input, given.textReads === true)) ??
+          (writeOnly === undefined
+            ? undefined
+            : writeRefusalOf(input, writeOnly.cwd, writeOnly.folders)));
     if (refused !== undefined && given.refuse !== undefined) {
       return given.refuse(refused);
     }

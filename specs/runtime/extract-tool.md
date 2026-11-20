@@ -146,14 +146,14 @@ and `show` come back under `reading: open`.
 Under `reading: extract`, Ork adds `Grep` and `Glob` to every session's denied
 tools ([tool-rules.ts](../../packages/core/src/run/tool-rules.ts),
 `WITHHELD_TOOLS`), unless the node names one in its own `tools.allow` or
-`tools.only`: `extract`'s `search` and `files` do their work. A node that cannot
-edit (`readonly`, or a `tools.only` with no `Edit` or `Write`) is
-`extract-only`: a `Read` of a text file is refused too, with the `extract` call
-to make, while an image or a PDF (which `extract` cannot read) is still read. A
-node that edits keeps `Read`, which Claude Code's `Edit` needs first. On
-`claude-code` the hook refuses the Read, on `command-code` the mod does, on
-`omp` the guard does, and on `open-code` a `read` deny with the image and PDF
-types allowed after it.
+`tools.only`: `extract`'s `search` and `files` do their work. Every reading rule
+also withholds `AskUserQuestion` (`ASKING_TOOLS`). A node that cannot edit
+(`readonly`, or a `tools.only` with no `Edit` or `Write`) is `extract-only`: a
+`Read` of a text file is refused too, naming the `extract` call to make; an
+image or a PDF (`extract` cannot read it) is still read. A node that edits keeps
+`Read`, which Claude Code's `Edit` needs first. The hook refuses it on
+`claude-code`, the mod on `command-code`, the guard on `omp`, a `read` deny
+(image and PDF types allowed after it) on `open-code`.
 
 ## Where it may read
 

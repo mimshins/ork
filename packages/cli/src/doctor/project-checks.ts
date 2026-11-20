@@ -7,9 +7,10 @@ import type { CheckResult } from "@krapht/ork-integrations";
 
 import { ORK_VERSION } from "../__build_info__.ts";
 import { skillChecks } from "../project/init-skills.ts";
-import { linkChecks } from "../project/link.ts";
+import { knowledgeChecks, linkChecks } from "../project/link.ts";
 
 export const projectChecks = (root: string): CheckResult[] => [
   ...linkChecks(root),
+  ...knowledgeChecks(root),
   ...skillChecks(root, ORK_VERSION),
 ];

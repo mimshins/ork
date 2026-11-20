@@ -27,7 +27,7 @@ import {
 
 import { confirm, style, write, writeErr } from "../output.ts";
 import { ignoreRunState, unignored } from "./init.ts";
-import { formatLinks } from "./link.ts";
+import { formatLinks, knowledgeFilesIn, LINK_WARNING } from "./link.ts";
 import { applyFormat, formatFormatPlan, planFormat } from "./migrate-format.ts";
 
 export type Migration = AgentMigration & {
@@ -57,11 +57,31 @@ export const planMigration = (
   return { ...migration, place, ignore: attached ? unignored(place.root) : [] };
 };
 
+/** The CLAUDE.md and AGENTS.md files the migration would move into `.ork/`. */
+const knowledgeFiles = (migration: Migration): string[] => {
+  const { place } = migration;
+  // The attached folder is scanned whole (but for runs/), so skip its steps.
+  const roots = migration.steps.flatMap(step =>
+    step.kind === "move" && path.relative(place.dir, step.from).startsWith("..")
+      ? [step.from]
+      : [],
+  );
+  const moved = roots.flatMap(root => knowledgeFilesIn(root));
+  return place.mode === "attached"
+    ? [...moved, ...knowledgeFilesIn(place.dir, true)]
+    : moved;
+};
+
 /** Why the project cannot migrate now, if it cannot. */
 export const refusal = (
   migration: Migration,
   store: Pick<EventStore, "runs">,
 ): string | undefined => {
+  const agentFiles = knowledgeFiles(migration);
+  if (agentFiles.length > 0) {
+    const shown = agentFiles.map(f => shownPath(f, migration.place.root));
+    return `Nothing was moved: ${shown.join(", ")} would land in .ork/, where every contributor's agent tool reads it as instructions. Move or remove it first.`;
+  }
   if (migration.clashes.length > 0) {
     const shown = migration.clashes.map(c =>
       shownPath(c, migration.place.root),
@@ -146,6 +166,7 @@ export const migrateHere = async (
     write(nothing ? "Nothing to migrate." : "Plan:");
     for (const line of formatFormatPlan(format, plan.place)) write(line);
     for (const line of formatMigration(plan)) write(line);
+    if (options.agents) write(style("yellow", `! ${LINK_WARNING}`));
     if (nothing || options.dryRun) return;
     if (!options.yes && !process.stdin.isTTY) {
       fail("Pass --yes to migrate without a terminal.");

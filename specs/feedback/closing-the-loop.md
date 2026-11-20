@@ -99,3 +99,31 @@ _Part of [Feedback and self-improvement](../feedback.md)._
     other context, and say when it was cut and how long the whole file is.
 - **Trust:** feedback is model output and repo content can steer it (prompt
   injection), so a lesson or fix only takes effect after a human accepts it.
+
+## A fix under `knowledge: ork-only`
+
+Status: **Built** ([apply.ts](../../packages/cli/src/runs/apply.ts),
+[tests](../../packages/cli/test/apply.test.ts)). Why:
+[ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md).
+
+A project whose documents and agent files belong to people who work without Ork
+sets `knowledge: ork-only` in `project.yaml`
+([rules](../project-rules/agents-and-knowledge.md#knowledge)). Then
+`ork feedback apply` reads it and:
+
+- starts the worker with `writeOnly` set to the project's `.ork/`
+  ([the write limit](../runtime/write-limit.md)): a Write or Edit of any other
+  path is refused with a reason the worker reads, and so is any file named
+  CLAUDE.md or AGENTS.md, even under `.ork/`. A driver that cannot hold the
+  limit (`open-code`) refuses the run;
+- passes a `limit` input to the worker's brief, in `feedback-apply.ork.yaml`,
+  telling it where it may write and to change nothing and report `fail` when the
+  fix belongs elsewhere (a workflow, skill or context file under `.ork/` is the
+  fix it may make);
+- refuses an **attached** project before it starts anything: its Ork folder is
+  under `~/.ork/projects/<id>/`, outside the repository, and editing it in place
+  is not built. The message names the rule and the cause, and the change is made
+  by hand ([L521](../gaps/session-apart-limits.md)).
+
+Without the rule nothing changes: the worker may edit a workflow, `AGENTS.md`,
+`CLAUDE.md`, a skill or a doc, as above.

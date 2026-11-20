@@ -48,7 +48,10 @@ Both folders hold the same things:
   [Ork for Claude Code](./claude-code.md#copies-in-a-project), and the `issues`
   workflow, which works GitHub issues in parallel into one pull request
   (`--issues`, `--no-issues`, or asked once on a terminal; it never overwrites
-  `.ork/workflows/issues.ork.yaml`).
+  `.ork/workflows/issues.ork.yaml`). When it links tool folders or writes
+  skills, it ends with a warning that they reach every contributor's own agent
+  tool, naming `--no-link` and `--no-skills`; its defaults are unchanged
+  ([cli](./cli.md)).
 - **`ork onboard`** ([onboard](./cli/onboard-flow.md#setting-up)) runs
   `ork init`'s file steps itself when `.ork/` is missing (records the project
   in-repo, writes the starter and the `.gitignore` entry, asks nothing else),
@@ -83,13 +86,24 @@ current folder's project's `workflows/`.
   attached folder) is the exception: `ork validate` and `ork context explain`
   resolve its references against the bundle's own folder, inside the attached
   folder, since no run worktree holds it then
-  ([references](./context.md#references)).
+  ([references](./context.md#references)). One addition: a path that resolves
+  inside `<root>/.ork/` reads the same path in the attached folder, so
+  `context: [.ork/context/a.md]` in `project.yaml` and `../context/a.md` from a
+  workflow both load `~/.ork/projects/<id>/context/a.md`. The file must be a
+  plain file inside that folder; a link, or a path that leaves it, is a
+  `ref.context` error naming the folder
+  ([context files](./context/session-apart.md#context-files-in-an-attached-project)).
 - **Runs** are recorded under the repository's root, like any run, and their
   folder is `~/.ork/projects/<id>/runs/<run>/`. A run started from anywhere
   works in the project: worktree nodes in worktrees beside the clone, the others
   at its root.
 - **Rules** come from `~/.ork/projects/<id>/project.yaml`; problems are located
   in it (a diagnostic's `file`), as `~/.ork/projects/<id>/project.yaml:3:5`.
+  `knowledge: ork-only` there limits what `ork feedback apply` may write; since
+  the folder is outside the repository, apply refuses an attached project that
+  sets it
+  ([agents and knowledge](./project-rules/agents-and-knowledge.md#knowledge),
+  [L521](./gaps/session-apart-limits.md)).
 - **Agents** from the attached folder's `agents/` take the place of
   `.ork/agents`; the tools' folders in the repository are still read.
 - **Not available:** `ork link` (nothing is linked into the repository) and its
@@ -110,7 +124,15 @@ in the working tree to review and commit
   that is a real folder, or a folder in the repository tool folders link to
   (`.ai/agents`), has its entries moved into `.ork/agents` or `.ork/skills` and
   becomes a link to it; every link to it then points at `.ork/`. Links leaving
-  the repository and broken links are kept and listed.
+  the repository and broken links are kept and listed. It prints the same
+  warning as `ork init`: the linked folders and `.ork/skills` reach every
+  contributor's own agent tool.
+- **It refuses a CLAUDE.md or AGENTS.md** that would land under `.ork/` (in the
+  attached folder, or in a tool folder it would move), naming the file and
+  moving nothing: agent tools read those names as instructions for every
+  contributor. The search skips `runs/` only directly under an Ork folder
+  (`ork doctor` and the scan of an attached folder); the scan of folders being
+  moved does not skip it.
 - **It rewrites the workflow format** (RFC-015,
   [migrate-format.ts](../packages/cli/src/project/migrate-format.ts)): every
   `*.ork.yaml` in the project's workflows folder that names `claude.worker`,

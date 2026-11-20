@@ -134,20 +134,23 @@ rules:
   permissions: { deny: ["Bash(rm *)"] }
   reading: open # extract (the default) | open
   sessions: { freshOver: 100000 } # never (the default) | tokens
+  agents: isolate # open (the default) | isolate
 ```
 
-Its `git` keys, `reading`, `sessions` and `permissions.unlisted` win; the rest
-of `permissions` adds up. `reading: extract` refuses a shell line that starts by
-reading files, naming the `extract` call to make; `open` allows it
+Its `git` keys, `reading`, `sessions`, `agents` and `permissions.unlisted` win;
+the rest of `permissions` adds up. `reading: extract` refuses a shell line that
+starts by reading files, naming the `extract` call to make; `open` allows it
 ([extract](./skills-and-context.md#reading-part-of-a-file-extract)).
-`sessions.freshOver` starts a worker's next delegated task in a fresh session
-once its context is over that many tokens; `never` is off, and `ork validate`
-refuses `0` or a word ([guide](./fresh-builder-sessions.md)).
+`sessions.freshOver` starts a worker's next task in a fresh session past that
+many tokens ([guide](./fresh-builder-sessions.md)). `agents: isolate` keeps a
+node to its own step ([guide](./agents.md#keeping-a-session-to-its-step)).
+`knowledge` is the project's alone
+([guide](./projects/attached-projects.md#keeping-ork-out-of-your-repositorys-knowledge)).
 
 ## What a run asks of the machine
 
-Two rules keep several runs from heating your machine
-([running several runs at once](./running-workflows/several-runs.md)):
+Two rules keep runs from heating your machine
+([several runs at once](./running-workflows/several-runs.md)):
 
 ```yaml
 heavy: [pnpm check, pnpm test, vitest run] # your full-suite commands
@@ -158,7 +161,7 @@ priority: low # low (the default) | normal
 slots (`ORK_HEAVY_SLOTS` changes the count), and a node with `verify:` may not
 run them in its session, since Ork runs that check. `priority: low` starts
 sessions and tool commands below your own programs; `normal` doesn't. A
-workflow's `rules:` doesn't change either: they are the project's.
+workflow's `rules:` changes neither.
 
 ## Where follow-ups are kept
 
@@ -185,16 +188,13 @@ the project for everyone (`experimental: [some-feature]`), or in your
 environment for you alone (`export ORK_EXPERIMENTAL=some-feature`, several
 separated by commas).
 
-`some-feature` stands for a real name: none has shipped yet. `ork doctor` lists
-what is on and who turned it on. A name Ork doesn't know fails `ork validate`,
-`ork run` and that `ork doctor` check, and they say which names exist.
+`some-feature` is a placeholder: none has shipped yet. `ork doctor` lists what
+is on; an unknown name fails it, `ork validate` and `ork run`.
 
 ## What never changes
 
 Whatever the rules say, Ork never pushes on its own (a `tool.git` node pushes
 only when its `allow` lists `push`), never takes over a branch it did not
 create, and records every branch and worktree it makes.
-[`ork worktrees`](./worktrees.md) lists and cleans exactly those, whatever they
-are called.
-
-For the full rules: [project rules](../../specs/project-rules.md).
+[`ork worktrees`](./worktrees.md) lists and cleans exactly those. Full rules:
+[project rules](../../specs/project-rules.md).

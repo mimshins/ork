@@ -297,7 +297,8 @@ describe("accessibility", () => {
         screen.getByRole("combobox", { name: "List from" }),
       );
     });
-  });
+    // Six user steps: under the whole suite's load it can pass 15 s.
+  }, 30_000);
 });
 
 /** The words of the element an `aria-describedby` points at ("" when none). */

@@ -134,7 +134,7 @@ To make `.ork/` the origin in a project that keeps its agents elsewhere, such as
 `.ai/`, run `ork migrate --agents`: it moves the files into `.ork/agents/` and
 `.ork/skills/` and points `.ai/agents`, `.claude/agents` and the rest at them,
 after showing the plan
-([Projects: moving into the repository](./projects.md#moving-into-the-repository)).
+([Projects: moving into the repository](./projects/moving-into-the-repository.md#moving-into-the-repository)).
 
 ## Agents in a workflow file
 
@@ -152,6 +152,40 @@ agents:
 
 The `software-factory` and `pr-review` [examples](./examples.md) are written
 this way.
+
+## Keeping a session to its step
+
+A project may run its own agent process: a documenter, an implementer, a
+reviewer, a human who approves. In an Ork run, each of those steps is another
+node, so Ork keeps a session from doing the others':
+
+- **It says so.** Every Claude session is told it is one node of an Ork
+  workflow: do only its step; never start another step's role agent (a
+  documenter, implementer, reviewer or PR shepherd) as a subagent, except
+  [sub-agent nodes](./leaders-and-delegation.md) it owns; a human gate (a
+  review, an approval, the choice to commit or open a pull request) is not its
+  to wait for or ask; ask with `ask_user`; never stage, commit, push or post
+  unless its brief says the node does.
+- **`AskUserQuestion` is denied.** A headless session has nobody to answer
+  Claude Code's own question prompt, so `ask_user` is the channel. A node that
+  does want it names `AskUserQuestion` in its `tools.allow` (or `tools.only`).
+- **`agents: isolate` closes the other agents.** Set it in
+  [`.ork/project.yaml`](./project-rules.md) or in a workflow's `rules:` (the
+  workflow's wins); the default is `open`:
+
+  ```yaml
+  rules:
+    agents: isolate
+  ```
+
+  A node's session then gets an `Agent(<name>)` deny, and the older
+  `Task(<name>)`, for each agent that fills another node of the workflow. It is
+  never its own agent, or the agents of its own sub-agent nodes. The match is by
+  the agent's name in the workflow, so an agent file under a different `name:`
+  is not denied.
+
+To keep Ork's own words out of the repository, see the `quiet` practice
+([built-in practices](./skills-and-context.md#built-in-practices)).
 
 For the full rules: [the workflow format](../../specs/workflow-format/agents.md)
 and [context](../../specs/context.md#agents).

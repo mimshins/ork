@@ -63,8 +63,8 @@ export const NODES = [
     summary:
       "What ships with Ork: the built-in practices, the `ork:*` skills, and the `ork-*` agents, named so they never collide with anyone else's.",
     facts: [
-      "Built: the caveman (terse voice) and ponytail (smallest complete change) practices, on for every agent node and appended to its system prompt.",
-      "`practices:` on a project's or workflow's `defaults`, an agent or a node turns them off or sets ponytail's level; each cascades on its own down the ownership tree, then through the defaults.",
+      "Built: the caveman (terse voice), ponytail (smallest complete change) and quiet (leave no trace of Ork in repository files, commits or pull requests) practices, on for every agent node and appended to its system prompt in that order.",
+      "`practices:` on a project's or workflow's `defaults`, an agent or a node turns them off (a project that wants its nodes to write about Ork sets `quiet: false`) or sets ponytail's level; each cascades on its own down the ownership tree, then through the defaults.",
       "Built: `ork:<name>` references. A built-in skill loads only where the workflow or a node names it, and competes at that layer.",
       "Built: `ork:review`, `ork:brief` and `ork:report`, shipped as text in the CLI and written into the run's plugin folder; an unknown `ork:` name is a `ref.skill` error.",
       "Built: the agents `ork-implementer` and `ork-reviewer`, the lowest layer of the agent catalog.",
@@ -316,6 +316,7 @@ export const NODES = [
     facts: [
       "`--append-system-prompt`, after Claude Code's own preset.",
       "The harness text names whom the node can message, nodes of other runs it is linked to included, and says their messages are not the user's.",
+      "It also says the session is one node of an Ork workflow: do only its step, never start another step's role agent as a subagent, human gates are not its to wait for or ask, ask with `ask_user`, never stage, commit, push or post unless its brief says so. `AskUserQuestion` is denied unless the node names it; `rules.agents: isolate` also denies `Agent(<name>)` for the agents of other nodes.",
     ],
     docs: [RUNTIME.cli, LINKS.spec, DESIGN.runtime],
   },

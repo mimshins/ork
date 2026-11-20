@@ -586,7 +586,7 @@ export const MILESTONES = [
         docs: [
           "specs/projects.md#migrating",
           "decisions/ADR-036-ork-migrate.md",
-          "docs/guides/projects.md#moving-into-the-repository",
+          "docs/guides/projects/moving-into-the-repository.md#moving-into-the-repository",
         ],
       },
       {
@@ -598,7 +598,7 @@ export const MILESTONES = [
         commits: ["79147f2"],
         date: "2026-10-31",
         docs: [
-          "docs/guides/projects.md#a-worked-example-a-project-with-its-own-process",
+          "docs/guides/projects/a-worked-example.md#a-worked-example-a-project-with-its-own-process",
           "specs/gaps.md",
         ],
       },

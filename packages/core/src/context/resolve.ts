@@ -53,7 +53,11 @@ export type ContextOptions = {
   checkout: string;
   /** `~` for the user layer, `~/.ork/`; tests pass a folder. */
   home?: string;
-  /** Ork's folder for the project (lessons); default `<projectRoot>/.ork`. */
+  /**
+   * Ork's folder for the project (lessons); default `<projectRoot>/.ork`. When
+   * it is elsewhere (attached), context references landing in
+   * `<projectRoot>/.ork/` read the same path in it.
+   */
   orkDir?: string;
 };
 

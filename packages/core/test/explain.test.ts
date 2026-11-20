@@ -237,7 +237,7 @@ describe("what a node's session loads", () => {
         "defaults:\n  practices: { caveman: false }\nnodes:\n",
       ),
     );
-    expect(e.practices.map(p => p.name)).toEqual(["ponytail"]);
+    expect(e.practices.map(p => p.name)).toEqual(["ponytail", "quiet"]);
     expect(e.practices[0]?.text).toContain("ponytail");
   });
 
@@ -282,7 +282,9 @@ describe("what a node's session loads", () => {
     );
     const result = explainedAt(place, home, "workflows/x.ork.yaml");
     expect(result.ok).toBe(false);
-    expect(said(result).error).toMatch(/\.\/style\.md does not exist$/u);
+    expect(said(result).error).toMatch(
+      /\.\/style\.md does not exist in ~\/\.ork\/projects\/[^/]+$/u,
+    );
   });
 
   it("says why a node can't be planned", () => {

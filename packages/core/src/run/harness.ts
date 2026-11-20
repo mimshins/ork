@@ -27,6 +27,15 @@ const CLAIMS_LINE =
 const EXTRACT_LINE =
   "- Read part of a file, search, or see a git diff, show or log through `extract` instead of `cat`, `sed`, `grep`, `rg`, `git` or a whole-file Read: only what you keep enters the conversation, and every later turn rereads it. For several files or searches, make several `extract` calls in one turn, not one chained shell command. Read a whole file only to edit it.";
 
+// Keeps a session to its step when the project runs its own agent process
+// (documenter, implementer, review...): Ork runs those steps as other nodes.
+const STEP_LINES = [
+  "- This session is one node of an Ork workflow: do only your node's step. The next step is another node.",
+  "- Never start another step's role agent (a documenter, implementer, reviewer or PR shepherd) yourself, as a subagent or otherwise; only sub-agent nodes you own are yours to start.",
+  "- Human gates (a review of the diff, an approval, the choice to commit or open a pull request) are not yours: don't wait for them, ask for them, or treat them as done.",
+  "- Never stage, commit, push or post (a pull request, a comment, a review) unless your brief or these instructions say this node does.",
+];
+
 const HANDOFF: Record<NonNullable<Checkout["merge"]>, string> = {
   auto: "Ork merges your branch when you pass",
   patch: "Ork applies your changes to your owner's worktree when you pass",
@@ -144,8 +153,9 @@ export const harnessInstructions = (
     "# Ork",
     `You are the \`${id}\` node (${node.type}${instance}) of the Ork workflow \`${workflow.name}\`.${owner}`,
     "- Work on the brief in the first message. Your owner and the user see your final report, not this conversation.",
+    ...STEP_LINES,
     `- End with the structured report: \`status\`, a short \`summary\`, and \`artifacts\` (name -> repository-relative path)${extra.length > 0 ? `, plus ${extra.map(f => `\`${f}\``).join(", ")}` : ""}.`,
-    "- If you are blocked on a choice only the user can make, call the `ask_user` tool with a clear question, two to four options, and the one you recommend. Never ask about what you can decide or look up yourself.",
+    "- Ask with `ask_user`: if you are blocked on a choice only the user can make, call it with a clear question, two to four options, and the one you recommend. Never ask about what you can decide or look up yourself.",
     EXTRACT_LINE,
   ];
   if (checkout !== undefined) lines.push(checkoutInstructions(checkout));

@@ -5,7 +5,7 @@
  *   once the project has `.ork/`.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { type ToolLink, toolLinks, toolsInUse } from "@krapht/ork-core";
@@ -34,6 +34,57 @@ const LABEL: Record<ToolLink["state"], () => string> = {
   broken: () => style("red", "broken "),
   elsewhere: () => style("yellow", "kept   "),
   folder: () => style("yellow", "kept   "),
+};
+
+/**
+ * Said by `ork init` and `ork migrate --agents` when they link tool folders or
+ * write skills: those folders are read by every contributor's own agent tool.
+ */
+export const LINK_WARNING =
+  "Linked tool folders (.claude/agents and so on) and .ork/skills reach every contributor's own agent tool, not only Ork's runs. Use --no-link and --no-skills to keep them out.";
+
+/** Names a contributor's own agent tool reads as instructions. */
+const KNOWLEDGE_FILES = new Set(["CLAUDE.md", "AGENTS.md"]);
+
+/**
+ * The CLAUDE.md and AGENTS.md files at or under `target`, which is a file or a
+ * folder. With `ork`, `target` is an Ork folder and the `runs/` folder directly
+ * under it (run state) is skipped; a `runs/` folder deeper down is searched.
+ * Links are not followed.
+ */
+export const knowledgeFilesIn = (target: string, ork = false): string[] => {
+  let entries;
+  try {
+    entries = readdirSync(target, { withFileTypes: true });
+  } catch {
+    return KNOWLEDGE_FILES.has(path.basename(target)) && existsSync(target)
+      ? [target]
+      : [];
+  }
+  return entries.flatMap(entry => {
+    const file = path.join(target, entry.name);
+    if (entry.isDirectory()) {
+      return ork && entry.name === "runs" ? [] : knowledgeFilesIn(file);
+    }
+    return KNOWLEDGE_FILES.has(entry.name) ? [file] : [];
+  });
+};
+
+/** A warning for each CLAUDE.md or AGENTS.md under the project's `.ork/`. */
+export const knowledgeChecks = (projectRoot: string): CheckResult[] => {
+  const ork = path.join(projectRoot, path.dirname(ORK_LAYOUT.agents));
+  const found = knowledgeFilesIn(ork, true).map(file =>
+    path.relative(projectRoot, file),
+  );
+  if (found.length === 0) return [];
+  return [
+    {
+      name: "agent instructions under .ork/",
+      status: "warn",
+      detail: found.join(", "),
+      hint: "Agent tools read CLAUDE.md and AGENTS.md as instructions for every contributor. Move the text into .ork/context/ or remove the file.",
+    },
+  ];
 };
 
 /** One line per folder; `created` marks the links this call made. */

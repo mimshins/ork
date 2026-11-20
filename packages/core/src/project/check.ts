@@ -95,7 +95,9 @@ export const checkWorkflowText = (
       : contextDiagnostics(graph.workflow, {
           workflowDir,
           projectRoot,
+          orkDir: place.dir,
           ...(refRoot === undefined ? {} : { refRoot }),
+          ...(home === undefined ? {} : { home }),
         })),
   ]) {
     // One in another file (the project's) is located there already.

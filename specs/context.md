@@ -5,8 +5,11 @@ Status: **Built** (M1c): the context compiler
 [tests](../packages/core/test/context.test.ts)), `ork context explain`
 ([cli](./cli/worktrees-agents-context-and-doctor.md#context)), and the
 [built-in practices](#built-in-practices)
-([practices/](../packages/core/src/practices/practices.ts)). Why:
-[ADR-023](../decisions/ADR-023-context-compiler.md).
+([practices/](../packages/core/src/practices/practices.ts)), and
+[keeping a session apart](./context/session-apart.md) from a project's own agent
+process (the session text, the `quiet` practice, an attached project's context
+files). Why: [ADR-023](../decisions/ADR-023-context-compiler.md),
+[ADR-110](../decisions/ADR-107-keep-ork-sessions-apart.md).
 
 **Layers** (lowest to highest precedence for same-named skills):
 
@@ -46,8 +49,11 @@ so nothing is loaded twice.
   `..` that leaves that folder is still `is outside the project`. A run of it
   (`ork run`) resolves against its run root as before.
 - `ork validate` reports what resolves to nothing as `ref.skill` or
-  `ref.context` errors, with the line; `ork run` refuses to start on them. Two
-  skills with one name in the same layer are an error; a name in
+  `ref.context` errors, with the line; `ork run` refuses to start on them. In an
+  attached project a path inside `<root>/.ork/` reads from
+  `~/.ork/projects/<id>/`, plain files only
+  ([attached](./context/session-apart.md#context-files-in-an-attached-project)).
+  Two skills with one name in the same layer are an error; a name in
   `project.skills.allow` the project does not have is a warning.
 
 ## How a node's session is compiled
@@ -85,7 +91,13 @@ so nothing is loaded twice.
   `readonly` node's default (RFC-028), and asks under `unlisted: ask`
   ([tool-rules.ts](../packages/core/src/run/tool-rules.ts), `readOnlyCommands`).
   Under `reading: extract`, `Grep` and `Glob` are denied unless the node names
-  them ([withheld tools](./runtime/extract-tool.md#withheld-tools)).
+  them ([withheld tools](./runtime/extract-tool.md#withheld-tools));
+  `AskUserQuestion` is denied unless the node names it, and under
+  `rules.agents: isolate` so are the agents of the workflow's other nodes
+  ([rules](./project-rules/agents-and-knowledge.md)).
+- **The session lines** of the harness say the session is one node of a workflow
+  and keep it to its step
+  ([session text](./context/session-apart.md#session-text)).
 - **The checkout line** of the harness says where the node works and what the
   project's git rules let it do: commit there, or not (`commit: never`), and how
   its work reaches its owner (merged, applied as a patch, or kept).
@@ -160,29 +172,35 @@ as before: an agent can fill a node and still be a subagent a session calls.
 
 ## Built-in practices
 
-Ork ships two practices, vendored from their upstream skills and on for every
+Ork ships three practices, two vendored from their upstream skills, on for every
 agent node unless turned off
 ([ADR-021](../decisions/ADR-021-built-in-practices.md)):
 
-| Practice   | What it does                                                                                                                                                                                                                   | Source                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
-| `caveman`  | Terse voice in the session's chat text, its report `summary`, and messages to other nodes; normal prose in files, code, comments, commits, docs, artifacts, and questions to the user                                          | Caveman v4.0.1 (Apache-2.0) |
-| `ponytail` | The smallest complete change: reuse before writing, no unasked-for abstraction, a check for new non-trivial logic, and a closing line on what was skipped. `lite` names the smaller option; `ultra` also questions the request | Ponytail v5.3.2 (MIT)       |
+| Practice   | What it does                                                                                                                                                                                                                                                 | Source                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `caveman`  | Terse voice in the session's chat text, its report `summary`, and messages to other nodes; normal prose in files, code, comments, commits, docs, artifacts, and questions to the user                                                                        | Caveman v4.0.1 (Apache-2.0) |
+| `ponytail` | The smallest complete change: reuse before writing, no unasked-for abstraction, a check for new non-trivial logic, and a closing line on what was skipped. `lite` names the smaller option; `ultra` also questions the request                               | Ponytail v5.3.2 (MIT)       |
+| `quiet`    | Never writes about Ork into a repository file, commit message, pull request text, review comment or code comment; Ork's own notes stay in `.ork/`. A project that writes about Ork turns it off ([ADR-110](../decisions/ADR-107-keep-ork-sessions-apart.md)) | Ork                         |
 
 - **Settings:**
-  `practices: { caveman: true | false, ponytail: true | false | lite | full | ultra }`
-  on `defaults` and on any agent node; `true` is `full`.
+  `practices: { caveman: true | false, ponytail: true | false | lite | full | ultra, quiet: true | false }`
+  on `defaults` and on any agent node; `true` is `full`. `quiet: false` turns
+  the third off.
 - **Cascade:** a node takes its own setting, else its agent's, else its nearest
   owner's, else the workflow's `defaults`, else the project's `defaults`, else
   on. Each practice falls through on its own, so setting `ponytail` at one level
   leaves a `caveman: false` from another in place. Turning a practice off on a
   root node turns it off for everything that node owns; a sub-agent follows the
   node it runs in.
-- **Delivery:** the practices lead the session's appended system prompt, before
-  Ork's harness instructions, so nodes with the same practices share a cached
-  prefix.
+- **Delivery:** the practices lead the session's appended system prompt, in the
+  order `caveman`, `ponytail`, `quiet`, before Ork's harness instructions, so
+  nodes with the same practices share a cached prefix.
 - **No double loading:** when the node's checkout has a skill of the same name
   (`.claude/skills/<name>/SKILL.md` or `.agents/skills/<name>/SKILL.md`), the
   project's skill wins and Ork adds nothing.
 - **Updating:** re-vendor a pinned upstream tag at least 7 days old, keep the
   attribution and [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) current.
+
+## Contents
+
+- [Keeping a session apart from a project's own agent process](./context/session-apart.md)

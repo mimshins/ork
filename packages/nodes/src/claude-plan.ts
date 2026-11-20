@@ -24,6 +24,9 @@ export const planOptionsOf = (
     ...(context.orkDir === undefined ? {} : { orkDir: context.orkDir }),
     pluginDir: path.join(context.runDir, "plugins", context.id),
   };
+  if (context.writeOnly !== undefined) {
+    planOptions.writeOnly = context.writeOnly;
+  }
   if (context.checkout !== undefined) planOptions.checkout = context.checkout;
   if (context.brief !== undefined) planOptions.brief = context.brief;
   if (context.handover !== undefined) planOptions.handover = context.handover;

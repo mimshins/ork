@@ -62,7 +62,9 @@ nodes:
 ```
 
 - Paths start with `./` or `../` and are relative to the **workflow file**, so a
-  workflow and its skills move together. They must stay inside the project.
+  workflow and its skills move together. They must stay inside the project. In a
+  project registered from outside, a context path into `.ork/` reads
+  [Ork's folder for it](./projects/attached-projects.md#paths-in-an-attached-workflow).
 - A skill is a folder with a `SKILL.md`. Its name is the `name` in that file's
   front matter, or else the folder's name.
 - Project skills load on their own; you never list them here.
@@ -78,16 +80,21 @@ skills for Claude Code, from [the Claude Code guide](./claude-code.md).
 
 ## Built-in practices
 
-Two practices are on for every agent node unless you turn them off:
+Three practices are on for every agent node unless you turn them off:
 
 - **caveman**: a terse voice in chat, reports and messages between nodes, which
   saves tokens. Files, code, commits and questions to you stay in normal prose.
 - **ponytail**: the smallest complete change; reuse before writing, no
   abstraction nobody asked for. `lite` and `ultra` make it gentler or stricter.
+- **quiet**: leaves no trace of Ork. The node never writes about Ork (its
+  workflows, nodes, gates, runs or tools) into a repository file, a commit
+  message, a pull request or a review comment; Ork's notes stay in `.ork/`. It
+  keeps a repository whose other contributors use their own agent tools free of
+  Ork's text. Set `quiet: false` if your nodes should write about Ork.
 
 ```yaml
 defaults:
-  practices: { caveman: false } # off for the whole workflow
+  practices: { caveman: false, quiet: false } # off for the whole workflow
 nodes:
   planner:
     type: agent.leader
@@ -97,8 +104,8 @@ nodes:
 A node takes its own setting, else its agent's, else its nearest owner's, else
 the workflow's `defaults`, else the `defaults` in `.ork/project.yaml`. Each
 practice falls through on its own, so turning `caveman` off for a project stays
-off in a workflow that only sets `ponytail`. When your project already has a
-skill named `caveman` or `ponytail`, the project's wins and Ork adds nothing.
+off in a workflow that only sets `ponytail`. A project skill named `caveman`,
+`ponytail` or `quiet` wins, and Ork adds nothing.
 
 ## See what a node loads
 
@@ -125,8 +132,9 @@ Context files
 Practices
   caveman   ≈666 tokens
   ponytail  ≈612 tokens
+  quiet     ≈173 tokens
 
-Appended to Claude Code's system prompt: ≈1,527 tokens
+Appended to Claude Code's system prompt: ≈1,700 tokens
 ```
 
 It plans the session without running anything: which instructions load, every
@@ -156,17 +164,10 @@ its own header), so several files or searches cost one turn.
 | `match`        | The lines holding a literal `text` (a POSIX regex with `regex: true`), with `context` lines around each     |
 | `count`        | How many lines the text before it has                                                                       |
 
-For example, the lines of a diff that mention `harness`, with three lines around
-each:
-
-```json
-{
-  "steps": [
-    { "step": "git", "op": "diff", "base": "main" },
-    { "step": "match", "text": "harness", "context": 3 }
-  ]
-}
-```
+For example,
+`{"steps":[{"step":"git","op":"diff","base":"main"},{"step":"match","text":"harness","context":3}]}`
+returns the lines of a diff that mention `harness`, with three lines around
+each.
 
 - **Only your folder.** A path that leads outside the session's folder, by `..`,
   an absolute path or a symlink, is refused, as is Ork's own session folder. The

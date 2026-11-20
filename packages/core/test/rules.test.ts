@@ -119,7 +119,14 @@ describe("project rules under a workflow", () => {
     );
     expect(spec.tools).toEqual({
       allow: ["Read"],
-      deny: ["Bash(git push *)", "Bash(rm *)", "WebFetch", "Grep", "Glob"],
+      deny: [
+        "Bash(git push *)",
+        "Bash(rm *)",
+        "WebFetch",
+        "Grep",
+        "Glob",
+        "AskUserQuestion",
+      ],
     });
   });
 
@@ -195,6 +202,7 @@ describe("project rules under a workflow", () => {
       "Bash(vitest run)",
       "Grep",
       "Glob",
+      "AskUserQuestion",
     ]);
     expect(verified.systemAppend).toContain("Ork runs the full check");
     const plain = plan("w");
@@ -203,6 +211,7 @@ describe("project rules under a workflow", () => {
       "WebFetch",
       "Grep",
       "Glob",
+      "AskUserQuestion",
     ]);
   });
 
@@ -240,6 +249,7 @@ describe("project rules under a workflow", () => {
     expect(resolvePractices(workflow, "a")).toEqual({
       caveman: false,
       ponytail: "ultra",
+      quiet: true,
     });
   });
 
@@ -269,6 +279,7 @@ describe("project rules under a workflow", () => {
       "NotebookEdit",
       "Grep",
       "Glob",
+      "AskUserQuestion",
     ]);
     // extract shows a diff, a commit and the log (RFC-025).
     expect(spec.tools.allow).toEqual([
@@ -343,12 +354,84 @@ describe("project rules under a workflow", () => {
       "NotebookEdit",
       "Grep",
       "Glob",
+      "AskUserQuestion",
     ]);
     expect([plan("r"), plan("w"), plan("g")].map(spec => spec.reading)).toEqual(
       ["extract-only", "extract", "extract-only"],
     );
     // A node that names Grep keeps it.
-    expect(plan("g").tools.deny).toEqual(["Glob"]);
+    expect(plan("g").tools.deny).toEqual(["Glob", "AskUserQuestion"]);
+  });
+
+  it("withhold AskUserQuestion unless the node names it, whatever the reading rule", () => {
+    const workflow = workflowOf([
+      "rules: { reading: open }",
+      "nodes:",
+      "  w: { type: agent.worker, prompt: go }",
+      "  a: { type: agent.worker, prompt: go, tools: { allow: [AskUserQuestion] } }",
+      "  o: { type: agent.worker, prompt: go, tools: { only: [Read, AskUserQuestion] } }",
+    ]);
+    const deny = (id: string) =>
+      specOf(
+        planNodeSession(workflow, id, { cwd: "/p", inputs: {}, inPlace: true }),
+      ).tools.deny;
+    expect([deny("w"), deny("a"), deny("o")]).toEqual([
+      ["AskUserQuestion"],
+      [],
+      [],
+    ]);
+  });
+
+  it("deny under agents: isolate the agents of the workflow's other nodes", () => {
+    const nodes = [
+      "agents:",
+      "  documenter: { instructions: Write docs. }",
+      "  implementer: { instructions: Build. }",
+      "  reviewer: { instructions: Review. }",
+      "nodes:",
+      "  d: { type: agent.worker, prompt: go, agent: documenter }",
+      "  i: { type: agent.worker, prompt: go, agent: implementer }",
+      "  r: { type: agent.worker, prompt: go, agent: reviewer }",
+      "  t: { type: agent.subagent, parent: i, description: Reviews., agent: reviewer }",
+    ];
+    const agentDenies = (lines: string[], id: string) =>
+      specOf(
+        planNodeSession(workflowOf([...lines, ...nodes]), id, {
+          cwd: "/p",
+          inputs: {},
+          inPlace: true,
+        }),
+      ).tools.deny.filter(rule => /^(?:Agent|Task)\(/u.test(rule));
+    const isolate = ["rules: { agents: isolate }"];
+    expect(agentDenies(isolate, "d")).toEqual([
+      "Agent(implementer)",
+      "Task(implementer)",
+      "Agent(reviewer)",
+      "Task(reviewer)",
+    ]);
+    // Never its own agent, nor its own sub-agent child's.
+    expect(agentDenies(isolate, "i")).toEqual([
+      "Agent(documenter)",
+      "Task(documenter)",
+    ]);
+    expect(agentDenies(isolate, "r")).toEqual([
+      "Agent(documenter)",
+      "Task(documenter)",
+      "Agent(implementer)",
+      "Task(implementer)",
+    ]);
+    expect(agentDenies(["rules: { agents: open }"], "d")).toEqual([]);
+    expect(agentDenies([], "d")).toEqual([]);
+  });
+
+  it("let a workflow's agents rule win over the project's", () => {
+    const nodes = ["nodes:", "  a: { type: agent.worker, prompt: go }"];
+    const effective = (lines: string[], project: Project) =>
+      applyProject(workflowOf([...lines, ...nodes]), { project }).rules?.agents;
+    const project: Project = { schemaVersion: 1, agents: "isolate" };
+    expect(effective([], project)).toBe("isolate");
+    expect(effective(["rules: { agents: open }"], project)).toBe("open");
+    expect(effective([], { schemaVersion: 1 })).toBeUndefined();
   });
 
   it("let a readonly node read git through the shell under reading: open", () => {

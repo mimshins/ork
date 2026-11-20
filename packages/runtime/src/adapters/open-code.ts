@@ -54,10 +54,19 @@ export const OPEN_CODE_ENV: Readonly<Record<string, string>> = {
   OPENCODE_CONFIG_CONTENT: "",
 };
 
+/** Why a session under a write limit (`writeOnly`) does not start here. */
+export const OPEN_CODE_NO_WRITE_LIMIT =
+  "OpenCode can't hold a session to its write limit (writeOnly): its permission rules match a path as written, not where its links lead; run it on claude-code, codex, command-code or omp";
+
 /** The config file, Ork's instructions and an empty config home, per session. */
 const configFile = (root: string): McpWiring => ({
   kind: "config-file",
   wire: (spec, endpoint) => {
+    // OpenCode's rules match an edit's path as written, not where its links
+    // lead, so a link in an allowed folder could reach any file.
+    if (spec.writeOnly !== undefined) {
+      return Promise.reject(new Error(OPEN_CODE_NO_WRITE_LIMIT));
+    }
     const folder = makeSecretFolder(root);
     try {
       const instructions = folder.write("ork.md", spec.systemAppend);

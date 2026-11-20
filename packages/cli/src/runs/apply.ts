@@ -15,7 +15,10 @@ import {
   type FeedbackItem,
   type FeedbackRecord,
   feedbackActions,
+  loadProject,
   openFixRun,
+  ORK_DIR,
+  placeFiles,
   placeOf,
   type ProjectPlace,
   type RunResult,
@@ -31,6 +34,27 @@ const RECORDS = 10;
 const BODY_CHARS = 1500;
 
 const BUILTIN = "ork:feedback-apply";
+
+/**
+ * What the worker is told under `knowledge: ork-only`; its edits are held to
+ * it.
+ */
+const LIMIT_NOTE = `This project lets you write only under ${ORK_DIR}/ (workflows, skills, context). A Write or Edit of any other path is refused, and so is any file named CLAUDE.md or AGENTS.md, even under ${ORK_DIR}/. If the fix belongs outside ${ORK_DIR}/, change nothing and report fail with the reason.`;
+
+const ATTACHED_REFUSAL =
+  "This project sets `knowledge: ork-only`, which limits the fix to its Ork folder, but that folder is attached (under ~/.ork/projects/), outside the repository, and editing an attached Ork folder in place is not supported. Make the change by hand.";
+
+/** Why apply refuses a project whose rules file can't be read. */
+const brokenProject = (
+  diagnostics: readonly { file?: string; line?: number; message: string }[],
+): string =>
+  [
+    "The project's rules file can't be read, so whether it limits the fix (`knowledge`) is unknown. Fix it first:",
+    ...diagnostics.map(
+      d =>
+        `${d.file ?? "project.yaml"}${d.line === undefined ? "" : `:${String(d.line)}`}: ${d.message}`,
+    ),
+  ].join("\n");
 
 /** An item and its newest records, as the worker reads them. */
 export const aboutItem = (
@@ -192,6 +216,15 @@ export const applyItem = async (options: ApplyOptions): Promise<Applied> => {
   const found = placeOf(store, item, undefined, options.registered);
   if (!found.ok) return found;
   const { place, project } = found;
+  const loaded = loadProject(place.root, placeFiles(place).rules);
+  // A broken project file could hide `knowledge: ork-only`: refuse, not guess.
+  if (loaded.project === undefined && loaded.diagnostics.length > 0) {
+    return { ok: false, error: brokenProject(loaded.diagnostics) };
+  }
+  const limited = loaded.project?.knowledge === "ork-only";
+  if (limited && place.mode === "attached") {
+    return { ok: false, error: ATTACHED_REFUSAL };
+  }
   const problem = builtinProblem(place, BUILTIN);
   const file = builtinWorkflowFile(place, BUILTIN);
   if (problem !== undefined || file === undefined) {
@@ -207,8 +240,13 @@ export const applyItem = async (options: ApplyOptions): Promise<Applied> => {
     ...options,
     file,
     cwd: place.root,
-    inputs: [`item=${short}`, `about=${aboutItem(item, records)}`],
+    inputs: [
+      `item=${short}`,
+      `about=${aboutItem(item, records)}`,
+      ...(limited ? [`limit=${LIMIT_NOTE}`] : []),
+    ],
     untrusted: ["about"],
+    ...(limited ? { writeOnly: [ORK_DIR] } : {}),
     inPlace: false,
     json: false,
     onRun: handle => {

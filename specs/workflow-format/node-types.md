@@ -179,8 +179,8 @@ too) ([which driver a session uses](../runtime.md#which-driver-a-session-uses)).
 The ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
 retired; use `claude-code`"; no `schemaVersion` changed.
 
-Agent nodes and `defaults` also take `practices` (caveman, ponytail), on unless
-turned off and inherited down the ownership tree; see
+Agent nodes and `defaults` also take `practices` (caveman, ponytail, quiet), on
+unless turned off and inherited down the ownership tree; see
 [built-in practices](../context.md#built-in-practices).
 
 Leaders, workers and `defaults` take `mcp: [name]`: the MCP servers from the

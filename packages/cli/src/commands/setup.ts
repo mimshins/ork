@@ -90,6 +90,8 @@ export const init = defineCommand({
       skills: args.skills,
       issues: args.issues,
       link: args.link,
+      // Only links this run made: `created` holds their paths.
+      linked: links.some(l => created.includes(l.path)),
     });
     const noCommit = await headWarning(exec);
     if (noCommit !== null) write(style("yellow", `\n! git: ${noCommit}`));

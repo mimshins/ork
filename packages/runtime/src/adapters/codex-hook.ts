@@ -50,6 +50,26 @@ export const tomlValue = (value: unknown): string => {
 export const shellQuote = (word: string): string =>
   "'" + word.replaceAll("'", String.raw`'\''`) + "'";
 
+/**
+ * The files a patch names (`*** Add File:`, `Update File:`, `Delete File:`,
+ * `Move to:`), for the write limit; `null` for none. Embedded in the hook.
+ */
+export const patchFiles = (
+  _name: string,
+  input: Record<string, unknown> | undefined,
+): string[] | null => {
+  const text = input?.["command"];
+  if (typeof text !== "string") return null;
+  const files = text.split("\n").flatMap(line => {
+    const header =
+      /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$/u.exec(
+        line.trim(),
+      );
+    return header?.[1] === undefined ? [] : [header[1].trim()];
+  });
+  return files.length === 0 ? null : files;
+};
+
 /** The matcher's module: the node's rules in Codex's tool names. */
 const rulesSource = (spec: SessionSpec): string =>
   `// Ork's rules for one Codex session; written by Ork, removed after it.
@@ -64,6 +84,7 @@ ${toolRulesSource(toolRuleSet(spec), {
     edit: ["Edit", "Write"],
     write: ["Edit", "Write"],
   },
+  editPaths: patchFiles.toString(),
 })}export const known = name => name.startsWith("mcp__") || Object.hasOwn(TOOLS, name);
 `;
 

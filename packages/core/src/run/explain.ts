@@ -17,6 +17,7 @@ import type { ContextStack } from "../context/resolve.ts";
 import { PLUGIN_NAME, SKILL_FILE } from "../context/session.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import {
+  PRACTICE_NAMES,
   practiceInstructions,
   resolvePractices,
 } from "../practices/practices.ts";
@@ -185,7 +186,7 @@ export const explainSession = (
   const resolved = resolvePractices(workflow, declared);
   const practices = practiceInstructions(resolved, root);
   // The texts come in this order, without the practices switched off or skipped.
-  const names = (["caveman", "ponytail"] as const).filter(
+  const names = PRACTICE_NAMES.filter(
     n => resolved[n] !== false && !practices.skipped.includes(n),
   );
   const ref = graph?.agents.get(declared);

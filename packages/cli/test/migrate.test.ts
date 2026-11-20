@@ -203,6 +203,35 @@ describe("ork migrate", () => {
     );
   });
 
+  it("refuses, before moving anything, to move a CLAUDE.md or AGENTS.md into .ork/", () => {
+    const root = clone();
+    const { store, place } = attached(root);
+    write(path.join(place.dir, "context", "AGENTS.md"), "rules\n");
+    const plan = planMigration(place, { agents: false });
+    expect(refusal(plan, store)).toContain(
+      path.join(place.dir, "context", "AGENTS.md"),
+    );
+    expect(existsSync(path.join(place.dir, "workflows"))).toBe(true);
+    expect(existsSync(path.join(root, ".ork"))).toBe(false);
+  });
+
+  it("refuses a CLAUDE.md in a folder --agents would move, and ignores runs/", () => {
+    const root = clone({
+      ".ai/skills/write-tests/CLAUDE.md": "rules\n",
+      ".ai/agents/reviewer.md": agentFile("reviewer"),
+    });
+    const store = openStore(":memory:");
+    const plan = planMigration(inRepoPlace(root), { agents: true });
+    expect(refusal(plan, store)).toContain(".ai/skills");
+
+    const { store: kept, place } = attached(clone());
+    write(path.join(place.dir, "runs", "r1", "AGENTS.md"), "output\n");
+    // Only the fixture's live run refuses, not the AGENTS.md under runs/.
+    expect(refusal(planMigration(place, { agents: false }), kept)).toContain(
+      "still running",
+    );
+  });
+
   it("drafts a gated workflow from the project's agents that validates", () => {
     const root = clone({
       ".ork/agents/documenter.md": agentFile("documenter"),

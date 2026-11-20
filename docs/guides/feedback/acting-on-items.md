@@ -62,6 +62,17 @@ only its claim.
   uncommitted; if it clashes with your changes there, nothing is copied.
 - **Discard:** the branch and worktree go; the item stays accepted.
 
+When the project's `.ork/project.yaml` sets `knowledge: ork-only`, the worker
+may write only under the project's `.ork/` folder (workflows, skills, context).
+A write anywhere else, and any file named `CLAUDE.md` or `AGENTS.md` even under
+`.ork/`, is refused with a reason the worker sees; if the fix belongs outside
+`.ork/`, it changes nothing and reports why. Claude Code, Codex, Command Code
+and omp enforce this; OpenCode cannot, so it refuses the run. In a project
+registered from outside, whose Ork folder is not in the repository,
+`ork feedback apply` is refused under this rule with a message naming it: make
+the change by hand
+([Projects](../projects/attached-projects.md#keeping-ork-out-of-your-repositorys-knowledge)).
+
 If the worker finds nothing to change, it says why and the item stays accepted.
 Feedback about Ork itself has no fix in your project, and an item already
 resolved, published or dismissed isn't applied again.

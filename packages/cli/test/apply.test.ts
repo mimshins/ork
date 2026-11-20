@@ -25,6 +25,8 @@ import {
   humanNoteEvent,
   openStore,
   type RunResult,
+  type SessionPorts,
+  type SessionSpec,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it, vi } from "vitest";
@@ -72,6 +74,36 @@ const neverCommit = (root: string): void => {
   );
   execFileSync("git", ["add", "-A"], { cwd: root });
   execFileSync("git", ["commit", "-q", "-m", "never"], { cwd: root });
+};
+
+/** Commits `.ork/project.yaml` with `body` after its schema line. */
+const withProjectFile = (root: string, body: string): void => {
+  writeFileSync(
+    path.join(root, ".ork", "project.yaml"),
+    `schemaVersion: 1\n${body}\n`,
+  );
+  execFileSync("git", ["add", "-A"], { cwd: root });
+  execFileSync("git", ["commit", "-q", "-m", "project"], { cwd: root });
+};
+
+/** A fake-claude runtime that records each session's `writeOnly` and prompt. */
+const limitsOf = () => {
+  const seen: (string[] | undefined)[] = [];
+  const prompts: string[] = [];
+  const inner = createCliRuntime({ bin: FAKE_CLAUDE });
+  return {
+    seen,
+    prompts,
+    runtime: () =>
+      Promise.resolve({
+        ...inner,
+        start: (spec: SessionSpec, ports: SessionPorts) => {
+          seen.push(spec.writeOnly);
+          prompts.push(spec.prompt);
+          return inner.start(spec, ports);
+        },
+      }),
+  };
 };
 
 /** What `git status --short` says in `root`. */
@@ -148,6 +180,13 @@ const firstLine = async (applying: Promise<Applied>): Promise<string> => {
   const applied = await applying;
   if (!applied.ok) throw new Error(applied.error);
   return applied.lines[0] ?? "";
+};
+
+/** Why an apply refused, or an error when it ran. */
+const refusal = async (applying: Promise<Applied>): Promise<string> => {
+  const applied = await applying;
+  if (applied.ok) throw new Error("It ran.");
+  return applied.error;
 };
 
 const branches = (root: string): string =>
@@ -313,6 +352,70 @@ describe("ork feedback apply", () => {
     );
     expect(branches(root)).toBe("");
     expect(statusOf(store, item)).toBe("accepted");
+  });
+
+  it("holds the worker to .ork/ under knowledge: ork-only", async () => {
+    const root = gitProject();
+    withProjectFile(root, "knowledge: ork-only");
+    const { store, item } = noted(root);
+    const limits = limitsOf();
+    await applyItem({
+      ...options(store, item, "discard"),
+      runtime: limits.runtime,
+    });
+    expect(limits.seen).toEqual([[".ork"]]);
+    expect(limits.prompts.join("\n")).toContain("only under .ork/");
+  });
+
+  it.each([["knowledge: any"], [""]])(
+    "sets no write limit when the project says `%s`",
+    async yaml => {
+      const root = gitProject();
+      withProjectFile(root, yaml);
+      const { store, item } = noted(root);
+      const limits = limitsOf();
+      await applyItem({
+        ...options(store, item, "discard"),
+        runtime: limits.runtime,
+      });
+      expect(limits.seen).toEqual([undefined]);
+      expect(limits.prompts.join("\n")).not.toContain("only under .ork/");
+    },
+  );
+
+  it("refuses when the project's rules file can't be read, naming its problem", async () => {
+    const root = gitProject();
+    withProjectFile(root, "knowledge: [ork-only");
+    const { store, item } = noted(root);
+    const limits = limitsOf();
+    const why = await refusal(
+      applyItem({
+        ...options(store, item, "keep"),
+        runtime: limits.runtime,
+      }),
+    );
+    expect(why).toMatch(/rules file can't be read.*\n.*project\.yaml/u);
+    expect(limits.seen).toEqual([]);
+    expect(statusOf(store, item)).toBe("new");
+  });
+
+  it("refuses an attached project under knowledge: ork-only, naming the rule", async () => {
+    const root = gitProject();
+    const dir = path.join(mkdtempSync(path.join(tmpdir(), "ork-att-")), "p1");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, "project.yaml"),
+      "schemaVersion: 1\nknowledge: ork-only\n",
+    );
+    const { store, item } = noted(root);
+    const why = await refusal(
+      applyItem({
+        ...options(store, item, "keep"),
+        registered: [{ root, mode: "attached", dir, id: "p1" }],
+      }),
+    );
+    expect(why).toMatch(/`knowledge: ork-only`.*attached.*not supported/u);
+    expect(statusOf(store, item)).toBe("new");
   });
 
   it("refuses an item about Ork itself", async () => {

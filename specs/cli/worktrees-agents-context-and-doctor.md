@@ -97,7 +97,13 @@ tool's agents and skills folders, from the layout registry (`claude`, `agents`,
   changes nothing. An unknown tool fails, naming the known ones.
 
 `ork init` links the tools a project already uses the same way; `--no-link`
-skips it.
+skips it. When init links, or writes Ork's skills (`--no-skills` skips them),
+and when `ork migrate --agents` runs, it prints a warning that the linked tool
+folders and `.ork/skills` reach every contributor's own agent tool, naming
+`--no-link` and `--no-skills`
+([LINK_WARNING](../../packages/cli/src/project/link.ts)). Neither command's
+defaults change; `ork link` does not print it yet
+([L522](../gaps/session-apart-limits.md)).
 
 ## Context
 
@@ -159,6 +165,12 @@ Once a project has `.ork/`, doctor adds one check per tool the project uses:
 folder or links elsewhere. These checks never fail the doctor. It also warns
 when the project's copies of Ork's skills for Claude Code are older than Ork,
 with `ork init --skills` as the fix ([Ork for Claude Code](../claude-code.md)).
+It warns, in one line naming the files, about a `CLAUDE.md` or `AGENTS.md` found
+anywhere under `.ork/` (a `runs/` folder is skipped, links are not followed; an
+attached project has none to check): agent tools read those names as
+instructions for every contributor, so the text belongs in `.ork/context/`, or
+the file should go. `ork migrate` refuses to move one into `.ork/`, naming it
+([projects](../projects.md#migrating)).
 
 A `command-code` line appears only when a Command Code session stopped without
 removing its `ork` MCP entry (a crash): doctor removes it from the checkout's

@@ -80,6 +80,8 @@ export type RunWorkflowOptions = {
   budgetCap?: number;
   /** What this run's worktrees start from, instead of the project's `HEAD`. */
   baseRef?: string;
+  /** The folders of the checkout the run's sessions may edit under. */
+  writeOnly?: string[];
   /** The run's id; `ork run --detach` picks it before the run starts. */
   runId?: string;
   /** `~`, for the run's socket; tests pass a folder. */

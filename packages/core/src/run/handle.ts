@@ -62,6 +62,8 @@ export type RunOptions = {
   projectRoot?: string;
   /** Ork's folder for the project (attached: `~/.ork/projects/<id>`). */
   orkDir?: string;
+  /** The folders, relative to a node's `cwd`, its sessions may edit under. */
+  writeOnly?: string[] | undefined;
   /** Recorded in `run.started`. */
   settings?: RunSettings;
   /** The Ork version running it, recorded in `run.started`. */

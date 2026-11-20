@@ -12,11 +12,12 @@ import { fileURLToPath } from "node:url";
 import {
   type HumanChannel,
   type Ownership,
+  planNodeSession,
   reportSchemaFor,
   type RuntimeEvent,
   type SessionSpec,
 } from "@krapht/ork-core";
-import { isClaudeNode, NodeSchema } from "@krapht/ork-schema";
+import { isClaudeNode, NodeSchema, parseWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -46,6 +47,21 @@ const spec: SessionSpec = {
   permissionMode: "default",
   maxTurns: 5,
   reportSchema: { type: "object" },
+};
+
+/** The session core plans for a plain worker node. */
+const plannedWorker = (): SessionSpec => {
+  const parsed = parseWorkflow(
+    "schemaVersion: 1\nname: t\nnodes:\n  w: { type: agent.worker, prompt: go }",
+  );
+  if (!parsed.ok) throw new Error("bad workflow");
+  const plan = planNodeSession(parsed.workflow, "w", {
+    cwd: process.cwd(),
+    inputs: {},
+    inPlace: true,
+  });
+  if (!plan.ok) throw new Error(plan.error);
+  return plan.spec;
 };
 
 type Asked = Parameters<HumanChannel["ask"]>[0];
@@ -501,6 +517,18 @@ describe("the CLI driver", () => {
     };
     expect(await cacheOf({ ...spec, promptCache: "1h" }, "leader")).toBe("1");
     expect(await cacheOf(spec, "worker")).toBe("");
+  });
+
+  it("starts a planned node's claude -p with AskUserQuestion withheld", async () => {
+    const { human } = recordingHuman();
+    const file = path.join(mkdtempSync(path.join(tmpdir(), "ork-deny-")), "d");
+    const env = { ...process.env, FAKE_CLAUDE_DENY_FILE: file };
+    const session = createCliRuntime({ bin: FAKE_CLAUDE, env }).start(
+      plannedWorker(),
+      { human },
+    );
+    await collect(session.events);
+    expect(readFileSync(file, "utf8").split(",")).toContain("AskUserQuestion");
   });
 
   it("has a stand-in claude that asks nothing, spends a set cost and edits a file", async () => {

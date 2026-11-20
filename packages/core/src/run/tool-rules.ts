@@ -4,9 +4,15 @@
  *   `readonly` node is denied the tools that write, and runs git that only
  *   reads without asking: under `reading: extract` (RFC-025, the default) only
  *   `git status`, since `extract` shows a diff, a commit and the log.
+ *   `AskUserQuestion` is withheld, and under `rules.agents: isolate` so are the
+ *   agents that fill the workflow's other nodes.
  */
 
-import type { ClaudeNode, Workflow } from "@krapht/ork-schema";
+import {
+  type ClaudeNode,
+  isClaudeNode,
+  type Workflow,
+} from "@krapht/ork-schema";
 
 import type { ToolRules } from "../runtime/types.ts";
 
@@ -31,6 +37,40 @@ export const readOnlyCommands = (reading: "extract" | "open"): string[] =>
 
 /** The built-in search tools `extract` replaces (RFC-025): withheld. */
 export const WITHHELD_TOOLS = ["Grep", "Glob"] as const;
+
+/**
+ * Tools withheld whatever the reading rule: a headless session asks through
+ * `ask_user`, and Claude Code's own question prompt would wait for no one.
+ */
+export const ASKING_TOOLS = ["AskUserQuestion"] as const;
+
+/**
+ * Under `rules.agents: isolate`, an `Agent(<name>)` deny (and its older
+ * `Task(<name>)` alias) for each agent that fills another node of the workflow:
+ * never the node's own agent, nor those of its own sub-agent children. Matched
+ * by the workflow's agent key.
+ */
+const otherAgents = (workflow: Workflow, id: string, node: ClaudeNode) => {
+  if (workflow.rules?.agents !== "isolate") return [];
+  const nodes = Object.values(workflow.nodes).filter(each =>
+    isClaudeNode(each),
+  );
+  const mine = new Set([
+    node.agent,
+    ...nodes
+      .filter(child => child.type === "agent.subagent" && child.parent === id)
+      .map(child => child.agent),
+  ]);
+  return (
+    nodes
+      .filter(other => other.type !== "agent.subagent")
+      .flatMap(other =>
+        other.agent === undefined || mine.has(other.agent) ? [] : [other.agent],
+      )
+      // Claude Code still reads `Task(...)` as an alias of `Agent(...)` (2.1.63).
+      .flatMap(name => [`Agent(${name})`, `Task(${name})`])
+  );
+};
 
 /** Whether one of the node's own rules names `tool` (`Grep`, `Grep(*.ts)`). */
 const names = (node: ClaudeNode, tool: string): boolean =>
@@ -77,34 +117,43 @@ const unlistedOf = (
   return unlisted === undefined ? {} : { unlisted };
 };
 
-/** The node's own tool rules, the project's and workflow's, and isolation's. */
+/**
+ * The node's own tool rules, the project's and workflow's, isolation's, and the
+ * other nodes' agents under `rules.agents: isolate`.
+ */
 export const toolRules = (
+  workflow: Workflow,
+  id: string,
   node: ClaudeNode,
   readonly: boolean,
-  rules: Workflow["rules"],
   mcp: readonly string[],
-): ToolRules => ({
-  allow: [
-    ...new Set([
-      ...(rules?.permissions?.allow ?? []),
-      ...(node.tools?.allow ?? []),
-      // A headless node can't answer per call; the node's author chose the server.
-      // Claude Code writes other characters in a server's name as `_` in tool names.
-      ...mcp.map(server => `mcp__${server.replaceAll(/[^\w-]/gu, "_")}`),
-      ...(readonly ? readOnlyCommands(rules?.reading ?? "extract") : []),
-    ]),
-  ],
-  deny: [
-    ...new Set([
-      ...(rules?.permissions?.deny ?? []),
-      ...(node.tools?.deny ?? []),
-      ...(readonly ? WRITE_TOOLS : []),
-      // Unless the node names one itself (its `tools.allow` or `only`).
-      ...(rules?.reading === "open"
-        ? []
-        : WITHHELD_TOOLS.filter(tool => !names(node, tool))),
-    ]),
-  ],
-  ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),
-  ...unlistedOf(node, readonly, rules),
-});
+): ToolRules => {
+  const { rules } = workflow;
+  return {
+    allow: [
+      ...new Set([
+        ...(rules?.permissions?.allow ?? []),
+        ...(node.tools?.allow ?? []),
+        // A headless node can't answer per call; the node's author chose the server.
+        // Claude Code writes other characters in a server's name as `_` in tool names.
+        ...mcp.map(server => `mcp__${server.replaceAll(/[^\w-]/gu, "_")}`),
+        ...(readonly ? readOnlyCommands(rules?.reading ?? "extract") : []),
+      ]),
+    ],
+    deny: [
+      ...new Set([
+        ...(rules?.permissions?.deny ?? []),
+        ...(node.tools?.deny ?? []),
+        ...(readonly ? WRITE_TOOLS : []),
+        // Unless the node names one itself (its `tools.allow` or `only`).
+        ...(rules?.reading === "open"
+          ? []
+          : WITHHELD_TOOLS.filter(tool => !names(node, tool))),
+        ...ASKING_TOOLS.filter(tool => !names(node, tool)),
+        ...otherAgents(workflow, id, node),
+      ]),
+    ],
+    ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),
+    ...unlistedOf(node, readonly, rules),
+  };
+};

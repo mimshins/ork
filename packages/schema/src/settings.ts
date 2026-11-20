@@ -89,10 +89,7 @@ export const retiredDriverHint = (value: unknown): string | undefined => {
     : `driver \`${String(value)}\` was retired; use \`${now}\``;
 };
 
-/**
- * The registered agent drivers' ids (ADR-022); a retired id says what replaced
- * it.
- */
+/** The agent drivers' ids (ADR-022); a retired id says what replaced it. */
 export const DriverSchema = z.enum(DRIVER_IDS, {
   error: issue => retiredDriverHint(issue.input),
 });
@@ -228,6 +225,10 @@ export const PracticesSchema = z.strictObject({
     .union([z.boolean(), z.enum(["lite", "full", "ultra"])])
     .optional()
     .describe("Smallest complete change. `true` is `full`. Default: `full`."),
+  quiet: z
+    .boolean()
+    .optional()
+    .describe("No writing about Ork into the repo or its PRs. Default: on."),
 });
 export type Practices = z.infer<typeof PracticesSchema>;
 export const TurnsSchema = z.number().int().positive();

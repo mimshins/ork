@@ -77,7 +77,11 @@ describe("ork context explain", () => {
         tokens: tokens("Be brief.\n"),
       },
     ]);
-    expect(e.practices.map(p => p.name)).toEqual(["caveman", "ponytail"]);
+    expect(e.practices.map(p => p.name)).toEqual([
+      "caveman",
+      "ponytail",
+      "quiet",
+    ]);
     expect(formatExplanation(e).join("\n")).toContain(
       "off: shadowed by the workflow layer",
     );

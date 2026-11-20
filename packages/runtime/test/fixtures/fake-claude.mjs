@@ -13,10 +13,12 @@
  *   folder), and a `--resume` with that marker fires the hook again without
  *   reading a new message. With `FAKE_CLAUDE_ENV_FILE` set it writes there
  *   the `ENABLE_PROMPT_CACHING_1H` it was started with, and with
- *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, and with
+ *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`,
+ *   `FAKE_CLAUDE_DENY_FILE` the `--disallowedTools` it was given, and with
  *   `FAKE_CLAUDE_PRIORITY_FILE` its own OS priority. `FAKE_CLAUDE_BASH` makes
  *   the hooked call a Bash call of that command, with a `PostToolUse` hook
- *   after it unless `FAKE_CLAUDE_NO_POST=1`; `FAKE_CLAUDE_HOOK_FILE` gets the
+ *   after it unless `FAKE_CLAUDE_NO_POST=1`; `FAKE_CLAUDE_WRITE` makes it a
+ *   Write of that file; `FAKE_CLAUDE_HOOK_FILE` gets the
  *   `PreToolUse` hook's answer. With
  *   `--resume <id> --fork-session` it is a fork: a new session (`fork-of-<id>`) that asks
  *   nothing and reports the first value its `--json-schema` allows for
@@ -78,9 +80,12 @@ const post = (url, headers, body) =>
 const rpc = (method, params) => post(mcp.url, mcp.headers, { jsonrpc: "2.0", id: 1, method, params });
 
 const bash = process.env.FAKE_CLAUDE_BASH;
-const call = bash === undefined
-  ? { tool_name: "mcp__ork__ask_user", tool_input: {} }
-  : { tool_name: "Bash", tool_input: { command: bash } };
+const write = process.env.FAKE_CLAUDE_WRITE;
+const call = write !== undefined
+  ? { tool_name: "Write", tool_input: { file_path: write, content: "x" } }
+  : bash === undefined
+    ? { tool_name: "mcp__ork__ask_user", tool_input: {} }
+    : { tool_name: "Bash", tool_input: { command: bash } };
 
 /** The hook's answer for the tool call, or none without a hook. */
 const toolHook = async event => {
@@ -215,6 +220,9 @@ if (scenario.startsWith("end:")) {
 
 if (process.env.FAKE_CLAUDE_ENV_FILE !== undefined) {
   writeFileSync(process.env.FAKE_CLAUDE_ENV_FILE, process.env.ENABLE_PROMPT_CACHING_1H ?? "");
+}
+if (process.env.FAKE_CLAUDE_DENY_FILE !== undefined) {
+  writeFileSync(process.env.FAKE_CLAUDE_DENY_FILE, flag("--disallowedTools") ?? "");
 }
 if (process.env.FAKE_CLAUDE_MEMORY_FILE !== undefined) {
   writeFileSync(

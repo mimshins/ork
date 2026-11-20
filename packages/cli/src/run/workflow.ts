@@ -228,6 +228,7 @@ const runIn = async (
     ...(runRoot === undefined ? {} : { sourceRoot: runRoot.source }),
   });
   const replay = replayOf(options);
+  const writeOnly = options.writeOnly ?? options.resume?.settings.writeOnly;
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept(), ork: ORK_RUN_VERSION });
   // Recorded, so `ork worktrees` and clean find a crash's leftover by its run.
@@ -264,6 +265,7 @@ const runIn = async (
         : { readyDriver: ready.readyDriver }),
       ...ports.settings,
       ...(head === "" ? {} : { baseRef: head }),
+      ...(writeOnly === undefined ? {} : { writeOnly }),
     },
     followUps: ports.followUps,
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),

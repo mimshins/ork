@@ -200,6 +200,7 @@ describe("agent nodes", () => {
     expect(resolvePractices(graph.workflow, "a")).toEqual({
       caveman: false,
       ponytail: "ultra",
+      quiet: true,
     });
   });
 

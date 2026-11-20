@@ -71,6 +71,8 @@ ${toolRulesSource(rules, {
   meta: [],
   // A rule's word, as omp's tools read it, covers these of Ork's tool names.
   covers: { read: ["Read", "Glob", "Grep"], edit: ["Edit", "Write"] },
+  // The guard's own reading of a file tool's paths, defined below.
+  editPaths: "(name, input) => named(name, input)",
 })}import { existsSync, readFileSync } from "node:fs";
 import { request } from "node:http";
 import { homedir } from "node:os";

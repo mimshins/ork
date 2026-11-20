@@ -110,3 +110,7 @@ defaults:
   budgetUsd: 2
   maxTurns: 60
   timeout: 45m
+  practices:
+    # Ork's own repository documents Ork (specs, docs, ADRs, the map), so its
+    # nodes may write about Ork in files, commits and pull request text.
+    quiet: false

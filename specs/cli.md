@@ -72,14 +72,14 @@ line, not the help ([list filters](./cli/list-filters.md)). `ork mcp`'s list
 tools check `project` and `limit` in the same words.
 
 ```
-ork init [--no-link] [--skills] [--issues]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code; the issues workflow
+ork init [--no-link] [--skills] [--issues]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code; the issues workflow; warns when it linked or wrote skills (naming --no-link and --no-skills)
 ork onboard [--driver <id>] [--review | --fresh]  # survey the project, ask what hurts, propose workflows, write the picked ones on a branch behind a gate; capped, never merged
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--limit n] [--ids] [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
-ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; renames old `claude.*` node types to `agent.*` in the project's workflows; commits nothing
+ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; renames old `claude.*` node types to `agent.*` in the project's workflows; --agents warns as init does; refuses a CLAUDE.md or AGENTS.md that would land in .ork/; commits nothing
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
-ork doctor                       # node, git (and a first commit), every agent driver and integration (its own login check), links
+ork doctor                       # node, git (and a first commit), every agent driver and integration (its own login check), links, a CLAUDE.md or AGENTS.md under .ork/ (a warning)
 ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending (the walk line points to it); with no file, the project's triggers too; each session node is checked against its driver (`--driver`, else the one a run would take; [driver fit](./graph-compiler.md#driver-fit))
 ork agents list [--source builtin|user|project] [--limit n] [--ids] [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]

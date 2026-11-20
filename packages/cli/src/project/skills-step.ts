@@ -2,7 +2,7 @@
  * @file The skills step of `ork init` (RFC-012): with `--skills` it writes
  *   Ork's skills for Claude Code into the project, with `--no-skills` it
  *   doesn't, and otherwise it asks on a terminal, once, saying the plugin has
- *   them too, or says how to add them later.
+ *   them too, or says how to add them later. It returns whether it wrote them.
  */
 
 import { ORK_VERSION } from "../__build_info__.ts";
@@ -32,13 +32,13 @@ const wanted = (
 export const skillsStep = async (
   root: string,
   options: { skills: boolean | undefined; link: boolean },
-): Promise<void> => {
+): Promise<boolean> => {
   const choice = await wanted(root, options.skills);
   if (choice === null) {
     write(style("dim", HINT));
-    return;
+    return false;
   }
-  if (!choice) return;
+  if (!choice) return false;
   const result = writeSkills(root, ORK_VERSION, { link: options.link });
   for (const item of result.created)
     write(`${style("green", "created")} ${item}`);
@@ -55,4 +55,5 @@ export const skillsStep = async (
   )) {
     write(line);
   }
+  return true;
 };

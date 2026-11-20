@@ -198,6 +198,7 @@ describe("planning a node's servers", () => {
       "mcp__chrome-devtools__navigate_page",
       "Grep",
       "Glob",
+      "AskUserQuestion",
     ]);
   });
 

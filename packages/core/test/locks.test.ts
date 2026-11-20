@@ -169,6 +169,14 @@ const integrator: NodeExecutor = async context => {
   return pass;
 };
 
+/** The integrator, its rebase held until `gate` opens. */
+const heldUntil =
+  (gate: Promise<void>): NodeExecutor =>
+  async context => {
+    if (context.id === "rebase") await gate;
+    return integrator(context);
+  };
+
 /** A process that has already ended. */
 const deadPid = (): number => {
   const { pid } = spawnSync(process.execPath, ["-e", ""]);
@@ -186,9 +194,11 @@ describe("a lock across runs", () => {
     const ledgers = (repo: string) =>
       fileLockLedgers({ dir, repo, project: repo, pollMs: 10 });
     const [a, b] = clones;
+    // The first run holds the lock until the second is seen waiting on it.
+    const { promise: gate, resolve: open } = Promise.withResolvers<void>();
     const first = begin({
       graph: integrate,
-      executor: integrator,
+      executor: heldUntil(gate),
       locks: ledgers(a),
       runId: "r1",
       cwd: a,
@@ -203,6 +213,10 @@ describe("a lock across runs", () => {
       runId: "r2",
       cwd: b,
     });
+    await vi.waitFor(() => {
+      expect(second.events.some(e => e.type === "lock.waiting")).toBe(true);
+    });
+    open();
     const [one, two] = await Promise.all([
       first.handle.done,
       second.handle.done,
