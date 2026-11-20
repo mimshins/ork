@@ -68,10 +68,10 @@ needs more is refused rather than half-run:
 | Capability                                     | `claude-code` | `open-code`              | `command-code`           | `codex`                  | `omp`                    |
 | ---------------------------------------------- | ------------- | ------------------------ | ------------------------ | ------------------------ | ------------------------ |
 | Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      | yes                      | yes                      |
-| Permission prompts mid-session                 | yes           | no                       | no                       | no                       | no                       |
+| Permission prompts mid-session                 | yes           | no                       | no                       | no                       | yes                      |
 | Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          | no, tokens only          | yes                      |
 | Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      | yes                      | yes                      |
-| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            | no (next leg)            | no (next leg)            |
+| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            | no (next leg)            | yes (after the call)     |
 | Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) |
 | Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      | no                       | no                       |
 | A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       | no                       | no                       |
@@ -129,12 +129,13 @@ warning, and the run goes on:
 ## Permissions: denied unless allowed
 
 `claude-code` asks you when a tool isn't allowed, and the question shows up in
-`ork decide`. `open-code`, `command-code` and `codex` have no way to ask in the
-middle of a session, so Ork **denies by default**: the node's `allow` and `deny`
-lists are written as that tool's own rules, and everything else is refused. A
-node that would have been asked about on `claude-code` is refused here, and the
-session sees the refusal and goes on without it. Give the node the tools it
-needs in its `allow` list.
+`ork decide`; `omp` can ask too, for a tool its Ork-written settings do not list
+([omp](./drivers/omp.md)). `open-code`, `command-code` and `codex` have no way
+to ask in the middle of a session, so Ork **denies by default**: the node's
+`allow` and `deny` lists are written as that tool's own rules, and everything
+else is refused. A node that would have been asked about on `claude-code` is
+refused here, and the session sees the refusal and goes on without it. Give the
+node the tools it needs in its `allow` list.
 
 `ork run --yolo` turns this around for one run, on every driver: nothing is
 asked, and every tool is allowed but what a node's `deny` list refuses

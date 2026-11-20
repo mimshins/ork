@@ -4,11 +4,11 @@ _Part of [Drivers](../drivers.md)._
 
 The `omp` driver runs your own `omp`
 ([oh-my-pi](https://github.com/can1357/oh-my-pi)'s coding agent, built against
-18.22.2), headless: one `omp -p --mode json` process for each stretch of a
-session, in the node's folder. It reaches whatever model providers your `omp` is
-signed in to. It is **built and not yet proven**: no real session has run
-through it with Ork's tools, guard and budgets, so `ork validate` and `ork run`
-**refuse** a node on `omp`
+18.22.2), headless: one long-lived `omp --mode rpc` process for each stretch of
+a session, in the node's folder, which Ork talks to in both directions. It
+reaches whatever model providers your `omp` is signed in to. It is **built and
+not yet proven**: no real session has run through it with Ork's tools, guard and
+budgets, so `ork validate` and `ork run` **refuse** a node on `omp`
 (`node … runs on driver omp, which is not yet proven on a real session`) and
 `ork doctor` shows it as `skip` even when `omp` is installed and signed in. A
 capped run on the maintainer's account will lift that; until then this page says
@@ -34,26 +34,36 @@ what the driver is built to do.
 
 ## What it does
 
-- A message or answer sent while `omp` is working arrives when that stretch
-  ends, and the session carries on from where it was (`--resume`), with Ork's
-  tools and rules passed again. Until then the agent's `read_inbox` and
-  `wait_for_messages` say there is no message, even though one waits. A leader's
+- A message sent while `omp` is working (`ork chat`, `ork send`) reaches the
+  model before the turn ends: Ork writes it to the running process as a steering
+  message. A tool call that is running finishes first, and the model reads the
+  message after it, so "before the turn ends" is not "at once". A leader's
   question to you is a fork of the session (`--fork`).
+- Each stretch starts a new `omp` process, and `omp` takes 10 to 25 seconds to
+  say it is ready (measured on a fresh home), so a stretch that resumes pays
+  that again.
 - Ork's tools (`ask_user`, `delegate`, messages, `extract`, `report`) reach it
   through a private plugin that carries Ork's tool server. A node's own `mcp`
   servers, `agent.subagent` nodes and `maxTurns` are refused, so `ork onboard`
   and `ork:security-audit`, whose workflows set `maxTurns`, do not run on `omp`.
 - It reports dollars and tokens
   ([what the dollars mean](#what-the-dollars-mean)).
-- It never asks you for permission: a node is
-  [denied unless allowed](../drivers.md#permissions-denied-unless-allowed).
+- A node is
+  [denied unless allowed](../drivers.md#permissions-denied-unless-allowed):
+  Ork's settings list every tool the node's rules allow, and the guard refuses
+  the rest. A call `omp` still asks about, for a tool those settings do not
+  list, comes to you as a permission question in `ork decide`, with the tool and
+  its arguments, as on `claude-code`. Allow answers `Approve` and deny answers
+  `Deny`. Ork never sends `omp`'s "approve for this session", so each call is
+  asked again. A question Ork cannot read is answered as a cancel, never as an
+  allow.
 - The report goes through Ork's `report` tool.
 - `omp`'s own `eval` and `task` tools are never offered, and its background
   jobs, advisor, prewalk, model fallback, automatic update and memory are off.
 
 ## What holds a node to its rules
 
-`omp` has no sandbox and no prompt Ork can answer, so three things hold a node:
+`omp` has no sandbox, so three things hold a node:
 
 - **Which tools it is offered.** Of `omp`'s six built-in tools (`read`, `edit`,
   `write`, `bash`, `grep`, `glob`), a node gets only those its `allow`, `deny`,
@@ -83,13 +93,24 @@ make.
 - **`ork pause`.** The node's next call waits, in the same stretch, until you
   `ork continue`; then it runs. A `heavy` command also waits there for its slot.
   Nothing prints while a call waits.
-- **A long pause.** A call waits up to an hour. If the node is still paused, the
-  call is refused with a request to make the same call again, and it waits
-  another hour. Each such round costs one model request, with a cold prompt
-  cache, counted toward the node's budgets.
-- **`ork stop`.** A held call never runs: the session ends `interrupted`. The
-  request that made the held call is not counted: its usage is only printed
-  after the call is answered.
+- **A long pause.** A call waits up to 9 minutes, the same window as
+  `claude-code`. If the node is still paused, Ork ends that stretch (it tells
+  `omp` to stop, then closes it), and `ork continue` starts a new one that
+  resumes the session (`omp --mode rpc --resume`) with one message asking the
+  model to make the held call again (any other resume, such as after
+  `ork resume` or a late message, sends the node's own prompt, as on every
+  driver). A pause of any length costs one resume, with a cold prompt cache, not
+  one model request for each window. The session's usage across both stretches
+  is added up for the node's budgets. The resume waits for `omp`'s start-up
+  (above) and for a `heavy` slot if the call needs one.
+- **`ork stop`.** A held call never runs: the session ends `interrupted`, with
+  no report. Ork tells `omp` to abort, then closes it and ends the process if it
+  is still running after a short wait. A stop while the stretch is ended at a
+  long pause never resumes it. The request that made the held call is not
+  counted: its usage is only printed after the call is answered.
+
+This path, resuming after an abort with Ork's session folder, has not yet run on
+a real `omp`; see [the omp limits](../../../specs/gaps/omp-limits.md).
 
 ## If a node stops before it starts
 
@@ -114,6 +135,14 @@ ended instead of running without Ork's tools.
 
 **`unknown flag`.** Your `omp` is older or newer than the one Ork was built
 against. Update `omp`, or report it.
+
+**`omp did not say it was ready within 45 s`.** `omp` did not finish starting
+within Ork's limit (it has taken up to 25 seconds), so the node ends. Run again;
+if it repeats, run `omp` by hand.
+
+**`omp sent a frame in chunks …`.** `omp` split one message above its frame
+limit (1 MiB), and Ork cannot read a split message yet, so the stretch ends
+instead of reading half of it. Report it with what the node was doing.
 
 ## What an omp session loads
 

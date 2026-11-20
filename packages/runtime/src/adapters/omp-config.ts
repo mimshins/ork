@@ -6,10 +6,11 @@
  *   approvals come from one function, so the two cannot disagree: a tool is
  *   offered only when the node's rules can allow some call of it, and every
  *   other tool, `eval` and `task` among them, is denied. `omp` asks before any
- *   tool with no approval entry and refuses it in print mode, so each Ork tool
- *   is allowed by its own name (a wildcard key does not work). Everything is
- *   written in a private folder outside the checkout (0700, files 0600,
- *   `secret-file.ts`), removed when the session ends or a write fails.
+ *   tool with no approval entry (in rpc mode it asks Ork, which a human then
+ *   answers), so each Ork tool is allowed by its own name (a wildcard key does
+ *   not work) and never needs asking. Everything is written in a private folder
+ *   outside the checkout (0700, files 0600, `secret-file.ts`), removed when the
+ *   session ends or a write fails.
  */
 
 import { mkdirSync } from "node:fs";

@@ -245,9 +245,11 @@ export const ompDriver = (proven: boolean): AgentDriver =>
     loginOutput: { args: ["models", "--json"], read: ompModels },
     capabilities: {
       questions: true,
-      permissionPrompt: false,
+      // `omp --mode rpc` asks Ork about a tool missing from the approval map.
+      permissionPrompt: true,
       price: true,
-      midTurnMessages: false,
+      // A `steer` frame, read before the turn ends (RFC-027).
+      midTurnMessages: true,
       reportSchema: false,
       turnLimit: false,
       mcpServers: false,

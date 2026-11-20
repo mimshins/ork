@@ -1,6 +1,7 @@
 # ADR-105 — The `omp` driver: oh-my-pi's `omp` CLI as the fifth driver
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-108](./ADR-108-duplex-session-client.md)
+  (the process shape, mid-turn messages, approvals and the long pause)
 - **Date:** 2026-11-19
 - **Topic:** runtime
 - **RFC:** [RFC-026](../rfcs/archived/RFC-026-omp-driver.md)
@@ -27,7 +28,9 @@ adapter's tests and the gate run already cover.
   `--resume <id>`; a leader's question fork runs `--fork <id>`.
   `midTurnMessages` and `permissionPrompt` are `false`. The long-lived
   `omp --mode rpc` shape, mid-turn messages and approvals Ork answers go to a
-  later RFC, shared with `codex app-server`.
+  later RFC, shared with `codex app-server`. (Amended by
+  [ADR-108](./ADR-108-duplex-session-client.md): `omp` now runs `omp --mode rpc`
+  on the two-way client, with both flags `true`.)
 - **Ork's tools through a private plugin folder.** `--plugin-dir` carries Ork's
   MCP server, with `tools.xdev: false`. The bearer token is a literal in the
   plugin's `.mcp.json` and in a hold file, each mode 0600, in a private folder

@@ -1,11 +1,13 @@
 /**
  * @file `omp` sessions on the fake `omp` (RFC-026): a leg fails closed before
  *   any model line without its guard, its overlay or Ork's server; a message
- *   sent mid-leg is delivered by a resumed leg that passes every flag and file
- *   again; a fork carries on under its new id; an unknown session ends with
- *   `omp`'s words; the reading rule (RFC-025) in each mode; the token in no
- *   argument, variable or event; the checkout holds only what the session
- *   wrote; and the usage, cost, context and Ork's ledger of a session.
+ *   sent mid-leg is a `steer` frame to the same leg; an approval `omp` asks
+ *   reaches the human channel and is answered `Approve` or `Deny`; a session
+ *   ends at `session_settled`, leaving no process; a fork carries on under its
+ *   new id; an unknown session ends with `omp`'s words; the reading rule
+ *   (RFC-025) in each mode; the token in no argument, variable or event; the
+ *   checkout holds only what the session wrote; and the usage, cost, context
+ *   and Ork's ledger of a session.
  */
 
 import {
@@ -48,6 +50,12 @@ const typesOf = (events: readonly RuntimeEvent[]): string[] =>
 const textsOf = (events: readonly RuntimeEvent[]): string[] =>
   events.flatMap(event =>
     event.type === "assistant.text" ? [event.text] : [],
+  );
+
+/** The messages of the `prompt` frames Ork wrote. */
+const promptsOf = (frames: readonly Recorded[]): (string | undefined)[] =>
+  frames.flatMap(each =>
+    each.frame?.type === "prompt" ? [each.frame.message] : [],
   );
 
 /** The id the session started under. */
@@ -197,9 +205,59 @@ describe("an omp session's usage, cost and context", () => {
   });
 });
 
+/** A `bash` call `omp` asks the host about: no approval entry. */
+const ASKED = [
+  { calls: [{ tool: "bash", input: { command: "true" }, ask: true }] },
+];
+
+/** Whether a process `pid` is still there. */
+const alive = (pid: number | undefined): boolean => {
+  try {
+    process.kill(pid ?? 0, 0);
+    return pid !== undefined;
+  } catch {
+    return false;
+  }
+};
+
+describe("an omp approval", () => {
+  it.each<
+    [{ allow: true } | { allow: false; message: string }, string, number]
+  >([
+    [{ allow: true }, "Approve", 1],
+    [{ allow: false, message: "no" }, "Deny", 0],
+  ])(
+    "reaches the human channel with the call; %o answers %s",
+    async (answer, value, ran) => {
+      const asked: unknown[] = [];
+      const { session, calls } = played({
+        script: ASKED,
+        over: { tools: { allow: ["Bash"], deny: [] } },
+        permit: request => {
+          asked.push({ tool: request.toolName, input: request.input });
+          return Promise.resolve(answer);
+        },
+      });
+      await collect(session);
+      expect(asked).toEqual([{ tool: "Bash", input: { command: "true" } }]);
+      expect(calls("approval").map(each => each.value)).toEqual([value]);
+      expect(calls("ran")).toHaveLength(ran);
+    },
+  );
+});
+
+describe("an omp session's end", () => {
+  it("ends at session_settled, after the prompt's result, and leaves no process", async () => {
+    const { session, legs } = played();
+    const events = await collect(session);
+    expect(outcomeOf(events).end?.kind).toBe("done");
+    expect(legs().map(leg => alive(leg.pid))).toEqual([false]);
+  });
+});
+
 describe("resuming and forking an omp session", () => {
-  it("delivers a message sent mid-leg by a resumed leg that passes every flag again", async () => {
-    const { session, legs, home } = played({
+  it("delivers a message sent mid-leg as a steer frame, in the same leg", async () => {
+    const { session, legs, home, frames } = played({
       scenario: "wait-message",
       over: { budgetUsd: 1 },
     });
@@ -207,9 +265,8 @@ describe("resuming and forking an omp session", () => {
       session.send("Also add tests");
     });
     const outcome = outcomeOf(events);
-    // The resumed leg prints only its own messages.
-    expect(textsOf(events)).toEqual(["first leg", "got: Also add tests"]);
-    expect(valueOf(argsAt(legs(), 1), "--resume")).toBe(outcome.sessionId);
+    expect(textsOf(events)).toEqual(["got: Also add tests"]);
+    expect(frames()).toEqual(["get_state", "prompt", "steer"]);
     const FLAGS = [
       "--append-system-prompt",
       "--session-dir",
@@ -229,25 +286,23 @@ describe("resuming and forking an omp session", () => {
         expect.any(String),
         "1",
       ],
-      [
-        "# Ork",
-        expect.any(String),
-        expect.any(String),
-        expect.any(String),
-        expect.any(String),
-        "1",
-      ],
     ]);
-    // Each leg's usage once; the cost is the session's total.
-    expect(outcome.usage).toMatchObject({
-      inputTokens: 200,
-      turns: 2,
-      contextTokens: 185,
-    });
-    expect(outcome.usage.costUsd).toBeCloseTo(0.002);
+    expect(outcome.usage).toMatchObject({ inputTokens: 100, turns: 1 });
+    expect(outcome.usage.costUsd).toBeCloseTo(0.001);
     expect(sessionSpend(ompFolders(home).spent, outcome.sessionId)).toBeCloseTo(
-      0.002,
+      0.001,
     );
+  });
+
+  it("resumes a session with the spec's own prompt, as a re-entered leader does", async () => {
+    const source = played();
+    const sourceId = outcomeOf(await collect(source.session)).sessionId;
+    const again = played({
+      home: source.home,
+      over: { resume: sourceId, prompt: "Round 2" },
+    });
+    await collect(again.session);
+    expect(promptsOf(again.calls("frame"))).toEqual(["Round 2"]);
   });
 
   it("forks a session under a new id, its cap and cost counting the source's spend", async () => {

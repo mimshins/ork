@@ -7,9 +7,12 @@
  *   node continues (ADR-041). A tool that takes no message mid-session gets one
  *   at the next leg, which resumes the session with it. A driver that cannot
  *   hold the final answer to the report schema gets Ork's `report` tool, and
- *   the session ends with the report it accepted. Interrupting stops the
- *   running process, or ends a wait between legs; a stopped session is never
- *   resumed.
+ *   the session ends with the report it accepted. A tool that speaks frames
+ *   both ways (`CliAdapter.protocol`, RFC-027) runs as duplex legs: a message
+ *   is sent to the running process, its approval asks go to the human channel,
+ *   and a deferred call ends the leg, resumed by its session id. Interrupting
+ *   stops the running process, or ends a wait between legs; a stopped session
+ *   is never resumed.
  */
 
 import type {
@@ -23,9 +26,15 @@ import type {
 
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
 import { heavyHook, NEVER_HELD, toolHook } from "./heavy-hook.ts";
+import { asStopped } from "./leg-step.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
-import { asStopped, type LegInput, runLeg } from "./session-leg.ts";
+import {
+  legInputOf,
+  type LegShared,
+  runAnyLeg,
+  wireSaying,
+} from "./session-leg-input.ts";
 import { readPatterns } from "./tools/contain.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
@@ -48,51 +57,6 @@ const resumed = (spec: SessionSpec, sessionId: string): SessionSpec => ({
 });
 
 /**
- * Wires a session to Ork's endpoint, yielding a `session.waiting` event each
- * time the wiring says it waits (a lease waits for its checkout).
- */
-const wireSaying = async function* (
-  adapter: CliAdapter,
-  spec: SessionSpec,
-  endpoint: OrkEndpoint,
-  signal: AbortSignal,
-  options: RunnerOptions,
-): AsyncGenerator<RuntimeEvent, Wired> {
-  const waits: string[] = [];
-  let woke: (() => void) | undefined;
-  const woken = (): Promise<false> =>
-    new Promise(resolve => {
-      woke = () => {
-        resolve(false);
-      };
-    });
-  const wiring = adapter.mcp.wire(spec, endpoint, {
-    waiting: reason => {
-      waits.push(reason);
-      woke?.();
-    },
-    signal,
-    bin: options.bin ?? adapter.command.bin,
-    env: options.env ?? process.env,
-    ...(options.runs === undefined ? {} : { runs: options.runs }),
-  });
-  const done = wiring.then(
-    () => true,
-    () => true,
-  );
-  for (;;) {
-    const finished =
-      waits.length === 0 &&
-      // oxlint-disable-next-line eslint/no-await-in-loop -- one wait at a time
-      (await Promise.race([done, woken()]));
-    for (const reason of waits.splice(0)) {
-      yield { type: "session.waiting", reason };
-    }
-    if (finished) return wiring;
-  }
-};
-
-/**
  * A runtime that drives `adapter`'s tool, as the user installed and logged it
  * in. Ork never reads or passes its credentials.
  */
@@ -103,12 +67,16 @@ export const createSessionRuntime = (
   driver: adapter.driver,
   start: (spec, ports): Session => {
     const { input } = adapter.command;
-    // Lines for stdin, written once a process is up.
+    const { protocol } = adapter;
+    // Lines for stdin, written once a process is up; a protocol leg's
+    // messages, sent once its first requests are.
     const pending: string[] =
       input === undefined ? [] : [input(spec.prompt, false)];
     // Messages for a tool with no stdin: the next leg brings them.
     const queued: string[] = [];
     let io: { write: (line: string) => void; stop: () => void } | undefined;
+    /** Ends a running protocol leg `deferred`. */
+    let defer: (() => void) | undefined;
     const ended = new AbortController();
     /** The hold hook deferred a call in the running process. */
     let deferring = false;
@@ -162,6 +130,8 @@ export const createSessionRuntime = (
               ended: ended.signal,
               onDefer: () => {
                 deferring = true;
+                // A protocol tool keeps no call pending: its leg ends here.
+                defer?.();
               },
             }),
       );
@@ -193,10 +163,7 @@ export const createSessionRuntime = (
           ...adapter.context.env(spec),
           ...wired.env,
         };
-        const legOf = (
-          legSpec: SessionSpec,
-          carried: SessionUsage | undefined,
-        ): LegInput => ({
+        const shared: LegShared = {
           adapter,
           bin,
           env,
@@ -205,24 +172,23 @@ export const createSessionRuntime = (
           ...(ports.machine === undefined
             ? {}
             : { priority: ports.machine.priority }),
-          args: [
-            ...adapter.command.args(legSpec, { endpoint, allowed }),
-            ...(wired?.args ?? []),
-          ],
-          carried,
-          ...(adapter.legDecoder === undefined
-            ? {}
-            : { decoder: adapter.legDecoder(legSpec) }),
+          wiredArgs: wired.args,
+          leg: { endpoint, allowed },
+          human: ports.human,
+          nodeId: spec.nodeId,
           pending,
           deferred: () => deferring,
           withhold: () => input === undefined && queued.length > 0,
           ...(byTool ? { reported: () => reported } : {}),
           attach: attached => {
             io = attached;
+            defer = attached?.defer;
           },
-        });
+        };
         let legSpec = spec;
         let spent: SessionUsage | undefined;
+        /** The next leg resumes a session whose last leg was deferred. */
+        let resumesDeferral = false;
         for (;;) {
           // Interrupted while wiring (no process yet to stop); one between
           // legs ends below, with the last leg's result.
@@ -230,8 +196,8 @@ export const createSessionRuntime = (
             yield driverFailure("interrupted", "interrupted", scope);
             return;
           }
-          const legInput = legOf(legSpec, spent);
-          const leg = yield* runLeg(legInput);
+          const legInput = legInputOf(shared, legSpec, spent, resumesDeferral);
+          const leg = yield* runAnyLeg(legInput);
           if (leg.kind === "failed") {
             // A resumed leg stopped before it printed its start ran as before.
             const { spent: stopped } = leg;
@@ -247,9 +213,30 @@ export const createSessionRuntime = (
             spent === undefined
               ? leg.usage
               : adapter.usage.combine(spent, leg.usage);
+          // A resumed leg stopped before it named its session ran as before.
+          // A fork leg's `resume` is the source's id, not its own session.
+          const sessionId =
+            leg.sessionId ||
+            (legSpec.fork === true ? "" : (legSpec.resume ?? ""));
+          // A protocol session resumes only by its id; without one it can't.
+          // A stop still ends it interrupted, below.
+          if (
+            protocol !== undefined &&
+            sessionId === "" &&
+            !ended.signal.aborted
+          ) {
+            yield driverFailure(
+              `${adapter.command.bin} stopped before it named its session, so it cannot resume`,
+              "driver_crashed",
+              scope,
+              { usage: spent, sessionId: "" },
+            );
+            return;
+          }
           if (leg.kind === "deferred" && !ended.signal.aborted) {
             // Wait for the node to continue, then resume the session with no
-            // new message; the pending call's hook then lets it run.
+            // new message (a protocol codec opens with its resume message);
+            // the pending call's hook then lets it run.
             // A call deferred for a slot waits for it too, until a stop.
             // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
             await heavy.ready();
@@ -263,13 +250,14 @@ export const createSessionRuntime = (
               : leg.last;
             return;
           }
+          resumesDeferral = leg.kind === "deferred";
           legSpec =
             leg.kind === "continued"
               ? {
-                  ...resumed(spec, leg.sessionId),
+                  ...resumed(spec, sessionId),
                   prompt: queued.splice(0).join("\n\n"),
                 }
-              : resumed(spec, leg.sessionId);
+              : resumed(spec, sessionId);
         }
       } finally {
         heavy.release();
@@ -281,11 +269,11 @@ export const createSessionRuntime = (
     return {
       events: events(),
       send: text => {
-        if (input === undefined) {
+        if (input === undefined && protocol === undefined) {
           queued.push(text);
           return;
         }
-        const line = input(text, true);
+        const line = input === undefined ? text : input(text, true);
         if (io === undefined) pending.push(line);
         else io.write(line);
       },

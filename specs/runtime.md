@@ -7,8 +7,10 @@ the [`open-code`](./runtime/open-code.md) and
 [`codex`](./runtime/codex.md) driver are built and proven on a real session
 ([code](../packages/runtime/src/index.ts),
 [tests](../packages/runtime/test/runtime.test.ts)); the
-[`omp`](./runtime/omp.md) driver is built and not yet proven (its gate run is
-pending, so a run refuses it). Drivers run one node at a time by
+[`omp`](./runtime/omp.md) driver and the
+[two-way session client](./runtime/duplex-client.md) it runs on are built and
+not yet proven (the gate run is pending, so a run refuses `omp`). Drivers run
+one node at a time by
 [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 [ADR-004](../decisions/ADR-004-no-credentials.md),
 [ADR-005](../decisions/ADR-005-one-runtime-port-two-drivers.md),
@@ -28,7 +30,7 @@ pending, so a run refuses it). Drivers run one node at a time by
 | `AgentRuntime`   | `{ driver: "claude-code" \| "open-code" \| "command-code" \| "codex" \| "omp"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause)) and its `MachinePort` (priority, slots for heavy Bash calls; [machine](./machine.md))                                                                                                                                                                                                                                                                                                                                                                                      |
 | `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules (`allow`, `deny`, `only`: the only built-in tools, `strictMcp`: no MCP server but Ork's, `--strict-mcp-config`), permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`, `fork` (with `resume`, a copy of that session: `--fork-session`; [leader questions](./messaging/leader-questions.md)), `promptCache` (`1h` for a leader), `machineClaude` (load the machine's MCP servers and auto-memory; [what a session loads](./runtime/what-a-session-loads.md)), `yolo` (`ork run --yolo`: allow what the tool rules don't deny; [ADR-094](../decisions/ADR-094-yolo-runs.md)) |
-| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not; `omp` takes it before the turn ends, once the running call finishes), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `session.waiting` (with a `reason`: the session waits before its tool starts, e.g. for its checkout on `command-code`; nothing derives from it), `assistant.text`, `tool.called`, `tool.result` (with the CPU it used, for an Ork tool command, and for an Ork tool's refusal or failure its first line as `message`, at most 300 characters, never for another tool: [ADR-106](../decisions/ADR-106-tool-result-carries-the-ork-message.md)), `session.finished` (with the outcome)                                                                                                                                                                                                                                                                   |
 | `SessionOutcome` | `end` (how the session ended: one closed kind, Ork's message and the scrubbed detail; [how a session ends](./runtime/session-ends.md)), `subtype` (`success` or the driver's error subtype, kept one release for stored events), session id, the report or `null`, the final text, usage, errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context, document)`, each with an optional `onNote` that takes the person's [note](./messaging.md#decisions) before the answer resolves; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md)); a yolo run's queue allows each `permit` itself, recorded as answered by `yolo`                                                                                                                                                                                                                                                                                                                                                                   |
@@ -39,10 +41,12 @@ adapter's hook (`claude`'s `PreToolUse` HTTP hook to the endpoint's `/hold`)
 waits while the node is paused; past the 9-minute window it defers the call, and
 the runner resumes the session once the node continues, yielding one session. A
 message to a tool with no stdin waits for the turn's end, and the runner resumes
-the session with it ([tests](../packages/runtime/test/session-runner.test.ts)).
-The same hook takes a slot for a Bash call matching `heavy`, and a `PostToolUse`
-hook on Bash frees it ([machine](./machine.md#a-sessions-bash-call)). A stopped
-session is never resumed: one stopped with a deferred call and no report ends
+the session with it ([tests](../packages/runtime/test/session-runner.test.ts));
+one that speaks frames gets it at once, and its leg ends `deferred` with an
+interrupt frame instead ([two-way client](./runtime/duplex-client.md)). The same
+hook takes a slot for a Bash call matching `heavy`, and a `PostToolUse` hook on
+Bash frees it ([machine](./machine.md#a-sessions-bash-call)). A stopped session
+is never resumed: one stopped with a deferred call and no report ends
 `interrupted`, and a stop during its slot wait ends it at once, the slot given
 back if it comes later.
 
@@ -56,22 +60,27 @@ missing entry does not compile. `claude-code` runs the user's own `claude`. Each
 descriptor has `capabilities` (`questions`, `permissionPrompt`, `price`,
 `midTurnMessages`, `reportSchema`, `turnLimit`, `mcpServers`, `subagents`,
 `readDenies`; false: Ork supplies a fallback or refuses the node) and `proven`.
+`midTurnMessages` means a message reaches the model before the turn ends, not at
+once; `permissionPrompt` means Ork answers the tool's own approval asks.
 `open-code` runs the user's own `opencode` ([its page](./runtime/open-code.md));
 `command-code` runs `cmd` ([its page](./architecture/command-code.md)). Both are
 `proven: true`, since their gate runs (2026-11-10). `codex` runs the user's own
 `codex exec` per leg ([its page](./runtime/codex.md); the sandbox and a
 per-session hook hold the node's rules) and is `proven: true` since its gate run
-(2026-11-18). `omp` runs the user's own `omp -p --mode json` per leg
+(2026-11-18). `omp` runs the user's own `omp --mode rpc` per leg
 ([its page](./runtime/omp.md); a guard extension Ork writes, `omp`'s approval
 settings and `--tools` hold the node's rules, and the guard holds a paused
-node's call) and is `proven: false`, built and awaiting its gate run.
-`readDenies: false` (`codex`) means a `deny` on a `Read`, `Glob` or `Grep` path
-can't hold, so `ork validate` and `ork run` refuse a node that has one for that
-driver; `omp` holds it by leaving its read tools out of `--tools`. A descriptor
-with `proven: false` is refused and never counts as ready. The session runner
-sets `PWD` to the session's folder, which OpenCode reads as its own. The ids
-`sdk` and `cli` are retired: naming one is refused ("use `claude-code`"); a
-stored run's are read as `claude-code`
+node's call) and is `proven: false`, built and awaiting its gate run. It is the
+one driver on the [two-way client](./runtime/duplex-client.md): a message
+reaches the model before the turn ends (not at once: a running call finishes
+first), Ork answers the tool's approvals, and a pause past the window ends the
+leg and resumes it. `readDenies: false` (`codex`) means a `deny` on a `Read`,
+`Glob` or `Grep` path can't hold, so `ork validate` and `ork run` refuse a node
+that has one for that driver; `omp` holds it by leaving its read tools out of
+`--tools`. A descriptor with `proven: false` is refused and never counts as
+ready. The session runner sets `PWD` to the session's folder, which OpenCode
+reads as its own. The ids `sdk` and `cli` are retired: naming one is refused
+("use `claude-code`"); a stored run's are read as `claude-code`
 ([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
 
 | Concern               | `claude-code` ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts))                                                                                                                                                                                           |
@@ -199,5 +208,6 @@ benchmark ([register](./gaps.md#limits)).
 - [What a session loads](./runtime/what-a-session-loads.md)
 - [The `open-code` driver](./runtime/open-code.md)
 - [The `codex` driver](./runtime/codex.md)
+- [The two-way session client](./runtime/duplex-client.md)
 - [The `omp` driver](./runtime/omp.md)
 - [The `extract` tool](./runtime/extract-tool.md)

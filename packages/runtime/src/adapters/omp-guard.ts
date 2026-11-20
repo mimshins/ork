@@ -40,9 +40,12 @@ export type OmpHoldFile = { url: string; token: string };
 /** The hold endpoint's answer the guard reads as "the node is still paused". */
 export const HELD: Readonly<Record<string, string>> = { ork: "held" };
 
-/** The refusal of a call a paused node made, once the hold window ran out. */
+/**
+ * The refusal of a call a paused node made, once the hold window ran out: the
+ * runner then ends the leg, and the resumed one asks for the call again.
+ */
 export const OMP_PAUSED =
-  "Ork paused this node, so this call did not run. Make the same call again; it waits until the node continues. Do nothing else.";
+  "Ork paused this node, so this call did not run. Do nothing else.";
 
 /** Where the guard's own files are. */
 export type GuardFiles = {

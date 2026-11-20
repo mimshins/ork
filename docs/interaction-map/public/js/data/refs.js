@@ -1374,6 +1374,18 @@ export const RUNTIME = {
     "packages/runtime/src/adapters/omp-guard.ts",
     "Code: the omp guard that holds a node's rules and a paused call",
   ),
+  ompRpc: d(
+    "packages/runtime/src/adapters/omp-rpc.ts",
+    "Code: the omp rpc codec",
+  ),
+  duplexLeg: d(
+    "packages/runtime/src/session-duplex-leg.ts",
+    "Code: the two-way session client",
+  ),
+  duplexSpec: d(
+    "specs/runtime/duplex-client.md",
+    "Spec: the two-way session client",
+  ),
   ompSpec: d("specs/runtime/omp.md", "Spec: the omp driver"),
   ompLimits: d("specs/gaps/omp-limits.md", "Limits: the omp driver"),
   extract: d(

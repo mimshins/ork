@@ -23,7 +23,10 @@ export type DriverCapabilities = {
   permissionPrompt: boolean;
   /** The tool reports dollars, so `budgetUsd` can be enforced. */
   price: boolean;
-  /** A message sent mid-turn reaches the model before the turn ends. */
+  /**
+   * A message sent mid-turn reaches the model before the turn ends, not at
+   * once: a running tool call finishes first.
+   */
   midTurnMessages: boolean;
   /** The tool validates its final answer against a JSON Schema. */
   reportSchema: boolean;

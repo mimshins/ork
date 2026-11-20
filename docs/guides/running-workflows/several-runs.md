@@ -61,10 +61,11 @@ project, nothing waits.
   the call before it starts, as it does for a [pause](./controlling-a-run.md),
   and lets it go when a slot is free. The slot is given back when the call ends,
   on the session's next call, or when the session ends. On `omp`, a slot that
-  does not come in time makes the model repeat the call, which keeps waiting for
-  the same slot. OpenCode and Command Code sessions don't take slots for their
-  Bash calls yet ([L257](../../../specs/gaps/machine-limits.md)), and neither do
-  Codex's ([G40](../../../specs/gaps.md#gaps)).
+  does not come in time ends that stretch of the session, and Ork resumes it
+  once a slot is free and the node is not paused. OpenCode and Command Code
+  sessions don't take slots for their Bash calls yet
+  ([L257](../../../specs/gaps/machine-limits.md)), and neither do Codex's
+  ([G40](../../../specs/gaps.md#gaps)).
 
 A wait is never silent. `ork ps` shows the run as `waiting for slot`, and
 `ork logs`, `ork tree` and the Now column of `ork ui` say

@@ -4,8 +4,30 @@ _Part of [The `omp` driver](./omp.md)._
 
 ## Output, usage and ends
 
-[omp-events.ts](../../packages/runtime/src/adapters/omp-events.ts) reads one
-JSON object a line, with no result line (the exit ends the leg):
+The [`omp-rpc` codec](../../packages/runtime/src/adapters/omp-rpc.ts) reads one
+JSON frame a line from `omp --mode rpc`. Frames with print mode's shapes go to
+[omp-events.ts](../../packages/runtime/src/adapters/omp-events.ts), so the
+events, usage and ledger below are unchanged; the codec reads the rest:
+
+- **Handshake and responses.** `ready` (with `maxFrameBytes`, 1048576) opens the
+  leg. Ork then writes `get_state` and `prompt` (a leg resumed after a deferral:
+  the message that asks for the held call again; any other resume: the node's
+  prompt); each request has an `id`, and the tool's `{"type":"response"}`
+  carries it back, with `success: false` or an `error` failing that request. The
+  `get_state` response's session id gives the `session.started` event (a
+  print-mode `session` frame does too, once).
+- **`steer`** is a message mid-turn and **`abort`** the interrupt; both are
+  requests with a response.
+- **Not events:** `extension_ui_request` of a method but `select` (`setWidget`,
+  …) gets no event and no answer; a `select` is an
+  [approval](./omp-rules.md#approvals-over-rpc).
+- **A frame in chunks** (over `maxFrameBytes`) ends the leg failed, naming the
+  limit; a line that is not JSON does too ([L497](../gaps/omp-limits.md)).
+- **The wire names** the spike did not measure (`prompt`'s `message`, the
+  `get_state` id, the cancel answer, how a chunk is marked) are
+  [listed](#not-measured).
+
+What the print-mode shapes give, as before:
 
 - `session` gives `session.started` (`id`; a fork's `parentSession` starts the
   session under the new id). An assistant `message_end` gives one
@@ -30,16 +52,20 @@ JSON object a line, with no result line (the exit ends the leg):
   assistant message's `input + cacheRead + cacheWrite`; two legs keep the later
   leg's. Dollars are `omp`'s catalogue prices: a subscription login gets
   notional dollars and a model with no known price costs 0.
-- **Ends.** Exit 0 after `agent_end`: the report Ork's `report` tool accepted
-  decides it, else `no_report`. Exit 3 is `budget_limit`, with the `cost-gate`
-  notice's words as the detail (after `agent_end`, or, on a leg already over the
-  cap, after `session`, `advisor_cost_changed` and the notice alone). Exit 130
-  is `interrupted`. Exit 1 before a turn (no login, an unknown model or session,
-  Ork's server not ready, a guard that did not load, a missing overlay) gives no
-  event, so the runner reads stderr and the provider classifier names the kind
+- **Ends.** A `prompt_result` only marks a turn (its `status`, and a
+  `sessionSettled` that can be `false` with a wake to follow); the session ends
+  at **`session_settled`**, read with the last `prompt_result`: `completed` is
+  the print path's exit 0, so the report Ork's `report` tool accepted decides
+  it, else `no_report`; an `error` with `code: "cost_cap"` is `budget_limit`,
+  with the error's message as the detail; `aborted` is `interrupted`; any other
+  error is a failed end with its message. The client then closes `omp`. The
+  process exiting first (no login, an unknown model or session, Ork's server not
+  ready, a guard that did not load, a missing overlay) gives no settled end, so
+  the runner reads stderr and the provider classifier names the kind
   (`No default model selected` is `auth`; `Model "<x>" not found` is
   `model_unavailable`), else `driver_crashed`; a request's `stopReason` other
-  than `toolUse` and `stop` is kept as the end's detail. There is no turn limit.
+  than `toolUse` and `stop` is kept as the end's detail. A stop is `interrupted`
+  with no report. There is no turn limit.
 - **The report** goes by Ork's `report` tool (`reportSchema: false`)
   ([node report](./node-report.md)).
 
@@ -88,7 +114,14 @@ checked before a run: a follow-up.
   hold, a failed model request's lines, usage on a second provider and on a
   subscription login, and what the user's own extensions, rules and MCP servers
   add to a session.
-- A hold longer than 135 seconds; whether `omp` holds for the whole 60 minutes.
-- Whether a model makes the same call again when the pause refusal asks it to.
+- Everything rpc: the gate run now also covers a `steer` during a call, an
+  approval, a deferral and `--resume` after an `abort` with Ork's
+  `--session-dir`, a cost cap over prompts, a chunked frame and the start-up
+  time ([L497 to L502](../gaps/omp-limits.md)).
+- The wire names above that the spike did not capture: `prompt`'s `message`
+  field, `get_state`'s `data.sessionId`, the cancel answer's `cancelled: true`,
+  an error's `message` and the chunk marker.
+- A hold of the whole 9-minute window, and whether a model makes the held call
+  again when the resume message asks it to.
 - Whether `--max-cost` on a fork counts the source's spend (assumed yes).
 - What an empty `--tools` does to MCP tools.

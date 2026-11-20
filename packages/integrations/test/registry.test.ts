@@ -336,9 +336,9 @@ describe("the omp driver", () => {
     expect([omp.proven, omp.onePerCheckout]).toEqual([false, false]);
     expect(omp.capabilities).toEqual({
       questions: true,
-      permissionPrompt: false,
+      permissionPrompt: true,
       price: true,
-      midTurnMessages: false,
+      midTurnMessages: true,
       reportSchema: false,
       turnLimit: false,
       mcpServers: false,

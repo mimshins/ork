@@ -425,7 +425,7 @@ describe("the omp guard's hold", () => {
     await endpoint.close();
   });
 
-  it("refuses with the sentence that asks for the same call again when the pause outlasts the window", async () => {
+  it("refuses as paused, asking for nothing else, when the pause outlasts the window", async () => {
     const endpoint = await standIn(() => ({
       status: 200,
       body: JSON.stringify(HELD),
@@ -433,7 +433,7 @@ describe("the omp guard's hold", () => {
     const guard = await loadGuard({ allow: ["Bash"] }, endpoint.hold);
     expect(await outcome(guard, "bash", { command: "ls" })).toBe(OMP_PAUSED);
     expect(OMP_PAUSED).toBe(
-      "Ork paused this node, so this call did not run. Make the same call again; it waits until the node continues. Do nothing else.",
+      "Ork paused this node, so this call did not run. Do nothing else.",
     );
     await endpoint.close();
   });

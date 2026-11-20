@@ -108,12 +108,12 @@ the slot; so does the session's next call, and its end.
 On `omp` the same hold request takes the slot: the session's guard asks Ork's
 `/hold` endpoint before each call, and `heavy.before` runs for a `Bash` call
 after the pause check, within the same window. A slot that does not come in time
-is the `defer` answer, which the guard turns into a refusal asking the model to
-make the same call again; it keeps waiting for the same slot. The guard frees
-the slot at once with a `PostToolUse` request from its `tool_result` handler,
-which `omp` fires after a call that ran; a call refused first fires none, so the
-session's next call and its end are the backstop, as on Claude Code
-([the `omp` page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
+is the `defer` answer: the leg ends deferred and, once `heavy.ready()` says a
+slot is free, resumes with a message asking the model to make the call again.
+The guard frees the slot at once with a `PostToolUse` request from its
+`tool_result` handler, which `omp` fires after a call that ran; a call refused
+first fires none, so the session's next call and its end are the backstop, as on
+Claude Code ([the `omp` page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
 
 ## Priority
 

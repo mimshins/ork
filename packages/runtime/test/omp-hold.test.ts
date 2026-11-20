@@ -3,11 +3,12 @@
  *   the guard holds a paused node's next call, Ork's own tools included, and
  *   lets it run in the same leg once the node continues; a call the node's
  *   rules refuse never reaches the hold endpoint; a pause past the window
- *   refuses the call with a request to make it again, which waits again, in one
- *   leg; a hold that cannot be asked refuses the call; a stop while a call is
- *   held ends the session with the call not run, even when `omp` plays on past
- *   the SIGINT; a `heavy` command waits for its slot and frees it once it has
- *   run, while the session goes on; and a session with no hold port asks
+ *   refuses the call and ends the leg with an `abort`, and the node's continue
+ *   resumes it (`--resume`) with one message to make the call again, usage
+ *   combined; a stop while deferred ends it interrupted; a hold that cannot be
+ *   asked refuses the call; a stop while a call is held ends the session with
+ *   the call not run; a `heavy` command waits for its slot and frees it once it
+ *   has run, while the session goes on; and a session with no hold port asks
  *   nothing.
  */
 
@@ -24,13 +25,28 @@ import {
   type RuntimeEvent,
   type SlotLedger,
 } from "@krapht/ork-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import type { CliAdapter } from "../src/adapter.ts";
 import { OMP_PAUSED } from "../src/index.ts";
 import { collect, outcomeOf } from "./contract/harness.ts";
-import { played, tampered, temp, unfenced } from "./fixtures/omp-session.ts";
+import {
+  played,
+  tampered,
+  temp,
+  unfenced,
+  valueOf,
+} from "./fixtures/omp-session.ts";
+
+/** The session id the events started with. */
+const sessionIdOf = (events: readonly RuntimeEvent[]): string =>
+  events.flatMap(e => (e.type === "session.started" ? [e.sessionId] : []))[0] ??
+  "";
+
+/** The arguments of a session's leg `at`; none when there is no such leg. */
+const argsAt = (legs: readonly { args: string[] }[], at: number): string[] =>
+  legs[at]?.args ?? [];
 
 const NODE = "om";
 
@@ -135,9 +151,9 @@ describe("an omp session's paused node", () => {
     expect(calls("ran")).toEqual([]);
   });
 
-  it("refuses a call held past the window with a request to make it again, which waits again, in one leg", async () => {
+  it("ends the leg at a pause past the window, and resumes it once the node continues", async () => {
     const { holds, recorded, hold } = holdsOf(true);
-    const { session, legs, calls } = played({
+    const { session, legs, calls, frames } = played({
       ports: { hold },
       holdWindowMs: 30,
     });
@@ -147,16 +163,58 @@ describe("an omp session's paused node", () => {
       () => {
         holds.proceed();
       },
-      200,
+      300,
     );
-    const again = calls("refused").filter(call => call.reason === OMP_PAUSED);
-    expect(again.length).toBeGreaterThan(0);
+    expect(calls("refused").map(call => call.reason)).toEqual([OMP_PAUSED]);
+    // The first leg ends with an abort; the second resumes it, asking once.
+    expect(frames()).toEqual([
+      "get_state",
+      "prompt",
+      "abort",
+      "get_state",
+      "prompt",
+    ]);
+    expect(calls("frame").at(-1)?.frame?.message).toMatch(
+      /make the same call again/u,
+    );
+    expect(valueOf(argsAt(legs(), 1), "--resume")).toBe(sessionIdOf(all));
+    expect([argsAt(legs(), 0).includes("--resume"), argsAt(legs(), 1)]).toEqual(
+      [false, expect.arrayContaining(["--mode", "rpc", "--session-dir"])],
+    );
     expect(calls("ran").map(call => call.tool)).toEqual([
       "mcp__ork_session_ork_ask_user",
       "mcp__ork_session_ork_report",
     ]);
+    const outcome = outcomeOf(all);
+    expect(outcome.report?.status).toBe("pass");
+    // Both legs' requests: the paused one, then ask_user and report again.
+    expect(outcome.usage.turns).toBe(3);
+  });
+
+  it("ends a deferred session interrupted on a stop, never resuming it", async () => {
+    const { recorded, hold } = holdsOf(true);
+    const { session, legs, calls, frames } = played({
+      ports: { hold },
+      holdWindowMs: 30,
+    });
+    const { all } = await whileHeld(
+      session.events,
+      recorded,
+      async () => {
+        // Deferred: the leg was ended with an abort before the stop.
+        await vi.waitFor(
+          () => {
+            expect(frames()).toContain("abort");
+          },
+          { timeout: 5000 },
+        );
+        await session.interrupt();
+      },
+      0,
+    );
     expect(legs()).toHaveLength(1);
-    expect(outcomeOf(all).report?.status).toBe("pass");
+    expect(calls("ran")).toEqual([]);
+    expect(outcomeOf(all).end?.kind).toBe("interrupted");
   });
 
   it("does not run a held call once the session is stopped, and ends interrupted", async () => {

@@ -11,185 +11,80 @@
 import { createInterface } from "node:readline";
 
 import {
-  type EndKind,
-  endFor,
   lowerChild,
-  type NodeReport,
   type RuntimeEvent,
-  type SessionOutcome,
+  type SessionSpec,
   type SessionUsage,
 } from "@krapht/ork-core";
-import type { Driver, Priority } from "@krapht/ork-schema";
+import type { Priority } from "@krapht/ork-schema";
 
-import type { CliAdapter, Decoded, LegDecoder } from "./adapter.ts";
+import type {
+  Ask,
+  Codec,
+  Decision,
+  LegContext,
+  LegDecoder,
+} from "./adapter.ts";
 import { spawnLeg } from "./leg-spawn.ts";
-import { classifyProviderError } from "./provider-errors.ts";
 import {
-  type EndScope,
-  failureKind,
-  failureReason,
-  heldUsage,
-  settleEnd,
-  type Spent,
-  tokenCapOutcome,
-} from "./session-end.ts";
+  type Leg,
+  legStep,
+  STDERR_TAIL,
+  type StepInput,
+  tokenCapEnd,
+  withCarried,
+} from "./leg-step.ts";
+import { classifyProviderError } from "./provider-errors.ts";
+import { failureKind, failureReason, heldUsage } from "./session-end.ts";
 
-/** How much of the end of a process's stderr is kept to explain its death. */
-const STDERR_TAIL = 16_384;
-
-/** Marks a session's start with the driver that runs it. */
-export const withDriver = (event: RuntimeEvent, driver: Driver): RuntimeEvent =>
-  event.type === "session.started" ? { ...event, driver } : event;
-
-/** How one leg of a session (one process) ended. */
-export type Leg =
-  | { kind: "finished" }
-  | {
-      /**
-       * `deferred`: the hold hook deferred a call; `continued`: a message
-       * waits.
-       */
-      kind: "deferred" | "continued";
-      sessionId: string;
-      usage: SessionUsage;
-      /** Its result, yielded only if the session never resumes. */
-      last: RuntimeEvent;
-    }
-  | {
-      kind: "failed";
-      reason: string;
-      end: EndKind;
-      /** What the session had spent when it stopped, earlier legs included. */
-      spent?: Spent;
-    };
-
-export type LegInput = {
-  adapter: CliAdapter;
+export type LegInput = StepInput & {
   bin: string;
   env: Readonly<Record<string, string | undefined>>;
   /** `low`: the process starts below Ork's priority (`machine/priority.ts`). */
   priority?: Priority;
   cwd: string;
   args: string[];
-  /** What the legs before this one spent; none for the first. */
-  carried: SessionUsage | undefined;
   /** Lines to write once the process is up; emptied as they are written. */
   pending: string[];
-  /** Whether the hold hook deferred a call in this process. */
-  deferred: () => boolean;
-  /** Whether a message waits for the next leg, so the result is not the end. */
-  withhold: () => boolean;
-  /**
-   * The report handed in through Ork's `report` tool, when the session has it:
-   * the session's report then, whatever the tool's result line says.
-   */
-  reported?: () => NodeReport | null;
   /** The process's stdin and stop while it runs; nothing after. */
   attach: (io?: { write: (line: string) => void; stop: () => void }) => void;
   /** The adapter's decoder for this leg, when it has one (`legDecoder`). */
   decoder?: LegDecoder;
-  /** What the session's end is written with. */
-  scope: EndScope;
 };
 
-/**
- * A session's outcome with its report (the one Ork's `report` tool accepted,
- * when the session has that tool) and its end settled. A session Ork `stopped`
- * with no report ends `interrupted`, whatever result line its tool printed.
- */
-const settled = (
-  outcome: SessionOutcome,
-  input: LegInput,
-  stopped = false,
-): SessionOutcome => {
-  const report =
-    input.reported === undefined ? outcome.report : input.reported();
-  const end = stopped && report === null ? endFor("interrupted") : outcome.end;
-  return settleEnd(
-    { ...outcome, report, ...(end === undefined ? {} : { end }) },
-    input.scope.facts,
-    input.scope.scrub,
-  );
+/** What the runner holds of a running duplex leg; nothing after it ends. */
+export type DuplexIo = {
+  /** `message`, its failure dropped: what the runner's `send` calls. */
+  write: (text: string) => void;
+  /** Stops the turn; the session ends `interrupted` with no report. */
+  stop: () => void;
+  /** Sends a message to the running session; settles with the tool's response. */
+  message: (text: string) => Promise<void>;
+  /** Ends the leg `deferred`, to resume the session later. */
+  defer: () => void;
 };
 
-/** A deferred leg's result once Ork stopped the session: as `settled`, stopped. */
-export const asStopped = (last: RuntimeEvent, input: LegInput): RuntimeEvent =>
-  last.type === "session.finished"
-    ? { ...last, outcome: settled(last.outcome, input, true) }
-    : last;
-
-/** What this leg `used`, with what the legs before it spent. */
-const withCarried = (
-  input: LegInput,
-  used: SessionUsage | undefined,
-): SessionUsage | undefined =>
-  used === undefined || input.carried === undefined
-    ? (used ?? input.carried)
-    : input.adapter.usage.combine(input.carried, used);
-
-/** The session's end at its token cap, its earlier legs' usage included. */
-const tokenCapEnd = (
-  input: LegInput,
-  used: SessionUsage | undefined,
-  sessionId: string,
-): RuntimeEvent | undefined => {
-  const capped = tokenCapOutcome(
-    input.scope.facts,
-    used === undefined ? undefined : withCarried(input, used),
-    sessionId,
-  );
-  return capped === undefined
-    ? undefined
-    : { type: "session.finished", outcome: settled(capped, input) };
-};
-
-/** The kinds of a session that ended well, so a queued message continues it. */
-const wentWell = (kind: EndKind | undefined): boolean =>
-  kind === "done" || kind === "reported_failure" || kind === "no_report";
-
-/**
- * What one decoded line yields, and how the leg ends if it does: a result is
- * the session's end, unless the hold hook deferred a call or a message waits; a
- * resumed leg's start is not news, and its end carries what the legs before it
- * spent. `stopped` is whether Ork had stopped the leg when the line came.
- */
-const legStep = (
-  decoded: Decoded,
-  input: LegInput,
-  stopped = false,
-): { events: RuntimeEvent[]; ended?: Leg } => {
-  const { adapter, carried } = input;
-  const deferred = input.deferred() && decoded.deferred === true;
-  const events: RuntimeEvent[] = [];
-  let ended: Leg | undefined;
-  for (const said of decoded.events) {
-    if (said.type === "session.started" && carried !== undefined) continue;
-    if (said.type !== "session.finished") {
-      events.push(withDriver(said, adapter.driver));
-      continue;
-    }
-    // The end is written with the whole session's spend; the leg's own goes
-    // back to the runner to add up.
-    const own = said.outcome.usage;
-    const usage =
-      carried === undefined ? own : adapter.usage.combine(carried, own);
-    const last = {
-      ...said,
-      outcome: settled({ ...said.outcome, usage }, input, stopped),
-    };
-    const { sessionId, end } = last.outcome;
-    // A queued message continues only a session that ended well; an error
-    // (a turn limit, a failed run) ends it, so no limit is overrun or hidden.
-    if (deferred) {
-      ended = { kind: "deferred", sessionId, usage: own, last };
-    } else if (input.withhold() && wentWell(end?.kind)) {
-      ended = { kind: "continued", sessionId, usage: own, last };
-    } else {
-      events.push(last);
-      ended = { kind: "finished" };
-    }
-  }
-  return ended === undefined ? { events } : { events, ended };
+/** A duplex leg's input (`session-duplex-leg.ts`): a leg's, with its codec. */
+export type DuplexLegInput = Omit<
+  LegInput,
+  "attach" | "decoder" | "pending"
+> & {
+  /** This leg's codec (`CliAdapter.protocol(spec)`). */
+  codec: Codec;
+  /** What the codec's first requests are made of. */
+  spec: SessionSpec;
+  leg: LegContext;
+  /** Messages to send once the first requests are written; emptied then. */
+  pending: string[];
+  /**
+   * Asks a human or the node's rules about a tool call; aborted at the leg's
+   * end.
+   */
+  permit: (ask: Ask, signal: AbortSignal) => Promise<Decision>;
+  attach: (io?: DuplexIo) => void;
+  /** Override `READY_MS` and `SETTLE_MS` (tests shorten them). */
+  readyMs?: number;
+  settleMs?: number;
 };
 
 /** Runs one process of a session, yielding its events; returns how it ended. */

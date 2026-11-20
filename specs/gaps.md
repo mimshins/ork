@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L497, and the next chore is
+closes it. Ids are never reused: the next limit is L503, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -230,7 +230,10 @@ Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
   The driver runs `codex exec` per leg, so a message waits for the leg's end
   (`midTurnMessages: false`), and `exec` asks nothing, so there is no
   `permissionPrompt`. `codex app-server` (JSON-RPC over stdio, experimental)
-  could do both; it is a later RFC.
+  could do both. The [two-way client](./runtime/duplex-client.md) it needs is
+  built, with `omp`'s codec; the `codex app-server` codec is a later plan under
+  [RFC-027](../rfcs/active/RFC-027-long-lived-protocol-drivers.md), so this
+  stays open.
 - **G40 · Pause, stop and `heavy` do not reach a Codex call.** Ork's hook
   decides locally and does not hold a call (holding from a Codex command hook
   was never tried), so `ork pause` and `ork stop` land at a leg's end, and a
@@ -257,20 +260,11 @@ Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
   that must not search the web should not run on this driver.
 
 Found building the `omp` driver (spec: [runtime/omp.md](./runtime/omp.md),
-RFC-026, 2026-11-19; the limits found with them are L464 to L482, in
-[their chunk](./gaps/omp-limits.md)):
+RFC-026, 2026-11-19; the limits found with them are L464 to L482 and L497 to
+L502, in [their chunk](./gaps/omp-limits.md)). G45 (no message mid-turn, no
+approval) and G46 (no true deferral) were closed by
+[the two-way client](./runtime/duplex-client.md) (RFC-027, 2026-11-20).
 
-- **G45 · `omp` takes no message mid-turn and asks no approval through Ork.**
-  The driver runs `omp -p --mode json` per leg, so a message waits for the leg's
-  end (`midTurnMessages: false`), and print mode asks nothing, so there is no
-  `permissionPrompt`. `omp --mode rpc` could do both; it is a later RFC shared
-  with `codex app-server`.
-- **G46 · A long pause is not a true deferral on `omp`.** `claude-code` ends the
-  leg at a long pause and resumes it on `ork continue`; `omp` cannot leave a
-  call pending across processes, and the runner's deferred resume would send the
-  spec's prompt again as a new message. So the guard holds the call for a window
-  and, past it, asks the model to repeat the call, at one request per window
-  (L464). Ending the leg and resuming it needs a change to the session runner.
 - **G47 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not
   supported on `omp`.** `mcpServers`, `subagents` and `turnLimit` are `false`
   and `ork validate` refuses a node that needs one. Ork's plugin is the only MCP

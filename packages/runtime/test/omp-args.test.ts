@@ -5,7 +5,7 @@
  *   its modes, the session folder, the hold file only with a hold endpoint, the
  *   token in no argument and no variable, `--max-cost` from Ork's ledger, the
  *   stopped marker on a stop, the removal on release), the hold's answers, the
- *   leg decoder bound to the ledger, and one whole session on the fake `omp`.
+ *   leg codec bound to the ledger, and one whole session on the fake `omp`.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -16,13 +16,15 @@ import { describe, expect, it } from "vitest";
 
 import type {
   CliAdapter,
-  LegDecoder,
+  Codec,
+  Frame,
   OrkEndpoint,
   WireHooks,
 } from "../src/adapter.ts";
 import {
   addSpend,
   HELD,
+  HOLD_WINDOW_MS,
   OMP_HOLD_WINDOW_MS,
   OMP_STOPPED_FILE,
   ompArgs,
@@ -59,16 +61,18 @@ const NEVER = new Set([
   "--no-session",
   "--no-context-files",
   "--no-tools",
-  "rpc",
   "--approval-mode",
+  "-p",
+  "--print",
+  "json",
+  "--no-ui",
 ]);
 
 describe("the arguments of an omp leg", () => {
-  it("starts in print mode with omp's extras off, and ends with the brief", () => {
+  it("starts in rpc mode with omp's extras off, and carries no brief", () => {
     expect(ompArgs({ ...spec, model: "openai/gpt-5.2" })).toEqual([
-      "-p",
       "--mode",
-      "json",
+      "rpc",
       "--no-skills",
       "--no-rules",
       "--no-title",
@@ -86,7 +90,6 @@ describe("the arguments of an omp leg", () => {
       "medium",
       "--append-system-prompt",
       "# Ork",
-      "Do the task",
     ]);
   });
 
@@ -94,8 +97,8 @@ describe("the arguments of an omp leg", () => {
     expect(ompArgs(spec)).not.toContain("--model");
   });
 
-  it("puts a space before a brief that starts with a dash", () => {
-    expect(ompArgs({ ...spec, prompt: "-rf" }).at(-1)).toBe(" -rf");
+  it("passes the brief in no argument: the codec sends it as a frame", () => {
+    expect(ompArgs({ ...spec, prompt: "-rf" })).not.toContain("-rf");
   });
 
   it.each(["low", "medium", "high", "xhigh", "max"] as const)(
@@ -183,7 +186,8 @@ describe("the hold's answers", () => {
   it("lets a call go with nothing, and refuses a deferred one with HELD", () => {
     expect(ompHoldAnswer("go")).toEqual({});
     expect(ompHoldAnswer("defer")).toEqual(HELD);
-    expect(OMP_HOLD_WINDOW_MS).toBe(3_600_000);
+    // claude-code's window: a pause past it costs one resume.
+    expect(OMP_HOLD_WINDOW_MS).toBe(HOLD_WINDOW_MS);
   });
 });
 
@@ -314,42 +318,47 @@ describe("the omp wiring", () => {
   });
 });
 
-const sessionLine = (id: string) =>
-  JSON.stringify({ type: "session", version: 3, id, cwd: "/w" });
+const sessionLine = (id: string): Frame => ({
+  type: "session",
+  version: 3,
+  id,
+  cwd: "/w",
+});
 
-const paid = (usd: number) =>
-  JSON.stringify({
-    type: "message_end",
-    message: {
-      role: "assistant",
-      content: [{ type: "text", text: "ok" }],
-      usage: {
-        input: 10,
-        output: 2,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 12,
-        cost: { total: usd },
-      },
-      stopReason: "stop",
+const paid = (usd: number): Frame => ({
+  type: "message_end",
+  message: {
+    role: "assistant",
+    content: [{ type: "text", text: "ok" }],
+    usage: {
+      input: 10,
+      output: 2,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 12,
+      cost: { total: usd },
     },
-  });
+    stopReason: "stop",
+  },
+});
 
-/** A leg's decoder of `adapter`, which must have one. */
-const decoderOf = (adapter: CliAdapter, leg: SessionSpec): LegDecoder => {
-  if (adapter.legDecoder === undefined) throw new Error("no leg decoder");
-  return adapter.legDecoder(leg);
+/** A leg's codec of `adapter`, which must have one. */
+const decoderOf = (adapter: CliAdapter, leg: SessionSpec): Codec => {
+  if (adapter.protocol === undefined) throw new Error("no codec");
+  return adapter.protocol(leg);
 };
 
-/** The cost of the end a decoder gives at exit 0. */
-const costAtExit = (decoder: LegDecoder): number | undefined => {
-  const end = decoder.exit(0).find(event => event.type === "session.finished");
+/** The cost of the end a codec gives once the session settled. */
+const costAtExit = (codec: Codec): number | undefined => {
+  const end = codec
+    .decode({ type: "session_settled" })
+    .events.find(event => event.type === "session.finished");
   return end?.type === "session.finished"
     ? end.outcome.usage.costUsd
     : undefined;
 };
 
-describe("the omp leg decoder", () => {
+describe("the omp leg codec", () => {
   it("adds each request's dollars to the ledger, and starts a resumed leg from it", () => {
     const { adapter, home } = adapterIn();
     const { spent } = ompFolders(home);

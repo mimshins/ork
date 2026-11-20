@@ -1,47 +1,47 @@
 /**
- * @file The `omp` adapter (RFC-026): the user's own `omp -p --mode json`
- *   (oh-my-pi, 18.22.2), logged in by the user, one process per leg in the
- *   node's worktree. A later message or answer waits for the leg's end and
- *   resumes the session (`--resume <id>`); a question fork is `--fork <id>`.
- *   Every leg passes Ork's instructions, the thinking level, the built-ins the
- *   node may use (`--tools`), and, from the wiring, the session's private
- *   folder: the settings overlay (`--config`), Ork's guard as the only
- *   extension (`--trusted-extension`), the plugin that carries Ork's MCP server
- *   with its token (`--plugin-dir`), and `--session-dir` under
+ * @file The `omp` adapter (RFC-026, RFC-027): the user's own `omp --mode rpc`
+ *   (oh-my-pi, 18.22.2), logged in by the user, one long-lived process per leg
+ *   in the node's worktree, driven through the `omp-rpc.ts` codec. A message is
+ *   a `steer` frame to the running process, an interrupt an `abort`, and a tool
+ *   `omp` asks about is approved through Ork's human channel; a question fork
+ *   is `--fork <id>`. Every leg passes Ork's instructions, the thinking level,
+ *   the built-ins the node may use (`--tools`), and, from the wiring, the
+ *   session's private folder: the settings overlay (`--config`), Ork's guard as
+ *   the only extension (`--trusted-extension`), the plugin that carries Ork's
+ *   MCP server with its token (`--plugin-dir`), and `--session-dir` under
  *   `~/.ork/omp/sessions`. The guard refuses what the node's rules refuse and
  *   holds a paused node's next call by asking Ork's hold endpoint; a pause past
- *   the window refuses the call and asks the model to make it again, since
- *   `omp` cannot leave a call pending across processes. `--max-cost` counts the
- *   whole session, so it is what Ork's ledger says the session had spent plus
- *   `budgetUsd`. Never `-e`, `--extension`, `--hook`, `--yolo`, `--api-key`,
- *   `--profile`, `--no-session` or `--mode rpc`.
+ *   the window refuses the call, the runner ends the leg with an `abort`, and
+ *   `ork continue` resumes it (`--resume <id>`) with a message to make the held
+ *   call again. `--max-cost` counts the whole session, so it is what Ork's
+ *   ledger says the session had spent plus `budgetUsd`. Never `-p`, `--no-ui`,
+ *   `-e`, `--extension`, `--hook`, `--yolo`, `--api-key`, `--profile` or
+ *   `--no-session`.
  */
 
+// oxlint-disable import/max-dependencies -- the adapter composes one module per strategy
 import { mkdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
 import type { SessionSpec, ToolRules } from "@krapht/ork-core";
 
-import type {
-  CliAdapter,
-  HoldHook,
-  LegDecoder,
-  McpWiring,
-} from "../adapter.ts";
+import type { Codec, CliAdapter, HoldHook, McpWiring } from "../adapter.ts";
 import { toolRuleSet } from "../tools/tool-rules-source.ts";
+import { HOLD_WINDOW_MS } from "./claude-code.ts";
 import { writeOmpSession, ompTools } from "./omp-config.ts";
 import { ompDecoder, ompUsage } from "./omp-events.ts";
 import { guardSource, HELD, OMP_STOPPED_FILE } from "./omp-guard.ts";
 import { addSpend, sessionSpend } from "./omp-ledger.ts";
+import { ompRpcCodec } from "./omp-rpc.ts";
 
 /**
- * How long a paused node's call waits before the guard refuses it with a
- * request to make it again: a pause of a working day costs a few requests.
+ * How long a paused node's call waits before it is deferred: `claude-code`'s
+ * window (9 minutes), since a pause past it costs one resume of the session.
  */
-export const OMP_HOLD_WINDOW_MS = 60 * 60 * 1000;
+export const OMP_HOLD_WINDOW_MS = HOLD_WINDOW_MS;
 
-/** The switches every leg passes: `omp`'s own extras off, print mode. */
+/** The switches every leg passes: `omp`'s own extras off. */
 const SWITCHES = [
   "--no-skills",
   "--no-rules",
@@ -55,13 +55,12 @@ const SWITCHES = [
 ];
 
 /**
- * The `omp` arguments of one leg, the brief last. The wiring's flags follow it
- * (`omp` reads flags after the brief too, checked on 18.22.2).
+ * The `omp` arguments of one leg; the wiring's flags follow. The brief is no
+ * argument: the codec sends it as the first `prompt` frame.
  */
 export const ompArgs = (spec: SessionSpec): string[] => [
-  "-p",
   "--mode",
-  "json",
+  "rpc",
   ...SWITCHES,
   ...(spec.model === undefined ? [] : ["--model", spec.model]),
   ...(spec.resume === undefined
@@ -76,13 +75,11 @@ export const ompArgs = (spec: SessionSpec): string[] => [
   ...(spec.systemAppend === ""
     ? []
     : ["--append-system-prompt", spec.systemAppend]),
-  // A brief starting with `-` would read as a flag.
-  spec.prompt.startsWith("-") ? ` ${spec.prompt}` : spec.prompt,
 ];
 
 /**
  * The guard's reading of the hold endpoint's answer: `{}` lets the call run,
- * {@link HELD} refuses it with the request to make it again.
+ * {@link HELD} refuses it as paused while the runner ends the leg.
  */
 export const ompHoldAnswer: HoldHook["answer"] = answer =>
   answer === "go" ? {} : { ...HELD };
@@ -200,14 +197,14 @@ const wiring = (
   },
 });
 
-/** A leg's decoder, starting from the ledger as it is when the leg starts. */
-const legDecoder =
+/** A leg's codec, starting from the ledger as it is when the leg starts. */
+const legCodec =
   (fixedHome: string | undefined) =>
-  (spec: SessionSpec): LegDecoder => {
+  (spec: SessionSpec): Codec => {
     const spent =
       LEDGERS.get(spec.tools) ??
       ompFolders(homeOf(fixedHome, process.env)).spent;
-    return ompDecoder(spec, {
+    return ompRpcCodec(spec, {
       spentBefore: spentBefore(spent, spec),
       record: (id, usd) => {
         addSpend(spent, id, usd);
@@ -222,10 +219,11 @@ export const createOmpAdapter = (options: OmpOptions = {}): CliAdapter => {
     driver: "omp",
     command: { bin: "omp", args: ompArgs },
     decode: line => ompDecoder({ cwd: "" }).decode(line),
-    // No result line: a leg's decoder keeps what the session's end needs.
-    legDecoder: legDecoder(options.home),
+    // Frames both ways; no `command.input`.
+    protocol: legCodec(options.home),
     mcp: wiring(options.home, windowMs, options.secretRoot),
-    permissions: { kind: "rules", denyByDefault: true },
+    // A tool missing from the overlay's approval map asks Ork (`select`).
+    permissions: { kind: "callback", denyByDefault: true },
     usage: ompUsage,
     context: {
       instructions: ["AGENTS.md"],

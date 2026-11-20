@@ -70,6 +70,11 @@ const RecordSchema = z.object({
   tool: z.string().optional(),
   input: z.unknown().optional(),
   reason: z.string().optional(),
+  // An approval's answer; a frame Ork wrote.
+  value: z.string().optional(),
+  frame: z
+    .looseObject({ type: z.string(), message: z.string().optional() })
+    .optional(),
 });
 
 export type Recorded = z.infer<typeof RecordSchema>;
@@ -100,6 +105,8 @@ export type Play = {
   home?: string;
   /** Changes the adapter, e.g. to tamper with its wiring. */
   adapt?: (adapter: CliAdapter) => CliAdapter;
+  /** The human's answer to an approval; a refusal by default. */
+  permit?: HumanChannel["permit"];
 };
 
 /**
@@ -138,11 +145,19 @@ export const played = (play: Play = {}) => {
         : { FAKE_OMP_SCRIPT: JSON.stringify(play.script) }),
       ...play.env,
     },
-  }).start({ ...ompSpec, cwd, ...play.over }, { human, ...play.ports });
+  }).start(
+    { ...ompSpec, cwd, ...play.over },
+    {
+      human: { ...human, ...(play.permit ? { permit: play.permit } : {}) },
+      ...play.ports,
+    },
+  );
   const all = () => recordsIn(record);
   const legs = () => all().filter(each => each.kind === "leg");
   const calls = (kind: string) => all().filter(each => each.kind === kind);
-  return { session, cwd, home, root, legs, calls };
+  /** The types of the frames Ork wrote, in order. */
+  const frames = () => calls("frame").map(each => each.frame?.type ?? "");
+  return { session, cwd, home, root, legs, calls, frames };
 };
 
 const FENCE = ["--trusted-extension", "--plugin-dir", "--config"];

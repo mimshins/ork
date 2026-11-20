@@ -75,14 +75,23 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 | `codex`        | `turn.failed` or `error` text; exit 130        | the classifier, else `unknown`; `interrupted`                 |
 |                | "not supported when using Codex"               | `model_unavailable`                                           |
 |                | no key caps its turns                          | never `turn_limit`                                            |
-| `omp`          | exit 3 (`--max-cost`, the `cost-gate` notice)  | `budget_limit`, the notice's words as detail                  |
-|                | exit 130; exit 0 with no report                | `interrupted`; `no_report`                                    |
-|                | exit 1 (stderr; a request's `stopReason`)      | the classifier, else `driver_crashed`                         |
+| `omp`          | `session_settled` after a `cost_cap` error     | `budget_limit`, the error's words as detail                   |
+|                | `session_settled` after `aborted`; `completed` | `interrupted`; the report, else `no_report`                   |
+|                | exit, a bad or chunked frame, no `ready`       | the classifier on stderr, else `driver_crashed`               |
 |                | no key caps its turns                          | never `turn_limit`                                            |
 | every driver   | counted tokens reach `budgetTokens`            | `budget_limit` (Ork stops it, below)                          |
 |                | the program is not installed (`ENOENT`)        | `tool_missing`                                                |
 |                | a start that failed with a provider's words    | the classifier                                                |
 |                | any other failure to run                       | `driver_crashed`                                              |
+
+**A driver on the two-way client** (`omp`) ends at the tool's settled end, not
+at a turn's result: `prompt_result` marks a turn, and a session that is not
+settled can wake and run another, so only `session_settled` is read as the end
+([the client](./duplex-client.md#what-the-client-does)). Its `deferred` leg is
+an interrupt frame, a bounded wait and a close, with the session id and usage
+kept; `ork continue` resumes it by id with a message (any other resume sends the
+node's own prompt), and one that never named itself ends `driver_crashed`
+because it cannot resume.
 
 A `claude-code` session that hands in its report (`StructuredOutput`, accepted)
 and then writes on can end with a result that carries no `structured_output`.

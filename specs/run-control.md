@@ -74,13 +74,12 @@ Nothing is cut short. What happens depends on what the paused part is doing:
   timeout of its own. The turn in flight finishes first, and the lines are
   silent while the call waits
   ([the page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
-  - **A long pause** is not a deferral: `omp` cannot leave a call pending across
-    processes. After the hold window (60 minutes) the endpoint answers `defer`,
-    and the guard refuses the call with "Ork paused this node, so this call did
-    not run. Make the same call again; it waits until the node continues. Do
-    nothing else." The model asks again, the call waits another window, and on
-    continue it runs, in the same leg with no resume. Each window a pause
-    outlasts costs one model request, counted toward the node's budgets.
+  - **A long pause** is a deferral. After the hold window (9 minutes) the
+    endpoint answers `defer`, the guard refuses the call, and the runner ends
+    the leg with an `abort` frame. On continue a new leg runs
+    `omp --mode rpc --resume <id>` and sends one message asking the model to
+    make the held call again. A pause costs one resume, however long it lasts
+    ([the page](./runtime/omp-rules.md#pausing-and-heavy-slots)).
   - **A stop** while a call is held writes a `stopped` marker at once, so the
     call does not run whatever the endpoint answers; the leg ends `interrupted`.
 - **Nothing new starts.** Queued activations wait, and so does a leader's
@@ -177,11 +176,10 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). Then the claude-code driver's hold never fires, and a
   node pauses only at its next activation ([L29](./scheduler/limits.md)).
-- **`omp` has no true deferral.** A pause past its hold window costs a model
-  request per window, because the call is refused and asked for again rather
-  than left pending. `claude-code` is the one driver that ends its turn and
-  resumes. `command-code` and `codex` have no hold: a pause reaches them at a
-  leg's end (see [omp's limits](./gaps/omp-limits.md)).
+- **`omp` defers a long pause by resuming, and the resume is not measured.**
+  Like `claude-code`, it ends its leg past the hold window and resumes on
+  continue ([L464](./gaps/omp-limits.md), [L498](./gaps/omp-limits.md)).
+  `command-code` and `codex` have no hold: a pause reaches them at a leg's end.
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or
   a node's stop: `ork pause`, `ork continue`, `ork stop --node` and the API's
   routes refuse a `node-…` run with "stop the whole run instead", as links,

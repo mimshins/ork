@@ -17,7 +17,7 @@ ork/
     schema/          Zod schemas → JSON Schema; YAML load/save with stable formatting; migrations
     core/            graph compiler & validator, scheduler, context compiler, message bus,
                      decision queue, event store (SQLite + JSONL), worktree manager
-    runtime/  AgentRuntime: adapters (strategies) + one session runner; claude-code (claude -p stream-json); command-code (cmd -p json); open-code (opencode run --format json); codex (codex exec --json, one process per leg, sandbox + hook); omp (omp -p --mode json, one process per leg, guard extension + approval overlay; not yet proven)
+    runtime/  AgentRuntime: adapters (strategies) + one session runner; claude-code (claude -p stream-json); command-code (cmd -p json); open-code (opencode run --format json); codex (codex exec --json, one process per leg, sandbox + hook); omp (omp --mode rpc on the two-way session client, one process per leg, guard extension + approval overlay; not yet proven)
     nodes/           built-in node-type registry (each: schema, defaults, execute(), UI metadata)
     server/          node:http JSON API + SSE streams, typed contract and client; loopback + token (ADR-039)
     cli/             `ork` bin (citty): init, validate, run, ps, logs, chat, decide, ui, doctor, context
@@ -80,11 +80,11 @@ ork/
   cases: events normalized, a report that fits kept and one that breaks the
   schema rejected, a denied tool still denied, Ork's endpoint reached and then
   gone, usage counted (dollars only where the descriptor declares `price`), an
-  interrupt ending the session, and a message sent mid-session arriving (at once
-  with `midTurnMessages`, else at the next leg); on a driver without
-  `reportSchema`, a report handed in through the `report` tool, refused once and
-  then kept. A registered adapter with no entry fails the suite, so a new driver
-  is an adapter, a fake and one entry, with no edit to the engine.
+  interrupt ending the session, and a message sent mid-session arriving (before
+  the turn ends with `midTurnMessages`, else at the next leg); on a driver
+  without `reportSchema`, a report handed in through the `report` tool, refused
+  once and then kept. A registered adapter with no entry fails the suite, so a
+  new driver is an adapter, a fake and one entry, with no edit to the engine.
 - **One entry point per package:** `packages/<name>/src/index.ts` only
   re-exports the package's public pieces, and other packages import only from
   it. No other module is named `index.ts`; logic lives in modules named for what

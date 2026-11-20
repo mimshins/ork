@@ -12,7 +12,9 @@
  *   request's dollars go to Ork's ledger (`omp-ledger.ts`), since `--max-cost`
  *   counts the whole session. The decoder keeps none of `omp`'s or the
  *   provider's own fields (`credentialId`, `responseId`, `thinkingSignature`,
- *   `details`, `intent`, `requestControls`) nor the thinking text.
+ *   `details`, `intent`, `requestControls`) nor the thinking text. Its `frame`
+ *   and `end` also decode `omp --mode rpc`'s event frames, which have these
+ *   shapes, for the rpc codec (`omp-rpc.ts`).
  */
 
 import {
@@ -23,7 +25,7 @@ import {
   type SessionUsage,
 } from "@krapht/ork-core";
 
-import type { LegDecoder, UsageReader } from "../adapter.ts";
+import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
 import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { ompToolName } from "./omp-names.ts";
@@ -93,8 +95,20 @@ export type OmpDecoderOptions = {
 const FINE_STOPS = new Set(["toolUse", "stop"]);
 
 /** The exit codes `omp` gives the cost cap and an interrupted session. */
-const COST_CAP = 3;
-const INTERRUPTED = 130;
+export const OMP_COST_CAP_EXIT = 3;
+export const OMP_INTERRUPTED_EXIT = 130;
+const COST_CAP = OMP_COST_CAP_EXIT;
+const INTERRUPTED = OMP_INTERRUPTED_EXIT;
+
+/**
+ * A leg's decoder with two entry points for the rpc codec (`omp-rpc.ts`): a
+ * frame already parsed, and the end as print mode's exit code would give it,
+ * with words that explain a failure or the cost cap.
+ */
+export type OmpDecoder = LegDecoder & {
+  frame: (message: unknown) => Decoded;
+  end: (code: number | null, why?: string) => RuntimeEvent[];
+};
 
 /** The outcome's subtype for the ends that are not an error. */
 const SUBTYPES: Readonly<Partial<Record<string, string>>> = {
@@ -111,7 +125,7 @@ const SUBTYPES: Readonly<Partial<Record<string, string>>> = {
 export const ompDecoder = (
   spec: Pick<SessionSpec, "model" | "cwd" | "fork">,
   options: OmpDecoderOptions = {},
-): LegDecoder => {
+): OmpDecoder => {
   const began = Date.now();
   const spentBefore = options.spentBefore ?? 0;
   let sessionId = "";
@@ -195,68 +209,75 @@ export const ompDecoder = (
     return said.length > 0 ? errorEnd(said.join("\n"), "driver_crashed") : null;
   };
 
-  return {
-    decode: line => {
-      const message = parseLine(line);
-      switch (get(message, "type")) {
-        case "session": {
-          sessionId = str(get(message, "id"));
-          // A fork's own spend starts from its source's, as `--max-cost` does.
-          // Keyed on the leg, not `parentSession`: a resumed fork's header may
-          // carry it too, and its entry already holds the inherited spend.
-          if (spec.fork === true) record(spentBefore);
-          return {
-            events: [
-              {
-                type: "session.started",
-                sessionId,
-                model: spec.model ?? "default",
-                cwd: spec.cwd,
-              },
-            ],
-          };
-        }
-        case "message_end": {
-          const body = get(message, "message");
-          if (get(body, "role") !== "assistant") return { events: [] };
-          return { events: assistant(body), usage };
-        }
-        case "tool_execution_start": {
-          return { events: called(message, str(get(message, "toolCallId"))) };
-        }
-        case "tool_execution_end": {
-          return { events: ended(message, str(get(message, "toolCallId"))) };
-        }
-        case "notice": {
-          if (get(message, "source") === "cost-gate") {
-            capped = str(get(message, "message"));
-          }
-          return { events: [] };
-        }
-        default: {
-          return { events: [] };
-        }
+  const frame = (message: unknown): Decoded => {
+    switch (get(message, "type")) {
+      case "session": {
+        sessionId = str(get(message, "id"));
+        // A fork's own spend starts from its source's, as `--max-cost` does.
+        // Keyed on the leg, not `parentSession`: a resumed fork's header may
+        // carry it too, and its entry already holds the inherited spend.
+        if (spec.fork === true) record(spentBefore);
+        return {
+          events: [
+            {
+              type: "session.started",
+              sessionId,
+              model: spec.model ?? "default",
+              cwd: spec.cwd,
+            },
+          ],
+        };
       }
-    },
-    exit: code => {
-      const end = endOf(code);
-      // A failure no line explains is explained from stderr instead.
-      if (end === null) return [];
-      const ok = code === 0;
-      return [
-        {
-          type: "session.finished",
-          outcome: {
-            subtype: SUBTYPES[end.kind] ?? "error_during_execution",
-            end,
-            sessionId,
-            report: null,
-            text,
-            usage: { ...usage, durationMs: Date.now() - began },
-            errors: ok ? [] : [capped, ...said].filter(each => each !== ""),
-          },
+      case "message_end": {
+        const body = get(message, "message");
+        if (get(body, "role") !== "assistant") return { events: [] };
+        return { events: assistant(body), usage };
+      }
+      case "tool_execution_start": {
+        return { events: called(message, str(get(message, "toolCallId"))) };
+      }
+      case "tool_execution_end": {
+        return { events: ended(message, str(get(message, "toolCallId"))) };
+      }
+      case "notice": {
+        if (get(message, "source") === "cost-gate") {
+          capped = str(get(message, "message"));
+        }
+        return { events: [] };
+      }
+      default: {
+        return { events: [] };
+      }
+    }
+  };
+
+  const end = (code: number | null, why = ""): RuntimeEvent[] => {
+    if (why !== "" && code === COST_CAP) capped ||= why;
+    else if (why !== "") said.push(why);
+    const ending = endOf(code);
+    // A failure no line explains is explained from stderr instead.
+    if (ending === null) return [];
+    const ok = code === 0;
+    return [
+      {
+        type: "session.finished",
+        outcome: {
+          subtype: SUBTYPES[ending.kind] ?? "error_during_execution",
+          end: ending,
+          sessionId,
+          report: null,
+          text,
+          usage: { ...usage, durationMs: Date.now() - began },
+          errors: ok ? [] : [capped, ...said].filter(each => each !== ""),
         },
-      ];
-    },
+      },
+    ];
+  };
+
+  return {
+    decode: line => frame(parseLine(line)),
+    exit: code => end(code),
+    frame,
+    end,
   };
 };

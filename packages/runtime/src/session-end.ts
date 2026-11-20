@@ -173,7 +173,7 @@ export const failureKind = (error: unknown): EndKind => {
 /** What a session had spent when it stopped, and the id it ran under. */
 export type Spent = { usage: SessionUsage; sessionId: string };
 
-const NOTHING_SPENT: Spent = {
+export const NOTHING_SPENT: Spent = {
   usage: {
     costUsd: 0,
     inputTokens: 0,

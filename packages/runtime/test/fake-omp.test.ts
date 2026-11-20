@@ -5,9 +5,10 @@
  *   an overlay, a guard or Ork's server), the line shapes of a leg, a guard's
  *   `tool_call` handler awaited one call at a time with nothing printed while
  *   it waits, a refused call's lines, approval per tool name, the handler
- *   timeout, SIGINT while a call is held, a call made again when the refusal
- *   asks, `--max-cost` over the whole session, resume and fork, and the record
- *   of each leg and call that task 9's sessions read.
+ *   timeout, SIGINT while a call is held, a call refused as paused made again
+ *   by the resumed leg, `--max-cost` over the whole session, resume and fork,
+ *   all over `--mode rpc` (the brief as a `prompt` frame), and the record of
+ *   each leg and call that task 9's sessions read.
  */
 
 import { spawn } from "node:child_process";
@@ -169,9 +170,8 @@ const folder = (
 };
 
 const legArgs = (dir: string, extra: string[] = []): string[] => [
-  "-p",
   "--mode",
-  "json",
+  "rpc",
   "--no-skills",
   "--no-rules",
   "--offline",
@@ -190,12 +190,20 @@ const legArgs = (dir: string, extra: string[] = []): string[] => [
   "--plugin-dir",
   path.join(dir, "secret", "plugin"),
   ...extra,
-  " Do the task",
 ];
+
+/** The frames of the rpc protocol, apart from the session's own lines. */
+const PROTOCOL = new Set([
+  "ready",
+  "response",
+  "prompt_result",
+  "session_settled",
+]);
 
 /**
  * Starts the fake in `dir/work`, with `script` (a list of requests) and extra
- * variables.
+ * variables, sends the brief as the `prompt` frame, and closes its stdin once
+ * the session settled, so it exits.
  */
 const leg = (
   dir: string,
@@ -218,8 +226,15 @@ const leg = (
   });
   let stdout = "";
   let stderr = "";
+  child.stdin.on("error", () => {
+    // A leg that failed to start closed its stdin first.
+  });
+  child.stdin.write(
+    `${JSON.stringify({ type: "prompt", id: "p1", message: "Do the task" })}\n`,
+  );
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();
+    if (stdout.includes('"session_settled"')) child.stdin.end();
   });
   child.stderr.on("data", (chunk: Buffer) => {
     stderr += chunk.toString();
@@ -229,7 +244,8 @@ const leg = (
       child.on("close", resolve);
     }),
     stdout: () => stdout,
-    lines: () => parseLines(stdout),
+    lines: () =>
+      parseLines(stdout).filter(line => !PROTOCOL.has(line.type ?? "")),
     stderr: () => stderr,
     signal: name => {
       child.kill(name);
@@ -521,13 +537,18 @@ describe("the fake omp, holding a call", () => {
     expect(recordOf(dir, "ran")).toEqual([]);
   });
 
-  it("makes a call again when the refusal asks for it", async () => {
+  it("makes a call refused as paused again in the resumed leg", async () => {
     const dir = folder(
-      `let n = 0; pi.on("tool_call", () => { n += 1; log({ asked: n }); return n === 1 ? { block: true, reason: "Ork paused this node, so this call did not run. Make the same call again; it waits until the node continues. Do nothing else." } : undefined; });`,
+      `pi.on("tool_call", () => existsSync(release) ? undefined : { block: true, reason: "Ork paused this node, so this call did not run. Do nothing else." });`,
     );
-    expect(
-      await leg(dir, legArgs(dir), [{ calls: [BASH("true")] }]).status,
-    ).toBe(0);
+    const first = leg(dir, legArgs(dir), [{ calls: [BASH("true")] }]);
+    expect(await first.status).toBe(0);
+    writeFileSync(path.join(dir, "release"), "");
+    const id = String(sessionOf(first.lines())?.id);
+    const again = leg(dir, legArgs(dir, ["--resume", id]), [
+      { calls: [BASH("true")] },
+    ]);
+    expect(await again.status).toBe(0);
     expect([
       recordOf(dir, "asked").length,
       recordOf(dir, "ran").length,
@@ -543,7 +564,8 @@ describe("the fake omp, sessions", () => {
       { calls: [BASH("true")] },
       { calls: [BASH("true")] },
     ]);
-    expect(await first.status).toBe(3);
+    expect(await first.status).toBe(0);
+    expect(first.stdout()).toContain('"code":"cost_cap"');
     expect(types(first.lines()).slice(-2)).toEqual(["notice", "agent_end"]);
     expect(first.lines().at(-2)).toMatchObject({
       level: "error",
@@ -554,7 +576,7 @@ describe("the fake omp, sessions", () => {
       dir,
       legArgs(dir, ["--max-cost", "0.001", "--resume", id]),
     );
-    expect(await again.status).toBe(3);
+    expect(await again.status).toBe(0);
     expect(types(again.lines())).toEqual([
       "session",
       "advisor_cost_changed",

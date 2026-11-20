@@ -58,9 +58,29 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   emits no `tool_call`, so the guard never sees it; one the guard blocks emits
   no `tool_result`.
 
+## Approvals over rpc
+
+The overlay allows every tool the node's rules offer and Ork's tools, and denies
+the rest, so a call the node may make never asks. Without `--no-ui`, `omp` asks,
+through an `extension_ui_request` of method `select`, only for a tool the
+overlay names no entry for. The `omp-rpc` codec reads such a request:
+
+- With `Approve` and `Deny` among its options, it goes to `ports.human.permit`
+  (the call `permission.ts` makes for `claude-code`) with the tool and arguments
+  of the `tool_execution_start` before it: the request names no call, so they
+  are paired **by order** ([L502](../gaps/omp-limits.md)). Allow answers an
+  `extension_ui_response` with `value: "Approve"`, deny `"Deny"`. Ork never
+  sends `Approve … for this session`.
+- A `select` with no `Approve` or `Deny` option, or one with no call to pair, is
+  answered as a cancel; a request it cannot read is never an allow.
+- A request of another method (`setWidget`, …) gets no answer and no error.
+
+A mismatched pairing shows a human the wrong arguments but cannot allow a tool
+the overlay lists as denied.
+
 ## Pausing and `heavy` slots
 
-`omp` has a hold, as `claude-code` has (ADR-041,
+`omp` has a hold, as `claude-code` has, and defers like it (ADR-041,
 [run control](../run-control.md)): `ompAdapter.hold` makes the session runner
 serve `/hold` beside `/mcp`, on the same local server and token, when the
 session has a hold port (a run's session), and the wiring gets
@@ -78,37 +98,47 @@ no `heavy` slot.
   other than 200 or an answer the guard does not know refuses it too ("Ork could
   not be asked"). The guard fails closed: only exactly `{}` is go, and an
   unknown tool name is refused (`ompToolName` returns `undefined`).
-- **A long pause.** `omp` cannot leave a call pending across processes and the
-  runner's deferred resume would send the spec's prompt as a new message, so
-  there is no true deferral. At the window's end (`OMP_HOLD_WINDOW_MS`, 60
-  minutes) the endpoint answers `defer` and the guard refuses with "Ork paused
-  this node, so this call did not run. Make the same call again; it waits until
-  the node continues. Do nothing else." The model asks again, waits another
-  window, and runs once the node continues: one leg, no resume. Each window a
-  pause outlasts costs one model request with a cold cache, counted toward the
-  node's budgets. A hold of 135 seconds, with a handler timeout of two hours,
-  then ran and finished (measured); the whole 60 minutes is not measured.
+- **A long pause** is a true deferral. At the window's end
+  (`OMP_HOLD_WINDOW_MS`, `claude-code`'s 9 minutes) the endpoint answers `defer`
+  and the guard refuses the call with "Ork paused this node, so this call did
+  not run. Do nothing else." The runner then ends the leg: an `abort` frame, a
+  bounded wait for the session to settle, the process closed
+  ([the client](./duplex-client.md#what-the-client-does)). On `ork continue`
+  (and a free `heavy` slot) a new leg runs `omp --mode rpc --resume <id>` with
+  `--session-dir` and sends one message, asking the model to make the held call
+  again, never the spec's brief. Only a resume after a deferral sends that
+  message; any other resume (a re-entered leader, a late message, a failed-check
+  retry, `ork resume`) sends the node's own prompt, as on every driver. The
+  session's usage over both legs is combined as for `claude-code`; a stop while
+  deferred ends it `interrupted` and never resumes. A pause costs one resume,
+  not one model request per window; the resume itself is not measured
+  ([L498](../gaps/omp-limits.md)), and no refuse-and-repeat path is left to fall
+  back on. A hold of 135 seconds, with a handler timeout of two hours, ran and
+  finished on the print path (measured); a window of nine minutes is not.
 - **The handler's timeout.** `omp` cuts a `tool_call` handler after
   `extensionHandlers.toolCallTimeoutMs`, so the overlay sets
   `2 × OMP_HOLD_WINDOW_MS + 60 000`: one window for a pause and one for a
   `heavy` slot. `omp`'s timeout only backs up an Ork that never answers.
 - **`heavy` slots.** The same request takes the slot (`heavy.before` runs for a
   `Bash` call after the pause check, within the same window); a slot that does
-  not come in time is the `defer` answer, and the repeated call keeps waiting
-  for the same slot. The guard frees it **at once** with a `PostToolUse` request
-  from its `tool_result` handler, which `omp` fires after a call that ran
-  (including one that returned `isError`). It is sent only for `Bash` calls: the
-  hook frees one slot whatever the tool, so a `Read`'s after-call must not free
-  a running `Bash`'s slot. A call refused first fires none, so the session's
-  next call and its end are the backstop
+  not come in time is the `defer` answer: the leg ends deferred, and once
+  `heavy.ready()` says a slot is free it resumes with a message asking the model
+  to make the call again. The guard frees it **at once** with a `PostToolUse`
+  request from its `tool_result` handler, which `omp` fires after a call that
+  ran (including one that returned `isError`). It is sent only for `Bash` calls:
+  the hook frees one slot whatever the tool, so a `Read`'s after-call must not
+  free a running `Bash`'s slot. A call refused first fires none, so the
+  session's next call and its end are the backstop
   ([machine](../machine.md#a-sessions-bash-call)). Two calls of one message are
   asked one at a time and end in either order, so the request is keyed by
   `toolCallId`.
 - **A stop while a call is held.** The wiring listens on the session's abort
   signal and writes `stopped` before the hold's answer goes out; the guard
   checks the marker after the answer and before any later call, so the held call
-  does not run. `omp` exited 130 within about a second on one SIGINT and the
-  command did not run (measured); the node ends `interrupted`.
+  does not run. A stop writes an `abort` frame, then closes stdin and kills the
+  process if it has not exited in a bounded wait; the node ends `interrupted`,
+  with no report. One SIGINT on the print path ended `omp` in about a second
+  with the command not run (measured); `abort` over rpc is not.
 - **What Ork sees meanwhile:** nothing. The lines are silent while a call is
   held: `tool_execution_start`, and the assistant `message_end` of the request
   that made the call, with its usage, arrive only after the guard answers, so

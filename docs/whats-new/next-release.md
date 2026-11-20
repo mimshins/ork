@@ -22,3 +22,17 @@ _Part of [What's new](../whats-new.md)._
   Upgrade: a run with a remote `git.base` now fetches it; if you work offline or
   have no access to the remote, set `git.fetch: never` in `.ork/project.yaml` to
   keep the old behavior.
+
+- **A message to an `omp` node arrives before the turn ends, and a long pause
+  costs one resume.** The `omp` driver now keeps one `omp --mode rpc` process
+  for each stretch and talks to it both ways. `ork chat` and `ork send` reach
+  the model before the turn ends (a tool call that is running finishes first), a
+  stop aborts the turn, and a permission question from `omp` comes to you in
+  `ork decide` (Ork never answers "approve for this session"). The session ends
+  when `omp` says it has settled, not at the end of the first turn. When a
+  paused node's call has waited 9 minutes, Ork now ends the stretch, and
+  `ork continue` resumes the session with a message asking the model to make the
+  held call again, instead of refusing the call every hour at the cost of a
+  model request each time. `omp` is still built and not yet proven, so
+  `ork validate` and `ork run` still refuse it ([omp](../guides/drivers/omp.md),
+  [Drivers](../guides/drivers.md)). Upgrade: none required.

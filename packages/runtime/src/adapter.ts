@@ -17,6 +17,12 @@ export type LegContext = {
   endpoint: OrkEndpoint;
   /** Ork's tools that need no permission prompt, as the tool names them. */
   allowed: readonly string[];
+  /**
+   * The leg resumes a session whose last leg the runner ended at a deferred
+   * call: its prompt is no message of the node's, so a codec opens with its own
+   * request to make the held call again. Unset on every other leg.
+   */
+  resumesDeferral?: boolean;
 };
 
 /** The program and its arguments for one leg of a session. */
@@ -27,7 +33,9 @@ export type Command = {
   /**
    * How the brief and later messages reach a running process on stdin, `later`
    * for one sent mid-session. Without it, the brief is in the arguments and a
-   * message waits for the next leg, which resumes the session with it.
+   * message waits for the next leg, which resumes the session with it. A tool
+   * that speaks frames both ways uses `CliAdapter.protocol` instead, never
+   * both.
    */
   input?: (text: string, later: boolean) => string;
 };
@@ -138,9 +146,9 @@ export type ContextLayers = {
 /**
  * Holding a paused node's next tool call (ADR-041), when the tool can: its
  * hook's answer to "go" or "defer", and how long a call may wait before it is
- * deferred instead. A driver whose tool cannot leave a call pending (`omp`)
- * answers "defer" by refusing the call with a request to make it again; its
- * decoder marks no line `deferred`, so the leg goes on.
+ * deferred instead. A protocol driver's tool keeps no call pending (`omp`): it
+ * answers "defer" by refusing the call, and the runner ends the leg, which the
+ * next leg resumes with a request to make the call again.
  */
 export type HoldHook = {
   answer: (answer: "go" | "defer") => Record<string, unknown>;
@@ -153,6 +161,69 @@ export type HoldHook = {
   refuse?: (reason: string) => Record<string, unknown>;
 };
 
+/** One JSON object a protocol driver reads or writes, one per line (RFC-027). */
+export type Frame = Record<string, unknown>;
+
+/** A frame Ork writes that the tool answers with a response carrying `id`. */
+export type FrameRequest = { id: string; frame: Frame };
+
+/** The tool asking Ork to approve one of its tool calls. */
+export type Ask = { id: string; tool: string; args: Record<string, unknown> };
+
+/** Ork's answer to an `Ask`; never "allow for the rest of the session". */
+export type Decision = "allow" | "deny";
+
+/**
+ * What one frame from the tool says. Its events end the session when they carry
+ * a `session.finished` (the tool's settled end, not a turn's end); the client
+ * then closes the process, so `deferred` and `kill` do not apply.
+ */
+export type DecodedFrame = Decoded & {
+  /** The handshake is done: the client writes `open`'s frames only after it. */
+  ready?: boolean;
+  /** The response to a request Ork wrote, with the tool's error if it failed. */
+  reply?: { id: string; error?: string };
+  /** A question for Ork; the client answers it with `answer`. */
+  ask?: Ask;
+  /** Frames to write back at once, such as a cancel for an ask it can't read. */
+  write?: Frame[];
+  /**
+   * A frame the codec cannot read (such as a chunk of one over the tool's frame
+   * limit): the leg ends failed with this one-line diagnostic.
+   */
+  fail?: string;
+};
+
+/**
+ * The longest line the client reads from a protocol driver: the 1 MiB frame
+ * limit `omp` reports at `ready`, plus slack. A longer line ends the leg
+ * failed.
+ */
+export const MAX_FRAME_LINE_BYTES = 1_048_576 + 65_536;
+
+/**
+ * A tool that speaks frames both ways over one long-lived process (RFC-027): a
+ * fresh codec for each leg, which keeps what it read (the session id, usage,
+ * the tool call an ask is about). The client owns the process and the request
+ * ids' pending table; the codec only maps frames.
+ */
+export type Codec = {
+  /**
+   * The leg's first requests: the spec's prompt, which on a resumed leg is the
+   * message it resumes with, never the first leg's prompt again.
+   */
+  open: (spec: SessionSpec, leg: LegContext) => FrameRequest[];
+  decode: (frame: Frame) => DecodedFrame;
+  /**
+   * A message to the running session; it reaches the model before the turn
+   * ends.
+   */
+  message: (text: string) => FrameRequest;
+  /** Stops the turn; the session settles after it. */
+  interrupt: () => FrameRequest;
+  answer: (ask: Ask, decision: Decision) => Frame;
+};
+
 /** One agent CLI, as its strategies. */
 export type CliAdapter = {
   driver: DriverId;
@@ -160,6 +231,11 @@ export type CliAdapter = {
   decode: EventDecoder;
   /** A fresh decoder for each leg's spec, used instead of `decode` when set. */
   legDecoder?: (spec: SessionSpec) => LegDecoder;
+  /**
+   * A fresh codec for each leg's spec, when the tool speaks frames both ways:
+   * the runner drives a duplex leg with it, and `command.input` is unset.
+   */
+  protocol?: (spec: SessionSpec) => Codec;
   mcp: McpWiring;
   permissions: PermissionPolicy;
   usage: UsageReader;
