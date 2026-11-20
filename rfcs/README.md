@@ -91,3 +91,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [025](./archived/RFC-025-extract-only-reading.md)              | Make `extract` the way sessions read, on every driver              | Implemented |
 | [026](./archived/RFC-026-omp-driver.md)                        | The omp driver: oh-my-pi's `omp` CLI as the fifth driver           | Implemented |
 | [027](./active/RFC-027-long-lived-protocol-drivers.md)         | A two-way client for `omp --mode rpc` and `codex app-server`       | Accepted    |
+| [028](./active/RFC-028-permissions-without-asking.md)          | Permissions without asking: parse, refuse, remember, suggest       | Accepted    |
