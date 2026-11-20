@@ -1,4 +1,4 @@
-# ADR-107 — A node's model from an earlier output or an input
+# ADR-111 — A node's model from an earlier output or an input
 
 - **Status:** Accepted
 - **Date:** 2026-11-20

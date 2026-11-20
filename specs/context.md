@@ -9,7 +9,7 @@ Status: **Built** (M1c): the context compiler
 [keeping a session apart](./context/session-apart.md) from a project's own agent
 process (the session text, the `quiet` practice, an attached project's context
 files). Why: [ADR-023](../decisions/ADR-023-context-compiler.md),
-[ADR-110](../decisions/ADR-107-keep-ork-sessions-apart.md).
+[ADR-110](../decisions/ADR-110-keep-ork-sessions-apart.md).
 
 **Layers** (lowest to highest precedence for same-named skills):
 
@@ -180,7 +180,7 @@ agent node unless turned off
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
 | `caveman`  | Terse voice in the session's chat text, its report `summary`, and messages to other nodes; normal prose in files, code, comments, commits, docs, artifacts, and questions to the user                                                                        | Caveman v4.0.1 (Apache-2.0) |
 | `ponytail` | The smallest complete change: reuse before writing, no unasked-for abstraction, a check for new non-trivial logic, and a closing line on what was skipped. `lite` names the smaller option; `ultra` also questions the request                               | Ponytail v5.3.2 (MIT)       |
-| `quiet`    | Never writes about Ork into a repository file, commit message, pull request text, review comment or code comment; Ork's own notes stay in `.ork/`. A project that writes about Ork turns it off ([ADR-110](../decisions/ADR-107-keep-ork-sessions-apart.md)) | Ork                         |
+| `quiet`    | Never writes about Ork into a repository file, commit message, pull request text, review comment or code comment; Ork's own notes stay in `.ork/`. A project that writes about Ork turns it off ([ADR-110](../decisions/ADR-110-keep-ork-sessions-apart.md)) | Ork                         |
 
 - **Settings:**
   `practices: { caveman: true | false, ponytail: true | false | lite | full | ultra, quiet: true | false }`

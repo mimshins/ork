@@ -8,7 +8,7 @@ Status: **Built**: `rules.agents` and `knowledge`
 [rules.ts](../../packages/core/src/project/rules.ts),
 [apply.ts](../../packages/cli/src/runs/apply.ts),
 [tests](../../packages/core/test/rules.test.ts)). Both are off by default. Why:
-[ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md).
+[ADR-110](../../decisions/ADR-110-keep-ork-sessions-apart.md).
 
 A repository can run its own agent process (a documenter, an implementer, a
 reviewer, each a Claude Code agent file) for contributors who never use Ork. Ork

@@ -9,7 +9,7 @@ Status: **Built** on `claude-code`, `codex`, `command-code` and `omp`;
 [tool-rules-source.ts](../../packages/runtime/src/tools/tool-rules-source.ts),
 [open-code.ts](../../packages/runtime/src/adapters/open-code.ts); tests:
 [write-limit](../../packages/runtime/test/write-limit.test.ts)). Why:
-[ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md).
+[ADR-110](../../decisions/ADR-110-keep-ork-sessions-apart.md).
 
 `SessionSpec.writeOnly` is a list of folders, relative to the session's `cwd`. A
 session that has it may write only under those folders, and never to a file

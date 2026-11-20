@@ -104,7 +104,7 @@ _Part of [Feedback and self-improvement](../feedback.md)._
 
 Status: **Built** ([apply.ts](../../packages/cli/src/runs/apply.ts),
 [tests](../../packages/cli/test/apply.test.ts)). Why:
-[ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md).
+[ADR-110](../../decisions/ADR-110-keep-ork-sessions-apart.md).
 
 A project whose documents and agent files belong to people who work without Ork
 sets `knowledge: ork-only` in `project.yaml`

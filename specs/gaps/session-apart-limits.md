@@ -6,7 +6,7 @@ Status: **Open**: to decide at the next review, as the register's other entries.
 
 Found building the agent isolation, the `knowledge` rule, the write limit, the
 `quiet` practice and the attached context mapping
-([ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md),
+([ADR-110](../../decisions/ADR-110-keep-ork-sessions-apart.md),
 [rules](../project-rules/agents-and-knowledge.md),
 [the write limit](../runtime/write-limit.md),
 [context](../context/session-apart.md)). What was left simpler, or could not be

@@ -10,7 +10,7 @@ attached project's context references
 [harness](../../packages/core/test/harness.test.ts),
 [practices](../../packages/core/test/practices.test.ts),
 [context](../../packages/core/test/context.test.ts)). Why:
-[ADR-110](../../decisions/ADR-107-keep-ork-sessions-apart.md).
+[ADR-110](../../decisions/ADR-110-keep-ork-sessions-apart.md).
 
 A repository can run its own agent process (a documenter, an implementer, human
 review, a reviewer), and its contributors' agents read its `CLAUDE.md` or
