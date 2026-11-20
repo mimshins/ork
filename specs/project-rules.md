@@ -132,8 +132,9 @@ feedback item. The detail is in
 `links: off` leaves out the message tools for a node with no one to write to and
 refuses links ([messaging](./messaging/links.md)); `reading: open` lets sessions
 read through the shell, which the default `extract` refuses
-([shell reads](./runtime/extract-tool.md#shell-reads)). A workflow's value wins.
-`sessions.freshOver` is in [sessions rule](./project-rules/sessions.md).
+([shell reads](./runtime/extract-reading-rules.md#shell-reads)). A workflow's
+value wins. `sessions.freshOver` is in
+[sessions rule](./project-rules/sessions.md).
 
 ## Agents and knowledge
 

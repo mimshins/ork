@@ -29,7 +29,11 @@ the same refusal adds to one item instead of making its own. Only Ork's tools
 are recorded this way: what Bash, Read or another tool printed is never kept,
 and a run keeps the first message per tool, so `ork feedback show` lists the
 runs that hit it. If the same refusal keeps recurring, the node's prompt or
-context may need an example of that call.
+context may need an example of that call. `extract` takes what models usually
+send (a `glob`, `context` or several paths in `search`, a `path` on `count`), so
+a refusal that remains is a real mistake in the call, and a path that does not
+exist counts as one. Git's own warnings are not an Ork bug: a search that only
+warns is a result (`[no matches]`), not a failed call.
 
 Each one shows in the transcript as it happens:
 

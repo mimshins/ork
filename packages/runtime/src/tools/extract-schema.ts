@@ -38,10 +38,29 @@ const SearchStepSchema = stepSchema("search", {
   pattern: z
     .string()
     .min(1, "empty: give a pattern, or read the file to keep every line")
-    .describe("POSIX extended regular expression (git grep -E)."),
-  path: z.string().min(1).optional().describe("A file or folder. Default: ."),
+    .describe(
+      "POSIX extended regular expression (git grep -E); fixed text with regex: false.",
+    ),
+  path: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("A file or folder, or several separated by spaces. Default: ."),
+  glob: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Only files matching it: *.ts at any depth; with a / the whole path from your folder.",
+    ),
+  context: count.optional().describe("Lines around each hit. Default: 0."),
+  regex: z
+    .boolean()
+    .optional()
+    .describe("Default: true; false searches the pattern as fixed text."),
   ignoreCase: z.boolean().optional(),
-  maxMatches: lines.max(200).optional().describe("Default: 50."),
+  maxMatches: lines.optional().describe("Default: 50, at most 200."),
+  max: lines.optional().describe("Same as maxMatches."),
 });
 
 const FilesStepSchema = stepSchema("files", {
@@ -52,7 +71,7 @@ const FilesStepSchema = stepSchema("files", {
     .min(1)
     .optional()
     .describe(
-      "Matched against the whole path from your folder: **/*.ts, src/**/test/*.ts.",
+      "*.ts matches at any depth; with a / the whole path from your folder: src/**/test/*.ts.",
     ),
   max: lines.max(1000).optional().describe("Default: 200."),
 });
@@ -92,7 +111,11 @@ const MatchStepSchema = stepSchema("match", {
   context: count.optional().describe("Lines around each match. Default: 0."),
 });
 
-const CountStepSchema = stepSchema("count", { step: z.literal("count") });
+const CountStepSchema = stepSchema("count", {
+  step: z.literal("count"),
+  // Models send the producer's path here too; it has one meaning: none.
+  path: z.string().optional().describe("Ignored."),
+});
 
 const StepSchema = z.discriminatedUnion("step", [
   ReadStepSchema,

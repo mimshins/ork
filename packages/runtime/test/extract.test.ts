@@ -368,14 +368,33 @@ describe("extract says what to do instead", () => {
   });
 
   it("of an unknown field, listing the step's own fields", async () => {
-    const said = await call(repo(), {
-      steps: [{ step: "search", pattern: "x", regex: true }],
+    const cwd = repo();
+    const search = await call(cwd, {
+      steps: [{ step: "search", pattern: "x", foo: true }],
     });
-    expect(said.said).toBe(
+    const count = await call(cwd, {
+      steps: [read("a.ts"), { step: "count", foo: true }],
+    });
+    expect([search.said, count.said]).toEqual([
       theirs(
-        "steps[0]: unknown field `regex`; search takes: step, pattern, path, ignoreCase, maxMatches",
+        "steps[0]: unknown field `foo`; search takes: step, pattern, path, glob, context, regex, ignoreCase, maxMatches, max",
       ),
-    );
+      theirs("steps[1]: unknown field `foo`; count takes: step, path"),
+    ]);
+  });
+
+  it("of a missing search path, or a missing part of several, as the call's mistake", async () => {
+    const cwd = repo();
+    const one = await call(cwd, {
+      steps: [{ step: "search", pattern: "x", path: "packages/nope" }],
+    });
+    const part = await call(cwd, {
+      steps: [{ step: "search", pattern: "x", path: "a.ts nope" }],
+    });
+    expect([one, part]).toEqual([
+      { said: theirs("no such file or folder: packages/nope"), isError: true },
+      { said: theirs("no such file or folder: nope"), isError: true },
+    ]);
   });
 
   it("of a path outside the folder, without naming the folder", async () => {
@@ -406,6 +425,24 @@ describe("extract says what to do instead", () => {
       `${BAD_ARGUMENTS}\ninvalid regular expression: [a (`,
     );
     expect([search.isError, match.isError]).toEqual([true, true]);
+  });
+});
+
+describe("extract accepts the search options", () => {
+  it("regex, glob, context and max, through the real parse", async () => {
+    const result = await call(repo(), {
+      steps: [
+        {
+          step: "search",
+          pattern: "a|b",
+          regex: true,
+          glob: "*.ts",
+          context: 1,
+          max: 5,
+        },
+      ],
+    });
+    expect(result.isError).toBe(false);
   });
 });
 
@@ -461,5 +498,60 @@ describe("extract takes steps and programs leniently", () => {
     // One strict object per step, as before the tolerance.
     expect(steps.items.oneOf).toHaveLength(8);
     expect(JSON.stringify(steps.items)).not.toContain('"null"');
+  });
+});
+
+/** The fields the advertised JSON Schema gives the step named `name`. */
+const fieldsOf = (name: string): string[] => {
+  const steps = z
+    .array(z.object({ properties: z.record(z.string(), z.unknown()) }))
+    .parse(advertised().steps.items.oneOf);
+  const step = steps.find(
+    candidate =>
+      JSON.stringify(candidate.properties["step"]) ===
+      JSON.stringify({ type: "string", const: name }),
+  );
+  return Object.keys(step?.properties ?? {});
+};
+
+describe("extract takes what models send to search and count", () => {
+  it("advertises search's glob, context, regex and max, and count's path", () => {
+    expect([fieldsOf("search"), fieldsOf("count")]).toEqual([
+      [
+        "step",
+        "pattern",
+        "path",
+        "glob",
+        "context",
+        "regex",
+        "ignoreCase",
+        "maxMatches",
+        "max",
+      ],
+      ["step", "path"],
+    ]);
+  });
+
+  it("clamps maxMatches and max over 200 instead of refusing them", async () => {
+    const cwd = repo();
+    const maxMatches = await call(cwd, {
+      steps: [{ step: "search", pattern: "t", maxMatches: 500 }],
+    });
+    const max = await call(cwd, {
+      steps: [{ step: "search", pattern: "t", max: 1000 }],
+    });
+    expect([maxMatches.isError, max.isError]).toEqual([false, false]);
+    expect(maxMatches.said).toMatch(/^a\.ts:2: two\na\.ts:3: three\n/u);
+  });
+
+  it("ignores a path on count", async () => {
+    const result = await call(repo(), {
+      steps: [
+        { step: "search", pattern: "t" },
+        { step: "count", path: "x" },
+      ],
+    });
+    expect(result.said).toMatch(/^2 lines\n\[extract: /u);
+    expect(result.isError).toBe(false);
   });
 });

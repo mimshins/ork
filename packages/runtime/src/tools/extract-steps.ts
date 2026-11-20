@@ -1,10 +1,10 @@
 /**
  * @file The step engine of the `extract` tool (RFC-023, option 2a; RFC-025): a
- *   producer step (`read`, the git producers `search` and `git` in
- *   `extract-git.ts`, or `files` in `extract-files.ts`) yields text, and each
- *   cut after it (`head`, `tail`, `match`, `count`) narrows the text before it.
- *   Every path is contained and checked against the deny list (`contain.ts`).
- *   Paging, the result cap and the footer are the tool's.
+ *   producer step (`read`, the git producers `search` in `extract-search.ts`
+ *   and `git` in `extract-git.ts`, or `files` in `extract-files.ts`) yields
+ *   text, and each cut after it (`head`, `tail`, `match`, `count`) narrows the
+ *   text before it. Every path is contained and checked against the deny list
+ *   (`contain.ts`). Paging, the result cap and the footer are the tool's.
  */
 
 import { readFileSync, statSync } from "node:fs";
@@ -12,13 +12,8 @@ import { readFileSync, statSync } from "node:fs";
 import { type Denied, deniedRead, readable, Refused } from "./contain.ts";
 import { badStep, StepError } from "./extract-error.ts";
 import { type FilesStep, filesStep, regexLines } from "./extract-files.ts";
-import {
-  type GitStep,
-  gitStep,
-  linesOf,
-  type SearchStep,
-  searchStep,
-} from "./extract-git.ts";
+import { type GitStep, gitStep, linesOf } from "./extract-git.ts";
+import { type SearchStep, searchStep } from "./extract-search.ts";
 
 export type ReadStep = {
   step: "read";
@@ -42,7 +37,7 @@ export type MatchStep = {
 export type CutStep =
   | { step: "head"; lines: number }
   | { step: "tail"; lines: number }
-  | { step: "count" }
+  | { step: "count"; path?: string }
   | MatchStep;
 
 export type StepContext = {

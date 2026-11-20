@@ -212,4 +212,7 @@ benchmark ([register](./gaps.md#limits)).
 - [The two-way session client](./runtime/duplex-client.md)
 - [The `omp` driver](./runtime/omp.md)
 - [The `extract` tool](./runtime/extract-tool.md)
+  - [Who gets `extract`, and what it takes](./runtime/extract-arguments.md)
+  - [What `extract` keeps a session to](./runtime/extract-reading-rules.md)
+  - [How `extract` runs git, and what it returns](./runtime/extract-results.md)
 - [The write limit](./runtime/write-limit.md)

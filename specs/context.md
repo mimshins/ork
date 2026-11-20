@@ -91,7 +91,7 @@ so nothing is loaded twice.
   `readonly` node's default (RFC-028), and asks under `unlisted: ask`
   ([tool-rules.ts](../packages/core/src/run/tool-rules.ts), `readOnlyCommands`).
   Under `reading: extract`, `Grep` and `Glob` are denied unless the node names
-  them ([withheld tools](./runtime/extract-tool.md#withheld-tools));
+  them ([withheld tools](./runtime/extract-reading-rules.md#withheld-tools));
   `AskUserQuestion` is denied unless the node names it, and under
   `rules.agents: isolate` so are the agents of the workflow's other nodes
   ([rules](./project-rules/agents-and-knowledge.md)).

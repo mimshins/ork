@@ -43,7 +43,7 @@ sits beside in `tool-rules.ts`): a headless session cannot answer it, and asks
 through `ask_user`. It rides in every driver's deny list, and a driver without
 that tool ignores it. A node that names it in its own `tools.allow` or
 `tools.only` keeps it, as for `Grep` and `Glob`
-([withheld tools](../runtime/extract-tool.md#withheld-tools)).
+([withheld tools](../runtime/extract-reading-rules.md#withheld-tools)).
 
 ## The `quiet` practice
 

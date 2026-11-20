@@ -10,14 +10,21 @@ the carried-weight script
 was left simpler, or could not be checked:
 
 - **L414 · The step language is small.** RFC-025 added `programs` (up to 8 a
-  call), `files` with a glob, a `regex` form of `match` and `count`. Still: a
-  path in `search` and `git` is literal (`GIT_LITERAL_PATHSPECS`), so a glob
-  narrows only `files`. `search` and `files` go through git, so an ignored file
-  (`node_modules`, build output) is never searched or listed, and a folder that
-  is not a git repository can be read but not searched or listed (RFC-025's open
-  question). `git diff` compares a `base` (or range) with the working tree or
-  the index; two refs need a range. `read` always numbers its lines. A program
-  reads the output of one producer: joining two files' lines needs two programs.
+  call), `files` with a glob, a `regex` form of `match` and `count`; `search`
+  now takes a `glob` (a file filter), `context`, `regex`, `max` (for
+  `maxMatches`) and several whitespace-separated paths, and `count` ignores a
+  `path`, since models kept sending them. Still: a path in `search` and `git` is
+  literal (`GIT_LITERAL_PATHSPECS`), so a glob in a path narrows nothing;
+  `files` and `search` have `glob`, `git` has none, and several paths work only
+  in `search`. The `search` glob filters after git's 1 MiB output cap, so on a
+  huge tree it can miss hits (upgrade: pass the matching files as pathspecs).
+  With `context` above 0, context lines look like hits and the cap counts lines.
+  `search` and `files` go through git, so an ignored file (`node_modules`, build
+  output) is never searched or listed, and a folder that is not a git repository
+  can be read but not searched or listed (RFC-025's open question). `git diff`
+  compares a `base` (or range) with the working tree or the index; two refs need
+  a range. `read` always numbers its lines. A program reads the output of one
+  producer: joining two files' lines needs two programs.
 - **L422 · Git-reported names are matched case-sensitively.** Paths taken from
   git output (search hits, diff headers) are checked against the deny list as
   written, so a committed file with odd case (`.ENV` on a case-insensitive disk

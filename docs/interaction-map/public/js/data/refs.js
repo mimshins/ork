@@ -1398,7 +1398,7 @@ export const RUNTIME = {
   ),
   extractSpec: d(
     "specs/runtime/extract-tool.md",
-    "Spec: the `extract` tool, shell reads and withheld tools",
+    "Spec: the `extract` tool and its steps",
   ),
   shellReads: d(
     "packages/runtime/src/tools/shell-reads.ts",

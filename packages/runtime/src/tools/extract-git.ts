@@ -1,27 +1,18 @@
 /**
- * @file The git producers of the `extract` tool (RFC-023): `search` (`git grep
- *   -E`) and `git` (`diff`, `show`, `log`). Nothing runs a shell: git is run
- *   with `execFile`, fixed arguments, no pager, no external diff or textconv,
- *   no prompt, literal pathspecs, a timeout and an output cap. No value from a
- *   call goes in a flag position: a revision must look like one and is checked
- *   to name a commit, a pattern follows `-e`, a path follows `--`. A denied
- *   file's hits are dropped and its section of a diff is replaced by `[refused:
- *   <path>]`.
+ * @file The git runner of the `extract` tool (RFC-023), and its `git` producer
+ *   (`diff`, `show`, `log`); `search` (`extract-search.ts`) and `files` use the
+ *   runner. Nothing runs a shell: git is run with `execFile`, fixed arguments,
+ *   no pager, no external diff or textconv, no prompt, literal pathspecs, a
+ *   timeout and an output cap. No value from a call goes in a flag position: a
+ *   revision must look like one and is checked to name a commit, a pattern
+ *   follows `-e`, a path follows `--`. A denied file's hits are dropped and its
+ *   section of a diff is replaced by `[refused: <path>]`.
  */
 
 import { execFile } from "node:child_process";
 
 import { type Denied, readable, Refused } from "./contain.ts";
 import { badStep, gitError, REV_PATH, StepError } from "./extract-error.ts";
-
-export type SearchStep = {
-  step: "search";
-  /** POSIX extended regular expression (`git grep -E`). */
-  pattern: string;
-  path?: string;
-  ignoreCase?: boolean;
-  maxMatches?: number;
-};
 
 export type GitStep = {
   step: "git";
@@ -35,8 +26,6 @@ export type GitStep = {
 
 export const GIT_TIMEOUT_MS = 10_000;
 export const GIT_OUTPUT_CAP = 1024 * 1024;
-export const DEFAULT_MATCHES = 50;
-export const MAX_MATCHES = 200;
 export const DEFAULT_LOG = 20;
 export const MAX_LOG = 50;
 
@@ -58,7 +47,11 @@ const gitEnv = (): NodeJS.ProcessEnv => ({
   GIT_OPTIONAL_LOCKS: "0",
 });
 
-/** Runs git without a shell; exit 1 with nothing on stderr is a result. */
+/** Exit 1 with nothing but `warning:` lines on stderr: no match, not a failure. */
+const onlyWarnings = (stderr: string): boolean =>
+  linesOf(stderr.trim()).every(line => line.startsWith("warning:"));
+
+/** Runs git without a shell; exit 1 with only warnings on stderr is a result. */
 const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
   new Promise((resolve, reject) => {
     execFile(
@@ -86,7 +79,8 @@ const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
           resolve({ out: stdout, cut: true, code: 0 });
         } else if (error.killed === true) {
           reject(new StepError("git timed out after 10 s"));
-        } else if (error.code === 1 && stderr.trim() === "") {
+        } else if (error.code === 1 && onlyWarnings(stderr)) {
+          // Exit 1 with warnings only is no failure; it holds for every git step, and callers ignore `code`.
           resolve({ out: stdout, cut: false, code: 1 });
         } else if (error.code === "ENOENT") {
           reject(new StepError("git not found"));
@@ -99,7 +93,7 @@ const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
     );
   });
 
-/** The same runner, for the `files` producer and the `regex` cut. */
+/** The same runner, for the `search` and `files` producers and the `regex` cut. */
 export const runGit = git;
 /** Git's output without the trailing newline, saying when it was cut. */
 const noted = ({ out, cut }: GitResult): string =>
@@ -215,41 +209,6 @@ const refuseSections = (out: string, denied: Denied): string => {
     }
   }
   return kept.join("\n");
-};
-
-export const searchStep = async (
-  cwd: string,
-  step: SearchStep,
-  denied: Denied,
-): Promise<string> => {
-  const where = gitPath(cwd, step.path ?? ".", denied);
-  const result = await git(cwd, [
-    "grep",
-    "-E",
-    "-n",
-    "-I",
-    "--null",
-    "--untracked",
-    // A `color.*` setting would wrap names in escapes the deny check can't read.
-    "--no-color",
-    ...(step.ignoreCase === true ? ["-i"] : []),
-    "-e",
-    step.pattern,
-    "--",
-    where,
-  ]);
-  // `path\0line\0text`; a line cut short by the cap has fewer parts.
-  const hits = linesOf(result.out)
-    .map(line => line.split("\0"))
-    .filter(parts => parts.length >= 3 && !denied(parts[0] ?? ""))
-    .map(([file, no, ...text]) => `${file}:${no}: ${text.join("\0")}`);
-  const max = Math.min(step.maxMatches ?? DEFAULT_MATCHES, MAX_MATCHES);
-  const more = hits.length - max;
-  return [
-    ...(hits.length === 0 ? ["[no matches]"] : hits.slice(0, max)),
-    ...(more > 0 ? [`[${more} more matches: narrow the pattern or path]`] : []),
-    ...(result.cut ? ["[git output cut at 1 MiB]"] : []),
-  ].join("\n");
 };
 
 /** Diff options no repository config can change. */

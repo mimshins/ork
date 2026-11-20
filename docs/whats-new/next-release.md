@@ -21,6 +21,19 @@ What lands on `main` is listed here until it ships.
   ([Keys and accessibility](../guides/browser-view/keys-and-accessibility.md)).
   Upgrade: none required.
 
+- **`extract` takes what models keep sending.** `search` now accepts a `glob` (a
+  file filter), `context` (lines around each hit), `regex` (`false` searches
+  plain text), `max` (for `maxMatches`; over 200 is cut to 200) and several
+  space-separated paths in `path`; `count` accepts and ignores a `path`. A
+  `search` path that does not exist is refused as
+  `no such file or folder: <path>` and filed as the agent's mistake, not an Ork
+  bug, and a search where git only warns returns `[no matches]` instead of
+  failing
+  ([skills and context](../guides/skills-and-context.md#reading-part-of-a-file-extract),
+  [reading feedback](../guides/feedback/reading.md)). Upgrade: a `files` `glob`
+  without a `/` (`*.ts`) now matches names at any depth, so it can return more
+  files than before; add the folder (`src/*.ts`) to match the whole path.
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

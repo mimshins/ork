@@ -18,9 +18,9 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   deny covers all three read tools, so none is offered and the node reads
   through `extract`, which applies the patterns in Ork's process: this holds
   `readDenies: true`. Under `reading: extract`, `Grep` and `Glob` are withheld
-  ([extract](./extract-tool.md#withheld-tools)). With nothing left the list is
-  `read`, denied by the overlay and the guard (an empty `--tools` was not
-  measured). MCP tools are not hidden by `--tools` (measured), hence the
+  ([extract](./extract-reading-rules.md#withheld-tools)). With nothing left the
+  list is `read`, denied by the overlay and the guard (an empty `--tools` was
+  not measured). MCP tools are not hidden by `--tools` (measured), hence the
   per-tool approvals.
 - **The guard** is the node's rules per call: `guard.mjs`, a default export that
   registers a `tool_call` handler, with the matcher shared with `command-code`'s

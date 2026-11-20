@@ -1,12 +1,15 @@
 /**
  * @file Tests for the `extract` step engine against a temporary git repository:
- *   `read` ranges, `search` through `git grep -E`, `git` diff/show/log with a
- *   denied file's section refused, the cuts, and the refusals of a flag-shaped
- *   ref, git's pathspec magic, a blob id and a path out of the folder.
+ *   `read` ranges, `search` through `git grep -E` (with what models send: a
+ *   glob, context, several paths, `max`, fixed text, git's warnings), `git`
+ *   diff/show/log with a denied file's section refused, the cuts, and the
+ *   refusals of a flag-shaped ref, git's pathspec magic, a blob id and a path
+ *   out of the folder.
  */
 
 import { execFileSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -16,8 +19,9 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { SearchStep } from "../src/tools/extract-search.ts";
 import {
   type CutStep,
   type ProducerStep,
@@ -178,6 +182,169 @@ describe("search", () => {
     const cwd = mkdtempSync(path.join(tmpdir(), "ork-nogit-"));
     expect(await said(cwd, [{ step: "search", pattern: "x" }])).toBe(
       "error: not a git repository",
+    );
+  });
+});
+
+/** What a search of `pattern` with `more` fields says. */
+const search = (
+  cwd: string,
+  pattern: string,
+  more: Omit<Partial<SearchStep>, "step" | "pattern"> = {},
+): Promise<string> => said(cwd, [{ step: "search", pattern, ...more }]);
+
+/**
+ * `c/` with hits at lines 2 and 9 of `a.txt`, then a denied file, then one
+ * more.
+ */
+const contextRepo = (): string => {
+  const cwd = repo();
+  const lines = Array.from({ length: 10 }, (_, at) => `l${String(at + 1)}`);
+  lines[1] = "hit";
+  lines[8] = "hit";
+  write(cwd, "c/a.txt", `${lines.join("\n")}\n`);
+  write(cwd, "c/b.key", "x\nhit\nx\n");
+  write(cwd, "c/c.txt", "hit\n");
+  return cwd;
+};
+
+/** Puts a `git` first on `PATH` that writes `stderr` and exits 1. */
+const shimGit = (stderr: string): void => {
+  const bin = mkdtempSync(path.join(tmpdir(), "ork-shim-"));
+  const shim = path.join(bin, "git");
+  writeFileSync(shim, `#!/bin/sh\nprintf '%s\\n' '${stderr}' >&2\nexit 1\n`);
+  chmodSync(shim, 0o755);
+  vi.stubEnv("PATH", `${bin}${path.delimiter}${process.env["PATH"] ?? ""}`);
+};
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("search takes what models send", () => {
+  it("keeps the files a glob matches: a name at any depth, or with / the whole path", async () => {
+    const cwd = repo();
+    write(cwd, "sub/deeper/c.ts", "hello c\n");
+    write(cwd, "src/x/d.ts", "hello d\n");
+    expect(
+      (await search(cwd, "hello", { glob: "*.ts" })).split("\n").toSorted(),
+    ).toEqual([
+      "a.ts:3: hello three",
+      "src/x/d.ts:1: hello d",
+      "sub/deeper/c.ts:1: hello c",
+    ]);
+    expect(await search(cwd, "hello", { glob: "src/**/*.ts" })).toBe(
+      "src/x/d.ts:1: hello d",
+    );
+  });
+
+  it("gives context lines, with -- between runs and files, and none of a denied file", async () => {
+    const cwd = contextRepo();
+    expect(await search(cwd, "hit", { path: "c", context: 2 })).toBe(
+      [
+        "c/a.txt:1: l1",
+        "c/a.txt:2: hit",
+        "c/a.txt:3: l3",
+        "c/a.txt:4: l4",
+        "--",
+        "c/a.txt:7: l7",
+        "c/a.txt:8: l8",
+        "c/a.txt:9: hit",
+        "c/a.txt:10: l10",
+        "--",
+        "c/c.txt:1: hit",
+      ].join("\n"),
+    );
+  });
+
+  it("caps context lines as lines and says how many more there were", async () => {
+    const cwd = contextRepo();
+    expect(await search(cwd, "hit", { path: "c", context: 2, max: 5 })).toBe(
+      [
+        "c/a.txt:1: l1",
+        "c/a.txt:2: hit",
+        "c/a.txt:3: l3",
+        "c/a.txt:4: l4",
+        "--",
+        "c/a.txt:7: l7",
+        "[4 more lines: narrow the pattern or path]",
+      ].join("\n"),
+    );
+  });
+
+  it("takes max as maxMatches, lets maxMatches win, and clamps both to 200", async () => {
+    const cwd = repo();
+    write(cwd, "many.txt", "o\n".repeat(300));
+    const capped = "[100 more matches: narrow the pattern or path]";
+    expect([
+      await search(cwd, "o", { max: 2 }),
+      await search(cwd, "o", { maxMatches: 2, max: 4 }),
+    ]).toEqual([
+      await search(cwd, "o", { maxMatches: 2 }),
+      await search(cwd, "o", { maxMatches: 2 }),
+    ]);
+    const clamped = [
+      await search(cwd, "o", { path: "many.txt", maxMatches: 500 }),
+      await search(cwd, "o", { path: "many.txt", max: 1000 }),
+    ].map(text => text.split("\n"));
+    expect(clamped.map(lines => [lines.length, lines.at(-1)])).toEqual([
+      [201, capped],
+      [201, capped],
+    ]);
+  });
+
+  it("takes regex: true as the default and regex: false as fixed text", async () => {
+    const cwd = repo();
+    write(cwd, "p.txt", "f(x)\n");
+    expect(await search(cwd, "^hel+o", { regex: true })).toBe(
+      await search(cwd, "^hel+o"),
+    );
+    expect(await search(cwd, "f(", { regex: false })).toBe("p.txt:1: f(x)");
+  });
+
+  it("searches several paths separated by spaces, or one path with a space in it", async () => {
+    const cwd = repo();
+    write(cwd, "my dir/n.txt", "hello n\n");
+    expect(await search(cwd, "hello", { path: "sub a.ts" })).toBe(
+      "a.ts:3: hello three\nsub/b.txt:1: hello b",
+    );
+    expect(await search(cwd, "hello", { path: "my dir" })).toBe(
+      "my dir/n.txt:1: hello n",
+    );
+  });
+
+  it("refuses a missing path, or a missing, denied or outside part, naming it", async () => {
+    const cwd = repo();
+    const refusals = await Promise.all(
+      ["nope", "sub nope", "sub .env", "sub ../x", "sub :(top)x"].map(where =>
+        run(cwd, [{ step: "search", pattern: "x", path: where }]),
+      ),
+    );
+    expect(refusals).toEqual([
+      { ok: false, error: "no such file or folder: nope", byArguments: true },
+      { ok: false, error: "no such file or folder: nope", byArguments: true },
+      { ok: false, error: "refused: .env", byArguments: true },
+      {
+        ok: false,
+        error:
+          "refused: ../x (outside the folder): extract reads only inside your folder; give a path relative to it",
+        byArguments: true,
+      },
+      {
+        ok: false,
+        error: "refused: :(top)x (a path can't start with `:`)",
+        byArguments: true,
+      },
+    ]);
+  });
+
+  it("takes git's exit 1 with only warnings as no match, and other stderr as a failure", async () => {
+    const cwd = repo();
+    shimGit("warning: could not open directory 'x/': Permission denied");
+    expect(await search(cwd, "x")).toBe("[no matches]");
+    shimGit("fatal: something broke");
+    expect(await search(cwd, "x")).toBe(
+      "error: git failed: fatal: something broke",
     );
   });
 });
@@ -402,6 +569,12 @@ describe("files (RFC-025)", () => {
     );
     expect(await said(cwd, [{ step: "files", glob: "*.md" }])).toBe(
       "[no files]",
+    );
+    expect(await said(cwd, [{ step: "files", glob: "*.txt" }])).toBe(
+      "sub/b.txt\nsub/deeper/c.txt",
+    );
+    expect(await said(cwd, [{ step: "files", glob: "sub/*.txt" }])).toBe(
+      "sub/b.txt",
     );
     expect(await said(cwd, [{ step: "files", path: "sub", max: 1 }])).toBe(
       "sub/b.txt\n[1 more files: narrow the glob or path]",

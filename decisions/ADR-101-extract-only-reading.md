@@ -38,7 +38,7 @@ Option B of RFC-025: prevention, plus a richer `extract`, on `claude-code`,
 
 The rule is `rules.reading` (`extract`, the default, or `open`) in
 `project.yaml` or a workflow's `rules:`. The detail is in
-[the `extract` spec](../specs/runtime/extract-tool.md#shell-reads),
+[the `extract` spec](../specs/runtime/extract-reading-rules.md#shell-reads),
 [tool-rules.ts](../packages/core/src/run/tool-rules.ts) and
 [shell-reads.ts](../packages/runtime/src/tools/shell-reads.ts).
 

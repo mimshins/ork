@@ -13,14 +13,15 @@ import path from "node:path";
 
 import { type Denied, readable } from "./contain.ts";
 import { linesOf, runGit } from "./extract-git.ts";
+import { matchesGlob } from "./extract-glob.ts";
 
 export type FilesStep = {
   step: "files";
   /** A folder; default `.`. */
   path?: string;
   /**
-   * Matched against the whole path relative to the folder; `**` crosses
-   * folders.
+   * With a `/`, matched against the whole path relative to the folder (`**`
+   * crosses folders); without one, against the name at any depth.
    */
   glob?: string;
   max?: number;
@@ -50,7 +51,7 @@ export const filesStep = async (
   const files = result.out
     .split("\0")
     .filter(file => file !== "" && !denied(file))
-    .filter(file => glob === undefined || path.posix.matchesGlob(file, glob))
+    .filter(file => glob === undefined || matchesGlob(file, glob))
     .toSorted();
   const max = Math.min(step.max ?? DEFAULT_FILES, MAX_FILES);
   const more = files.length - max;

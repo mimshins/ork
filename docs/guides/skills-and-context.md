@@ -154,15 +154,15 @@ one to six steps: a step that produces text, then cuts of the text before them.
 A call runs one program (`steps`) or up to eight (`programs`, each result under
 its own header), so several files or searches cost one turn.
 
-| Step           | What it does                                                                                                |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| `read`         | A file's lines `from` to `to` (1-based, inclusive), each with its number                                    |
-| `files`        | The folder's files, tracked and untracked, not ignored; a `glob` such as `**/*.test.ts` narrows them        |
-| `search`       | A `pattern` (POSIX extended regex) in a file or folder; up to `maxMatches` hits, 50 unless set              |
-| `git`          | `diff` (with `base`, `staged` or `path`), `show` (a `ref`) or `log` (up to 50 commits); no patches in `log` |
-| `head`, `tail` | The first or last `lines` lines of the text before it                                                       |
-| `match`        | The lines holding a literal `text` (a POSIX regex with `regex: true`), with `context` lines around each     |
-| `count`        | How many lines the text before it has                                                                       |
+| Step           | What it does                                                                                                                                                                                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read`         | A file's lines `from` to `to` (1-based, inclusive), each with its number                                                                                                                                                                                                          |
+| `files`        | The folder's files, tracked and untracked, not ignored; a `glob` narrows them: `*.ts` matches names at any depth, `src/**/*.ts` the whole path                                                                                                                                    |
+| `search`       | A `pattern` (POSIX extended regex) in a file, a folder or several (`"path":"src docs"`); up to `maxMatches` hits (or `max`), 50 unless set, 200 at most; also a `glob`, `context` lines around each hit, and `regex: false` for plain text; a path that does not exist is refused |
+| `git`          | `diff` (with `base`, `staged` or `path`), `show` (a `ref`) or `log` (up to 50 commits); no patches in `log`                                                                                                                                                                       |
+| `head`, `tail` | The first or last `lines` lines of the text before it                                                                                                                                                                                                                             |
+| `match`        | The lines holding a literal `text` (a POSIX regex with `regex: true`), with `context` lines around each                                                                                                                                                                           |
+| `count`        | How many lines the text before it has (a `path` is ignored)                                                                                                                                                                                                                       |
 
 For example,
 `{"steps":[{"step":"git","op":"diff","base":"main"},{"step":"match","text":"harness","context":3}]}`
