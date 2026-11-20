@@ -56,7 +56,7 @@ const installedCli = (
     ...rest
   }: Pick<
     AgentDriver,
-    "label" | "capabilities" | "proven" | "onePerCheckout"
+    "label" | "capabilities" | "proven" | "onePerCheckout" | "models"
   > & {
     /** The oldest version Ork works with, and why: older is a warning. */
     min?: { version: string; why: string };
@@ -229,6 +229,28 @@ const ompModels = (stdout: string): string | null => {
 };
 
 /**
+ * The `selector` of each model `omp models --json` lists (an entry has
+ * `provider`, `id` and `selector`), else `provider/id`; `null` when none.
+ */
+const ompSelectors = (stdout: string): string[] | null => {
+  const models = field(parseJson(stdout), "models");
+  if (!Array.isArray(models)) return null;
+  const selectors = models.flatMap(model => {
+    const selector = field(model, "selector");
+    if (typeof selector === "string" && selector !== "") return [selector];
+    const provider = field(model, "provider");
+    const id = field(model, "id");
+    return typeof provider === "string" &&
+      typeof id === "string" &&
+      provider !== "" &&
+      id !== ""
+      ? [`${provider}/${id}`]
+      : [];
+  });
+  return selectors.length === 0 ? null : selectors;
+};
+
+/**
  * RFC-026's descriptor, proven or not: the doctor check reads `proven` when it
  * is made, so a test of the proven check needs its own copy.
  */
@@ -243,6 +265,10 @@ export const ompDriver = (proven: boolean): AgentDriver =>
     },
     // `omp` has no status command: the models its logins reach, only counted.
     loginOutput: { args: ["models", "--json"], read: ompModels },
+    models: async exec => {
+      const listed = await exec("omp", ["models", "--json"]);
+      return listed.ok ? ompSelectors(listed.stdout) : null;
+    },
     capabilities: {
       questions: true,
       // `omp --mode rpc` asks Ork about a tool missing from the approval map.

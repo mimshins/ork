@@ -20,8 +20,9 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   `readDenies: true`. Under `reading: extract`, `Grep` and `Glob` are withheld
   ([extract](./extract-reading-rules.md#withheld-tools)). With nothing left the
   list is `read`, denied by the overlay and the guard (an empty `--tools` was
-  not measured). MCP tools are not hidden by `--tools` (measured), hence the
-  per-tool approvals.
+  not measured). Ork's tools are not hidden by `--tools` (measured for the MCP
+  route they used to take; not re-measured for host tools), hence the per-tool
+  approvals, keyed `ork_<tool>` (allow, or deny when the node's rules deny it).
 - **The guard** is the node's rules per call: `guard.mjs`, a default export that
   registers a `tool_call` handler, with the matcher shared with `command-code`'s
   mod and Codex's hook
@@ -29,8 +30,11 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   It sees `{ type, toolName, toolCallId, input }` and refuses with
   `{ block: true, reason }`; the model reads the reason. For each call, inside a
   `try`, in this order:
-  1. Map the name: a built-in by table, `mcp__ork_session_ork_<tool>` to
-     `mcp__ork__<tool>`; **any other name is refused, `--yolo` included**.
+  1. Map the name: a built-in by table, a host tool `ork_<tool>` to
+     `mcp__ork__<tool>`; **any other name is refused, `--yolo` included** (a
+     name that starts with `mcp__` among them). Whether `omp` fires `tool_call`
+     for a host tool is not measured ([L536](../gaps/omp-limits.md)): if it does
+     not, the overlay's per-tool `deny` is the wall.
   2. Once the `stopped` marker exists, refuse everything.
   3. Refuse an address with a scheme and a path in Ork's private folder; refuse
      an `edit` or `write` whose real path is outside the worktree, or that names
@@ -84,10 +88,10 @@ the overlay lists as denied.
 
 `omp` has a hold, as `claude-code` has, and defers like it (ADR-041,
 [run control](../run-control.md)): `ompAdapter.hold` makes the session runner
-serve `/hold` beside `/mcp`, on the same local server and token, when the
-session has a hold port (a run's session), and the wiring gets
-`endpoint.holdUrl`. A session with no hold port sends no hold request and takes
-no `heavy` slot.
+serve `/hold` on its local server and token (with no tools beside it: Ork's
+tools are host tools), when the session has a hold port (a run's session), and
+the wiring gets `endpoint.holdUrl`. A session with no hold port sends no hold
+request and takes no `heavy` slot.
 
 - **The request.** After step 4, the guard sends `POST <holdUrl>` with the
   bearer token and `{ hook_event_name: "PreToolUse", tool_name, tool_input }`
@@ -108,7 +112,14 @@ no `heavy` slot.
   ([the client](./duplex-client.md#what-the-client-does)). On `ork continue`
   (and a free `heavy` slot) a new leg runs `omp --mode rpc --resume <id>` with
   `--session-dir` and sends one message, asking the model to make the held call
-  again, never the spec's brief. Only a resume after a deferral sends that
+  again, never the spec's brief. The message says why the call did not run: the
+  runner keeps the reason the hold hook gave (`"pause"` or `"slot"`) in
+  `LegContext.deferredFor`, and the codec picks the words. A pause says Ork
+  paused the node and it has continued; a slot says the call waited for a free
+  `heavy` slot, none came in time, the slot is now taken, and to make the same
+  call again now. (The guard's own refusal text, which the model reads first,
+  still says "Ork paused this node" on a slot deferral:
+  [L540](../gaps/omp-limits.md).) Only a resume after a deferral sends that
   message; any other resume (a re-entered leader, a late message, a failed-check
   retry, `ork resume`) sends the node's own prompt, as on every driver. The
   session's usage over both legs is combined as for `claude-code`; a stop while
@@ -124,13 +135,13 @@ no `heavy` slot.
 - **`heavy` slots.** The same request takes the slot (`heavy.before` runs for a
   `Bash` call after the pause check, within the same window); a slot that does
   not come in time is the `defer` answer: the leg ends deferred, and once
-  `heavy.ready()` says a slot is free it resumes with a message asking the model
-  to make the call again. The guard frees it **at once** with a `PostToolUse`
-  request from its `tool_result` handler, which `omp` fires after a call that
-  ran (including one that returned `isError`). It is sent only for `Bash` calls:
-  the hook frees one slot whatever the tool, so a `Read`'s after-call must not
-  free a running `Bash`'s slot. A call refused first fires none, so the
-  session's next call and its end are the backstop
+  `heavy.ready()` says a slot is free it resumes with a message saying the call
+  waited for a slot and asking the model to make it again. The guard frees it
+  **at once** with a `PostToolUse` request from its `tool_result` handler, which
+  `omp` fires after a call that ran (including one that returned `isError`). It
+  is sent only for `Bash` calls: the hook frees one slot whatever the tool, so a
+  `Read`'s after-call must not free a running `Bash`'s slot. A call refused
+  first fires none, so the session's next call and its end are the backstop
   ([machine](../machine.md#a-sessions-bash-call)). Two calls of one message are
   asked one at a time and end in either order, so the request is keyed by
   `toolCallId`.

@@ -1,22 +1,16 @@
 /**
  * @file `omp` sessions on the fake `omp` (RFC-026): a leg fails closed before
- *   any model line without its guard, its overlay or Ork's server; a message
- *   sent mid-leg is a `steer` frame to the same leg; an approval `omp` asks
- *   reaches the human channel and is answered `Approve` or `Deny`; a session
- *   ends at `session_settled`, leaving no process; a fork carries on under its
- *   new id; an unknown session ends with `omp`'s words; the reading rule
- *   (RFC-025) in each mode; the token in no argument, variable or event; the
- *   checkout holds only what the session wrote; and the usage, cost, context
- *   and Ork's ledger of a session.
+ *   any model line without its guard or its overlay; a message sent mid-leg is
+ *   a `steer` frame to the same leg; an approval `omp` asks reaches the human
+ *   channel and is answered `Approve` or `Deny`; a session ends at
+ *   `session_settled`, leaving no process; a fork carries on under its new id;
+ *   an unknown session ends with `omp`'s words; the reading rule (RFC-025) in
+ *   each mode; the token in no argument, variable or event; the checkout holds
+ *   only what the session wrote; and the usage, cost, context and Ork's ledger
+ *   of a session.
  */
 
-import {
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -36,9 +30,6 @@ import {
   unfenced,
   valueOf,
 } from "./fixtures/omp-session.ts";
-
-/** An address where nothing answers. */
-const DEAD = "http://127.0.0.1:1/mcp";
 
 /** The arguments of the leg at `at`; none when there is no such leg. */
 const argsAt = (legs: readonly Recorded[], at: number): string[] =>
@@ -78,7 +69,7 @@ const holdOf = () =>
   }).forNode("om");
 
 describe("an omp leg fails closed", () => {
-  it.each<[string, (dir: string, url: string) => void, string]>([
+  it.each<[string, (dir: string) => void, string]>([
     [
       "a guard that is missing",
       dir => {
@@ -94,14 +85,6 @@ describe("an omp leg fails closed", () => {
       "Trusted extension failed to load",
     ],
     [
-      "Ork's server not answering",
-      (dir, url) => {
-        const file = path.join(dir, "plugin", ".mcp.json");
-        writeFileSync(file, readFileSync(file, "utf8").replace(url, DEAD));
-      },
-      "MCP servers not ready",
-    ],
-    [
       "a missing overlay",
       dir => {
         rmSync(path.join(dir, "overlay.yml"));
@@ -110,8 +93,8 @@ describe("an omp leg fails closed", () => {
     ],
   ])("ends before any model line on %s", async (_case, change, words) => {
     const { session, calls } = played({
-      adapt: tampered((dir, endpoint) => {
-        change(dir, endpoint.url);
+      adapt: tampered(dir => {
+        change(dir);
       }),
     });
     const events = await collect(session);
@@ -266,13 +249,17 @@ describe("resuming and forking an omp session", () => {
     });
     const outcome = outcomeOf(events);
     expect(textsOf(events)).toEqual(["got: Also add tests"]);
-    expect(frames()).toEqual(["get_state", "prompt", "steer"]);
+    expect(frames()).toEqual([
+      "get_state",
+      "set_host_tools",
+      "prompt",
+      "steer",
+    ]);
     const FLAGS = [
       "--append-system-prompt",
       "--session-dir",
       "--config",
       "--trusted-extension",
-      "--plugin-dir",
       "--max-cost",
     ];
     expect(
@@ -280,7 +267,6 @@ describe("resuming and forking an omp session", () => {
     ).toEqual([
       [
         "# Ork",
-        expect.any(String),
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -389,7 +375,7 @@ describe("the reading rule on omp (RFC-025)", () => {
 
 // Last: the tests above run in order, so every session has ended.
 describe("every leg of this file's sessions", () => {
-  it("ran with the guard, the plugin and the overlay", () => {
+  it("ran with the guard and the overlay", () => {
     expect(unfenced()).toEqual([]);
   });
 });

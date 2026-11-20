@@ -19,7 +19,11 @@ import type {
   Frame,
   FrameRequest,
 } from "../src/adapter.ts";
-import { OMP_RESUME_MESSAGE, ompRpcCodec } from "../src/adapters/omp-rpc.ts";
+import {
+  OMP_PAUSE_MESSAGE,
+  OMP_SLOT_MESSAGE,
+  ompRpcCodec,
+} from "../src/adapters/omp-rpc.ts";
 
 const specOf = (over: Partial<SessionSpec> = {}): SessionSpec => ({
   nodeId: "omp",
@@ -135,6 +139,86 @@ describe("the omp rpc codec", () => {
     expect(new Set(requests.map(each => each.id)).size).toBe(2);
   });
 
+  it("offers the leg's host tools between the state and the prompt, on a resumed leg too", () => {
+    const spec = specOf({ resume: "s1", prompt: "Round 2" });
+    const requests = ompRpcCodec(spec).open(spec, {
+      ...leg,
+      hostTools: [
+        {
+          name: "ork_report",
+          description: "Report",
+          parameters: { type: "object" },
+          call: () => Promise.resolve({ content: [] }),
+        },
+      ],
+    });
+    expect(requests.map(each => each.frame)).toEqual([
+      { id: requests[0]?.id, type: "get_state" },
+      {
+        id: requests[1]?.id,
+        type: "set_host_tools",
+        tools: [
+          {
+            name: "ork_report",
+            description: "Report",
+            parameters: { type: "object" },
+          },
+        ],
+      },
+      { id: requests[2]?.id, type: "prompt", message: "Round 2" },
+    ]);
+  });
+
+  it("gives a refused `set_host_tools` its error, so the leg's start fails", () => {
+    const codec = ompRpcCodec(specOf());
+    const id = idAt(codec.open(specOf(), { ...leg, hostTools: [] }), 1);
+    expect(
+      codec.decode({
+        type: "response",
+        id,
+        command: "set_host_tools",
+        success: false,
+        error: "unknown command",
+      }),
+    ).toEqual({ events: [], reply: { id, error: "unknown command" } });
+  });
+
+  it("reads a host tool call by its id and answers it with a `host_tool_result`", () => {
+    const codec = opened();
+    expect(
+      codec.decode({
+        type: "host_tool_call",
+        id: "h1",
+        toolCallId: "t1",
+        toolName: "ork_report",
+        arguments: { summary: "done" },
+      }),
+    ).toEqual({
+      events: [],
+      call: { id: "h1", tool: "ork_report", args: { summary: "done" } },
+    });
+    const call = { id: "h1", tool: "ork_report", args: {} };
+    expect(
+      codec.callResult(call, { content: [{ type: "text", text: "kept" }] }),
+    ).toEqual({
+      type: "host_tool_result",
+      id: "h1",
+      result: { content: [{ type: "text", text: "kept" }] },
+    });
+    expect(
+      codec.callResult(call, {
+        content: [{ type: "text", text: "Ork tool failed:\nno" }],
+        isError: true,
+      }),
+    ).toMatchObject({ result: { isError: true } });
+  });
+
+  it("ignores a host tool call with no id", () => {
+    expect(
+      opened().decode({ type: "host_tool_call", toolName: "ork_report" }),
+    ).toEqual({ events: [] });
+  });
+
   it("starts the session at the id `get_state` answers with", () => {
     const codec = ompRpcCodec(specOf());
     const requests = codec.open(specOf(), leg);
@@ -158,16 +242,31 @@ describe("the omp rpc codec", () => {
     expect(prompt?.frame).toMatchObject({ type: "prompt", message: "Round 2" });
   });
 
-  it("resumes a deferral with a message to make the held call again, never the prompt", () => {
+  it("resumes a pause's deferral with a message to make the held call again, never the prompt", () => {
     const spec = specOf({ resume: "s1", prompt: "Round 2" });
     const [, prompt] = ompRpcCodec(spec).open(spec, {
       ...leg,
-      resumesDeferral: true,
+      deferredFor: "pause",
     });
     expect(prompt?.frame).toMatchObject({
       type: "prompt",
-      message: OMP_RESUME_MESSAGE,
+      message: OMP_PAUSE_MESSAGE,
     });
+    expect(OMP_PAUSE_MESSAGE).toMatch(/^Ork paused this node/u);
+  });
+
+  it("resumes a slot's deferral saying the call waited for a heavy slot, not a pause", () => {
+    const spec = specOf({ resume: "s1", prompt: "Round 2" });
+    const [, prompt] = ompRpcCodec(spec).open(spec, {
+      ...leg,
+      deferredFor: "slot",
+    });
+    expect(prompt?.frame).toMatchObject({
+      type: "prompt",
+      message: OMP_SLOT_MESSAGE,
+    });
+    expect(OMP_SLOT_MESSAGE).toContain("slot is now taken");
+    expect(OMP_SLOT_MESSAGE).not.toMatch(/paused/u);
   });
 
   it("asks a fork its question", () => {

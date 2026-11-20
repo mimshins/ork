@@ -43,9 +43,11 @@ what the driver is built to do.
   say it is ready (measured on a fresh home), so a stretch that resumes pays
   that again.
 - Ork's tools (`ask_user`, `delegate`, messages, `extract`, `report`) reach it
-  through a private plugin that carries Ork's tool server. A node's own `mcp`
-  servers, `agent.subagent` nodes and `maxTurns` are refused, so `ork onboard`
-  and `ork:security-audit`, whose workflows set `maxTurns`, do not run on `omp`.
+  as host tools over the pipe the session already has: Ork offers them when the
+  stretch starts (`ork_ask_user`, `ork_report` and so on) and runs each call
+  itself, so no plugin or tool server is involved. A node's own `mcp` servers,
+  `agent.subagent` nodes and `maxTurns` are refused, so `ork onboard` and
+  `ork:security-audit`, whose workflows set `maxTurns`, do not run on `omp`.
 - It reports dollars and tokens
   ([what the dollars mean](#what-the-dollars-mean)).
 - A node is
@@ -99,10 +101,13 @@ make.
   resumes the session (`omp --mode rpc --resume`) with one message asking the
   model to make the held call again (any other resume, such as after
   `ork resume` or a late message, sends the node's own prompt, as on every
-  driver). A pause of any length costs one resume, with a cold prompt cache, not
-  one model request for each window. The session's usage across both stretches
-  is added up for the node's budgets. The resume waits for `omp`'s start-up
-  (above) and for a `heavy` slot if the call needs one.
+  driver). If the call was instead waiting for a free slot for a `heavy`
+  command, the message says that: the call waited for a slot, the slot is now
+  taken, and the model should make the same call again. A pause of any length
+  costs one resume, with a cold prompt cache, not one model request for each
+  window. The session's usage across both stretches is added up for the node's
+  budgets. The resume waits for `omp`'s start-up (above) and for a `heavy` slot
+  if the call needs one.
 - **`ork stop`.** A held call never runs: the session ends `interrupted`, with
   no report. Ork tells `omp` to abort, then closes it and ends the process if it
   is still running after a short wait. A stop while the stretch is ended at a
@@ -127,11 +132,23 @@ Run again; if it repeats, report it.
 **`Model "…" not found`.** The `omp.<model>` name matches nothing for your
 logins; run `omp models` to see what does.
 
+**`node … names model …, which is not in omp models`.** This one comes from
+`ork run` (and `ork resume`) before anything starts, not from `omp`. When a node
+names an exact `provider/model` (`omp.openai/gpt-5.2`, or `driver: omp` with
+`model: openai/gpt-5.2`) and no entry of `omp models --json` has it as its
+`selector`, the run is refused, naming the node and the model. Write a selector
+that `omp models` shows. A fuzzy name (`omp.opus`), a role, a templated model
+and a node on another driver are not checked, and nothing is said when
+`omp models --json` fails, times out or lists nothing; `omp` itself then
+decides. Ork runs the command at most once per run, and `ork validate` never
+runs it, so it stays offline.
+
 **`Session … not found`.** `ork resume` found no session file; they are kept in
 `~/.ork/omp/sessions/` ([where Ork keeps things](../where-ork-keeps-things.md)).
 
-**`MCP servers not ready`.** Ork's tool server did not answer, so the stretch
-ended instead of running without Ork's tools.
+**`omp refused the session's start: …`.** `omp` rejected Ork's host tools when
+the stretch began, so it ended instead of running without them. The line has
+what `omp` said; check that your `omp` is the version Ork was built against.
 
 **`unknown flag`.** Your `omp` is older or newer than the one Ork was built
 against. Update `omp`, or report it.
@@ -154,11 +171,13 @@ settings Ork does not name, such as your model roles. Ork's own instructions are
 passed on every stretch, since `omp` does not keep them when a session resumes.
 
 Ork keeps what it makes for the session in a private folder outside your project
-(mode `0700`, files `0600`), including a copy of its token, and removes it when
-the session ends. `omp` keeps its session files, whole transcripts, in
-`~/.ork/omp/sessions/`, and Ork keeps a small ledger of what each session has
-spent in `~/.ork/omp/spent/`. **Neither is pruned**: delete them yourself when
-you no longer resume those sessions.
+(mode `0700`, files `0600`) and removes it when the session ends. It holds the
+guard and the settings file, with no plugin folder, and one copy of Ork's token,
+in `hold.json`. That token opens only the endpoint the guard asks before each
+call; Ork's tools do not go through it. `omp` keeps its session files, whole
+transcripts, in `~/.ork/omp/sessions/`, and Ork keeps a small ledger of what
+each session has spent in `~/.ork/omp/spent/`. **Neither is pruned**: delete
+them yourself when you no longer resume those sessions.
 
 ## What the dollars mean
 
@@ -177,4 +196,5 @@ you no longer resume those sessions.
 The register has what is left open:
 [the omp limits](../../../specs/gaps/omp-limits.md). The contract:
 [specs/runtime/omp.md](../../../specs/runtime/omp.md). Why Ork does it this way:
-[ADR-105](../../../decisions/ADR-105-omp-driver.md).
+[ADR-105](../../../decisions/ADR-105-omp-driver.md) and
+[ADR-113](../../../decisions/ADR-113-omp-host-tools.md).

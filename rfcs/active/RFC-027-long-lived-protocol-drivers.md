@@ -250,7 +250,11 @@ Unknowns for the build and its gate run; none changes the decision.
    seconds to `ready` includes whatever they load; Ork's flags may differ.
 8. **Host tools, later.** `host_tool_cancel`, a call's timeout and the
    `loadMode` field of `set_host_tools` were not measured, nor how `ask_user`
-   and `report` would change when served as host tools.
+   and `report` would change when served as host tools. _Built 2026-11-21
+   ([ADR-113](../../decisions/ADR-113-omp-host-tools.md)): Ork's tools reach
+   `omp` as host tools, on the fake `omp`; the unknowns are
+   [L534 to L537](../../specs/gaps/omp-limits.md), for the gate run to measure.
+   The RFC stays Active: the Codex codec and the other questions remain._
 9. **Codex.** The codec's needs come from method names only. `turn/steer` while
    a command runs may wait for the command as `omp`'s does; the handshake,
    `thread/resume`, approvals, `item/tool/call` and `thread/tokenUsage/updated`

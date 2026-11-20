@@ -5,22 +5,37 @@
  *   is up reaches the session as a message frame, an approval ask reaches the
  *   human channel and is answered, an interrupt ends the session interrupted
  *   with no report, and a deferred call ends the leg and resumes the session on
- *   continue with the codec's resume message and the legs' usage combined, or
- *   never resumes it once stopped, or fails it when it has no session id.
+ *   continue with the codec's resume message and the legs' usage combined (or
+ *   once a heavy slot frees, saying the slot was the reason), or never resumes
+ *   it once stopped, or fails it when it has no session id. A driver that takes
+ *   host tools gets Ork's tools on its leg and an endpoint that lists none.
  */
 
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
   createHolds,
+  fileSlotLedger,
+  type MachinePort,
+  machinePort,
   type RunEvent,
   type RuntimeEvent,
   type SessionSpec,
   type SessionUsage,
+  type SlotLedger,
 } from "@krapht/ork-core";
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
-import type { CliAdapter, Codec, DecodedFrame, Frame } from "../src/adapter.ts";
+import type {
+  CliAdapter,
+  Codec,
+  DecodedFrame,
+  Frame,
+  LegContext,
+} from "../src/adapter.ts";
 import { createSessionRuntime } from "../src/index.ts";
 
 const FAKE = path.join(import.meta.dirname, "fixtures/fake-rpc-session.mjs");
@@ -35,8 +50,8 @@ const usageOf = (tokens: number): SessionUsage => ({
   durationMs: 0,
 });
 
-/** What the codecs of a session were asked to write. */
-type Written = { interrupts: number; opened: string[] };
+/** What the codecs of a session were asked to write, and the last leg's context. */
+type Written = { interrupts: number; opened: string[]; leg?: LegContext };
 
 const decoders: Record<string, (frame: Frame) => DecodedFrame> = {
   ready: () => ({ events: [], ready: true }),
@@ -87,12 +102,15 @@ const codecOf = (written: Written): Codec => {
     return { id, frame: { ...frame, id } };
   };
   return {
-    open: legSpec => {
+    open: (legSpec, leg) => {
       const text =
         legSpec.resume === undefined || legSpec.fork === true
           ? legSpec.prompt
           : "again";
-      written.opened.push(text);
+      written.opened.push(
+        leg.deferredFor === undefined ? text : `${text} (${leg.deferredFor})`,
+      );
+      written.leg = leg;
       return [request({ type: "prompt", text })];
     },
     decode: frame =>
@@ -107,10 +125,12 @@ const codecOf = (written: Written): Codec => {
       id: ask.id,
       value: decision,
     }),
+    callResult: (call, result) => ({ type: "result", id: call.id, result }),
   };
 };
 
-const adapterOf = (written: Written): CliAdapter => ({
+const adapterOf = (written: Written, hostTools = false): CliAdapter => ({
+  ...(hostTools ? { hostTools: true } : {}),
   driver: "omp",
   command: {
     bin: "fake-rpc",
@@ -169,10 +189,33 @@ const humanOf = (answer: Permit) => {
   };
 };
 
+/** A machine port where the fake's hooked call (`ls`) is heavy. */
+const machineOf = (ledger: SlotLedger, recorded: RunEvent[]): MachinePort => {
+  const port = machinePort(
+    {
+      machine: { rules: { heavy: ["ls"], priority: "normal" }, ledger },
+      onEvent: event => {
+        recorded.push(event);
+      },
+    },
+    "r1",
+    "worker",
+    { waitFor: (_, wait) => wait() },
+  );
+  if (port === undefined) throw new Error("no machine port");
+  return port;
+};
+
 /** Starts a session of `prompt` on the fake tool, collecting its events. */
 const start = (
   prompt: string,
-  options: { answer?: Permit; paused?: boolean; fork?: boolean } = {},
+  options: {
+    answer?: Permit;
+    paused?: boolean;
+    fork?: boolean;
+    machine?: MachinePort;
+    hostTools?: boolean;
+  } = {},
 ) => {
   const written: Written = { interrupts: 0, opened: [] };
   const recorded: RunEvent[] = [];
@@ -186,14 +229,18 @@ const start = (
   });
   if (options.paused === true) holds.pause();
   const { asked, human } = humanOf(options.answer ?? { allow: true });
-  const session = createSessionRuntime(adapterOf(written), {
+  const session = createSessionRuntime(adapterOf(written, options.hostTools), {
     bin: process.execPath,
     holdWindowMs: 30,
   }).start(
     options.fork === true
       ? { ...specOf(prompt), resume: "source", fork: true }
       : specOf(prompt),
-    { human, hold: holds.forNode("worker") },
+    {
+      human,
+      hold: holds.forNode("worker"),
+      ...(options.machine === undefined ? {} : { machine: options.machine }),
+    },
   );
   const events: RuntimeEvent[] = [];
   const finish = (async () => {
@@ -227,7 +274,57 @@ const deferredOnce = async (written: Written) => {
   }, WAIT);
 };
 
+const ListSchema = z.object({
+  result: z.object({ tools: z.array(z.object({ name: z.string() })) }),
+});
+
+/** The names in the `tools/list` of the endpoint the running leg was given. */
+const listedTools = async (written: Written): Promise<string[]> => {
+  await vi.waitFor(() => {
+    expect(written.leg).toBeDefined();
+  }, WAIT);
+  const endpoint = written.leg?.endpoint ?? { url: "", token: "" };
+  const reply = await fetch(endpoint.url, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${endpoint.token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+  });
+  const body = ListSchema.parse(await reply.json());
+  return body.result.tools.map(tool => tool.name);
+};
+
+/** A session on the fake tool, its leg's context and its endpoint's tools. */
+const offered = async (hostTools: boolean) => {
+  const run = start("Work", { hostTools });
+  const listed = await listedTools(run.written);
+  run.session.send("finish");
+  await run.finish;
+  return { leg: run.written.leg, listed };
+};
+
 describe("the session runner, for a tool that speaks frames both ways", () => {
+  it("gives a host-tools driver Ork's tools as host tools, its endpoint listing none", async () => {
+    const { leg, listed } = await offered(true);
+    expect(listed).toEqual([]);
+    expect(leg?.allowed).toContain("mcp__ork__ask_user");
+    const tool = leg?.hostTools?.find(each => each.name === "ork_ask_user");
+    expect(tool?.parameters).toMatchObject({ type: "object" });
+    const result = await tool?.call({});
+    expect(result?.isError).toBe(true);
+    expect(result?.content[0]?.text).toMatch(
+      /^Invalid arguments, nothing ran:/u,
+    );
+  });
+
+  it("serves Ork's tools on its endpoint to any other driver, with no host tools", async () => {
+    const { leg, listed } = await offered(false);
+    expect(listed).toContain("ask_user");
+    expect(leg?.hostTools).toBeUndefined();
+  });
+
   it("sends a message before and after the leg is up as a message frame", async () => {
     const run = start("Work");
     run.session.send("early");
@@ -272,11 +369,37 @@ describe("the session runner, for a tool that speaks frames both ways", () => {
     await deferredOnce(run.written);
     run.holds.proceed();
     await run.finish;
-    expect(run.written.opened).toEqual(["hold", "again"]);
+    expect(run.written.opened).toEqual(["hold", "again (pause)"]);
     expect(texts(run.events)).toEqual(["again"]);
     expect(outcomes(run.events)).toMatchObject([
       { sessionId: "s1", text: "again", usage: { inputTokens: 10, turns: 2 } },
     ]);
+  });
+
+  it("resumes a call deferred for a heavy slot that frees late, saying it was the slot", async () => {
+    const ledger = fileSlotLedger({
+      dir: mkdtempSync(path.join(tmpdir(), "ork-duplex-slots-")),
+      slots: 1,
+      pollMs: 10,
+    });
+    const other = await ledger.take(
+      { run: "r0", node: "check", pid: process.pid },
+      { signal: new AbortController().signal },
+    );
+    const recorded: RunEvent[] = [];
+    const run = start("hold", { machine: machineOf(ledger, recorded) });
+    await vi.waitFor(() => {
+      expect(recorded.map(event => event.type)).toContain("slot.waiting");
+    }, WAIT);
+    await deferredOnce(run.written);
+    other?.();
+    await run.finish;
+    expect(recorded.map(event => event.type)).toEqual([
+      "slot.waiting",
+      "slot.taken",
+    ]);
+    expect(run.written.opened).toEqual(["hold", "again (slot)"]);
+    expect(ledger.holders()).toEqual([]);
   });
 
   it("never resumes a session stopped while deferred", async () => {

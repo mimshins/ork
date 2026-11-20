@@ -17,6 +17,7 @@ import type { Driver, Workflow } from "@krapht/ork-schema";
 import { prepareCheckout } from "./checkout.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
 import { localLockNotes } from "./lock-notes.ts";
+import { modelRefusals } from "./model-check.ts";
 import { noteLines } from "./node-notes.ts";
 import {
   budgetWarningLines,
@@ -83,6 +84,15 @@ export const preflight = async (
     ready: driver.driver ?? options.resume?.settings.readyDriver,
   });
   if (unfit.length > 0) return { ok: false, lines: unfit };
+  const unknownModels = await modelRefusals(
+    given.effective,
+    {
+      override: options.driver,
+      ready: driver.driver ?? options.resume?.settings.readyDriver,
+    },
+    options.modelList,
+  );
+  if (unknownModels.length > 0) return { ok: false, lines: unknownModels };
   const budget = budgetWarningLines(given.effective, options.drivers, {
     override: options.driver,
     ready: driver.driver ?? options.resume?.settings.readyDriver,

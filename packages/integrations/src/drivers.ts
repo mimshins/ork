@@ -60,6 +60,13 @@ export type AgentDriver = {
    * `ork validate` warns where a workflow could queue that way.
    */
   onePerCheckout: boolean;
+  /**
+   * The exact `provider/model` selectors the driver's logins reach, or `null`
+   * when it cannot list them (the command fails, times out or lists none), so
+   * `ork run` can refuse a node that names a model the tool does not have.
+   * Absent: the driver's models are not checked.
+   */
+  models?: (exec: Exec, env: Env) => Promise<readonly string[] | null>;
 };
 
 /**

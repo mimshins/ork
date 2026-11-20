@@ -1,7 +1,8 @@
 # ADR-105 — The `omp` driver: oh-my-pi's `omp` CLI as the fifth driver
 
 - **Status:** Accepted; amended by [ADR-108](./ADR-108-duplex-session-client.md)
-  (the process shape, mid-turn messages, approvals and the long pause)
+  (the process shape, mid-turn messages, approvals and the long pause) and by
+  [ADR-113](./ADR-113-omp-host-tools.md) (Ork's tools: host tools, no plugin)
 - **Date:** 2026-11-19
 - **Topic:** runtime
 - **RFC:** [RFC-026](../rfcs/archived/RFC-026-omp-driver.md)
@@ -35,15 +36,18 @@ adapter's tests and the gate run already cover.
   MCP server, with `tools.xdev: false`. The bearer token is a literal in the
   plugin's `.mcp.json` and in a hold file, each mode 0600, in a private folder
   (0700, outside the checkout) removed when the session ends. It is not in the
-  arguments or the leg's environment.
+  arguments or the leg's environment. (Superseded by
+  [ADR-113](./ADR-113-omp-host-tools.md): Ork's tools are host tools over the
+  rpc pipe; no plugin, no `.mcp.json`, the token in the hold file only.)
 - **A guard Ork writes, with `omp`'s approval settings behind it.** The guard is
   the only extension (`--trusted-extension`), a `tool_call` handler that applies
   the node's rules with the shared matcher; an overlay (`--config`) sets
   `approvalMode: always-ask` and allows or denies each tool by name, from the
   same list as `--tools`. `eval` and `task` are never offered. A guard that does
   not load, a missing overlay or an Ork server that is down ends the leg before
-  a model request. `readDenies` is `true`, held by `--tools` first: a
-  path-scoped `Read`, `Grep` or `Glob` deny offers none of the read tools.
+  a model request (the server-down end went with the plugin: ADR-113).
+  `readDenies` is `true`, held by `--tools` first: a path-scoped `Read`, `Grep`
+  or `Glob` deny offers none of the read tools.
 - **Edits outside the worktree are refused.** The guard refuses an `edit` or
   `write` whose real path is outside the node's folder, `--yolo` included,
   because `omp` has no sandbox.

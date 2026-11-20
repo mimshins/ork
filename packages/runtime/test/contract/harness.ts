@@ -8,13 +8,14 @@ import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type {
-  EndKind,
-  HumanChannel,
-  RuntimeEvent,
-  Session,
-  SessionOutcome,
-  SessionSpec,
+import {
+  createHolds,
+  type EndKind,
+  type HumanChannel,
+  type RuntimeEvent,
+  type Session,
+  type SessionOutcome,
+  type SessionSpec,
 } from "@krapht/ork-core";
 
 import { createSessionRuntime } from "../../src/index.ts";
@@ -35,6 +36,17 @@ const human: HumanChannel = {
   ask: ({ recommended }) => Promise.resolve(recommended ?? "none"),
   permit: () => Promise.resolve({ allow: false, message: "not in this run" }),
 };
+
+/** A run's hold for the node, never paused. */
+const holdOf = () =>
+  createHolds({
+    onEvent: () => {
+      // Not under test.
+    },
+    onChange: () => {
+      // Not under test.
+    },
+  }).forNode("contract");
 
 const specIn = (cwd: string): SessionSpec => ({
   nodeId: "contract",
@@ -81,7 +93,11 @@ export const start = (
       FAKE_SPENT_FILE: spentFile,
     },
     runs: path.join(home, "runs"),
-  }).start({ ...specIn(cwd), ...spec }, { human });
+  }).start(
+    { ...specIn(cwd), ...spec },
+    // A host-tools driver's only endpoint is its hold hook, wired with a hold.
+    entry.adapter.hostTools === true ? { human, hold: holdOf() } : { human },
+  );
   return {
     session,
     endpoint: () => readFileSync(endpointFile, "utf8"),

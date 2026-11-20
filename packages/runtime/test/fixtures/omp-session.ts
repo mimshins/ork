@@ -107,6 +107,8 @@ export type Play = {
   adapt?: (adapter: CliAdapter) => CliAdapter;
   /** The human's answer to an approval; a refusal by default. */
   permit?: HumanChannel["permit"];
+  /** The human's answer to `ask_user`; the recommended option by default. */
+  ask?: HumanChannel["ask"];
 };
 
 /**
@@ -148,7 +150,11 @@ export const played = (play: Play = {}) => {
   }).start(
     { ...ompSpec, cwd, ...play.over },
     {
-      human: { ...human, ...(play.permit ? { permit: play.permit } : {}) },
+      human: {
+        ...human,
+        ...(play.permit ? { permit: play.permit } : {}),
+        ...(play.ask ? { ask: play.ask } : {}),
+      },
       ...play.ports,
     },
   );
@@ -160,7 +166,7 @@ export const played = (play: Play = {}) => {
   return { session, cwd, home, root, legs, calls, frames };
 };
 
-const FENCE = ["--trusted-extension", "--plugin-dir", "--config"];
+const FENCE = ["--trusted-extension", "--config"];
 
 /** The legs of every session {@link played} started that lacked a fence flag. */
 export const unfenced = (): Recorded[] =>

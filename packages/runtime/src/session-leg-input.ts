@@ -17,6 +17,7 @@ import type {
 import type {
   CliAdapter,
   Decision,
+  DeferReason,
   LegContext,
   OrkEndpoint,
   Wired,
@@ -48,10 +49,11 @@ export const legInputOf = (
   shared: LegShared,
   legSpec: SessionSpec,
   carried: SessionUsage | undefined,
-  resumesDeferral = false,
+  deferredFor?: DeferReason,
 ): LegInput | DuplexLegInput => {
   const { wiredArgs, human, nodeId, ...rest } = shared;
-  const leg = resumesDeferral ? { ...shared.leg, resumesDeferral } : shared.leg;
+  const leg =
+    deferredFor === undefined ? shared.leg : { ...shared.leg, deferredFor };
   const { protocol, legDecoder } = shared.adapter;
   const common = {
     ...rest,

@@ -325,9 +325,25 @@ const ompCheck = async (
   return { result: await driver.doctor(exec, {}), calls };
 };
 
-const OMP_MODELS = JSON.stringify({
-  models: [{ id: "openai/gpt-5.2" }, { id: "anthropic/claude-opus-5-5" }],
+/** An entry of `omp models --json` as measured: `selector` is `provider/id`. */
+const ompEntry = (provider: string, id: string) => ({
+  provider,
+  kind: "model",
+  id,
+  selector: `${provider}/${id}`,
+  name: id,
 });
+
+const OMP_MODELS = JSON.stringify({
+  models: [
+    ompEntry("openai", "gpt-5.2"),
+    ompEntry("anthropic", "claude-opus-5-5"),
+  ],
+});
+
+/** `omp`'s model list, with an `omp` whose `models --json` prints `out`. */
+const list = (out: string | null) =>
+  listedOmp().models?.(() => answer(out), {});
 
 describe("the omp driver", () => {
   it("is the fifth, not yet proven, and declares what it does itself", () => {
@@ -384,7 +400,7 @@ describe("the omp driver", () => {
 
   it("is ready once proven, so a run may take it", async () => {
     const proven = ompDriver(true);
-    const one = JSON.stringify({ models: [{ id: "openai/gpt-5.2" }] });
+    const one = JSON.stringify({ models: [ompEntry("openai", "gpt-5.2")] });
     const { result } = await ompCheck("omp/18.22.2\n", one, proven);
     expect(result).toMatchObject({
       status: "ok",
@@ -395,6 +411,29 @@ describe("the omp driver", () => {
   it("runs only omp --version and omp models --json", async () => {
     const { calls } = await ompCheck("omp/18.22.2\n", OMP_MODELS);
     expect(calls).toEqual(["omp --version", "omp models --json"]);
+  });
+
+  it("lists the exact selectors, or null when it cannot", async () => {
+    expect(await list(OMP_MODELS)).toEqual([
+      "openai/gpt-5.2",
+      "anthropic/claude-opus-5-5",
+    ]);
+    // No `selector`: `provider/id`; no usable parts: skipped.
+    expect(
+      await list(
+        JSON.stringify({
+          models: [{ provider: "fake", id: "m" }, { id: "bare" }],
+        }),
+      ),
+    ).toEqual(["fake/m"]);
+    expect(await list(null)).toBeNull();
+    expect(await list("not json")).toBeNull();
+    expect(await list(JSON.stringify({ models: [] }))).toBeNull();
+    expect(await list(JSON.stringify({ models: [{ name: "x" }] }))).toBeNull();
+  });
+
+  it("is the only driver with a model list", () => {
+    expect(AGENT_DRIVERS.filter(d => d.models !== undefined)).toHaveLength(1);
   });
 });
 

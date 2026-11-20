@@ -2,9 +2,9 @@
  * @file Tests for a session's heavy Bash calls (the project's `heavy` rule): on
  *   the stand-in `claude`, a call waits for a machine-wide slot in its pre-call
  *   hook, is deferred past the hold window and resumed once the slot is taken,
- *   and frees it in its post-call hook; the hook itself frees a slot at the
- *   next call and at the session's end; and a session starts below Ork's
- *   priority under `low` only.
+ *   and frees it in its post-call hook; a deferral says whether a pause or a
+ *   slot caused it; the hook itself frees a slot at the next call and at the
+ *   session's end; and a session starts below Ork's priority under `low` only.
  */
 
 import { mkdtempSync, readFileSync } from "node:fs";
@@ -286,6 +286,59 @@ describe("the call's slot without a post-call hook", () => {
     const after = { ...bash("pnpm check"), hook_event_name: "PostToolUse" };
     expect(await handler(signal, after)).toEqual({});
     expect(ledger.holders()).toEqual([]);
+  });
+});
+
+/** A run's hold for the node, paused: its next call is held. */
+const pausedHold = () => {
+  const holds = createHolds({
+    onEvent: () => {
+      // Not under test.
+    },
+    onChange: () => {
+      // Not under test.
+    },
+  });
+  holds.pause();
+  return holds.forNode("worker");
+};
+
+/** Why a tool hook deferred a heavy call past a short window. */
+const deferredFor = async (
+  hold: ReturnType<typeof holdOf>,
+  ledger: SlotLedger,
+): Promise<string[]> => {
+  const reasons: string[] = [];
+  const heavy = heavyHook(portOf(ledger, []));
+  const handler = toolHook({
+    hold,
+    heavy,
+    answer: answer => ({ answer }),
+    windowMs: 20,
+    ended: signal,
+    onDefer: reason => {
+      reasons.push(reason);
+    },
+  });
+  expect(await handler(signal, bash("pnpm check"))).toEqual({
+    answer: "defer",
+  });
+  heavy.release();
+  return reasons;
+};
+
+describe("a tool hook's deferral", () => {
+  it("says a pause deferred the call", async () => {
+    expect(await deferredFor(pausedHold(), ledgerOf(1))).toEqual(["pause"]);
+  });
+
+  it("says a heavy slot deferred the call", async () => {
+    const ledger = ledgerOf(1);
+    await ledger.take(
+      { run: "r0", node: "check", pid: process.pid },
+      { signal },
+    );
+    expect(await deferredFor(holdOf(), ledger)).toEqual(["slot"]);
   });
 });
 

@@ -8,11 +8,13 @@
  *   flag (`-p` and `--no-ui` included), or `-e`/`--extension`/`--hook`
  *   beside `--trusted-extension`, exits 2; a `--config` overlay that is missing
  *   or not a YAML mapping, a `--trusted-extension` that is missing or throws
- *   while it loads, a `--resume`/`--fork` session not in `--session-dir`, and,
- *   with `OMP_MCP_REQUIRE_READY=1`, a `--plugin-dir` server that does not
- *   answer `tools/list`, each exit 1 with an `error: …` line on stderr and no
- *   line on stdout. Then it writes `ready` and reads Ork's frames, one per
- *   line: `get_state` (answered with `data.sessionId`), `prompt` (its `message`
+ *   while it loads, and a `--resume`/`--fork` session not in `--session-dir`,
+ *   each exit 1 with an `error: …` line on stderr and no line on stdout. Then
+ *   it writes `ready` and reads Ork's frames, one per line: `get_state`
+ *   (answered with `data.sessionId`), `set_host_tools` (Ork's tools, which the
+ *   model calls by their names, `ork_<tool>`; answered with `data.toolNames`,
+ *   or an error with `FAKE_OMP_HOST_TOOLS=refuse`), `host_tool_result` (the
+ *   answer to a `host_tool_call` the fake wrote, by `id`), `prompt` (its `message`
  *   is the brief; the scenario plays), `steer` (its `message` is read at the
  *   next request; `wait-message` ends with `got: <it>`), `abort` (an aborted
  *   message and `turn_end` mid-turn, then the session settles, so a held call
@@ -43,8 +45,11 @@
  *   `notice` and `agent_end`, and the prompt ends in a `cost_cap` error; a
  *   resumed leg already over it prints the notice only. Each request uses 100 input,
  *   20 output, 80 cache-read and 5 cache-write tokens, and `FAKE_OMP_COST`
- *   dollars (0.001). It follows fake-claude.mjs's protocol: `FAKE_ENDPOINT_FILE`
- *   gets the URL of Ork's endpoint, `FAKE_SPENT_FILE` is written once `spend`
+ *   dollars (0.001). A call of a host tool writes a `host_tool_call` (`id`,
+ *   `toolCallId`, `toolName`, `arguments`) and runs once its result comes; a
+ *   name with no host tool, `ork_` or `mcp__`, is "not found". It follows
+ *   fake-claude.mjs's protocol: `FAKE_ENDPOINT_FILE` gets the URL of Ork's
+ *   endpoint (the hold URL in `hold.json` beside the guard), `FAKE_SPENT_FILE` is written once `spend`
  *   printed its usage, and `FAKE_SCENARIO` plays one case: unset (asks through
  *   Ork's `ask_user` on a first leg, then reports through Ork's `report`),
  *   `invalid-report`, `report-tool`, `try-denied` (a `bash` `git status`), `extract`,
@@ -64,8 +69,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { request } from "node:http";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline";
@@ -103,7 +107,7 @@ record({ kind: "leg", cwd: process.cwd(), args: argv, env: { ...env } });
 // The flags Ork passes, and the three a trusted extension cannot sit beside.
 const VALUED = new Set([
   "--mode", "--model", "--thinking", "--append-system-prompt", "--session-dir", "--config", "--trusted-extension",
-  "--plugin-dir", "--tools", "--max-cost", "--resume", "--fork", "-e", "--extension", "--hook",
+  "--tools", "--max-cost", "--resume", "--fork", "-e", "--extension", "--hook",
 ]);
 const SWITCHES = new Set([
   "--no-skills", "--no-rules", "--no-title", "--no-lsp", "--no-pty", "--no-prewalk", "--no-judge",
@@ -203,44 +207,12 @@ for (const file of extensions) {
   }
 }
 
-// node:http, not fetch: fetch gives up after 300 s with no response headers,
-// and an ask_user waits as long as the user takes to answer.
-const post = (url, headers, body) =>
-  new Promise((resolve, reject) => {
-    const req = request(url, { method: "POST", headers: { ...headers, "content-type": "application/json" } }, res => {
-      let text = "";
-      res
-        .setEncoding("utf8")
-        .on("data", chunk => (text += chunk))
-        .on("error", reject)
-        .on("end", () => (res.statusCode === 200 ? resolve(text) : reject(new Error(`status ${res.statusCode}`))));
-    });
-    req.on("error", reject).end(JSON.stringify(body));
-  }).then(JSON.parse);
-
-// The plugins' MCP servers, offered as `mcp__<plugin>_<server>_<tool>`.
-const servers = (flags["--plugin-dir"] ?? []).flatMap(dir => {
-  const manifest = path.join(dir, ".claude-plugin", "plugin.json");
-  if (!existsSync(manifest)) fail(1, `error: Plugin manifest not found: ${manifest}`);
-  const plugin = JSON.parse(readFileSync(manifest, "utf8")).name;
-  const mcpFile = path.join(dir, ".mcp.json");
-  const found = existsSync(mcpFile) ? (JSON.parse(readFileSync(mcpFile, "utf8")).mcpServers ?? {}) : {};
-  return Object.entries(found).map(([name, server]) => ({
-    label: `${plugin}:${name}`,
-    prefix: `mcp__${plugin.replaceAll("-", "_")}_${name}_`,
-    url: server.url,
-    headers: server.headers ?? {},
-  }));
-});
-const rpc = (server, method, params) => post(server.url, server.headers, { jsonrpc: "2.0", id: 1, method, params });
-if (env.OMP_MCP_REQUIRE_READY === "1") {
-  for (const server of servers) {
-    // oxlint-disable-next-line eslint/no-await-in-loop -- one server at a time
-    const listed = await rpc(server, "tools/list", {}).catch(() => undefined);
-    if (listed?.result === undefined) fail(1, `error: MCP servers not ready: ${server.label}`);
-  }
+// Ork's endpoint, for the contract suite: the hold URL in the guard's
+// `hold.json` (beside it); Ork's tools themselves come as host tools.
+const holdFile = extensions.map(file => path.join(path.dirname(file), "hold.json")).find(file => existsSync(file));
+if (env.FAKE_ENDPOINT_FILE !== undefined && holdFile !== undefined) {
+  writeFileSync(env.FAKE_ENDPOINT_FILE, JSON.parse(readFileSync(holdFile, "utf8")).url);
 }
-if (env.FAKE_ENDPOINT_FILE !== undefined && servers[0] !== undefined) writeFileSync(env.FAKE_ENDPOINT_FILE, servers[0].url);
 
 // The session's file in `--session-dir`: its id, folder and spend so far.
 const sessionDir = flag("--session-dir") ?? path.join(env.PI_CODING_AGENT_DIR ?? path.join(env.HOME ?? homedir(), ".omp", "agent"), "sessions");
@@ -259,7 +231,12 @@ const session = {
   // The stored header keeps its parent, so a resumed fork prints it again.
   ...(forked ? { parentSession: source } : before.parentSession === undefined ? {} : { parentSession: before.parentSession }),
 };
-const save = () => writeFileSync(fileOf(session.id), JSON.stringify(session));
+// Written whole then renamed, so a fork reading it at once never sees half a file.
+const save = () => {
+  const temp = `${fileOf(session.id)}.${process.pid}.tmp`;
+  writeFileSync(temp, JSON.stringify(session));
+  renameSync(temp, fileOf(session.id));
+};
 
 const scenario = env.FAKE_SCENARIO ?? "";
 /** The words `omp` gives each cause on stderr; only the model's and the login's are measured. */
@@ -390,9 +367,9 @@ const handlersOf = async event => {
 /** Why `omp` itself refuses a call before any handler sees it, or `undefined`. */
 const policyRefusal = name => {
   const offered = flag("--tools")?.split(",");
-  const builtIn = !name.startsWith("mcp__");
-  if (builtIn && offered !== undefined && !offered.includes(name)) return `Tool "${name}" is not available in this session`;
-  if (!builtIn && !servers.some(server => name.startsWith(server.prefix))) return `Tool "${name}" not found`;
+  const host = hostTools.includes(name);
+  if (!host && (name.startsWith("mcp__") || name.startsWith("ork_"))) return `Tool "${name}" not found`;
+  if (!host && offered !== undefined && !offered.includes(name)) return `Tool "${name}" is not available in this session`;
   const policy = setting("tools", "approval")?.[name];
   if (policy === "deny") return `Tool "${name}" is blocked by user policy. To allow: remove tools.approval.${name}`;
   if (policy !== "allow" && setting("tools", "approvalMode") === "always-ask") {
@@ -410,14 +387,25 @@ const shell = command =>
     child.on("close", code => resolve({ isError: code !== 0, text }));
   });
 
+/** The host tools Ork offered (`set_host_tools`), by name. */
+let hostTools = [];
+/** The host's pending answers to host tool calls, by call id. */
+const hostResults = new Map();
+let hostCount = 0;
+/** Asks the host to run its tool `name`; its result, once it answers. */
+const callHost = (name, input, toolCallId) =>
+  new Promise(resolve => {
+    const id = `host_${(hostCount += 1)}`;
+    hostResults.set(id, resolve);
+    out({ type: "host_tool_call", id, toolCallId, toolName: name, arguments: input });
+  }).then(result => ({
+    isError: result?.isError === true,
+    text: (result?.content ?? []).map(each => each.text ?? "").join(""),
+  }));
+
 /** Runs a call `omp` and the handlers let through. */
-const run = async ({ name, input }) => {
-  const server = servers.find(each => name.startsWith(each.prefix));
-  if (server !== undefined) {
-    const reply = await rpc(server, "tools/call", { name: name.slice(server.prefix.length), arguments: input }).catch(error => ({ error }));
-    const text = (reply.result?.content ?? []).map(c => c.text ?? "").join("") || (reply.error?.message ?? "");
-    return { isError: reply.result?.isError === true || reply.error !== undefined, text };
-  }
+const run = async ({ id, name, input }) => {
+  if (hostTools.includes(name)) return callHost(name, input, id);
   const where = file => path.resolve(process.cwd(), String(file ?? "").replace(/:\d+(?:-\d+)?$/u, ""));
   try {
     if (name === "bash") return await shell(input.command);
@@ -437,8 +425,8 @@ const run = async ({ name, input }) => {
   }
 };
 
-/** The tool's name as `omp` offers it: a built-in, or `{ ork }` through the plugin. */
-const nameOf = call => (call.ork === undefined ? call.tool : `${servers[0]?.prefix ?? "mcp__ork_session_ork_"}${call.ork}`);
+/** The tool's name as the model calls it: a built-in, or `{ ork }` as Ork's host tool. */
+const nameOf = call => (call.ork === undefined ? call.tool : `ork_${call.ork}`);
 
 /** The host's answers to approval requests, by request id. */
 const approvals = new Map();
@@ -615,6 +603,18 @@ for await (const line of createInterface({ input: process.stdin })) {
   const frame = JSON.parse(line);
   record({ kind: "frame", frame });
   if (frame.type === "get_state") respond(frame, { data: { sessionId: session.id } });
+  if (frame.type === "set_host_tools") {
+    if (env.FAKE_OMP_HOST_TOOLS === "refuse") {
+      write({ type: "response", id: frame.id, command: frame.type, success: false, error: "host tools are not supported" });
+    } else {
+      hostTools = (frame.tools ?? []).map(tool => tool.name);
+      respond(frame, { data: { toolNames: hostTools } });
+    }
+  }
+  if (frame.type === "host_tool_result") {
+    hostResults.get(frame.id)?.(frame.result);
+    hostResults.delete(frame.id);
+  }
   if (frame.type === "prompt") {
     respond(frame);
     brief = frame.message;

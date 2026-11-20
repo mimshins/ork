@@ -13,9 +13,11 @@ spend ledger
 ([omp-ledger.ts](../../packages/runtime/src/adapters/omp-ledger.ts)) are built,
 and the contract suite passes on a fake `omp --mode rpc` that replays the frames
 [RFC-027](../../rfcs/active/RFC-027-long-lived-protocol-drivers.md)'s spike
-captured. Until a capped gate run on a real `omp` passes, `ork validate` and
-`ork run` refuse a node that names it ("not yet proven on a real session"),
-`ork doctor` shows it `skip`, and it never counts as ready
+captured, and on its host-tool frames (`set_host_tools`, `host_tool_call`, whose
+shapes are partly guessed: [L534 to L537](../gaps/omp-limits.md)). Until a
+capped gate run on a real `omp` passes, `ork validate` and `ork run` refuse a
+node that names it ("not yet proven on a real session"), `ork doctor` shows it
+`skip`, and it never counts as ready
 ([drivers](./which-driver.md#the-ready-driver)). The facts in these pages come
 from [RFC-026](../../rfcs/archived/RFC-026-omp-driver.md)'s spike and capture
 legs and a free hand check, all on `omp` 18.22.2 (oh-my-pi); the hand check used
@@ -44,7 +46,8 @@ One `omp --mode rpc` process per leg, in the node's worktree, driven by the
 message or answer sent during a leg is a `steer` frame: it reaches the model
 before the turn ends (a call that is running finishes first). A paused node's
 long pause ends the leg and the next one is `--resume <id>`, which sends a
-message asking the model to make the held call again, never the brief a second
+message saying why the held call did not run (a pause, or a `heavy` slot that
+was not free) and asking the model to make it again, never the brief a second
 time (any other resume, such as a late message, a retry or `ork resume`, sends
 the node's own prompt, as on every driver); a leader's question fork is
 `--fork <id>`, and its `session` carries the fork's id (and `parentSession`).
@@ -74,13 +77,14 @@ omp --mode rpc --no-skills --no-rules --no-title --no-lsp --no-pty
   [--append-system-prompt <text>]
 ```
 
-then the wiring's: `--session-dir`, `--config`, `--trusted-extension`,
-`--plugin-dir` and, with a `budgetUsd`, `--max-cost`. There is no `-p`, no
-`--mode json` and no brief argument. `--no-ui` is gone too: in `rpc` mode `omp`
-asks a tool missing from the approval map through its UI, and Ork answers
-([approvals](./omp-rules.md#approvals-over-rpc)); a UI request of a method Ork
-does not know gets no answer. The set of tools that can ask is still the set the
-guard and the overlay name.
+then the wiring's: `--session-dir`, `--config`, `--trusted-extension` and, with
+a `budgetUsd`, `--max-cost`. There is no `--plugin-dir`: Ork's tools are host
+tools ([wiring](./omp-wiring.md#orks-tools-and-the-private-folder)). There is no
+`-p`, no `--mode json` and no brief argument. `--no-ui` is gone too: in `rpc`
+mode `omp` asks a tool missing from the approval map through its UI, and Ork
+answers ([approvals](./omp-rules.md#approvals-over-rpc)); a UI request of a
+method Ork does not know gets no answer. The set of tools that can ask is still
+the set the guard and the overlay name.
 
 - **`--thinking`** on every leg: the node's `effort` as written (`low`,
   `medium`, `high`, `xhigh`, `max`), and `medium` when it sets none. Never
@@ -91,22 +95,30 @@ guard and the overlay name.
   the node's rules can allow
   ([rules](./omp-rules.md#what-holds-a-node-to-its-rules)); never `eval` or
   `task`.
-- **Never present:** the endpoint's token, `-e`, `--extension`, `--hook`,
-  `--yolo`, `--plan-yolo`, `--advisor`, `--api-key`, `--profile`,
+- **Never present:** the endpoint's token, `--plugin-dir`, `-e`, `--extension`,
+  `--hook`, `--yolo`, `--plan-yolo`, `--advisor`, `--api-key`, `--profile`,
   `--no-session`, `--no-context-files`, `--no-tools`, `-p`, `--mode json`,
   `--no-ui` or an `--approval-mode` of `yolo`. `-e` beside `--trusted-extension`
   is exit 2 (measured).
-- The environment adds `OMP_MCP_REQUIRE_READY=1` (a start fails when Ork's
-  server is not ready: `MCP servers not ready`) and `OMP_MCP_TIMEOUT_MS=0`
-  (`delegate` and `ask_user` wait as long as they need). The rest is the user's.
-- Two flags are undocumented in `omp --help` (`--trusted-extension`, `--fork`);
-  `--plugin-dir` is documented only in its CLI reference. A release that drops
-  one ends the leg at exit 2 ("unknown flag") before any model call.
+- The environment adds nothing: no `OMP_MCP_REQUIRE_READY` or
+  `OMP_MCP_TIMEOUT_MS`, since no MCP server loads. The rest is the user's.
+- Two flags are undocumented in `omp --help` (`--trusted-extension`, `--fork`).
+  A release that drops one ends the leg at exit 2 ("unknown flag") before any
+  model call.
+- **Ork's tools** are host tools: the codec writes `set_host_tools` before the
+  first `prompt` of every leg and the runner runs each `host_tool_call`
+  ([wiring](./omp-wiring.md#orks-tools-and-the-private-folder),
+  [ADR-113](../../decisions/ADR-113-omp-host-tools.md)). The descriptor's
+  adapter sets `hostTools: true`.
+- **The model check.** `ork run` (and `ork resume`) refuse a node whose exact
+  `omp.<provider>/<model>` is not in `omp models --json`, before any spend
+  ([which driver](./which-driver.md)); the descriptor's `models` hook gives the
+  list.
 
 ## Contents
 
-- [Ork's endpoint and the private folder](./omp-wiring.md)
-  - Ork's endpoint and the private folder
+- [Ork's tools and the private folder](./omp-wiring.md)
+  - Ork's tools and the private folder
   - What a session loads
 - [Rules, the guard and the hold](./omp-rules.md)
   - What holds a node to its rules

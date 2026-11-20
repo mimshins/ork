@@ -3,11 +3,12 @@
  *   over stdin and stdout (RFC-027): the duplex counterpart of `runLeg`. It
  *   waits for the tool's `ready`, writes the codec's first requests, matches
  *   each response to its request by id, answers the tool's approval asks
- *   through the runner's `permit`, and ends the session at the codec's settled
- *   end. A stop or a deferral writes the codec's interrupt and waits a bounded
- *   time for the session to settle before it closes and kills the process. It
- *   spawns as `runLeg` does (`leg-spawn.ts`, the orphan guard), and settles
- *   events and ends with the same `legStep`.
+ *   through the runner's `permit` and its calls of Ork's tools with
+ *   `hostCalls`, and ends the session at the codec's settled end. A stop or a
+ *   deferral writes the codec's interrupt and waits a bounded time for the
+ *   session to settle before it closes and kills the process. It spawns as
+ *   `runLeg` does (`leg-spawn.ts`, the orphan guard), and settles events and
+ *   ends with the same `legStep`.
  */
 
 import {
@@ -31,6 +32,7 @@ import {
   requestTable,
   watched,
 } from "./frame-lines.ts";
+import { hostCalls } from "./host-calls.ts";
 import { spawnLeg } from "./leg-spawn.ts";
 import { type Leg, legStep, tokenCapEnd, withCarried } from "./leg-step.ts";
 import { classifyProviderError } from "./provider-errors.ts";
@@ -134,6 +136,7 @@ export const runDuplexLeg = async function* (
       .catch((): Decision => "deny");
     write(codec.answer(ask, decision));
   };
+  const serve = hostCalls(input.leg.hostTools, codec, write, done.signal);
   /** The tool is ready: the first requests, then the messages that waited. */
   const open = () => {
     isOpen = true;
@@ -170,6 +173,7 @@ export const runDuplexLeg = async function* (
     if (decoded.reply !== undefined) requests.answered(decoded.reply);
     for (const back of decoded.write ?? []) write(back);
     if (decoded.ask !== undefined) void decide(decoded.ask);
+    if (decoded.call !== undefined) serve(decoded.call);
     if (decoded.ready === true && !isOpen && !stopped && !deferring) open();
     used = decoded.usage ?? used;
     for (const event of decoded.events) {

@@ -13,7 +13,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import type { HoldPort, MachinePort, SessionSpec } from "@krapht/ork-core";
 
-import type { HoldHook } from "./adapter.ts";
+import type { DeferReason, HoldHook } from "./adapter.ts";
 import { type HoldAnswer, holdAtTool } from "./hold.ts";
 import type { HoldHandler } from "./mcp-http.ts";
 import { realOf } from "./tools/contain.ts";
@@ -224,7 +224,7 @@ const afterCall = (input: unknown): boolean =>
  * A session's hook on its tool calls. A shell read (RFC-025) or an edit outside
  * the write limit is refused first. Before one, a pause holds it (ADR-041),
  * then a heavy Bash call waits for its slot; past the window either defers it
- * (`onDefer`). After a call, its slot is freed.
+ * (`onDefer`, with which one). After a call, its slot is freed.
  */
 export const toolHook =
   (given: {
@@ -233,7 +233,7 @@ export const toolHook =
     answer: HoldHook["answer"];
     windowMs: number;
     ended: AbortSignal;
-    onDefer: () => void;
+    onDefer: (reason: DeferReason) => void;
     /** Refuses a shell read before anything else (RFC-025). */
     refuse?: (reason: string) => Record<string, unknown>;
     /** Refuses a Read of a text file too: the node cannot edit. */
@@ -262,10 +262,12 @@ export const toolHook =
       return given.refuse(refused);
     }
     const signal = AbortSignal.any([gone, given.ended]);
-    let answer = await holdAtTool(given.hold, signal, given.windowMs);
-    if (answer === "go") {
-      answer = await given.heavy.before(input, signal, given.windowMs);
+    const held = await holdAtTool(given.hold, signal, given.windowMs);
+    if (held === "defer") {
+      given.onDefer("pause");
+      return given.answer(held);
     }
-    if (answer === "defer") given.onDefer();
-    return given.answer(answer);
+    const slot = await given.heavy.before(input, signal, given.windowMs);
+    if (slot === "defer") given.onDefer("slot");
+    return given.answer(slot);
   };

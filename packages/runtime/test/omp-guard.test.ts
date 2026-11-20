@@ -186,18 +186,16 @@ describe("the omp guard's rules", () => {
 
   it("lets Ork's own tools through, but one the node denies", async () => {
     const open = await loadGuard({});
-    expect(await outcome(open, "mcp__ork_session_ork_report", {})).toBe("runs");
-    expect(
-      await outcome(open, "mcp__ork_session_ork_ask_user", { question: "q?" }),
-    ).toBe("runs");
+    expect(await outcome(open, "ork_report", {})).toBe("runs");
+    expect(await outcome(open, "ork_ask_user", { question: "q?" })).toBe(
+      "runs",
+    );
     const denied = await loadGuard({ deny: ["mcp__ork__ask_user"] });
     expect(
-      await outcome(denied, "mcp__ork_session_ork_ask_user", {
+      await outcome(denied, "ork_ask_user", {
         question: "q?",
       }),
-    ).toBe(
-      "Ork: mcp__ork_session_ork_ask_user is denied for this node. Do not retry it.",
-    );
+    ).toBe("Ork: ork_ask_user is denied for this node. Do not retry it.");
   });
 
   it("refuses a tool name it does not know, --yolo included", async () => {
@@ -206,7 +204,9 @@ describe("the omp guard's rules", () => {
       "eval",
       "task",
       "mcp__other__x",
-      "mcp__ork_session_ork_",
+      "mcp__ork__report",
+      "mcp__ork_session_ork_report",
+      "ork_",
       "constructor",
     ];
     const outcomes = await Promise.all(
@@ -392,9 +392,7 @@ describe("the omp guard's hold", () => {
   it("asks for Ork's own tools too, in Ork's words", async () => {
     const endpoint = await standIn();
     const guard = await loadGuard({}, endpoint.hold);
-    expect(
-      await outcome(guard, "mcp__ork_session_ork_delegate", { to: "x" }),
-    ).toBe("runs");
+    expect(await outcome(guard, "ork_delegate", { to: "x" })).toBe("runs");
     expect(endpoint.seen.map(each => each.body)).toEqual([
       {
         hook_event_name: "PreToolUse",

@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L534, and the next chore is
+closes it. Ids are never reused: the next limit is L541, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
 adds that a fetched ref already has before the change is rebased). At a review,
@@ -260,22 +260,23 @@ Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
   that must not search the web should not run on this driver.
 
 Found building the `omp` driver (spec: [runtime/omp.md](./runtime/omp.md),
-RFC-026, 2026-11-19; the limits found with them are L464 to L482 and L497 to
-L502, in [their chunk](./gaps/omp-limits.md)). G45 (no message mid-turn, no
-approval) and G46 (no true deferral) were closed by
+RFC-026, 2026-11-19; the limits found with them are L464 to L482, L497 to L502
+and L534 to L540, in [their chunk](./gaps/omp-limits.md)). G45 (no message
+mid-turn, no approval) and G46 (no true deferral) were closed by
 [the two-way client](./runtime/duplex-client.md) (RFC-027, 2026-11-20).
 
 - **G47 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not
   supported on `omp`.** `mcpServers`, `subagents` and `turnLimit` are `false`
-  and `ork validate` refuses a node that needs one. Ork's plugin is the only MCP
-  server of a session, any other `mcp__` name is refused by the guard, `task` is
-  never offered, and no flag caps a session's turns.
-- **G48 · A node's own `omp.<provider>/<model>` is not checked before the run.**
-  The doctor counts the models `omp models --json` lists, but a node's model, a
-  fuzzy name or a role is passed as written, so a model the account does not
-  have fails when the session starts (`Model "<x>" not found`). Checking it
-  against that list before a run, and recording the model `omp` resolved (L475),
-  is a follow-up.
+  and `ork validate` refuses a node that needs one. Ork's host tools are the
+  only tools of a session besides `omp`'s built-ins, any `mcp__` name is refused
+  by the guard, `task` is never offered, and no flag caps a session's turns.
+- **G48 · A fuzzy `omp` model, a role and a run of one node are not checked
+  before the run.** `ork run` and `ork resume` refuse an exact
+  `omp.<provider>/<model>` that `omp models --json` does not list (L538), but a
+  fuzzy name, a role or a templated model is passed as written, and
+  `ork run --node` and `ork chat` do not check (L539), so such a model the
+  account does not have fails when the session starts (`Model "<x>" not found`).
+  Recording the model `omp` resolved (L475) is a follow-up.
 - **G49 · `ork onboard` and `ork:security-audit` are refused on `omp`.** Their
   built-in workflows set `maxTurns`, which `omp` cannot hold, so `ork run`
   refuses them before any session starts, while `ork onboard` may offer a ready

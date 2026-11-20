@@ -128,6 +128,22 @@ gets the model without it. A plain model (`deepseek/x`) names no driver.
   ``See `ork doctor`.`` Drivers named on nodes or in a model prefix are not
   checked up front (a node may sit on a branch that never runs); they fail at
   their session, as before.
+- **An exact model the driver does not list stops `ork run` and `ork resume`,**
+  after the checks above and before any checkout is made
+  ([model-check.ts](../../packages/cli/src/run/model-check.ts)). It applies to a
+  session node whose resolved driver has an `AgentDriver.models` hook (`omp`
+  only: `omp models --json`, each entry's `selector`, else `provider/id`, as the
+  exact `provider/model` forms), and whose model, after the driver prefix is
+  stripped, has a `/` and no `{{` (`omp.fake/nope`, or `driver: omp` and
+  `model: fake/nope`). A miss refuses the run with one line per node, naming the
+  node and the model, saying it is not in `omp models` and asking for an exact
+  `provider/model` that command lists. The match is exact and case-sensitive. A
+  fuzzy name, a role, a templated model, a node on another driver and a workflow
+  with no such node cost no process and say nothing; a list that fails, times
+  out or is empty says nothing either. The list is read once per driver per run.
+  `ork validate` stays offline and never asks; `ork run --node` and `ork chat`
+  do not check ([L538 and L539](../gaps/omp-limits.md)). Tests pass their own
+  list ([tests](../../packages/cli/test/model-check.test.ts)).
 - **The run records it** (`settings.readyDriver` on `run.started`), and
   `ork resume` keeps it, without looking again. A run recorded before this has
   none, and a resume looks.

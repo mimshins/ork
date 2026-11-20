@@ -1,18 +1,19 @@
 /**
  * @file The session runner: one agent CLI session, driven through an adapter's
  *   strategies (`adapter.ts`), written once for every driver. It serves Ork's
- *   tools on a local MCP endpoint, wires the session to it, and runs the tool
- *   as one or more processes (legs). A paused node's tool call is held, and
- *   past the hold window deferred; the next leg resumes the session once the
- *   node continues (ADR-041). A tool that takes no message mid-session gets one
- *   at the next leg, which resumes the session with it. A driver that cannot
- *   hold the final answer to the report schema gets Ork's `report` tool, and
- *   the session ends with the report it accepted. A tool that speaks frames
- *   both ways (`CliAdapter.protocol`, RFC-027) runs as duplex legs: a message
- *   is sent to the running process, its approval asks go to the human channel,
- *   and a deferred call ends the leg, resumed by its session id. Interrupting
- *   stops the running process, or ends a wait between legs; a stopped session
- *   is never resumed.
+ *   tools on a local MCP endpoint (or, to a tool that takes them over its
+ *   protocol, as host tools, the endpoint keeping only the hold hook), wires
+ *   the session to it, and runs the tool as one or more processes (legs). A
+ *   paused node's tool call is held, and past the hold window deferred; the
+ *   next leg resumes the session once the node continues (ADR-041). A tool that
+ *   takes no message mid-session gets one at the next leg, which resumes the
+ *   session with it. A driver that cannot hold the final answer to the report
+ *   schema gets Ork's `report` tool, and the session ends with the report it
+ *   accepted. A tool that speaks frames both ways (`CliAdapter.protocol`,
+ *   RFC-027) runs as duplex legs: a message is sent to the running process, its
+ *   approval asks go to the human channel, and a deferred call ends the leg,
+ *   resumed by its session id. Interrupting stops the running process, or ends
+ *   a wait between legs; a stopped session is never resumed.
  */
 
 import type {
@@ -24,7 +25,7 @@ import type {
   SessionUsage,
 } from "@krapht/ork-core";
 
-import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
+import type { CliAdapter, DeferReason, OrkEndpoint, Wired } from "./adapter.ts";
 import { heavyHook, hookRefusals, NEVER_HELD, toolHook } from "./heavy-hook.ts";
 import { asStopped } from "./leg-step.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
@@ -36,7 +37,7 @@ import {
   wireSaying,
 } from "./session-leg-input.ts";
 import { sessionRules } from "./session-rules.ts";
-import { orkTools, preapprovedTools } from "./tools/registry.ts";
+import { hostTools, orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
 
 export type RunnerOptions = {
@@ -78,8 +79,8 @@ export const createSessionRuntime = (
     /** Ends a running protocol leg `deferred`. */
     let defer: (() => void) | undefined;
     const ended = new AbortController();
-    /** The hold hook deferred a call in the running process. */
-    let deferring = false;
+    /** Why the hold hook deferred a call in the running process, if it did. */
+    let deferring: DeferReason | undefined;
     /** The last report the `report` tool accepted, across legs. */
     let reported: NodeReport | null = null;
     const { hold } = ports;
@@ -117,8 +118,10 @@ export const createSessionRuntime = (
       });
       // The tool is offered only where the driver cannot check the report.
       const byTool = tools.some(tool => tool.name === REPORT_TOOL);
+      // A tool that takes Ork's tools over its protocol reaches this server
+      // for the hold hook only.
       const mcp = await startOrkMcpHttp(
-        tools,
+        adapter.hostTools === true ? [] : tools,
         hook === undefined
           ? undefined
           : toolHook({
@@ -129,8 +132,8 @@ export const createSessionRuntime = (
               answer: hook.answer,
               windowMs: options.holdWindowMs ?? hook.windowMs,
               ended: ended.signal,
-              onDefer: () => {
-                deferring = true;
+              onDefer: reason => {
+                deferring = reason;
                 // A protocol tool keeps no call pending: its leg ends here.
                 defer?.();
               },
@@ -174,11 +177,17 @@ export const createSessionRuntime = (
             ? {}
             : { priority: ports.machine.priority }),
           wiredArgs: wired.args,
-          leg: { endpoint, allowed },
+          leg: {
+            endpoint,
+            allowed,
+            ...(adapter.hostTools === true
+              ? { hostTools: hostTools(tools) }
+              : {}),
+          },
           human: ports.human,
           nodeId: spec.nodeId,
           pending,
-          deferred: () => deferring,
+          deferred: () => deferring !== undefined,
           withhold: () => input === undefined && queued.length > 0,
           ...(byTool ? { reported: () => reported } : {}),
           attach: attached => {
@@ -188,8 +197,8 @@ export const createSessionRuntime = (
         };
         let legSpec = spec;
         let spent: SessionUsage | undefined;
-        /** The next leg resumes a session whose last leg was deferred. */
-        let resumesDeferral = false;
+        /** Why the last leg was deferred, for the next leg that resumes it. */
+        let deferredFor: DeferReason | undefined;
         for (;;) {
           // Interrupted while wiring (no process yet to stop); one between
           // legs ends below, with the last leg's result.
@@ -197,7 +206,7 @@ export const createSessionRuntime = (
             yield driverFailure("interrupted", "interrupted", scope);
             return;
           }
-          const legInput = legInputOf(shared, legSpec, spent, resumesDeferral);
+          const legInput = legInputOf(shared, legSpec, spent, deferredFor);
           const leg = yield* runAnyLeg(legInput);
           if (leg.kind === "failed") {
             // A resumed leg stopped before it printed its start ran as before.
@@ -209,7 +218,8 @@ export const createSessionRuntime = (
             return;
           }
           if (leg.kind === "finished") return;
-          deferring = false;
+          const reason = deferring;
+          deferring = undefined;
           spent =
             spent === undefined
               ? leg.usage
@@ -251,7 +261,8 @@ export const createSessionRuntime = (
               : leg.last;
             return;
           }
-          resumesDeferral = leg.kind === "deferred";
+          deferredFor =
+            leg.kind === "deferred" ? (reason ?? "pause") : undefined;
           legSpec =
             leg.kind === "continued"
               ? {

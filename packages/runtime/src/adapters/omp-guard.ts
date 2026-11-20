@@ -3,16 +3,17 @@
  *   private folder and loads with `--trusted-extension`, the fence that holds
  *   an `omp` session to its node's tool rules and holds a paused node's next
  *   call. Its `tool_call` handler, for each call: maps the name to Ork's words
- *   (`bash` is `Bash`, `mcp__ork_session_ork_<tool>` is `mcp__ork__<tool>`) and
- *   refuses one Ork does not know; refuses everything once the session's
- *   `stopped` marker exists; refuses an address with a scheme, a path in Ork's
- *   private folder, and an `edit` or `write` whose real path is outside the
- *   worktree or that names no path it can read, `--yolo` included (`omp` has no
- *   sandbox); applies the node's rules and the reading rule with the shared
- *   matcher (`tools/tool-rules-source.ts`); then, when the session can be held,
- *   asks Ork's hold endpoint (`hold.json`: its URL and the bearer token) and
- *   waits for the answer. Its `tool_result` handler frees a `heavy` slot after
- *   a `Bash` call that was asked. Anything going wrong refuses the call.
+ *   (`bash` is `Bash`, the host tool `ork_<tool>` is `mcp__ork__<tool>`) and
+ *   refuses one Ork does not know (any `mcp__` name among them); refuses
+ *   everything once the session's `stopped` marker exists; refuses an address
+ *   with a scheme, a path in Ork's private folder, and an `edit` or `write`
+ *   whose real path is outside the worktree or that names no path it can read,
+ *   `--yolo` included (`omp` has no sandbox); applies the node's rules and the
+ *   reading rule with the shared matcher (`tools/tool-rules-source.ts`); then,
+ *   when the session can be held, asks Ork's hold endpoint (`hold.json`: its
+ *   URL and the bearer token) and waits for the answer. Its `tool_result`
+ *   handler frees a `heavy` slot after a `Bash` call that was asked. Anything
+ *   going wrong refuses the call.
  */
 
 import {
@@ -20,7 +21,7 @@ import {
   toolRulesSource,
 } from "../tools/tool-rules-source.ts";
 import { toolId } from "../tools/tool.ts";
-import { OMP_ORK_PREFIX, OMP_TOOLS } from "./omp-names.ts";
+import { OMP_HOST_PREFIX, OMP_TOOLS } from "./omp-names.ts";
 
 /** The guard's file in the session's private folder. */
 export const OMP_GUARD_FILE = "guard.mjs";
@@ -86,7 +87,7 @@ if (HOLD !== undefined && (typeof HOLD?.url !== "string" || typeof HOLD?.token !
 const HELD = ${JSON.stringify(JSON.stringify(HELD))};
 const PAUSED = ${JSON.stringify(OMP_PAUSED)};
 const STOPPED_WORDS = "Ork stopped this node, so this call did not run. Do nothing else.";
-const ORK_PREFIX = ${JSON.stringify(OMP_ORK_PREFIX)};
+const ORK_PREFIX = ${JSON.stringify(OMP_HOST_PREFIX)};
 const ORK_TOOL = ${JSON.stringify(toolId(""))};
 // A tool's name in Ork's words; undefined for one Ork does not know.
 const orkName = name => Object.hasOwn(TOOLS, name)

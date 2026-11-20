@@ -2,13 +2,15 @@
  * @file Tests that the fake `omp` (`fixtures/fake-omp.mjs`) behaves as `omp`
  *   18.22.2 did in RFC-026's capture legs and the task 1 hand check: its
  *   version, the exit codes of a bad start (2 for a flag, 1 before any line for
- *   an overlay, a guard or Ork's server), the line shapes of a leg, a guard's
- *   `tool_call` handler awaited one call at a time with nothing printed while
- *   it waits, a refused call's lines, approval per tool name, the handler
- *   timeout, SIGINT while a call is held, a call refused as paused made again
- *   by the resumed leg, `--max-cost` over the whole session, resume and fork,
- *   all over `--mode rpc` (the brief as a `prompt` frame), and the record of
- *   each leg and call that task 9's sessions read.
+ *   an overlay or a guard), its answer to `set_host_tools`, the line shapes of
+ *   a leg, Ork's host tools called by `host_tool_call` and run on the result
+ *   (an `ork_` or `mcp__` name not offered is not found), a guard's `tool_call`
+ *   handler awaited one call at a time with nothing printed while it waits, a
+ *   refused call's lines, approval per tool name, the handler timeout, SIGINT
+ *   while a call is held, a call refused as paused made again by the resumed
+ *   leg, `--max-cost` over the whole session, resume and fork, all over `--mode
+ *   rpc` (the brief as a `prompt` frame), and the record of each leg and call
+ *   that task 9's sessions read.
  */
 
 import { spawn } from "node:child_process";
@@ -20,16 +22,14 @@ import {
   realpathSync,
   writeFileSync,
 } from "node:fs";
-import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 const FAKE = fileURLToPath(new URL("fixtures/fake-omp.mjs", import.meta.url));
-const TOKEN = "tok-fake-omp";
 
 /** A line the fake prints or records, with the keys the tests read. */
 const LineSchema = z.looseObject({
@@ -45,63 +45,39 @@ const LineSchema = z.looseObject({
     .optional(),
 });
 type Line = z.infer<typeof LineSchema>;
-const RpcSchema = z.object({
-  method: z.string(),
-  params: z.object({
-    name: z.string().optional(),
-    arguments: z.looseObject({ status: z.unknown().optional() }).optional(),
-  }),
+const HostCallSchema = z.object({
+  type: z.literal("host_tool_call"),
+  id: z.string(),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  arguments: z.looseObject({ status: z.unknown().optional() }).optional(),
 });
+type HostCall = z.infer<typeof HostCallSchema>;
 type Leg = {
   status: Promise<number | null>;
   stdout: () => string;
   lines: () => Line[];
   stderr: () => string;
   signal: (name: NodeJS.Signals) => void;
+  /** The host tool calls the leg made, each answered at once. */
+  hostCalls: () => HostCall[];
 };
 
+/** The host tools a leg offers, as Ork names them to the model. */
+const HOST_TOOLS = ["ork_ask_user", "ork_report", "ork_extract"];
+
 /**
- * The stand-in for Ork's endpoint: answers `tools/list` and `tools/call` behind
- * the token.
+ * The host's answer to a host tool call: its name answered, an error for a
+ * report that does not pass.
  */
-const calls: string[] = [];
-let server: Server;
-let url = "";
-beforeAll(async () => {
-  server = createServer((req, res) => {
-    let body = "";
-    req.on("data", (chunk: Buffer) => {
-      body += chunk.toString();
-    });
-    req.on("end", () => {
-      const ok = req.headers.authorization === `Bearer ${TOKEN}`;
-      const { method, params } = RpcSchema.parse(JSON.parse(body));
-      calls.push(
-        `${method}${params.name === undefined ? "" : `:${params.name}`}`,
-      );
-      const result =
-        method === "tools/list"
-          ? { tools: [] }
-          : {
-              content: [
-                { type: "text", text: `${params.name ?? ""} answered` },
-              ],
-              isError:
-                params.name === "report" && params.arguments?.status !== "pass",
-            };
-      res
-        .writeHead(ok ? 200 : 401)
-        .end(ok ? JSON.stringify({ jsonrpc: "2.0", id: 1, result }) : "");
-    });
-  });
-  await new Promise<void>(resolve => {
-    server.listen(0, "127.0.0.1", resolve);
-  });
-  const address = server.address();
-  url = `http://127.0.0.1:${String(typeof address === "object" && address !== null ? address.port : 0)}/mcp`;
-});
-afterAll(() => {
-  server.close();
+const hostResult = (call: HostCall) => ({
+  type: "host_tool_result",
+  id: call.id,
+  result: {
+    content: [{ type: "text", text: `${call.toolName} answered` }],
+    isError:
+      call.toolName === "ork_report" && call.arguments?.status !== "pass",
+  },
 });
 
 const OVERLAY = (timeoutMs: number): string =>
@@ -117,8 +93,8 @@ const OVERLAY = (timeoutMs: number): string =>
     "    write: deny",
     "    eval: deny",
     "    task: deny",
-    "    mcp__ork_session_ork_report: allow",
-    "    mcp__ork_session_ork_ask_user: allow",
+    "    ork_report: allow",
+    "    ork_ask_user: allow",
     "extensionHandlers:",
     `  toolCallTimeoutMs: ${String(timeoutMs)}`,
     "prewalk:",
@@ -142,27 +118,13 @@ const guardOf = (dir: string, body: string): string =>
 const ALLOW = `pi.on("tool_call", e => log({ asked: e.toolCallId, name: e.toolName, input: e.input })); pi.on("tool_result", e => log({ result: e.toolCallId, isError: e.isError }));`;
 
 /**
- * A private folder (overlay, guard, plugin) like the adapter writes, in a new
- * temporary folder.
+ * A private folder (overlay, guard) like the adapter writes, in a new temporary
+ * folder.
  */
-const folder = (
-  guard = ALLOW,
-  timeoutMs = 7_260_000,
-  token = TOKEN,
-): string => {
+const folder = (guard = ALLOW, timeoutMs = 7_260_000): string => {
   // The real path: the fake reports `process.cwd()`, which resolves macOS's /var link.
   const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-fake-omp-")));
-  const plugin = path.join(dir, "secret", "plugin");
-  mkdirSync(path.join(plugin, ".claude-plugin"), { recursive: true });
-  writeFileSync(
-    path.join(plugin, ".claude-plugin", "plugin.json"),
-    JSON.stringify({ name: "ork-session", version: "0.0.0" }),
-  );
-  const headers = { Authorization: `Bearer ${token}` };
-  writeFileSync(
-    path.join(plugin, ".mcp.json"),
-    JSON.stringify({ mcpServers: { ork: { type: "http", url, headers } } }),
-  );
+  mkdirSync(path.join(dir, "secret"));
   writeFileSync(path.join(dir, "secret", "overlay.yml"), OVERLAY(timeoutMs));
   writeFileSync(path.join(dir, "secret", "guard.mjs"), guardOf(dir, guard));
   mkdirSync(path.join(dir, "work"));
@@ -187,8 +149,6 @@ const legArgs = (dir: string, extra: string[] = []): string[] => [
   path.join(dir, "secret", "overlay.yml"),
   "--trusted-extension",
   path.join(dir, "secret", "guard.mjs"),
-  "--plugin-dir",
-  path.join(dir, "secret", "plugin"),
   ...extra,
 ];
 
@@ -196,14 +156,19 @@ const legArgs = (dir: string, extra: string[] = []): string[] => [
 const PROTOCOL = new Set([
   "ready",
   "response",
+  "host_tool_call",
   "prompt_result",
   "session_settled",
 ]);
 
+/** A frame Ork writes, as one line. */
+const frame = (value: object): string => `${JSON.stringify(value)}\n`;
+
 /**
  * Starts the fake in `dir/work`, with `script` (a list of requests) and extra
- * variables, sends the brief as the `prompt` frame, and closes its stdin once
- * the session settled, so it exits.
+ * variables, offers it Ork's host tools and sends the brief as the `prompt`
+ * frame, answers each host tool call, and closes its stdin once the session
+ * settled, so it exits.
  */
 const leg = (
   dir: string,
@@ -216,7 +181,6 @@ const leg = (
     env: {
       ...process.env,
       FAKE_SCENARIO: "",
-      OMP_MCP_REQUIRE_READY: "1",
       FAKE_OMP_RECORD: path.join(dir, "record.jsonl"),
       ...(script === undefined
         ? {}
@@ -226,14 +190,37 @@ const leg = (
   });
   let stdout = "";
   let stderr = "";
+  let read = 0;
+  const hostCalls: HostCall[] = [];
   child.stdin.on("error", () => {
     // A leg that failed to start closed its stdin first.
   });
+  const tools = HOST_TOOLS.map(name => ({
+    name,
+    description: name,
+    parameters: { type: "object" },
+  }));
+  child.stdin.write(frame({ type: "set_host_tools", id: "h1", tools }));
   child.stdin.write(
-    `${JSON.stringify({ type: "prompt", id: "p1", message: "Do the task" })}\n`,
+    frame({ type: "prompt", id: "p1", message: "Do the task" }),
   );
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();
+    const end = stdout.lastIndexOf("\n") + 1;
+    // `--version` prints no JSON: only a line that is an object can be a call.
+    const calls = stdout
+      .slice(read, end)
+      .split("\n")
+      .filter(line => line.startsWith("{"))
+      .flatMap(line => {
+        const call = HostCallSchema.safeParse(JSON.parse(line));
+        return call.success ? [call.data] : [];
+      });
+    read = end;
+    for (const call of calls) {
+      hostCalls.push(call);
+      child.stdin.write(frame(hostResult(call)));
+    }
     if (stdout.includes('"session_settled"')) child.stdin.end();
   });
   child.stderr.on("data", (chunk: Buffer) => {
@@ -250,6 +237,7 @@ const leg = (
     signal: name => {
       child.kill(name);
     },
+    hostCalls: () => hostCalls,
   };
 };
 
@@ -279,6 +267,10 @@ const ends = (lines: Line[]): Line[] =>
   lines.filter(line => line.type === "tool_execution_end");
 const sessionOf = (lines: Line[]): Line | undefined =>
   lines.find(line => line.type === "session");
+
+/** The fake's response to the leg's `set_host_tools` (`h1`). */
+const reply = (child: Leg): Line | undefined =>
+  parseLines(child.stdout()).find(line => line.id === "h1");
 
 const BASH = (command: string) => ({ tool: "bash", input: { command } });
 const sleep = (ms: number) =>
@@ -346,18 +338,28 @@ describe("the fake omp, starting", () => {
     },
   );
 
-  it("ends the leg when Ork's server refuses its token, under OMP_MCP_REQUIRE_READY", async () => {
-    const dir = folder(ALLOW, 7_260_000, "wrong");
-    const child = leg(dir, legArgs(dir));
-    expect([await child.status, child.lines()]).toEqual([1, []]);
-    expect(child.stderr()).toBe(
-      "error: MCP servers not ready: ork-session:ork\n",
-    );
+  it("answers set_host_tools with the tools' names, or an error under FAKE_OMP_HOST_TOOLS=refuse", async () => {
+    const dir = folder();
+    const offered = leg(dir, legArgs(dir));
+    const refused = leg(dir, legArgs(dir), undefined, {
+      FAKE_OMP_HOST_TOOLS: "refuse",
+    });
+    expect([await offered.status, await refused.status]).toEqual([0, 0]);
+    expect(reply(offered)).toMatchObject({
+      type: "response",
+      success: true,
+      data: { toolNames: HOST_TOOLS },
+    });
+    expect(reply(refused)).toMatchObject({
+      type: "response",
+      success: false,
+      error: "host tools are not supported",
+    });
   });
 });
 
 describe("the fake omp, a leg", () => {
-  it("prints the recorded lines, reaches Ork's tools under the plugin's names, and ends with agent_end", async () => {
+  it("prints the recorded lines, calls Ork's host tools by their names, and ends with agent_end", async () => {
     const dir = folder();
     const child = leg(dir, legArgs(dir));
     expect(await child.status).toBe(0);
@@ -384,7 +386,7 @@ describe("the fake omp, a leg", () => {
       lines
         .filter(line => line.type === "tool_execution_start")
         .map(line => line.toolName),
-    ).toEqual(["mcp__ork_session_ork_ask_user", "mcp__ork_session_ork_report"]);
+    ).toEqual(["ork_ask_user", "ork_report"]);
     expect(assistantEnds(lines)[0]).toMatchObject({
       message: {
         usage: {
@@ -400,13 +402,33 @@ describe("the fake omp, a leg", () => {
         responseId: "resp_1",
       },
     });
-    expect(calls).toEqual(
-      expect.arrayContaining([
-        "tools/list",
-        "tools/call:ask_user",
-        "tools/call:report",
-      ]),
-    );
+    const starts = lines.filter(line => line.type === "tool_execution_start");
+    expect(
+      child.hostCalls().map(call => [call.toolName, call.toolCallId]),
+    ).toEqual(starts.map(line => [line.toolName, line.toolCallId]));
+    expect(ends(lines).map(line => line["result"])).toMatchObject([
+      { content: [{ text: "ork_ask_user answered" }] },
+      { content: [{ text: "ork_report answered" }] },
+    ]);
+  });
+
+  it("finds no tool for an Ork name it was not offered, nor an MCP name", async () => {
+    const dir = folder();
+    const child = leg(dir, legArgs(dir), [
+      { calls: [{ tool: "ork_nope" }, { tool: "mcp__ork__report" }] },
+    ]);
+    expect(await child.status).toBe(0);
+    expect(ends(child.lines())).toMatchObject([
+      {
+        isError: true,
+        result: { content: [{ text: 'Tool "ork_nope" not found' }] },
+      },
+      {
+        isError: true,
+        result: { content: [{ text: 'Tool "mcp__ork__report" not found' }] },
+      },
+    ]);
+    expect(child.hostCalls()).toEqual([]);
   });
 
   it("records each leg's arguments and environment, and each call that ran", async () => {
@@ -461,7 +483,7 @@ describe("the fake omp, a leg", () => {
       result: {
         content: [
           {
-            text: 'Tool "mcp__ork_session_ork_extract" requires approval but no interactive UI available',
+            text: 'Tool "ork_extract" requires approval but no interactive UI available',
           },
         ],
       },

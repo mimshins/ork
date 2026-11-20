@@ -12,6 +12,12 @@ export const ORK_SERVER = "ork";
 /** The name Claude Code gives an Ork tool: `mcp__ork__<name>`. */
 export const toolId = (name: string): string => `mcp__${ORK_SERVER}__${name}`;
 
+/**
+ * The name a protocol driver's model sees for an Ork host tool
+ * (`CliAdapter.hostTools`): `ork_<name>`.
+ */
+export const hostToolName = (name: string): string => `${ORK_SERVER}_${name}`;
+
 export type ToolText = {
   content: { type: "text"; text: string }[];
   isError?: boolean;

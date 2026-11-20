@@ -8,8 +8,11 @@
  *   combined; a stop while deferred ends it interrupted; a hold that cannot be
  *   asked refuses the call; a stop while a call is held ends the session with
  *   the call not run; a `heavy` command waits for its slot and frees it once it
- *   has run, while the session goes on; and a session with no hold port asks
- *   nothing.
+ *   has run, while the session goes on; a session with no hold port asks
+ *   nothing; and Ork's tools reach the session as host tools (`ork_ask_user`
+ *   and `ork_report` answered, the report read, a refused `set_host_tools`
+ *   failing the leg, the endpoint `hold.json` names listing no tools, a call
+ *   pending at a stop never answered).
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -126,8 +129,8 @@ describe("an omp session's paused node", () => {
     });
     expect(typesOf(seen)).not.toContain("tool.called");
     expect(calls("ran").map(call => call.tool)).toEqual([
-      "mcp__ork_session_ork_ask_user",
-      "mcp__ork_session_ork_report",
+      "ork_ask_user",
+      "ork_report",
     ]);
     expect(legs()).toHaveLength(1);
     expect(
@@ -166,24 +169,30 @@ describe("an omp session's paused node", () => {
       300,
     );
     expect(calls("refused").map(call => call.reason)).toEqual([OMP_PAUSED]);
-    // The first leg ends with an abort; the second resumes it, asking once.
+    // The first leg ends with an abort; the second resumes it, asking once,
+    // with Ork's tools offered again, and answers its two host tool calls.
     expect(frames()).toEqual([
       "get_state",
+      "set_host_tools",
       "prompt",
       "abort",
       "get_state",
+      "set_host_tools",
       "prompt",
+      "host_tool_result",
+      "host_tool_result",
     ]);
-    expect(calls("frame").at(-1)?.frame?.message).toMatch(
-      /make the same call again/u,
-    );
+    expect(
+      calls("frame").findLast(call => call.frame?.type === "prompt")?.frame
+        ?.message,
+    ).toMatch(/make the same call again/u);
     expect(valueOf(argsAt(legs(), 1), "--resume")).toBe(sessionIdOf(all));
     expect([argsAt(legs(), 0).includes("--resume"), argsAt(legs(), 1)]).toEqual(
       [false, expect.arrayContaining(["--mode", "rpc", "--session-dir"])],
     );
     expect(calls("ran").map(call => call.tool)).toEqual([
-      "mcp__ork_session_ork_ask_user",
-      "mcp__ork_session_ork_report",
+      "ork_ask_user",
+      "ork_report",
     ]);
     const outcome = outcomeOf(all);
     expect(outcome.report?.status).toBe("pass");
@@ -369,9 +378,135 @@ describe("an omp session's heavy call", () => {
   });
 });
 
+const ListSchema = z.object({
+  result: z.object({ tools: z.array(z.object({ name: z.string() })) }),
+});
+
+/** The tools Ork's endpoint lists to the bearer of `hold.json`'s token. */
+const listedWith = async (holdJson: string): Promise<string[]> => {
+  const held = HoldFileSchema.parse(JSON.parse(readFileSync(holdJson, "utf8")));
+  const reply = await fetch(new URL("/mcp", held.url), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${held.token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+  });
+  return ListSchema.parse(await reply.json()).result.tools.map(
+    tool => tool.name,
+  );
+};
+
+/** The names of the tools a session's events say were called, in order. */
+const calledNames = (events: readonly RuntimeEvent[]): string[] =>
+  events.flatMap(e => (e.type === "tool.called" ? [e.name] : []));
+
+/** A session's end kind, or "hung" when {@link endedIn} gave up. */
+const endKindOf = (ended: RuntimeEvent[] | "hung") =>
+  ended === "hung" ? ended : outcomeOf(ended).end?.kind;
+
+describe("an omp session's host tools", () => {
+  it("offers Ork's tools before the prompt, answers ork_ask_user and ork_report, and the run reads the report", async () => {
+    const asked: string[] = [];
+    const { session, calls, frames } = played({
+      ask: ({ question }) => {
+        asked.push(question);
+        return Promise.resolve("a");
+      },
+    });
+    const all = await collect(session);
+    expect(frames()).toEqual([
+      "get_state",
+      "set_host_tools",
+      "prompt",
+      "host_tool_result",
+      "host_tool_result",
+    ]);
+    const offered = calls("frame").find(
+      call => call.frame?.type === "set_host_tools",
+    )?.frame?.["tools"];
+    expect(offered).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "ork_ask_user" }),
+        expect.objectContaining({ name: "ork_report" }),
+      ]),
+    );
+    expect(asked).toEqual(["Which way?"]);
+    expect(calls("ran").map(call => call.tool)).toEqual([
+      "ork_ask_user",
+      "ork_report",
+    ]);
+    expect(calledNames(all)).toEqual([
+      "mcp__ork__ask_user",
+      "mcp__ork__report",
+    ]);
+    expect(outcomeOf(all).report?.status).toBe("pass");
+  });
+
+  it("ends the leg failed when omp refuses set_host_tools", async () => {
+    const { session, frames } = played({
+      env: { FAKE_OMP_HOST_TOOLS: "refuse" },
+    });
+    const outcome = outcomeOf(await collect(session));
+    expect(outcome.report).toBeNull();
+    expect(outcome.errors).toEqual([
+      expect.stringContaining(
+        "omp refused the session's start: host tools are not supported",
+      ),
+    ]);
+    expect(frames()).not.toContain("host_tool_result");
+  });
+
+  it("gives hold.json the token of an endpoint that answers the hold and lists no tools", async () => {
+    let dir = "";
+    const { holds, recorded, hold } = holdsOf(true);
+    const { session, calls } = played({
+      ports: { hold },
+      adapt: tampered(at => {
+        dir = at;
+      }),
+    });
+    let listed: string[] = ["not seen"];
+    const { all } = await whileHeld(session.events, recorded, async () => {
+      listed = await listedWith(path.join(dir, "hold.json"));
+      holds.proceed();
+    });
+    expect(listed).toEqual([]);
+    expect(calls("ran").map(call => call.tool)).toEqual([
+      "ork_ask_user",
+      "ork_report",
+    ]);
+    expect(outcomeOf(all).report?.status).toBe("pass");
+  });
+
+  it("drops the answer of a host call still pending when the session is stopped", async () => {
+    let answer: (choice: string) => void = quiet;
+    const { session, calls, frames } = played({
+      ask: () =>
+        new Promise(resolve => {
+          answer = resolve;
+        }),
+    });
+    const events = collect(session);
+    await vi.waitFor(
+      () => {
+        expect(calls("ran").map(call => call.tool)).toEqual(["ork_ask_user"]);
+      },
+      { timeout: 5000 },
+    );
+    await session.interrupt();
+    const ended = await endedIn(events);
+    answer("a");
+    await sleep(50);
+    expect(endKindOf(ended)).toBe("interrupted");
+    expect(frames()).not.toContain("host_tool_result");
+  });
+});
+
 // Last: the tests above run in order, so every session has ended.
 describe("every leg of this file's sessions", () => {
-  it("ran with the guard, the plugin and the overlay", () => {
+  it("ran with the guard and the overlay", () => {
     expect(unfenced()).toEqual([]);
   });
 });

@@ -128,4 +128,5 @@ checked before a run: a follow-up.
 - A hold of the whole 9-minute window, and whether a model makes the held call
   again when the resume message asks it to.
 - Whether `--max-cost` on a fork counts the source's spend (assumed yes).
-- What an empty `--tools` does to MCP tools.
+- What an empty `--tools` does to Ork's host tools, and the host tool items in
+  [L534 to L537](../gaps/omp-limits.md).

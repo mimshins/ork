@@ -7,7 +7,9 @@ The gaps found with them are G47 to G49 in [the register](../gaps.md#gaps) (G45
 and G46 are closed). L497 to L502 came with the rpc path
 ([RFC-027](../../rfcs/active/RFC-027-long-lived-protocol-drivers.md),
 [the client](../runtime/duplex-client.md)), built and tested on a fake `omp`
-that replays the spike's frames, never run on a real `omp`.
+that replays the spike's frames, never run on a real `omp`. L534 to L540 came
+with host tools, the model check and the deferral reason
+([ADR-113](../../decisions/ADR-113-omp-host-tools.md)), built the same way.
 
 Found building the `omp` driver (spec: [runtime/omp.md](../runtime/omp.md))
 ([RFC-026](../../rfcs/archived/RFC-026-omp-driver.md)), reading `omp` 18.22.2's
@@ -46,11 +48,10 @@ was left simpler, or could not be checked:
 - **L468 · The user's own `omp` settings the overlay does not name apply.** The
   leg uses the user's agent folder and profile (their login stays where it is),
   with Ork's overlay and flags on top. A key the overlay does not name keeps the
-  user's value, and with `OMP_MCP_REQUIRE_READY=1` a user's own MCP server that
-  is down could end every leg. Whether the overlay's `disabledProviders` and
+  user's value. Whether the overlay's `disabledProviders` (`claude-plugins`
+  among them now that Ork's tools are host tools, not a plugin) and
   `disabledExtensions` keep the user's servers out was not measured (the hand
-  check used an empty agent folder). The `claude-plugins` provider must stay
-  enabled, as Ork's plugin loads through it.
+  check used an empty agent folder).
 - **L469 · Dollars are catalogue prices, and some requests are on no line.**
   `omp` prices a request from its own catalogue, so a subscription login gets
   notional dollars and a model with no known price costs 0: `budgetUsd` alone
@@ -63,13 +64,14 @@ was left simpler, or could not be checked:
   count, so the cap errs tight, never loose. A session resumed after its entry
   was removed gets no credit for what it spent and may end at once at its cap. A
   fork's cap assumes `omp` counts the source session's spend; not measured.
-- **L471 · The token is in two files, and the guard's files can be rewritten.**
-  Ork's token sits in the plugin's `.mcp.json` and in `hold.json`, both 0600 in
-  a 0700 folder outside the checkout, gone when the session ends. The guard
-  refuses `omp`'s own file tools on that folder but cannot fence a shell: a
-  command the node's rules allow can read the token, or rewrite the guard, the
-  hold file or the marker between legs (as L447 for Codex). The token opens only
-  this session's Ork tools and hold.
+- **L471 · The token is in one file, and the guard's files can be rewritten.**
+  Ork's token sits in `hold.json` only (0600 in a 0700 folder outside the
+  checkout, gone when the session ends); the plugin's `.mcp.json` is gone with
+  the plugin. The guard refuses `omp`'s own file tools on that folder but cannot
+  fence a shell: a command the node's rules allow can read the token, or rewrite
+  the guard, the hold file or the marker between legs (as L447 for Codex). The
+  runner's HTTP endpoint serves `/hold` only on `omp` (a `tools/list` is empty),
+  so the token opens this session's hold endpoint and nothing else.
 - **L472 · `omp` has no sandbox, so the guard is the only fence for file
   tools.** With `write` allowed, `omp` wrote outside the working directory
   (`/tmp/…` and `../`), and its approval settings are per tool, not per path.
@@ -94,24 +96,25 @@ was left simpler, or could not be checked:
   to the runtime port.
 - **L476 · Errors are read by text, and a failed request's lines were never
   seen.** Exit 1 has several meanings (no login, an unknown model, an unknown
-  session, Ork's server not ready, a guard that did not load), told apart by the
-  last block of stderr through the shared provider-error classifier; a changed
-  sentence ends as `driver_crashed`. The lines `omp` prints for a failed model
-  request, and the values `stopReason` takes besides `toolUse`, `stop` and
-  `aborted`, were not captured.
+  session, a guard that did not load), told apart by the last block of stderr
+  through the shared provider-error classifier; a changed sentence ends as
+  `driver_crashed`. The lines `omp` prints for a failed model request, and the
+  values `stopReason` takes besides `toolUse`, `stop` and `aborted`, were not
+  captured.
 - **L477 · `omp models --json` can take about 15 seconds on a fresh home.**
   `ork doctor`, `ork validate` and `ork run` read it for the login check, so
   they can wait that long on a machine where `omp` has not cached its model
   list, even while the driver is unproven. A cached list or a shorter wait for
   an unproven driver would close it.
 - **L478 · A new Ork tool needs an entry in the overlay.** With
-  `tools.approvalMode: always-ask`, `omp` asks before an MCP tool with no
-  `tools.approval` entry, and a wildcard key did not work. On the print path
-  (`--no-ui`) that was a refusal ("requires approval but no interactive UI
+  `tools.approvalMode: always-ask`, `omp` asks before a tool with no
+  `tools.approval` entry (measured for the MCP route Ork's tools used to take; a
+  host tool's is not re-measured), and a wildcard key did not work. On the print
+  path (`--no-ui`) that was a refusal ("requires approval but no interactive UI
   available"); over rpc it is a `select` Ork answers through the human channel,
   so a tool added to Ork later asks a person on `omp` until the overlay lists it
-  by its `mcp__ork_session_ork_<tool>` name. It still fails closed (a person, or
-  a deny, never an allow), but no longer fails loudly.
+  by its `ork_<tool>` host tool name. It still fails closed (a person, or a
+  deny, never an allow), but no longer fails loudly.
 - **L479 · The overlay's values are not checked by `omp`.** An unknown key or a
   wrong-type value gave no error and no stderr: a typo does nothing. The tests
   read effective values back with `omp config get`, not the fact that a leg ran.
@@ -123,18 +126,18 @@ was left simpler, or could not be checked:
   it is `ready` waits for the start-up (L500). Until it arrives, `read_inbox`
   and `wait_for_messages` still say "no message" (as L451 for Codex).
 - **L481 · The driver leans on flags `omp --help` does not list.**
-  `--trusted-extension`, `--plugin-dir` and `--fork` are in `omp`'s
-  `cli-reference.md` and work on 18.22.2, but are not in `--help`. A release
-  that drops one ends every leg with exit 2 ("unknown flag") and no model call;
-  the doctor's minimum version does not catch a newer break.
+  `--trusted-extension` and `--fork` are in `omp`'s `cli-reference.md` and work
+  on 18.22.2, but are not in `--help`. A release that drops one ends every leg
+  with exit 2 ("unknown flag") and no model call; the doctor's minimum version
+  does not catch a newer break.
 - **L482 · What the user's own `omp` setup adds to a session is unmeasured.**
   `--no-skills`, `--no-rules`, `--trusted-extension` (which loads only Ork's
   guard) and the disabled providers keep the user's setup out of the session,
   but what the user's own extensions, rules, context files and MCP servers add,
   and how the repository's `AGENTS.md` is read, were not measured. `omp` also
-  keeps Ork's MCP tools on whatever `--tools` lists; what an empty `--tools`
-  does to them is not known, so a node with nothing to offer gets `read` alone,
-  denied.
+  keeps Ork's tools on whatever `--tools` lists (measured when they were MCP
+  tools); what an empty `--tools` does to Ork's host tools is not known, so a
+  node with nothing to offer gets `read` alone, denied.
 - **L497 · A frame `omp` sends in chunks is not read.** `ready` reports
   `maxFrameBytes: 1048576` and says frames above it come in chunks; no chunk was
   captured, so its shape is unknown and cannot be reassembled blind. The codec
@@ -169,3 +172,47 @@ was left simpler, or could not be checked:
   interleaves calls, a person is shown the wrong tool or arguments. It cannot
   allow a tool the overlay lists as denied, and a `select` with no call to pair
   is cancelled.
+- **L534 · A host tool call has no timeout of Ork's own.** The runner waits for
+  an Ork tool as long as it runs (`delegate` and `ask_user` can wait for hours),
+  and writes its `host_tool_result` when it ends. Whether `omp` cuts a
+  `host_tool_call` that waits long, and what the model then sees, was not
+  measured; the plugin route set `OMP_MCP_TIMEOUT_MS=0` for this, and host tools
+  have no such setting known. A call still running when the leg ends has its
+  answer dropped, not written.
+- **L535 · `host_tool_cancel` and `loadMode` are not used.** `omp` can cancel a
+  host tool call and sets a tool's `loadMode`; the codec answers no cancel and
+  sends no `loadMode`, so a stopped call runs to its end in Ork (its answer
+  dropped), and `omp` loads each Ork tool with its own default. Neither was
+  measured.
+- **L536 · Whether the guard sees a host tool's call is unmeasured.** The guard
+  maps `ork_<tool>` to `mcp__ork__<tool>` and applies the node's rules, hold and
+  stop marker as for any call, but only if `omp` fires `tool_call` for a host
+  tool. If it does not, the overlay's per-tool `deny` is the only wall for Ork's
+  tools: a node's `deny` of one still holds, an `only` or path rule on its
+  arguments and the pause hold do not. The gate run measures it.
+- **L537 · Two host tool shapes are guessed.** The spike measured
+  `set_host_tools` answering `{toolNames}`, a `host_tool_call`'s `id`,
+  `toolCallId`, `toolName` and `arguments`, and a result's `content`. Not
+  measured, so chosen to match: the request's field `tools` (an array of `name`,
+  `description`, `parameters`), the result's `isError` and how a failed call is
+  marked. A `set_host_tools` error ends the leg failed with "omp refused the
+  session's start: …"; a wrong field name would do that on every leg.
+- **L538 · The model check reads only an exact form, and costs a process.** A
+  node's model is checked against the `selector` of each entry of
+  `omp models --json` only when it is `provider/model` with no `{{`; a fuzzy
+  name (`omp.opus`), a role and a templated model are left to `omp` and fail at
+  the session, as before. The match is exact and case-sensitive, so a
+  `provider/model` that `omp` would resolve loosely is refused ("not in
+  `omp models`"). A list that fails, times out or is empty says nothing. The 15
+  seconds `omp models --json` can take on a fresh home (L477) now also applies
+  to `ork run` and `ork resume` once, when a node names an exact `omp` model.
+- **L539 · The model check is in `ork run` and `ork resume` only.**
+  `ork validate` stays offline, and `ork run --node` and `ork chat` do not
+  check, so an unknown exact model there still fails when the session starts.
+  Running the check there waits until the preflight's form is settled.
+- **L540 · The guard's refusal text still says Ork paused the node on a slot
+  deferral.** The resume message names the real reason (a pause, or a `heavy`
+  slot that was not free), but the guard's refusal, which the model reads first,
+  is "Ork paused this node, so this call did not run." on both. Carrying the
+  reason in the hold hook's answer, and following it in the fake's `PAUSED`
+  pattern, would close it.

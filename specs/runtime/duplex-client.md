@@ -40,13 +40,14 @@ reach its process, never both:
 The client owns the process, the line reader and the table of requests Ork has
 written; a codec only maps frames. Its parts:
 
-| Part                  | What it does                                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `open(spec, leg)`     | the leg's first requests: the spec's prompt, and on a leg resumed after a deferral the resume message instead (any other resume opens with the node's prompt) |
-| `decode(frame)`       | events (usage included), and optionally `ready`, a `reply` to a request, an `ask`, frames to `write` back at once, or a `fail` that ends the leg              |
-| `message(text)`       | a request that reaches the model before the turn ends                                                                                                         |
-| `interrupt()`         | a request that stops the turn; the session settles after it                                                                                                   |
-| `answer(ask, choice)` | the frame that answers an `ask`: allow or deny, never "allow for the rest of the session"                                                                     |
+| Part                       | What it does                                                                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `open(spec, leg)`          | the leg's first requests: Ork's host tools when the leg has any, then the spec's prompt, and on a leg resumed after a deferral the resume message instead (any other resume opens with the node's prompt) |
+| `decode(frame)`            | events (usage included), and optionally `ready`, a `reply` to a request, an `ask`, a `call` of a host tool, frames to `write` back at once, or a `fail` that ends the leg                                 |
+| `message(text)`            | a request that reaches the model before the turn ends                                                                                                                                                     |
+| `interrupt()`              | a request that stops the turn; the session settles after it                                                                                                                                               |
+| `answer(ask, choice)`      | the frame that answers an `ask`: allow or deny, never "allow for the rest of the session"                                                                                                                 |
+| `callResult(call, result)` | the frame that completes a `call`, with the tool's `ToolText`                                                                                                                                             |
 
 ## What the client does
 
@@ -67,6 +68,19 @@ written; a codec only maps frames. Its parts:
   leg's end aborts. An allow and a deny are answered; a failed or withdrawn
   `permit` is a deny. A frame the codec cannot read as an ask is answered as a
   cancel by the codec, never as an allow.
+- **Host tools.** An adapter with `hostTools: true` takes Ork's tools over its
+  protocol: the runner binds them as it does for an MCP endpoint, passes them in
+  `LegContext.hostTools` (each a `HostTool`: `name` as the model sees it,
+  `description`, `parameters` as the tool's JSON Schema, and `call`), and starts
+  its HTTP server with the hold handler only. A `call` the codec decodes
+  (`DecodedFrame.call`: `id`, `tool`, `args`) is run by
+  [host-calls.ts](../../packages/runtime/src/host-calls.ts): it finds the tool
+  by name, calls it and writes `codec.callResult`. Calls may overlap (`delegate`
+  and `ask_user` wait long); each is answered by its own id. An unknown name,
+  bad arguments or a thrown error is answered with an error result that starts
+  with `Ork tool failed:` or `Invalid arguments, nothing ran:`, as the MCP
+  server's tools give; an answer that comes after the leg has ended is dropped,
+  not written.
 - **A frame that is not one.** A line that is not JSON, a line over
   `MAX_FRAME_LINE_BYTES` (1 MiB plus 64 KiB of slack: the tool's own limit is 1
   MiB) or a frame the codec marks `fail` ends the leg `failed` with one line
@@ -90,14 +104,19 @@ written; a codec only maps frames. Its parts:
   never resumes. A protocol session that never named itself cannot resume, so it
   ends `driver_crashed`. `omp`'s codec learns the id from a `get_state` request
   it sends before `prompt`; a deferral before that answers leaves no id.
-- **Which id a resume uses.** The runner sets `LegContext.resumesDeferral` (a
-  fourth argument of `legInputOf`) only when the leg resumes a deferral. A fork
-  leg's `legSpec.resume` holds the source's session id, not the fork's: the
-  leg's own id is `leg.sessionId`, and `legSpec.resume` is only the fallback
-  when none was named; never take it as a fork's own id for a later resume.
+- **Which id a resume uses.** The runner sets `LegContext.deferredFor` (a fourth
+  argument of `legInputOf`) only when the leg resumes a deferral: it is
+  `"pause"` or `"slot"`, the reason the hold hook gave (`onDefer(reason)`), and
+  the codec picks its resume message by it (a pause: the node was paused; a
+  slot: the call waited for a free `heavy` slot, now taken). A fork leg's
+  `legSpec.resume` holds the source's session id, not the fork's: the leg's own
+  id is `leg.sessionId`, and `legSpec.resume` is only the fallback when none was
+  named; never take it as a fork's own id for a later resume.
 
 ## Limits
 
-[L497 to L502](../gaps/omp-limits.md): chunked frames are not read, the resume
-after an `abort` is not measured, unmeasured wire names, cost cap and protocol
-version 2, start-up and event volume, and approvals paired by order.
+[L497 to L502 and L534 to L537](../gaps/omp-limits.md): chunked frames are not
+read, the resume after an `abort` is not measured, unmeasured wire names, cost
+cap and protocol version 2, start-up and event volume, approvals paired by
+order, and what host tools leave unmeasured (call timeout, cancel, `loadMode`,
+the guard's `tool_call`, the request's and result's shapes).

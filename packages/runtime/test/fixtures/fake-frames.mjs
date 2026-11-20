@@ -9,7 +9,9 @@
  *   `bash` and says the answer, then settles; `huge` writes a line over 1 MiB;
  *   `garbage` writes a line that is not JSON; `chunk` writes a `chunk` frame;
  *   `blank` writes blank lines, then settles; `crash` exits 3 with a reason on
- *   stderr; `exit-on-steer` exits at a steer without a response.
+ *   stderr; `exit-on-steer` exits at a steer without a response; `call` calls
+ *   four host tools at once, says each `result` as `<id>:<text>`, and settles
+ *   after the fourth; `call-hang` calls `ork_hang` and then acts as `wait`.
  */
 
 import { createInterface } from "node:readline";
@@ -22,6 +24,14 @@ const out = frame => {
 out({ type: "pid", pid: process.pid });
 if (mode !== "silent") out({ type: "ready" });
 
+const CALLS = [
+  ["c1", "ork_slow"],
+  ["c2", "ork_fast"],
+  ["c3", "ork_nope"],
+  ["c4", "ork_throw"],
+];
+let results = 0;
+
 const onPrompt = () => {
   out({ type: "started", session: "s1" });
   out({ type: "usage", tokens: 7 });
@@ -29,6 +39,12 @@ const onPrompt = () => {
   if (mode === "ask") {
     out({ type: "ask", id: "a1", tool: "bash", args: { command: "ls" } });
   }
+  if (mode === "call") {
+    for (const [id, tool] of CALLS) {
+      out({ type: "call", id, tool, args: { n: 1 } });
+    }
+  }
+  if (mode === "call-hang") out({ type: "call", id: "h1", tool: "ork_hang" });
   if (mode === "huge") process.stdout.write(`${"x".repeat(1_200_000)}\n`);
   if (mode === "chunk") out({ type: "chunk" });
   if (mode === "blank") {
@@ -61,6 +77,11 @@ for await (const line of createInterface({ input: process.stdin })) {
   if (frame.type === "abort" && mode !== "deaf") {
     out({ type: "response", id: frame.id });
     out({ type: "settled", text: "", aborted: true });
+  }
+  if (frame.type === "result") {
+    out({ type: "said", text: `${frame.id}:${frame.text}` });
+    results += 1;
+    if (results === CALLS.length) out({ type: "settled", text: "called" });
   }
   if (frame.type === "answer") {
     out({ type: "said", text: frame.value });

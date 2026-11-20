@@ -1,20 +1,24 @@
 /**
  * @file The `omp --mode rpc` codec (RFC-027): newline-delimited JSON both ways,
- *   not JSON-RPC. Ork writes `get_state` (the session id), `prompt`, `steer`
- *   and `abort`, each with an `id` the tool answers with a `response` frame
- *   (`success`, `error`); it answers an `extension_ui_request` of method
- *   `select` that offers `Approve` and `Deny` with an `extension_ui_response`,
- *   pairing it by order with the `tool_execution_start` before it (the request
- *   names no call). The tool's event frames have print mode's shapes, so
- *   `omp-events.ts` reads them, usage and Ork's ledger included. A
- *   `prompt_result` only marks a turn; the session ends at `session_settled`,
- *   as the last `prompt_result` says (`completed`, `aborted`, or an `error`
- *   whose `code` is `cost_cap`). Shapes measured in RFC-027's spike: `ready`
- *   (`maxFrameBytes`), `steer`'s `message`, `response`, the approval request
- *   and its `value` answer, `prompt_result`'s `status` and `sessionSettled`.
- *   Not measured, so chosen to match the rest: `prompt`'s `message`,
- *   `get_state`'s `data.sessionId`, the cancel answer (`cancelled: true`), an
- *   error's `message`, and how a chunked frame is marked.
+ *   not JSON-RPC. Ork writes `get_state` (the session id), `set_host_tools`
+ *   (Ork's tools, on every leg), `prompt`, `steer` and `abort`, each with an
+ *   `id` the tool answers with a `response` frame (`success`, `error`); it
+ *   answers a `host_tool_call` with a `host_tool_result` of the same `id`, and
+ *   an `extension_ui_request` of method `select` that offers `Approve` and
+ *   `Deny` with an `extension_ui_response`, pairing it by order with the
+ *   `tool_execution_start` before it (the request names no call). The tool's
+ *   event frames have print mode's shapes, so `omp-events.ts` reads them, usage
+ *   and Ork's ledger included. A `prompt_result` only marks a turn; the session
+ *   ends at `session_settled`, as the last `prompt_result` says (`completed`,
+ *   `aborted`, or an `error` whose `code` is `cost_cap`). Shapes measured in
+ *   RFC-027's spike: `ready` (`maxFrameBytes`), `steer`'s `message`,
+ *   `response`, the approval request and its `value` answer, `prompt_result`'s
+ *   `status` and `sessionSettled`, `host_tool_call`'s `id`, `toolName` and
+ *   `arguments`, and the result's `content`. Not measured, so chosen to match
+ *   the rest: `prompt`'s `message`, `get_state`'s `data.sessionId`,
+ *   `set_host_tools`' `tools`, the result's `isError`, the cancel answer
+ *   (`cancelled: true`), an error's `message`, and how a chunked frame is
+ *   marked.
  */
 
 import type { SessionSpec } from "@krapht/ork-core";
@@ -53,12 +57,19 @@ const APPROVE = "Approve";
 const DENY = "Deny";
 
 /**
- * What a leg after a deferral (`LegContext.resumesDeferral`) sends instead of
- * the spec's prompt: the leg before it ended at a pause with the held call not
- * run.
+ * What a leg after a pause's deferral (`LegContext.deferredFor`) sends instead
+ * of the spec's prompt: the leg before it ended at a pause with the held call
+ * not run.
  */
-export const OMP_RESUME_MESSAGE =
+export const OMP_PAUSE_MESSAGE =
   "Ork paused this node before your last tool call ran, so it did not run. The node has continued: make the same call again now, then go on with the task.";
+
+/**
+ * What a leg after a slot's deferral sends instead: the held call waited for a
+ * free `heavy` slot past the hold window, and the runner has taken it since.
+ */
+export const OMP_SLOT_MESSAGE =
+  "Your last tool call did not run: it waited for a free slot for heavy commands (the project's `heavy` rule), and none came free in time. The slot is now taken for you: make the same call again now, then go on with the task.";
 
 /** Whether `frame` is one piece of a frame over the tool's limit. */
 // shortcut: no reassembly, upgrade once a real chunked frame is captured.
@@ -196,6 +207,19 @@ export const ompRpcCodec = (
         // Other methods (`setWidget`, …) need no answer.
         return frame["method"] === "select" ? select(frame) : { events: [] };
       }
+      case "host_tool_call": {
+        const id = str(frame["id"]);
+        if (id === "") return { events: [] };
+        const args = frame["arguments"];
+        return {
+          events: [],
+          call: {
+            id,
+            tool: str(frame["toolName"]),
+            args: isObject(args) ? args : {},
+          },
+        };
+      }
       case "prompt_result": {
         result = frame;
         return { events: [] };
@@ -216,8 +240,26 @@ export const ompRpcCodec = (
       // A leg after a deferral asks for the held call again; any other leg,
       // a plain resume or a fork included, sends its own prompt.
       const message =
-        leg.resumesDeferral === true ? OMP_RESUME_MESSAGE : legSpec.prompt;
-      return [state, request({ type: "prompt", message })];
+        leg.deferredFor === undefined
+          ? legSpec.prompt
+          : leg.deferredFor === "slot"
+            ? OMP_SLOT_MESSAGE
+            : OMP_PAUSE_MESSAGE;
+      // Every leg offers Ork's tools again, a resumed or forked one included.
+      const tools =
+        leg.hostTools === undefined
+          ? []
+          : [
+              request({
+                type: "set_host_tools",
+                tools: leg.hostTools.map(tool => ({
+                  name: tool.name,
+                  description: tool.description,
+                  parameters: tool.parameters,
+                })),
+              }),
+            ];
+      return [state, ...tools, request({ type: "prompt", message })];
     },
     decode,
     message: text => request({ type: "steer", message: text }),
@@ -226,6 +268,11 @@ export const ompRpcCodec = (
       type: "extension_ui_response",
       id: ask.id,
       value: decision === "allow" ? APPROVE : DENY,
+    }),
+    callResult: (hostCall, toolResult) => ({
+      type: "host_tool_result",
+      id: hostCall.id,
+      result: toolResult,
     }),
   };
 };

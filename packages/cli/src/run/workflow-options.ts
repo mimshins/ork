@@ -14,6 +14,7 @@ import type { ToolRunner } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
 import type { TerminalHuman } from "../human.ts";
+import type { ModelList } from "./model-check.ts";
 import type { DriverChecks } from "./ready-driver.ts";
 
 export type RunWorkflowOptions = {
@@ -43,6 +44,11 @@ export type RunWorkflowOptions = {
    * as `ork doctor` runs them).
    */
   driverChecks?: DriverChecks;
+  /**
+   * The models a driver lists, for a node that names an exact one (default: the
+   * real tool's list, as `ork models` prints it).
+   */
+  modelList?: ModelList;
   /** The driver descriptors a node is checked against (default: the real ones). */
   drivers?: readonly DriverNeeds[];
   /**

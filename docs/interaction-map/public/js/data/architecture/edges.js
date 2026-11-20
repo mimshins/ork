@@ -510,9 +510,9 @@ export const EDGES = [
     from: "sessionRunner",
     to: "ompDriver",
     kind: "local",
-    label: "strategies · plugin · guard",
+    label: "strategies · host tools · guard",
     detail:
-      "The `omp` adapter supplies its own strategies, with a private plugin folder as its MCP wiring (the token in its `.mcp.json`), a settings overlay, and a guard that holds the node's rules and asks the runner's hold endpoint before each call. Built, not yet proven on a real session.",
+      "The `omp` adapter supplies its own strategies, with Ork's tools as host tools the runner serves over the leg's pipe (the token only in the guard's `hold.json`), a settings overlay, and a guard that holds the node's rules and asks the runner's hold endpoint before each call. Built, not yet proven on a real session.",
     status: "built",
     docs: [DESIGN.runtime],
   },

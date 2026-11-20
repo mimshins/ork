@@ -1,20 +1,17 @@
 /**
  * @file The `omp` driver's session files (RFC-026): the built-ins a leg offers
  *   (`--tools`), the settings overlay (`--config`) that is the wall behind
- *   Ork's guard, the plugin folder (`--plugin-dir`) that carries Ork's MCP
- *   server, and the hold file the guard reads. `--tools` and the overlay's
- *   approvals come from one function, so the two cannot disagree: a tool is
- *   offered only when the node's rules can allow some call of it, and every
- *   other tool, `eval` and `task` among them, is denied. `omp` asks before any
- *   tool with no approval entry (in rpc mode it asks Ork, which a human then
- *   answers), so each Ork tool is allowed by its own name (a wildcard key does
- *   not work) and never needs asking. Everything is written in a private folder
- *   outside the checkout (0700, files 0600, `secret-file.ts`), removed when the
- *   session ends or a write fails.
+ *   Ork's guard, and the hold file the guard reads (the only file with the
+ *   token). `--tools` and the overlay's approvals come from one function, so
+ *   the two cannot disagree: a tool is offered only when the node's rules can
+ *   allow some call of it, and every other tool, `eval` and `task` among them,
+ *   is denied. `omp` asks before any tool with no approval entry (in rpc mode
+ *   it asks Ork, which a human then answers), so each Ork host tool
+ *   (`ork_<tool>`) is allowed by its own name (a wildcard key does not work)
+ *   and never needs asking. Everything is written in a private folder outside
+ *   the checkout (0700, files 0600, `secret-file.ts`), removed when the session
+ *   ends or a write fails.
  */
-
-import { mkdirSync } from "node:fs";
-import path from "node:path";
 
 import type { SessionSpec } from "@krapht/ork-core";
 
@@ -23,7 +20,7 @@ import { makeSecretFolder } from "../secret-file.ts";
 import { ORK_TOOLS } from "../tools/registry.ts";
 import { toolRuleSet } from "../tools/tool-rules-source.ts";
 import { ORK_SERVER, toolId } from "../tools/tool.ts";
-import { OMP_ORK_PREFIX, OMP_PLUGIN } from "./omp-names.ts";
+import { OMP_HOST_PREFIX } from "./omp-names.ts";
 
 /** The built-ins Ork may offer, in `omp`'s names. */
 const BUILT_INS = ["read", "edit", "write", "bash", "grep", "glob"] as const;
@@ -50,13 +47,13 @@ const COVERS: Readonly<Record<string, readonly string[]>> = {
 
 /**
  * Discovery sources of other tools' files and MCP servers, kept out of every
- * leg. Not `claude-plugins`: Ork's own plugin folder loads through it. Not
- * `native` (the user's own `omp` setup) nor `agents-md` (the repository's
- * `AGENTS.md`).
+ * leg. Not `native` (the user's own `omp` setup) nor `agents-md` (the
+ * repository's `AGENTS.md`).
  */
 const OTHER_TOOLS = [
   "claude",
   "claude-md",
+  "claude-plugins",
   "agent-plugins",
   "agents",
   "codex",
@@ -139,7 +136,7 @@ const approvals = (spec: SessionSpec): Record<string, "allow" | "deny"> => {
     ...Object.fromEntries(NEVER.map(tool => [tool, "deny"])),
     ...Object.fromEntries(
       ORK_TOOLS.map(tool => [
-        `${OMP_ORK_PREFIX}${tool.name}`,
+        `${OMP_HOST_PREFIX}${tool.name}`,
         orkDenied(spec, tool.name) ? "deny" : "allow",
       ]),
     ),
@@ -191,38 +188,11 @@ export const yamlOf = (value: Record<string, unknown>, indent = ""): string =>
     )
     .join("");
 
-/** The plugin folder's files, by path inside it; the token as a literal. */
-export const pluginFiles = (endpoint: OrkEndpoint): Record<string, string> => ({
-  ".claude-plugin/plugin.json": `${JSON.stringify(
-    {
-      name: OMP_PLUGIN,
-      version: "0.0.0",
-      description: "Ork's tools for this session",
-    },
-    null,
-    2,
-  )}\n`,
-  ".mcp.json": `${JSON.stringify(
-    {
-      mcpServers: {
-        [ORK_SERVER]: {
-          type: "http",
-          url: endpoint.url,
-          headers: { Authorization: `Bearer ${endpoint.token}` },
-        },
-      },
-    },
-    null,
-    2,
-  )}\n`,
-});
-
 /** A session's files, by absolute path, and their removal. */
 export type OmpSessionFiles = {
   dir: string;
   overlay: string;
   guard: string;
-  plugin: string;
   /** Only when the session can be held. */
   hold?: string;
   remove: () => void;
@@ -241,9 +211,9 @@ export type OmpSessionOptions = {
 };
 
 /**
- * Writes a session's files in a fresh private folder: the plugin, the hold file
- * (with a hold endpoint), the overlay and the guard. A failure removes the
- * folder before it throws.
+ * Writes a session's files in a fresh private folder: the hold file (with a
+ * hold endpoint), the overlay and the guard. A failure removes the folder
+ * before it throws.
  */
 export const writeOmpSession = (
   spec: SessionSpec,
@@ -252,14 +222,6 @@ export const writeOmpSession = (
 ): OmpSessionFiles => {
   const folder = makeSecretFolder(options.root);
   try {
-    const plugin = path.join(folder.dir, "plugin");
-    mkdirSync(path.join(plugin, ".claude-plugin"), {
-      recursive: true,
-      mode: 0o700,
-    });
-    for (const [name, content] of Object.entries(pluginFiles(endpoint))) {
-      folder.write(path.join("plugin", name), content);
-    }
     const hold =
       endpoint.holdUrl === undefined
         ? undefined
@@ -278,7 +240,6 @@ export const writeOmpSession = (
           ? options.guard
           : options.guard(folder.dir),
       ),
-      plugin,
       ...(hold === undefined ? {} : { hold }),
       remove: folder.remove,
     };

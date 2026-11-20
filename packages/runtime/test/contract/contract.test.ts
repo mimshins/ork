@@ -142,7 +142,7 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
     const events = await collect(start(entry, "extract").session);
     expect(resultsOf(events, "extract")).toEqual([false]);
     expect(outcomeOf(events).text).toMatch(
-      /^1: http:\/\/127\.0\.0\.1:\d+\/mcp\n\[extract: read \d+ characters, returned \d+\]$/u,
+      /^1: http:\/\/127\.0\.0\.1:\d+\/(?:mcp|hold)\n\[extract: read \d+ characters, returned \d+\]$/u,
     );
   });
 

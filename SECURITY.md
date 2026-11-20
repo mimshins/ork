@@ -50,9 +50,10 @@ driver is given it, and what removes it:
   (`ORK_CODEX_MCP_TOKEN`), never an argument or a file, and kept out of any
   shell Codex starts. Nothing with the token is written to disk.
 - **`omp`** (built, not yet proven): a private folder (0700, files 0600) outside
-  the checkout, holding the token in the session's plugin `.mcp.json` and, when
-  the session can be held, `hold.json`. It goes when the session ends or fails,
-  and a crashed session's folder is swept later.
+  the checkout, holding the token in `hold.json` only (the guard's hold
+  endpoint; Ork's tools reach `omp` over its pipe, not through the token). It
+  goes when the session ends or fails, and a crashed session's folder is swept
+  later.
 
 The token is never written to logs, events or artifacts (it is masked), and a
 project's own `.mcp.json` is never changed. A driver with no permission prompt

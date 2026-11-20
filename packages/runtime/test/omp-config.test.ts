@@ -1,9 +1,9 @@
 /**
  * @file The `omp` driver's session files (`omp-config.ts`): the `--tools` list
  *   against a node's rules (a table), the overlay's approvals generated from
- *   the same list, Ork's tools allowed by name, the YAML it is written in, the
- *   plugin folder, the hold file, and the private folder's modes and removal, a
- *   failed write included.
+ *   the same list, Ork's host tools allowed by name, the YAML it is written in,
+ *   the hold file (the only one with the token), and the private folder's modes
+ *   and removal, a failed write included.
  */
 
 import {
@@ -25,7 +25,6 @@ import type { OrkEndpoint } from "../src/adapter.ts";
 import {
   ompTools,
   overlayOf,
-  pluginFiles,
   writeOmpSession,
   yamlOf,
 } from "../src/adapters/omp-config.ts";
@@ -74,7 +73,7 @@ const approval = (spec: SessionSpec): Record<string, string> =>
 
 const allowed = (spec: SessionSpec): string[] =>
   Object.entries(approval(spec))
-    .filter(([name, value]) => value === "allow" && !name.startsWith("mcp__"))
+    .filter(([name, value]) => value === "allow" && !name.startsWith("ork_"))
     .map(([name]) => name);
 
 describe("ompTools", () => {
@@ -169,17 +168,16 @@ describe("overlayOf", () => {
     expect(approval(spec)).toMatchObject({ read: "deny" });
   });
 
-  it("allows each Ork tool by its own name, and denies one the node denies", () => {
-    const names = ORK_TOOLS.map(
-      tool => `mcp__ork_session_ork_${tool.name}`,
-    ).toSorted();
-    const allOrk = Object.keys(approval(specOf()))
-      .filter(name => name.startsWith("mcp__"))
-      .toSorted();
-    expect(allOrk).toEqual(names);
+  it("allows each Ork host tool by its own name, and denies one the node denies", () => {
+    const names = ORK_TOOLS.map(tool => `ork_${tool.name}`).toSorted();
+    const keys = Object.keys(approval(specOf()));
+    expect(keys.filter(name => name.startsWith("ork_")).toSorted()).toEqual(
+      names,
+    );
+    expect(keys.filter(name => name.startsWith("mcp__"))).toEqual([]);
     expect(approval(specOf(rules([], ["mcp__ork__ask_user"])))).toMatchObject({
-      mcp__ork_session_ork_ask_user: "deny",
-      mcp__ork_session_ork_report: "allow",
+      ork_ask_user: "deny",
+      ork_report: "allow",
     });
   });
 
@@ -193,7 +191,7 @@ describe("overlayOf", () => {
       retry: { modelFallback: false, waitForUsageReset: false },
       mcp: { enableProjectConfig: false },
     });
-    expect(overlay["disabledProviders"]).not.toContain("claude-plugins");
+    expect(overlay["disabledProviders"]).toContain("claude-plugins");
     expect(overlay).not.toHaveProperty("extensionHandlers");
   });
 
@@ -209,28 +207,6 @@ describe("yamlOf", () => {
     expect(yamlOf({ a: { b: false, c: "off" }, d: ["x", "y"], e: 3 })).toBe(
       'a:\n  b: false\n  c: "off"\nd: ["x","y"]\ne: 3\n',
     );
-  });
-});
-
-describe("pluginFiles", () => {
-  it("names Ork's server with the token as a literal header", () => {
-    const files = pluginFiles(ENDPOINT);
-    expect(Object.keys(files).toSorted()).toEqual([
-      ".claude-plugin/plugin.json",
-      ".mcp.json",
-    ]);
-    expect(jsonOf(files[".claude-plugin/plugin.json"])).toMatchObject({
-      name: "ork-session",
-    });
-    expect(jsonOf(files[".mcp.json"])).toEqual({
-      mcpServers: {
-        ork: {
-          type: "http",
-          url: ENDPOINT.url,
-          headers: { Authorization: "Bearer TOKEN-omp-config" },
-        },
-      },
-    });
   });
 });
 
@@ -255,26 +231,26 @@ describe("writeOmpSession", () => {
       holdWindowMs: 1000,
       root: temp("ork-omp-root-"),
     });
-    expect(
-      outside(spec.cwd, [files.dir, files.overlay, files.guard, files.plugin]),
-    ).toBe(true);
+    expect(outside(spec.cwd, [files.dir, files.overlay, files.guard])).toBe(
+      true,
+    );
     expect(statSync(files.dir).mode & 0o777).toBe(0o700);
     expect(filesUnder(files.dir)).toEqual([
       "guard.mjs",
       "hold.json",
       "overlay.yml",
-      "plugin/.claude-plugin/plugin.json",
-      "plugin/.mcp.json",
     ]);
     expect(
       filesUnder(files.dir).map(
         name => statSync(path.join(files.dir, name)).mode & 0o777,
       ),
-    ).toEqual([0o600, 0o600, 0o600, 0o600, 0o600]);
-    expect(filesUnder(files.plugin)).toEqual([
-      ".claude-plugin/plugin.json",
-      ".mcp.json",
-    ]);
+    ).toEqual([0o600, 0o600, 0o600]);
+    // The token is in hold.json only.
+    expect(
+      filesUnder(files.dir).filter(name =>
+        readFileSync(path.join(files.dir, name), "utf8").includes(HELD.token),
+      ),
+    ).toEqual(["hold.json"]);
     expect(
       jsonOf(readFileSync(path.join(files.dir, "hold.json"), "utf8")),
     ).toEqual({
@@ -308,7 +284,7 @@ describe("writeOmpSession", () => {
   it("removes the folder when a write throws part-way", () => {
     const root = temp("ork-omp-root-");
     const broken = {
-      url: ENDPOINT.url,
+      ...HELD,
       get token(): string {
         throw new Error("no token");
       },

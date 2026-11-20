@@ -270,8 +270,8 @@ describe("ompDecoder's lines", () => {
   it("names tools in Ork's words and pairs interleaved calls by id", () => {
     const events = decodeAll(ompDecoder(spec), [
       start("c1", "bash", { command: "ls" }),
-      start("c2", "mcp__ork_session_ork_ask_user", { question: "?" }),
-      finish("c2", "mcp__ork_session_ork_ask_user", false),
+      start("c2", "ork_ask_user", { question: "?" }),
+      finish("c2", "ork_ask_user", false),
       finish("c1", "bash", true),
     ]);
     expect(events).toEqual([
@@ -306,13 +306,8 @@ describe("ompDecoder's lines", () => {
 
   it("marks an Ork tool's bad-arguments answer as the agent's fault", () => {
     const events = decodeAll(ompDecoder(spec), [
-      start("c1", "mcp__ork_session_ork_report", {}),
-      finish(
-        "c1",
-        "mcp__ork_session_ork_report",
-        false,
-        `${BAD_ARGUMENTS} status`,
-      ),
+      start("c1", "ork_report", {}),
+      finish("c1", "ork_report", false, `${BAD_ARGUMENTS} status`),
     ]);
     expect(events.at(-1)).toEqual({
       type: "tool.result",
@@ -325,10 +320,10 @@ describe("ompDecoder's lines", () => {
 
   it("keeps the message of an Ork tool's failure, and none of another tool's error", () => {
     const events = decodeAll(ompDecoder(spec), [
-      start("c1", "mcp__ork_session_ork_extract", {}),
+      start("c1", "ork_extract", {}),
       finish(
         "c1",
-        "mcp__ork_session_ork_extract",
+        "ork_extract",
         true,
         `${ORK_FAILED}\nnot a git repository\nmore`,
       ),

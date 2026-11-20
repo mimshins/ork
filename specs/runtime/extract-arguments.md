@@ -8,11 +8,11 @@ Every session whose spec has a folder: the session runner sets `cwd` (the spec's
 `cwd`) and `denyRead` (the `Read(...)` patterns of `tools.deny`) on the tool
 context, and the tool is offered only when `cwd` is set. It is preapproved, one
 line in `ORK_TOOLS`, and the five drivers serve it as they serve every Ork tool
-(`mcp__ork__extract`, OpenCode's `ork_extract`, `omp`'s
-`mcp__ork_session_ork_extract`). Every session's harness instructions carry the
-whole rule in one line: read, search and see git output through it, several
-calls in one turn rather than one chained shell command, and a whole-file Read
-only to edit. It ships with Ork, so a project's own context need not repeat it.
+(`mcp__ork__extract`, OpenCode's `ork_extract`, `omp`'s `ork_extract` as a host
+tool). Every session's harness instructions carry the whole rule in one line:
+read, search and see git output through it, several calls in one turn rather
+than one chained shell command, and a whole-file Read only to edit. It ships
+with Ork, so a project's own context need not repeat it.
 
 **Loaded up front.** Claude Code defers MCP tools behind a tool search, and a
 session that has not searched for `extract` reads with Read and the shell

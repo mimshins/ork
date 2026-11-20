@@ -9,20 +9,39 @@
 import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
 import type { DriverId } from "@krapht/ork-integrations";
 
+import type { ToolText } from "./tools/tool.ts";
+
 /** Where a session reaches Ork's MCP endpoint, and its hold hook if any. */
 export type OrkEndpoint = { url: string; token: string; holdUrl?: string };
+
+/**
+ * One Ork tool as a protocol driver offers it to the tool (host tools):
+ * `parameters` is the tool's JSON Schema, as the MCP server's `inputSchema`.
+ */
+export type HostTool = {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+  call: (args: unknown) => Promise<ToolText>;
+};
+
+/** Why the runner ended a leg at a deferred call: a pause, or a `heavy` slot. */
+export type DeferReason = "pause" | "slot";
 
 /** What a leg of a session runs with besides its spec. */
 export type LegContext = {
   endpoint: OrkEndpoint;
   /** Ork's tools that need no permission prompt, as the tool names them. */
   allowed: readonly string[];
+  /** The session's bound Ork tools, for a driver that declares `hostTools`. */
+  hostTools?: readonly HostTool[];
   /**
    * The leg resumes a session whose last leg the runner ended at a deferred
-   * call: its prompt is no message of the node's, so a codec opens with its own
-   * request to make the held call again. Unset on every other leg.
+   * call, and why it was deferred: its prompt is no message of the node's, so a
+   * codec opens with its own request to make the held call again. Unset on
+   * every other leg.
    */
-  resumesDeferral?: boolean;
+  deferredFor?: DeferReason;
 };
 
 /** The program and its arguments for one leg of a session. */
@@ -170,6 +189,13 @@ export type FrameRequest = { id: string; frame: Frame };
 /** The tool asking Ork to approve one of its tool calls. */
 export type Ask = { id: string; tool: string; args: Record<string, unknown> };
 
+/** The tool calling one of Ork's host tools (`LegContext.hostTools`). */
+export type HostCall = {
+  id: string;
+  tool: string;
+  args: Record<string, unknown>;
+};
+
 /** Ork's answer to an `Ask`; never "allow for the rest of the session". */
 export type Decision = "allow" | "deny";
 
@@ -185,6 +211,8 @@ export type DecodedFrame = Decoded & {
   reply?: { id: string; error?: string };
   /** A question for Ork; the client answers it with `answer`. */
   ask?: Ask;
+  /** A tool call the tool makes of Ork; the client answers it with `callResult`. */
+  call?: HostCall;
   /** Frames to write back at once, such as a cancel for an ask it can't read. */
   write?: Frame[];
   /**
@@ -222,6 +250,8 @@ export type Codec = {
   /** Stops the turn; the session settles after it. */
   interrupt: () => FrameRequest;
   answer: (ask: Ask, decision: Decision) => Frame;
+  /** The frame that completes a host tool call (`DecodedFrame.call`). */
+  callResult: (call: HostCall, result: ToolText) => Frame;
 };
 
 /** One agent CLI, as its strategies. */
@@ -236,6 +266,11 @@ export type CliAdapter = {
    * the runner drives a duplex leg with it, and `command.input` is unset.
    */
   protocol?: (spec: SessionSpec) => Codec;
+  /**
+   * The tool takes Ork's tools over its protocol (`LegContext.hostTools`), so
+   * the runner's HTTP server serves the hold hook only.
+   */
+  hostTools?: true;
   mcp: McpWiring;
   permissions: PermissionPolicy;
   usage: UsageReader;

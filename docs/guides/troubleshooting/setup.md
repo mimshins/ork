@@ -50,10 +50,10 @@ would run untrusted beside Ork's, so a Codex node ends before it starts. Move
 the file away ([Codex](../drivers/codex.md#if-a-node-stops-before-it-starts)).
 
 **`Trusted extension failed to load …`, `Config overlay not found …`,
-`No default model selected`, `MCP servers not ready`.** An `omp` node ended
-before its first model request: Ork's guard or settings for the session could
-not load, `omp` is not signed in (`omp login`), or Ork's tool server did not
-answer ([omp](../drivers/omp.md#if-a-node-stops-before-it-starts)).
+`No default model selected`, `omp refused the session's start`.** An `omp` node
+ended before its first model request: Ork's guard or settings for the session
+could not load, `omp` is not signed in (`omp login`), or `omp` rejected Ork's
+host tools ([omp](../drivers/omp.md#if-a-node-stops-before-it-starts)).
 
 **`No agent driver is ready here, and … name none.`** Neither your `claude`
 login nor an API key or cloud provider is set up, and the nodes it names don't

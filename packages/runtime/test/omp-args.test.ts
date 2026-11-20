@@ -213,7 +213,8 @@ describe("the omp wiring", () => {
     const sessions = flagOf(wired.args, "--session-dir");
     expect(sessions).toBe(path.join(home, ".ork", "omp", "sessions"));
     expect(mode(sessions)).toBe(0o700);
-    const own = ["--config", "--trusted-extension", "--plugin-dir"].map(flag =>
+    expect(wired.args).not.toContain("--plugin-dir");
+    const own = ["--config", "--trusted-extension"].map(flag =>
       flagOf(wired.args, flag),
     );
     for (const file of own) {
@@ -228,8 +229,6 @@ describe("the omp wiring", () => {
     ).toEqual([
       ["guard.mjs", 0o600],
       ["overlay.yml", 0o600],
-      ["plugin/.claude-plugin/plugin.json", 0o600],
-      ["plugin/.mcp.json", 0o600],
     ]);
     expect(readdirSync(cwd)).toEqual([]);
     await wired.release();
@@ -257,7 +256,7 @@ describe("the omp wiring", () => {
     await plain.release();
   });
 
-  it("keeps the token out of the arguments and the environment, and asks omp to fail closed", async () => {
+  it("keeps the token out of the arguments, and sets no MCP environment", async () => {
     const { adapter } = adapterIn();
     const wired = await adapter.mcp.wire(
       { ...spec, budgetUsd: 1 },
@@ -266,10 +265,7 @@ describe("the omp wiring", () => {
     );
     const leg = [...ompArgs(spec), ...wired.args];
     expect(leg.some(arg => arg.includes(TOKEN))).toBe(false);
-    expect(wired.env).toEqual({
-      OMP_MCP_REQUIRE_READY: "1",
-      OMP_MCP_TIMEOUT_MS: "0",
-    });
+    expect(wired.env).toEqual({});
     await wired.release();
   });
 
@@ -384,9 +380,10 @@ describe("an omp session on the fake omp", () => {
     expect(readdirSync(root)).toEqual([]);
     expect(legs().length).toBeGreaterThan(0);
     for (const { args } of legs()) {
-      for (const flag of ["--trusted-extension", "--plugin-dir", "--config"]) {
+      for (const flag of ["--trusted-extension", "--config"]) {
         expect(valueOf(args, flag)).toBeDefined();
       }
+      expect(args).not.toContain("--plugin-dir");
       expect(args.some(arg => arg.includes(TOKEN))).toBe(false);
     }
   });

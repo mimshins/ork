@@ -7,16 +7,17 @@
  *   is `--fork <id>`. Every leg passes Ork's instructions, the thinking level,
  *   the built-ins the node may use (`--tools`), and, from the wiring, the
  *   session's private folder: the settings overlay (`--config`), Ork's guard as
- *   the only extension (`--trusted-extension`), the plugin that carries Ork's
- *   MCP server with its token (`--plugin-dir`), and `--session-dir` under
- *   `~/.ork/omp/sessions`. The guard refuses what the node's rules refuse and
- *   holds a paused node's next call by asking Ork's hold endpoint; a pause past
- *   the window refuses the call, the runner ends the leg with an `abort`, and
- *   `ork continue` resumes it (`--resume <id>`) with a message to make the held
- *   call again. `--max-cost` counts the whole session, so it is what Ork's
- *   ledger says the session had spent plus `budgetUsd`. Never `-p`, `--no-ui`,
- *   `-e`, `--extension`, `--hook`, `--yolo`, `--api-key`, `--profile` or
- *   `--no-session`.
+ *   the only extension (`--trusted-extension`), and `--session-dir` under
+ *   `~/.ork/omp/sessions`. Ork's tools are host tools the codec offers over the
+ *   leg's pipe (`set_host_tools`, `ork_<tool>`), run by the runner; no plugin,
+ *   no MCP server, and the token only in the guard's `hold.json`. The guard
+ *   refuses what the node's rules refuse and holds a paused node's next call by
+ *   asking Ork's hold endpoint; a pause past the window refuses the call, the
+ *   runner ends the leg with an `abort`, and `ork continue` resumes it
+ *   (`--resume <id>`) with a message to make the held call again. `--max-cost`
+ *   counts the whole session, so it is what Ork's ledger says the session had
+ *   spent plus `budgetUsd`. Never `-p`, `--no-ui`, `-e`, `--extension`,
+ *   `--hook`, `--yolo`, `--api-key`, `--profile` or `--no-session`.
  */
 
 // oxlint-disable import/max-dependencies -- the adapter composes one module per strategy
@@ -180,13 +181,9 @@ const wiring = (
         files.overlay,
         "--trusted-extension",
         files.guard,
-        "--plugin-dir",
-        files.plugin,
         ...cap,
       ],
-      // Fail closed when Ork's server is not up; Ork's tools wait as long as
-      // they need (`delegate`, `ask_user`).
-      env: { OMP_MCP_REQUIRE_READY: "1", OMP_MCP_TIMEOUT_MS: "0" },
+      env: {},
       release: () => {
         if (LEDGERS.get(spec.tools) === spent) LEDGERS.delete(spec.tools);
         hooks.signal.removeEventListener("abort", stop);
@@ -221,6 +218,8 @@ export const createOmpAdapter = (options: OmpOptions = {}): CliAdapter => {
     decode: line => ompDecoder({ cwd: "" }).decode(line),
     // Frames both ways; no `command.input`.
     protocol: legCodec(options.home),
+    // Ork's tools go over the protocol; the runner's server serves `/hold` only.
+    hostTools: true,
     mcp: wiring(options.home, windowMs, options.secretRoot),
     // A tool missing from the overlay's approval map asks Ork (`select`).
     permissions: { kind: "callback", denyByDefault: true },

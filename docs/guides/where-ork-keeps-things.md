@@ -56,8 +56,8 @@ mode `0700`, and `state.db` with `0600`, and tightens an older `~/.ork/` that
 others could read the next time it opens the store. A `claude-code` session's
 MCP servers and settings go to it in files in a private temporary folder, not on
 its command line where other users' `ps` could see them, and the files are
-removed when the session ends; an `omp` session's plugin, settings and guard,
-with a copy of Ork's token, are kept the same way. `omp/sessions/` is `0700`.
+removed when the session ends; an `omp` session's settings, guard and hold file
+(with a copy of Ork's token) are kept the same way. `omp/sessions/` is `0700`.
 Ork never prunes `omp/sessions/` or `omp/spent/` (`ork prune` leaves them):
 delete them yourself once you no longer resume those sessions.
 

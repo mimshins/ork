@@ -73,6 +73,22 @@ What lands on `main` is listed here until it ships.
   to do: add the rule to the node's `tools.allow` or say in its prompt not to
   use the tool ([feedback](../guides/feedback/reading.md#where-it-comes-from)).
   Upgrade: none required.
+
+- **`omp` takes Ork's tools over its own pipe, and a wrong model name stops the
+  run early.** Ork's tools now reach `omp` as host tools on the session's pipe,
+  so the private plugin folder, its `.mcp.json` and the `MCP servers not ready`
+  failure are gone, and the session's token sits in one file that opens only the
+  guard's endpoint. `ork run` and `ork resume` refuse a node whose exact
+  `omp.<provider>/<model>` is not in `omp models --json`, naming the node and
+  the model, before anything is spent; fuzzy names, roles and templated models
+  are not checked, and `ork validate` stays offline. A resumed `omp` session
+  tells the model the real reason its call did not run, a pause or a `heavy`
+  slot that was not free, where it always said the node was paused. `omp` stays
+  unproven, so a run still refuses it
+  ([omp](../guides/drivers/omp.md#if-a-node-stops-before-it-starts)). Upgrade: a
+  model name that `omp` resolves fuzzily but `omp models` does not list exactly
+  (`omp.openai/gpt5`) is now refused; write the exact form `omp models` shows.
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

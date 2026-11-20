@@ -4,6 +4,9 @@
  */
 
 // oxlint-disable import/max-dependencies -- a registry imports one module per tool
+import { z } from "zod";
+
+import type { HostTool } from "../adapter.ts";
 import { askUserTool } from "./ask-user.ts";
 import { claimTool, releaseTool } from "./claims.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
@@ -22,6 +25,7 @@ import { reportTool } from "./report.ts";
 import {
   type BoundTool,
   type OrkTool,
+  hostToolName,
   type ToolContext,
   toolId,
 } from "./tool.ts";
@@ -51,3 +55,15 @@ export const orkTools = (context: ToolContext): BoundTool[] =>
 /** Their Claude Code names, for the session's allowed tools. */
 export const preapprovedTools = (tools: readonly BoundTool[]): string[] =>
   tools.filter(t => t.preapproved).map(t => toolId(t.name));
+
+/**
+ * The same tools as a protocol driver's host tools (`CliAdapter.hostTools`),
+ * with the JSON Schema the MCP server gives as `inputSchema`.
+ */
+export const hostTools = (tools: readonly BoundTool[]): HostTool[] =>
+  tools.map(t => ({
+    name: hostToolName(t.name),
+    description: t.description,
+    parameters: z.toJSONSchema(t.schema),
+    call: t.call,
+  }));

@@ -2,10 +2,12 @@
  * @file Tests for the duplex leg (`runDuplexLeg`, RFC-027) on a tiny fake tool
  *   that speaks JSON frames (`fixtures/fake-frames.mjs`) and a trivial codec:
  *   the handshake, requests matched by id and failed at the end, approvals,
- *   stop and kill, deferral, and the failures a frame or an exit ends it with.
+ *   host tool calls, stop and kill, deferral, and the failures a frame or an
+ *   exit ends it with.
  */
 
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
 import { describe, expect, it, vi } from "vitest";
@@ -17,10 +19,12 @@ import type {
   Decision,
   DecodedFrame,
   Frame,
+  HostTool,
 } from "../src/adapter.ts";
 import type { Leg } from "../src/leg-step.ts";
 import { runDuplexLeg } from "../src/session-duplex-leg.ts";
 import type { DuplexIo } from "../src/session-leg.ts";
+import { text as toolText } from "../src/tools/tool.ts";
 
 const FAKE = path.join(import.meta.dirname, "fixtures/fake-frames.mjs");
 
@@ -34,8 +38,11 @@ const usageOf = (tokens: number): SessionUsage => ({
   durationMs: 0,
 });
 
-/** The fake tool's frames as Ork's events; `seen` keeps its pid. */
-const fakeCodec = (seen: { pid: number }): Codec => {
+/** What the fake codec saw: the tool's pid, and the host calls it answered. */
+type Seen = { pid: number; answered: string[] };
+
+/** The fake tool's frames as Ork's events; `seen` keeps what it saw. */
+const fakeCodec = (seen: Seen): Codec => {
   let n = 0;
   const request = (frame: Frame) => {
     n += 1;
@@ -93,6 +100,14 @@ const fakeCodec = (seen: { pid: number }): Codec => {
         args: { command: "ls" },
       },
     }),
+    call: frame => ({
+      events: [],
+      call: {
+        id: String(frame["id"]),
+        tool: String(frame["tool"]),
+        args: { n: 1 },
+      },
+    }),
     chunk: () => ({
       events: [],
       fail: "fake-frames sent a frame in chunks, over its 1048576-byte frame limit",
@@ -109,6 +124,15 @@ const fakeCodec = (seen: { pid: number }): Codec => {
       id: ask.id,
       value: decision,
     }),
+    callResult: (call, result) => {
+      seen.answered.push(call.id);
+      const said = result.content.map(each => each.text).join("");
+      return {
+        type: "result",
+        id: call.id,
+        text: result.isError === true ? `error ${said}` : said,
+      };
+    },
   };
 };
 
@@ -140,7 +164,7 @@ const spec: SessionSpec = {
 type Started = {
   events: RuntimeEvent[];
   io: () => DuplexIo;
-  seen: { pid: number };
+  seen: Seen;
   asked: Ask[];
   finish: Promise<Leg>;
 };
@@ -150,9 +174,10 @@ const start = (
   mode: string,
   permit: (ask: Ask) => Promise<Decision> = () => Promise.resolve("allow"),
   readyMs = 5000,
+  hostTools: HostTool[] = [],
 ): Started => {
   const events: RuntimeEvent[] = [];
-  const seen = { pid: 0 };
+  const seen: Seen = { pid: 0, answered: [] };
   const asked: Ask[] = [];
   let attached: DuplexIo | undefined;
   const leg = runDuplexLeg({
@@ -168,7 +193,7 @@ const start = (
     scope: { facts: { program: "fake-frames" } },
     codec: fakeCodec(seen),
     spec,
-    leg: { endpoint: { url: "", token: "" }, allowed: [] },
+    leg: { endpoint: { url: "", token: "" }, allowed: [], hostTools },
     permit: ask => {
       asked.push(ask);
       return permit(ask);
@@ -193,6 +218,13 @@ const start = (
   };
   return { events, io, seen, asked, finish };
 };
+
+const hostTool = (name: string, call: HostTool["call"]): HostTool => ({
+  name,
+  description: name,
+  parameters: { type: "object" },
+  call,
+});
 
 const isAlive = (pid: number): boolean => {
   try {
@@ -304,6 +336,44 @@ describe("runDuplexLeg", () => {
       { id: "a1", tool: "bash", args: { command: "ls" } },
     ]);
     expect(texts(run.events)).toEqual(["allow"]);
+  });
+
+  it("runs overlapping host tool calls, answering each by its id with Ork's markers on failure", async () => {
+    const run = start("call", undefined, 5000, [
+      hostTool("ork_slow", () => delay(100).then(() => toolText("slow"))),
+      hostTool("ork_fast", args =>
+        Promise.resolve(toolText(JSON.stringify(args))),
+      ),
+      hostTool("ork_throw", () => {
+        throw new Error("boom");
+      }),
+    ]);
+    await expect(run.finish).resolves.toEqual({ kind: "finished" });
+    // The slow call, made first, is answered last: no call waits for another.
+    expect(texts(run.events).at(-1)).toBe("c1:slow");
+    expect(texts(run.events).toSorted()).toEqual([
+      "c1:slow",
+      'c2:{"n":1}',
+      "c3:error Invalid arguments, nothing ran:\nno Ork tool is named ork_nope",
+      "c4:error Ork tool failed:\nboom",
+    ]);
+  });
+
+  it("drops the answer of a host tool call still running when the leg ends", async () => {
+    const called = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const run = start("call-hang", undefined, 5000, [
+      hostTool("ork_hang", () => {
+        called.resolve();
+        return release.promise.then(() => toolText("late"));
+      }),
+    ]);
+    await called.promise;
+    run.io().stop();
+    await expect(run.finish).resolves.toMatchObject({ end: "interrupted" });
+    release.resolve();
+    await delay(50);
+    expect(run.seen.answered).toEqual([]);
   });
 
   it("denies when permit throws", async () => {
