@@ -166,6 +166,16 @@ type Script = {
   answer?: string;
   /** The `docs` session fails instead of reporting. */
   docsFails?: boolean;
+  /** More files the change adds, and that land upstream, by path. */
+  files?: Record<string, string>;
+  upstreamFiles?: Record<string, string>;
+};
+
+const writeAll = (dir: string, files: Record<string, string> = {}) => {
+  for (const [file, text] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    writeFileSync(path.join(dir, file), text);
+  }
 };
 
 const report = (output: NodeOutput) =>
@@ -286,6 +296,7 @@ const run = async (w: World, script: Script) => {
         "HEAD",
       );
       writeFileSync(path.join(docsDir, "app.txt"), script.change);
+      writeAll(docsDir, script.files);
       mkdirSync(path.join(docsDir, ".changeset"));
       writeFileSync(
         path.join(docsDir, ".changeset", "c.md"),
@@ -297,7 +308,9 @@ const run = async (w: World, script: Script) => {
         git(other, "config", "user.name", "t");
         git(other, "config", "user.email", "t@example.com");
         writeFileSync(path.join(other, "app.txt"), script.upstream);
-        git(other, "commit", "-q", "-am", "upstream");
+        writeAll(other, script.upstreamFiles);
+        git(other, "add", "-A");
+        git(other, "commit", "-q", "-m", "upstream");
         git(other, "push", "-q", "origin", "main");
       }
       return report({
@@ -394,6 +407,22 @@ describe("build's publish steps", () => {
       log(w).filter(line => line.startsWith("pnpm run check")),
     ).toHaveLength(1);
     expect(log(w)).toContain("ork follow-ups published main");
+  });
+
+  it("renumbers an ADR main took meanwhile and still reports its outcome", async () => {
+    const w = world();
+    const { result } = await run(w, {
+      change: "base\n",
+      files: { "decisions/ADR-001-mine.md": "# ADR-001: Mine\n" },
+      upstream: "base\n",
+      upstreamFiles: { "decisions/ADR-001-theirs.md": "# ADR-001: Theirs\n" },
+      choice: "main",
+    });
+    expect(result.reasons).toEqual([]);
+    expect(result.status).toBe("succeeded");
+    expect(git(w.remote, "show", "main:decisions/ADR-002-mine.md")).toBe(
+      "# ADR-002: Mine\n",
+    );
   });
 
   it("does not start the resolver, or take the lock, when `docs` fails", async () => {

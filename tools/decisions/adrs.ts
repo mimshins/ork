@@ -128,6 +128,19 @@ const retarget = (target: string, move: AdrMove): string =>
  * `ADR-NNN` (or, in the index, `by NNN`) only where `bare` gives the number it
  * stands for here. Any other ADR, and any other number, is left alone.
  */
+/** Each number of an index row's `by NNN, NNN` list, moved by `to`. */
+const byList = (
+  list: string,
+  to: (digits: string) => number | undefined,
+): string =>
+  list
+    .split(", ")
+    .map(digits => {
+      const moved = to(digits);
+      return moved === undefined ? digits : pad(moved);
+    })
+    .join(", ");
+
 export const renumberAdrLine = (
   line: string,
   moves: readonly AdrMove[],
@@ -165,7 +178,7 @@ export const renumberAdrLine = (
       : `[${prefix}${Number(digits) === move.number ? pad(move.to) : digits}](${retarget(target, move)})`;
   };
   return line.replaceAll(
-    /\[ADR-(\d+)\]\(([^)\s]*)\)|\[(\d+)\]\(\.\/(ADR-[^)\s]*)\)|ADR-\d+(?!\d)(?:(?:-[a-z0-9]+)*\.md)?|\bby (\d+)(?!\d)/gu,
+    /\[ADR-(\d+)\]\(([^)\s]*)\)|\[(\d+)\]\(\.\/(ADR-[^)\s]*)\)|ADR-\d+(?!\d)(?:(?:-[a-z0-9]+)*\.md)?|\bby (\d+(?:, \d+)*)(?!\d)/gu,
     (
       whole,
       adrLabel: string | undefined,
@@ -174,17 +187,14 @@ export const renumberAdrLine = (
       rowTarget: string | undefined,
       by: string | undefined,
     ) => {
-      // `by NNN` is an ADR only in the index's Status column.
-      const to = by === undefined || !index ? undefined : bareOf(by);
+      // `by NNN` (or `by NNN, NNN`) is an ADR only in the index's Status column.
       return adrLabel !== undefined && adrTarget !== undefined
         ? label("ADR-", adrLabel, adrTarget)
         : rowLabel !== undefined && rowTarget !== undefined
           ? label("", rowLabel, `./${rowTarget}`)
           : by === undefined
             ? mention(whole)
-            : to === undefined
-              ? whole
-              : `by ${pad(to)}`;
+            : `by ${index ? byList(by, bareOf) : by}`;
     },
   );
 };

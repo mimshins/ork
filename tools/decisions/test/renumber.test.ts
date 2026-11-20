@@ -194,6 +194,17 @@ describe("renumberAdrLine", () => {
     ).toBe("| [108](./ADR-108-a.md) | A | Amended by 109 |");
   });
 
+  it("rewrites each moved number in an amended-by list", () => {
+    expect(
+      renumberAdrLine(
+        "| [105](./ADR-105-o.md) | O | Amended by 104, 108 |",
+        moves,
+        bare,
+        true,
+      ),
+    ).toBe("| [105](./ADR-105-o.md) | O | Amended by 104, 109 |");
+  });
+
   it("leaves a bare mention alone when it may stand for another ADR", () => {
     const none = new Map<number, number>();
     expect(renumberAdrLine("See ADR-107.", moves, n => none.get(n))).toBe(

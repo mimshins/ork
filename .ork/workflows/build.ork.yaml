@@ -759,7 +759,7 @@ nodes:
         git -C "$WORKTREE" fetch origin main
       fi
       git -C "$WORKTREE" fetch origin "$base"
-      if ! node tools/decisions/renumber.ts "$WORKTREE" origin/main FETCH_HEAD; then
+      if ! node tools/decisions/renumber.ts "$WORKTREE" origin/main FETCH_HEAD > /dev/null; then
         echo "Renumbering this change's ADRs or gap ids failed. The change is committed in $WORKTREE; renumber it there and resume." >&2
         exit 1
       fi
