@@ -1,5 +1,42 @@
 # @krapht/ork
 
+## 1.0.0-alpha.27
+
+### Minor Changes
+
+- [`62d5533`](https://github.com/mimshins/ork/commit/62d5533800c1fc69d90c9025cee4e777d60e5597) Thanks [@mimshins](https://github.com/mimshins)! - Add `omp`, the fifth agent driver: it runs your own `omp` (the CLI of oh-my-pi)
+  headless, one process for each stretch of a session, with Ork's tools through a
+  private plugin and a guard Ork writes to hold each node to its rules and to hold
+  a paused node's next call. It is built and **not yet proven**: `ork validate`
+  and `ork run` refuse a node on it, and `ork doctor` shows it as `skip`, until a
+  capped run on a real `omp` passes. `ork doctor` reads `omp models --json` and
+  shows the number of models your logins reach. Session files go to
+  `~/.ork/omp/sessions/` and a small ledger of what each session spent to
+  `~/.ork/omp/spent/`; Ork never prunes either. The README, the docs overview,
+  `ork --help` and the npm description now name Codex and `omp` beside Claude
+  Code, OpenCode and Command Code.
+
+### Patch Changes
+
+- [`84d88e1`](https://github.com/mimshins/ork/commit/84d88e1f9e09ed8b6a47a792a4801f53e49f0e15) Thanks [@mimshins](https://github.com/mimshins)! - `ork run --detach` and `ork resume --detach` no longer fail with
+  `the run did not start in time` when a driver's CLI is slow during the start:
+  the background process shows it is starting, and the command waits up to two
+  minutes for it (15 seconds with no sign of life). A node that finds too little
+  budget left now gives up its reserve only when another node's reserve can free,
+  so a node starting beside it can no longer be offered dollars the run's budget
+  does not have.
+
+- [`080469a`](https://github.com/mimshins/ork/commit/080469acdb8a84e29fbeca14db89584ddf2fa0f8) Thanks [@mimshins](https://github.com/mimshins)! - Say why an Ork tool call failed. Feedback about a refused or failed Ork tool
+  call (`tool.arguments`, `tool.error`) now carries the first line of the tool's
+  own message, at most 300 characters, with secrets and your `env:` values masked,
+  and one item is kept for each tool instead of one for each node. Only Ork's own
+  tools are recorded this way. `extract` now says what to send instead when it
+  refuses a call (an empty `match` text or `search` pattern, a cut that starts a
+  program, `programs` that is not an array of programs, an unknown field, a path
+  outside the folder), takes `null` and a JSON string for `steps` and `programs`,
+  and files a regular expression git cannot compile as the agent's mistake rather
+  than a failure of Ork.
+
 ## 1.0.0-alpha.26
 
 ### Minor Changes
