@@ -27,7 +27,7 @@ import { createUpdates, type UpdateOptions } from "./updates.ts";
 export const DEFAULT_PORT = 4417;
 
 export type ServerOptions = {
-  /** Ork's version, for `/api/health`. */
+  /** Ork's version, for `/api/health` and the plan limits the store keeps. */
   version: string;
   /** Default 4417; 0 picks a free port (tests). */
   port?: number;
@@ -118,7 +118,9 @@ const listen = (
 export const startServer = async (
   options: ServerOptions,
 ): Promise<RunningServer> => {
-  const store = openStore(storePath(options.home));
+  const store = openStore(storePath(options.home), {
+    version: options.version,
+  });
   const startedAt = new Date().toISOString();
   const uiDir = options.ui?.find(dir => hasUi(dir));
   const updates = createUpdates({

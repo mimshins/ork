@@ -51,6 +51,12 @@ export type StoreOptions = {
    * migration), and SQLite refuses every write (tab completion).
    */
   readOnly?: boolean;
+  /**
+   * Ork's version, recorded with each plan limit; a writable open forgets the
+   * limits other versions recorded, except `rejected` ones. Without it, limits
+   * are recorded with `''` and none are forgotten.
+   */
+  version?: string;
 };
 
 /** A database opened for reading only, refused unless it is current. */
@@ -148,8 +154,13 @@ export const openStore = (
     recordUsage,
     recordToolCpu,
     recordPlanLimit,
+    forgetOtherVersions,
     ...queries
   } = storeQueries(db);
+  const version = options.version ?? "";
+  if (options.readOnly !== true && options.version !== undefined) {
+    forgetOtherVersions(options.version);
+  }
 
   return {
     ...queries,
@@ -215,7 +226,7 @@ export const openStore = (
           recordToolCpu(runId);
         }
         if (event.type === "node.event" && event.event.type === "plan.limit") {
-          recordPlanLimit(event.event, at);
+          recordPlanLimit(event.event, at, version);
         }
         if (event.type === "feedback.recorded") {
           insertFeedback(runId, seq, at, event.node, event.feedback);

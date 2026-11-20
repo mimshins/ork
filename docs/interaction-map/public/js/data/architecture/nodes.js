@@ -1047,7 +1047,7 @@ export const NODES = [
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
-      "A subscription's rate limit reaches the engine as `plan.limit`; only `rejected` stops anything, and it stops the run rather than failing the node.",
+      "A subscription's rate limit reaches the engine as `plan.limit`; only `rejected` stops anything, and it stops the run rather than failing the node. A warning is dated, and stale after 3 hours.",
       "`Session.send` injects a message between turns, or on `omp` (the two-way client, RFC-027) before the turn ends, once the running call finishes; `interrupt()` stops the session.",
       "A session's driver: the one its model names (`claude-code.opus`), else `--driver`, else the node's or its agent's, else the workflow's or project's `defaults.driver`, else the one ready on this machine when the run started. A committed workflow needn't name one. The retired ids `sdk` and `cli` are refused; a stored run that recorded one resumes as `claude-code`.",
       "`SessionSpec.fork` with `resume` starts a copy of a session and leaves the original as it was; a leader's fork answers its children's questions.",

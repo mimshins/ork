@@ -43,6 +43,13 @@ quotas:
   the time it gives, and `ork resume` goes on. If the limit lifts sooner, make
   Ork forget it with `ork usage --clear-plan-limits`, which says how many it
   cleared (`Cleared 1 plan limit(s).`).
+- **A plan's warning ages.** `ork usage` and the Usage panel say when each plan
+  limit was seen:
+  `Claude plan's seven day limit is close, resets <time> (seen 2h ago)`, or
+  `Claude plan's five hour limit was reached, resets <time> (seen 2h ago)`. A
+  warning seen more than 3 hours ago reads `was close … (seen 1d ago, stale)`,
+  dimmed, and changes nothing; only a limit the plan refused stops runs. Ork
+  also forgets the warnings an older version stored when you upgrade.
 
 `ork usage` and the Usage panel show each cap, what it has left and when it
 resets; the token cap shows beside the dollar ones.

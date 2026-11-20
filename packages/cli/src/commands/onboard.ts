@@ -10,6 +10,7 @@ import { openStore } from "@krapht/ork-core";
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { exec } from "../doctor/checks.ts";
 import { runOnboard } from "../onboard/flow.ts";
 import { write, writeErr } from "../output.ts";
@@ -40,7 +41,7 @@ export const onboard = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     const human = terminalHuman();
     try {
       process.exitCode = await runOnboard({

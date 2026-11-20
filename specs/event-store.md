@@ -59,7 +59,12 @@ all views over the same events.
   counts, as before
   ([store/process-age.ts](../packages/core/src/store/process-age.ts)).
 - **Plan limits:** `plan_limits` keeps what Claude Code last said of each of a
-  plan's limits, written with its event, across runs
+  plan's limits, written with its event, across runs, and with the Ork version
+  that wrote it (`ork_version`, migration 21, empty for a limit an older Ork
+  wrote). A store opened with `StoreOptions.version` records that version with
+  each limit, and when the open is writable it deletes the non-`rejected` limits
+  another version wrote; a store opened without one records an empty version and
+  deletes nothing, and a read-only open never deletes
   ([usage](./usage.md#limits-across-runs)).
 - **An event:** the run, a sequence number (1, 2, 3, … in the run), the time,
   and the [run event](./scheduler/resuming-and-events.md#run-events) itself.

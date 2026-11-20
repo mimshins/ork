@@ -44,8 +44,8 @@ ork resume <run>
 ```
 
 **Your plan's limit has lifted, but Ork still refuses.** Ork remembers what
-Claude Code last said about your plan's limits. Once the limit has lifted, make
-it forget:
+Claude Code last said about your plan's limits, and when (`seen 2h ago` in
+`ork usage`). Once the limit has lifted, make it forget:
 
 ```sh
 ork usage --clear-plan-limits

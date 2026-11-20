@@ -93,6 +93,18 @@ export const formatElapsed = (ms: number): string => {
     : `${String(Math.floor(minutes / 60))}:${end}`;
 };
 
+/** `just now`, `5m ago`, `3h ago`, `2d ago`, then the date (as the CLI's `ago`). */
+export const ago = (iso: string, now: number = Date.now()): string => {
+  const minutes = Math.floor((now - Date.parse(iso)) / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${String(minutes)}m ago`;
+  if (minutes < 24 * 60) return `${String(Math.floor(minutes / 60))}h ago`;
+  if (minutes < 7 * 24 * 60) {
+    return `${String(Math.floor(minutes / (24 * 60)))}d ago`;
+  }
+  return iso.slice(0, 10);
+};
+
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,

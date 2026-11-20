@@ -4,6 +4,7 @@
  *   node of a finished run is answered by resuming its last session.
  */
 
+// oxlint-disable import/max-dependencies -- a command wires one module per part of a chat
 import {
   type EventStore,
   findRun,
@@ -16,6 +17,7 @@ import {
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { resumeChat } from "../runs/chat.ts";
@@ -130,7 +132,7 @@ export const chat = defineCommand({
       process.exitCode = 1;
       return;
     }
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     try {
       const found = findRun(store, args.run, process.cwd());
       if (!found.ok) {

@@ -94,7 +94,8 @@ larger window.
 
 A subscription window (for example the five-hour one) is used up. It stops the
 whole run, and may pass. **Who acts:** your account. **What to do:** wait until
-the window resets, then `ork resume`.
+the window resets, then `ork resume`. A plan's "close" warning in `ork usage`
+never stops a run; one seen over 3 hours ago reads "was close … stale".
 
 ## Rate limited
 

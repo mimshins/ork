@@ -13,6 +13,7 @@ import { openStore, storePath } from "@krapht/ork-core";
 import { runCommand } from "citty";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ORK_VERSION } from "../src/__build_info__.ts";
 import { usage } from "../src/commands/usage.ts";
 
 /** A throwaway home whose store holds `limits` plan limits (0 or 1). */
@@ -175,6 +176,75 @@ describe("ork usage filters", () => {
     }
     expect(usage.args).not.toHaveProperty("ids");
     expect(usage.args).not.toHaveProperty("limit");
+  });
+});
+
+/** A home with an old seven-day warning and a fresh five-hour rejection. */
+const seedPlanLimits = (): void => {
+  const home = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-usage-")));
+  vi.stubEnv("HOME", home);
+  vi.stubEnv("ORK_PLAIN", "1");
+  const store = openStore(storePath(home), { version: ORK_VERSION });
+  store.begin({
+    id: "r1",
+    workflow: "w",
+    file: "/p/w.ork.yaml",
+    project: "/p",
+  });
+  for (const [status, window] of [
+    ["allowed_warning", "seven_day"],
+    ["rejected", "five_hour"],
+  ] as const) {
+    store.append("r1", {
+      type: "node.event",
+      id: "a",
+      event: {
+        type: "plan.limit",
+        status,
+        window,
+        resetsAt: "2030-01-01T00:00:00.000Z",
+      },
+    });
+  }
+  store.close();
+  const db = new DatabaseSync(storePath(home));
+  const old = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+  db.prepare(
+    "UPDATE plan_limits SET at = ? WHERE status = 'allowed_warning'",
+  ).run(old);
+  db.close();
+};
+
+const anyString: unknown = expect.any(String);
+const containing = (items: unknown[]): unknown => expect.arrayContaining(items);
+
+describe("ork usage plan limits", () => {
+  it("--json dates each limit and flags only the stale warning", async () => {
+    seedPlanLimits();
+    const resetsAt = "2030-01-01T00:00:00.000Z";
+    expect(await reported("--since", "all")).toMatchObject({
+      limits: {
+        // Each entry matches whole: the rejected one carries no `stale`.
+        plan: containing([
+          {
+            status: "allowed_warning",
+            window: "seven_day",
+            resetsAt,
+            at: anyString,
+            stale: true,
+          },
+          { status: "rejected", window: "five_hour", resetsAt, at: anyString },
+        ]),
+      },
+    });
+  });
+
+  it("prints the stale warning as was close, with when it was seen", async () => {
+    seedPlanLimits();
+    const { out } = await ork("--project", "all", "--since", "all");
+    expect(out).toContain("seven day limit was close");
+    expect(out).toContain("(seen 5h ago, stale)");
+    expect(out).toContain("five hour limit was reached");
   });
 });
 

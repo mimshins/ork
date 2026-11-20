@@ -197,7 +197,9 @@ describe("the Usage panel", () => {
       screen.queryByRole("meter", { name: "All projects, this day" }),
     ).not.toBeNull();
     expect(
-      screen.queryByText("Your Claude plan's five hour limit was reached."),
+      screen.queryByText(
+        /^Claude plan's five hour limit was reached \(seen .+\)$/u,
+      ),
     ).not.toBeNull();
   });
 

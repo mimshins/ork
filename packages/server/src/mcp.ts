@@ -42,7 +42,9 @@ export const openMcp = (options: {
   /** Whether `start_run` is offered. */
   start: boolean;
 }): OpenMcp => {
-  const store = openStore(storePath(options.home));
+  const store = openStore(storePath(options.home), {
+    version: options.version,
+  });
   const context: ServerContext = {
     store,
     version: options.version,

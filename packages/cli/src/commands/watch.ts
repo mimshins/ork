@@ -7,6 +7,7 @@
  *   by accident.
  */
 
+// oxlint-disable import/max-dependencies -- a command wires one module per part of a watch
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -30,6 +31,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { confirm, plain, style, write, writeErr } from "../output.ts";
 import { limitsRefusal, runLimits } from "../run/limits.ts";
 import { lookAt } from "../watch/look.ts";
@@ -252,7 +254,7 @@ export const watch = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     try {
       if (args.status) {
         const report = triggersReport(store, store.projects());

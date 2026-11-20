@@ -15,7 +15,7 @@ import { costOf, shortCount, style } from "../output.ts";
 import { CHIP_LABELS, chip } from "../term/chips.ts";
 import { type Term, termOf } from "../term/mode.ts";
 import { header, table } from "../term/table.ts";
-import { cost } from "./format.ts";
+import { ago, cost } from "./format.ts";
 
 /** `950`, `12.3k`, `4.5M`. */
 export const tokens = shortCount;
@@ -138,12 +138,19 @@ export const formatLimits = (
       const line = `  ${whose}, this ${cap.window}: ${tokens(cap.spentTokens)} of ${tokens(cap.capTokens)} tokens, resets ${shortTime(cap.resetsAt)}`;
       return cap.leftTokens <= 0 ? warned(term, line.trimStart()) : line;
     }),
-    ...plan.map(limit =>
-      warned(
-        term,
-        `Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : "is close"}${limit.resetsAt === undefined ? "" : `, resets ${shortTime(limit.resetsAt)}`}`,
-      ),
-    ),
+    ...plan.map(limit => {
+      const verb =
+        limit.status === "rejected"
+          ? "was reached"
+          : limit.stale === true
+            ? "was close"
+            : "is close";
+      const seen = `seen ${ago(limit.at)}${limit.stale === true ? ", stale" : ""}`;
+      const line = `Claude plan's ${limit.window.replaceAll("_", " ")} limit ${verb}${limit.resetsAt === undefined ? "" : `, resets ${shortTime(limit.resetsAt)}`} (${seen})`;
+      return limit.stale === true
+        ? style("dim", `  ${line}`)
+        : warned(term, line);
+    }),
     "",
   ];
 };

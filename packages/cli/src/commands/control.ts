@@ -20,6 +20,7 @@ import {
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
@@ -158,7 +159,7 @@ export const resume = defineCommand({
       failed(badDriver(args.driver));
       return;
     }
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     const human = terminalHuman();
     try {
       const found = findRun(store, args.run, process.cwd());

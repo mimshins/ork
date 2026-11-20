@@ -6,10 +6,12 @@
  *   file.
  */
 
+// oxlint-disable import/max-dependencies -- a command wires one module per subcommand
 import { openStore } from "@krapht/ork-core";
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { registeredProjects } from "../project/place.ts";
 import { applyItem } from "../runs/apply.ts";
@@ -58,7 +60,7 @@ export const apply = defineCommand({
       return;
     }
     const driver = args.driver;
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     const human = terminalHuman();
     try {
       const found = findFeedbackItem(store, args.item);

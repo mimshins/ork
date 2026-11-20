@@ -10,8 +10,9 @@ run keeps stopping, to be looked at again once a real refusal has been seen
 - **L74 · Usage shows estimates, and a plan's limits only when they bite.**
   Costs are Claude Code's estimates, which are not a subscription's bill. A
   plan's limit is acted on when it says `rejected`, and shown from
-  `allowed_warning`. How much of a window is used is not shown, as that figure
-  isn't in the part of Claude Code's output its types declare.
+  `allowed_warning`, with when it was seen, and one older than 3 hours is shown
+  as stale. How much of a window is used is not shown, as that figure isn't in
+  the part of Claude Code's output its types declare.
   ([usage](../usage.md#reports))
 - **L99 · A quota can be passed.** The ledger sees only finished sessions, so
   runs already working don't see each other, and each session may spend all that

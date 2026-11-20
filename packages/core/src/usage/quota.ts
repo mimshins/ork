@@ -75,8 +75,11 @@ export type LimitsReport = {
    * it.
    */
   tokenCaps?: TokenStanding[];
-  /** The plan limits Claude Code last reported that are not plain `allowed`. */
-  plan: PlanLimit[];
+  /**
+   * The plan limits Claude Code last reported that are not plain `allowed`;
+   * `stale` marks an `allowed_warning` seen more than 3 hours ago.
+   */
+  plan: (PlanLimit & { stale?: true })[];
 };
 
 /** Where a window began and when the next begins, in local time. */
@@ -238,6 +241,9 @@ const refusing = (limits: readonly PlanLimit[], now: Date): PlanLimit[] =>
 /** How long a report with no reset time stays worth showing. */
 const SHOWN_MS = 24 * 60 * 60 * 1000;
 
+/** How long an `allowed_warning` is news; older, it is shown as stale. */
+const WARNING_FRESH_MS = 3 * 60 * 60 * 1000;
+
 /** What the caps and the plan allow a run now. */
 export const limitsNow = (
   store: Pick<UsageStore, "spentSince" | "planLimits">,
@@ -276,12 +282,15 @@ export const limitsReport = (
   problems,
   caps: standingOf(store, caps, now),
   tokenCaps: tokenStandingOf(store, caps, now),
-  plan: store.planLimits().filter(limit => {
-    if (limit.status === "allowed") return false;
+  plan: store.planLimits().flatMap(limit => {
     const until =
       limit.resetsAt === undefined
         ? Date.parse(limit.at) + SHOWN_MS
         : Date.parse(limit.resetsAt);
-    return until > now.getTime();
+    if (limit.status === "allowed" || until <= now.getTime()) return [];
+    const stale =
+      limit.status === "allowed_warning" &&
+      now.getTime() - Date.parse(limit.at) > WARNING_FRESH_MS;
+    return [stale ? { ...limit, stale: true as const } : limit];
   }),
 });

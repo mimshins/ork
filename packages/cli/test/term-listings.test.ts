@@ -174,6 +174,24 @@ describe("ork ps", () => {
   });
 });
 
+/** Limits holding one seven-day warning seen 4 h ago, `extra` on the entry. */
+const planOf = (extra: { stale?: true } = {}) => ({
+  problems: [],
+  caps: [],
+  plan: [
+    {
+      status: "allowed_warning" as const,
+      window: "seven_day",
+      at: new Date(Date.now() - 4 * 3_600_000).toISOString(),
+      ...extra,
+    },
+  ],
+});
+
+/** The plan limit's line of `limits`, rich, with its colors stripped. */
+const planLine = (limits: ReturnType<typeof planOf>): string =>
+  bare(formatLimits(limits, rich(80)))[1] ?? "";
+
 describe("ork usage", () => {
   const limits = {
     problems: ["the limit file is unreadable"],
@@ -188,6 +206,15 @@ describe("ork usage", () => {
     expect(formatLimits(limits, plainTerm)[1]).toBe(
       "  the limit file is unreadable",
     );
+  });
+
+  it("warns on a fresh plan limit, and dims a stale one", () => {
+    const fresh = planLine(planOf());
+    expect(fresh).toContain("WARN");
+    expect(fresh).toContain("seven day limit is close (seen 4h ago)");
+    const old = planLine(planOf({ stale: true }));
+    expect(old).not.toContain("WARN");
+    expect(old).toContain("seven day limit was close (seen 4h ago, stale)");
   });
 
   it("says nothing styled when there is nothing, plain", () => {

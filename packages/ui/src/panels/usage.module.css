@@ -431,6 +431,22 @@
   margin: 0;
 }
 
+/*
+ * A plan limit in force reads in full ink; one that was reported hours ago
+ * (`data-stale`) steps down to the muted ink, still 4.5:1, so what is old looks
+ * old. The words "was close" and "stale" carry it, not the color.
+ */
+.planNote {
+  --usage-plan-note-text: var(--color-text);
+
+  color: var(--usage-plan-note-text);
+  margin: 0;
+}
+
+.planNote[data-stale] {
+  --usage-plan-note-text: var(--color-text-muted);
+}
+
 .refused {
   --usage-refused-text: var(--color-danger-text);
 

@@ -2,7 +2,7 @@
  * @file Tests for limits across runs (RFC-007): windows match what `ork usage`
  *   shows, both the user's and a project's caps apply, the ledger is read
  *   across runs, a plan limit holds until it resets, and a run stops as for a
- *   budget.
+ *   budget; a warning seen more than 3 hours ago is stale and never stops one.
  */
 
 import { parseUserSettings } from "@krapht/ork-schema";
@@ -31,6 +31,20 @@ const rejected = (resetsAt?: string): PlanLimit => ({
   at: NOW.toISOString(),
   ...(resetsAt === undefined ? {} : { resetsAt }),
 });
+
+const HOUR = 60 * 60 * 1000;
+
+/** A seven-day warning seen `ago` ms before `NOW`, resetting in two days. */
+const warning = (ago: number): PlanLimit => ({
+  status: "allowed_warning",
+  window: "seven_day",
+  at: new Date(NOW.getTime() - ago).toISOString(),
+  resetsAt: new Date(NOW.getTime() + 48 * HOUR).toISOString(),
+});
+
+/** The plan limits `limitsReport` shows for `plan`. */
+const planShown = (plan: PlanLimit[]) =>
+  limitsReport(spending(0, plan), { caps: [], problems: [] }, NOW).plan;
 
 const sessionOf = (id: string, project: string, cost: number) => {
   const store = openStore(":memory:");
@@ -188,6 +202,41 @@ describe("plan limits", () => {
     expect(
       limitsReport(spending(0, [warned]), { caps: [], problems: [] }, NOW).plan,
     ).toEqual([warned]);
+  });
+
+  it("mark a warning seen more than 3 hours ago as stale", () => {
+    const old = warning(3 * HOUR + 1);
+    expect(planShown([old])).toEqual([{ ...old, stale: true }]);
+  });
+
+  it("keep a warning seen 3 hours ago or less fresh", () => {
+    const edge = warning(3 * HOUR);
+    const recent = warning(HOUR);
+    expect(planShown([edge, recent])).toEqual([edge, recent]);
+  });
+
+  it("never mark a rejected limit stale", () => {
+    const old: PlanLimit = {
+      ...rejected(later),
+      at: new Date(NOW.getTime() - 2 * 24 * HOUR).toISOString(),
+    };
+    expect(planShown([old])).toEqual([old]);
+  });
+
+  it("do not stop on a stale warning", () => {
+    expect(limitsNow(spending(0, [warning(5 * HOUR)]), [], NOW)).toEqual(
+      limitsNow(spending(0), [], NOW),
+    );
+  });
+
+  it("hold every run on a rejected limit whatever its age", () => {
+    const old: PlanLimit = {
+      ...rejected(later),
+      at: new Date(NOW.getTime() - 2 * 24 * HOUR).toISOString(),
+    };
+    expect(limitsNow(spending(0, [old]), [], NOW).blocked).toContain(
+      "five hour limit was reached",
+    );
   });
 
   it("say when a limit has no reset time", () => {

@@ -8,7 +8,7 @@ import { Fragment } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { Meter } from "../components/meter.tsx";
-import { formatTokenCap, formatTokens } from "../graph/facts.ts";
+import { ago, formatTokenCap, formatTokens } from "../graph/facts.ts";
 
 import styles from "./usage.module.css";
 
@@ -90,10 +90,11 @@ export const UsageLimits = ({ limits }: { limits: LimitsReport }) => {
       )}
       {limits.plan.map(limit => (
         <p
-          className={styles["note"]}
+          className={styles["planNote"]}
+          data-stale={limit.stale === true ? "" : undefined}
           key={limit.window}
         >
-          {`Your Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : "is close"}${limit.resetsAt === undefined ? "" : `; it resets ${when(limit.resetsAt)}`}.`}
+          {`Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : limit.stale === true ? "was close" : "is close"}${limit.resetsAt === undefined ? "" : `, resets ${when(limit.resetsAt)}`} (seen ${ago(limit.at)}${limit.stale === true ? ", stale" : ""})`}
         </p>
       ))}
     </section>

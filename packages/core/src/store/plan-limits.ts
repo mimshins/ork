@@ -12,10 +12,20 @@ import type { UsageStore } from "./types.ts";
 export const planLimitQueries = (
   db: DatabaseSync,
 ): Pick<UsageStore, "planLimits" | "clearPlanLimits"> & {
-  recordPlanLimit: (report: PlanReport, at: string) => void;
+  /** Records `report`, seen at `at`, by Ork `version` (`''` when unknown). */
+  recordPlanLimit: (report: PlanReport, at: string, version: string) => void;
+  /**
+   * Forgets the limits other Ork versions recorded, except `rejected` ones
+   * (they hold until they reset): a warning an older Ork stored, perhaps by a
+   * bug since fixed, is not shown by this one.
+   */
+  forgetOtherVersions: (version: string) => void;
 } => {
+  const forget = db.prepare(
+    "DELETE FROM plan_limits WHERE status != 'rejected' AND ork_version != ?",
+  );
   const put = db.prepare(
-    "INSERT OR REPLACE INTO plan_limits (name, status, resets_at, at) VALUES (?, ?, ?, ?)",
+    "INSERT OR REPLACE INTO plan_limits (name, status, resets_at, at, ork_version) VALUES (?, ?, ?, ?, ?)",
   );
   const all = db.prepare(
     "SELECT name, status, resets_at, at FROM plan_limits ORDER BY name",
@@ -23,8 +33,11 @@ export const planLimitQueries = (
   const clear = db.prepare("DELETE FROM plan_limits");
   return {
     clearPlanLimits: () => Number(clear.run().changes),
-    recordPlanLimit: ({ window, status, resetsAt }, at) => {
-      put.run(window, status, resetsAt ?? null, at);
+    forgetOtherVersions: version => {
+      forget.run(version);
+    },
+    recordPlanLimit: ({ window, status, resetsAt }, at, version) => {
+      put.run(window, status, resetsAt ?? null, at, version);
     },
     planLimits: () =>
       all.all().flatMap((r): PlanLimit[] => {

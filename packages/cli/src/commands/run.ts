@@ -4,6 +4,7 @@
  *   on the terminal.
  */
 
+// oxlint-disable import/max-dependencies -- a command wires one module per part of a run
 import {
   type AgentRuntime,
   beginDetachedHeartbeat,
@@ -13,6 +14,7 @@ import {
 import { sessionEnv } from "@krapht/ork-nodes";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import { callsShown, createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import {
@@ -207,7 +209,7 @@ export const run = defineCommand({
       process.exitCode = 1;
       return;
     }
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     // The detached copy runs with ORK_DETACHED=1, and never detaches again.
     if (args.detach && process.env[DETACHED_ENV] !== "1") {
       try {

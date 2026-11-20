@@ -18,6 +18,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { ORK_VERSION } from "../__build_info__.ts";
 import {
   filterArgs,
   projectScope,
@@ -70,7 +71,7 @@ export const usage = defineCommand({
       return;
     }
     const by = given;
-    const store = openStore();
+    const store = openStore(undefined, { version: ORK_VERSION });
     try {
       const scope = projectScope(request.filter, store.projects());
       if (scope === undefined) return;

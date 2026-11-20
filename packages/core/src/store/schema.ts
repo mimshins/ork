@@ -253,6 +253,8 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
    );
    CREATE INDEX follow_ups_by_project ON follow_ups (project, created_at);
    CREATE INDEX follow_ups_by_status ON follow_ups (status);`,
+  // 21: the Ork version that recorded each plan limit ('' before this column).
+  `ALTER TABLE plan_limits ADD COLUMN ork_version TEXT NOT NULL DEFAULT '';`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

@@ -130,7 +130,19 @@ caps.
   as `allowed` (Claude Code 2.1.329 warns at 31% of the seven-day window). A
   session that goes on to succeed is left alone. `ork usage --clear-plan-limits`
   forgets them, for one that has lifted early, and says how many it forgot, or
-  that none was recorded (on stderr under `--json`).
+  that none was recorded (on stderr under `--json`). Each limit shown says when
+  it was seen (`seen 2h ago`, from the event's time). An `allowed_warning` seen
+  more than 3 hours ago (`WARNING_FRESH_MS` in
+  [quota.ts](../packages/core/src/usage/quota.ts)) is stale: it reads "was
+  close" with `seen 1d ago, stale`, dimmed or muted, and is never acted on, as
+  only an unexpired `rejected` is. A `rejected` is never stale. The store also
+  records the Ork version that wrote each limit, and a writable open that
+  carries a version forgets the other versions' non-`rejected` limits, those an
+  older Ork wrote included, so a warning an older release stored stops showing
+  after an upgrade ([event store](./event-store.md#where-it-lives)). Two Ork
+  versions on one machine (`ork mcp` spawned by another binary included) forget
+  each other's warnings on each versioned open; a read-only open and an
+  unversioned one (stop, decide, send, setup, prune, doctor) never do.
 - **`ork chat`** counts, and says when a limit is spent. It isn't stopped.
 - **A call that activates a finished run again** is held as any session, as a
   workflow did it and not a person.
@@ -159,8 +171,9 @@ counts runs with a session, not those that only ran tools. Without `--by` it
 prints the totals, the latest 10 days and the costliest 10 of each of workflow,
 model and node, then any hints; with it, that one table in full. Any limits go
 first, token caps after the dollar ones. `--json` prints the whole report, with
-`limits`. A dollar total that misses sessions on a driver without prices reads
-`(partial)`, with tokens beside it
+`limits`, whose `plan` entries are a plan limit and its `at`, with `stale: true`
+on an old `allowed_warning`. A dollar total that misses sessions on a driver
+without prices reads `(partial)`, with tokens beside it
 ([partial totals](./usage/tokens.md#partial-totals)). `--by node` also has a
 `TOOL CPU` column: the seconds of CPU (user and system, children included) that
 Ork's tool commands of the node used, from the `tool_cpu` table
