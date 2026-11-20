@@ -1400,9 +1400,11 @@ export const MILESTONES = [
       {
         id: "fresh-base",
         title: "Fetch the base, read it readonly",
-        status: "active",
+        status: "done",
         detail:
           "A remote `git.base` such as `origin/main` is fetched before a new run (`git.fetch: auto | never`, a failed fetch stops the run), and `git.readonly: base` gives readonly nodes with no owner one shared detached worktree at the base instead of the checkout. Built, not yet on `main`.",
+        commits: ["8f16740"],
+        date: "2026-11-20",
         docs: [
           "specs/project-rules/fetch.md",
           "decisions/ADR-107-fetch-the-base-and-read-it-readonly.md",
@@ -1412,9 +1414,11 @@ export const MILESTONES = [
       {
         id: "permissions-without-asking",
         title: "Permissions without asking",
-        status: "active",
+        status: "done",
         detail:
-          "Built, not yet released. RFC-028, now Implemented. On `claude-code`, the `permission` tool reads a shell line with one reader in core (loops, subshells, `if`, `while`, and the wrappers `timeout`, `env`, `cd`, `time`, `nice`) and allows it, with no question, when every command is covered by the node's allow rules or by a shipped read-only set (`ork logs`, `ps`, `tree`, `usage`, `feedback` and `follow-ups` reads, `jq`, `wc`, `cut`, `sort`, `uniq`, `head`, `tail`, `tr`, `ls`, `echo`, `printf`, `pwd`, `basename`, `dirname`, `date`, `cd`, `true`, `false`, each without its write or run flags). A read-only node is now refused, with a message, a command its rules do not allow (`unlisted: refuse | ask` on a node, a workflow or the project; node over workflow over project). A readable line's prompt offers once, node, run or always; \"always\" appends a prefix rule to `permissions.allow` and keeps the file's comments. A rule allowed 3 times across 2 runs becomes a `permission.suggest` feedback item. The Codex, Command Code and omp guards embed the same reader, without the shipped set. Left: refusal, remember and suggest on the other drivers, non-Bash tools still prompt, and the shipped list needs upkeep when a command gains a flag; a replay of a read-only `spec` node to count prompts and refusals. The limits are L503 to L512.",
+          "RFC-028, now Implemented. On `claude-code`, the `permission` tool reads a shell line with one reader in core (loops, subshells, `if`, `while`, and the wrappers `timeout`, `env`, `cd`, `time`, `nice`) and allows it, with no question, when every command is covered by the node's allow rules or by a shipped read-only set (`ork logs`, `ps`, `tree`, `usage`, `feedback` and `follow-ups` reads, `jq`, `wc`, `cut`, `sort`, `uniq`, `head`, `tail`, `tr`, `ls`, `echo`, `printf`, `pwd`, `basename`, `dirname`, `date`, `cd`, `true`, `false`, each without its write or run flags). A read-only node is now refused, with a message, a command its rules do not allow (`unlisted: refuse | ask` on a node, a workflow or the project; node over workflow over project). A readable line's prompt offers once, node, run or always; \"always\" appends a prefix rule to `permissions.allow` and keeps the file's comments. A rule allowed 3 times across 2 runs becomes a `permission.suggest` feedback item. The Codex, Command Code and omp guards embed the same reader, without the shipped set. Left: refusal, remember and suggest on the other drivers, non-Bash tools still prompt, and the shipped list needs upkeep when a command gains a flag; a replay of a read-only `spec` node to count prompts and refusals. The limits are L503 to L512.",
+        commits: ["5b955f9"],
+        date: "2026-11-20",
         docs: [
           "docs/guides/permissions.md",
           "specs/gaps/permissions-limits.md",
@@ -1427,11 +1431,28 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "sessions-apart",
+        title: "Keep Ork sessions apart from a project's own agents",
+        status: "done",
+        detail:
+          "ADR-110. Every Claude session is told it is one node of an Ork workflow (only its step, no other step's role agent, the human gates are Ork's, ask with `ask_user`, no staging or posting unless its node does); `AskUserQuestion` is withheld in every session; `agents: isolate` denies the agents of a workflow's other nodes; the `quiet` practice (on by default) keeps Ork out of repository files, commits and pull request text; `knowledge: ork-only` limits `ork feedback apply` to `.ork/`; an attached project's context can sit in `~/.ork/projects/<id>/context/`.",
+        commits: ["ef99e87"],
+        date: "2026-11-20",
+        docs: [
+          "decisions/ADR-110-keep-ork-sessions-apart.md",
+          "specs/project-rules/agents-and-knowledge.md",
+          "specs/context/session-apart.md",
+          "docs/guides/projects/attached-projects.md",
+        ],
+      },
+      {
         id: "model-from-output",
         title: "A node's model from an earlier output or an input",
-        status: "active",
+        status: "done",
         detail:
-          "Built, and waiting to merge (flip to done with its commit). RFC-029, Implemented (option A, ADR-111). A node's `model` and `effort` may be a template reading `inputs.*` and the output of a node that runs before it (`model: \"{{nodes.pick.output.model}}\"`), on any agent node, not only a `forEach` one. `ork validate` checks the reads like a prompt's (`ref.*`, `template.not-upstream`); the value is rendered when the session is planned, and a rendered `claude-code.opus` picks the driver and goes through the contradiction, fit and budget checks. A model that is not one word, starts with `-` or ends with `.` fails; a `nodes.*` read that renders empty fails the node, and a plan with no outputs takes the default with a warning. A resumed session whose driver changed starts fresh, and its `node.started` carries `driverChanged`. `defaults.model` and `defaults.effort` stay refused. Left: a conditional in expressions (option B) and a node that extends another (option C), each its own RFC; a wrong model name still fails at the session (L262).",
+          "RFC-029, Implemented (option A, ADR-111). A node's `model` and `effort` may be a template reading `inputs.*` and the output of a node that runs before it (`model: \"{{nodes.pick.output.model}}\"`), on any agent node, not only a `forEach` one. `ork validate` checks the reads like a prompt's (`ref.*`, `template.not-upstream`); the value is rendered when the session is planned, and a rendered `claude-code.opus` picks the driver and goes through the contradiction, fit and budget checks. A model that is not one word, starts with `-` or ends with `.` fails; a `nodes.*` read that renders empty fails the node, and a plan with no outputs takes the default with a warning. A resumed session whose driver changed starts fresh, and its `node.started` carries `driverChanged`. `defaults.model` and `defaults.effort` stay refused. Left: a conditional in expressions (option B) and a node that extends another (option C), each its own RFC; a wrong model name still fails at the session (L262).",
+        commits: ["b643aa1"],
+        date: "2026-11-20",
         docs: [
           "decisions/ADR-111-model-from-an-earlier-output-or-an-input.md",
           "specs/scheduler/for-each.md",
