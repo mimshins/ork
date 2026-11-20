@@ -1,7 +1,8 @@
 # @krapht/ork
 
 The `ork` command: orchestrate coding agents (Claude Code, OpenCode, Command
-Code, Codex, omp) on your machine with hierarchical, serializable workflows.
+Code, Codex, Codex app-server, omp) on your machine with hierarchical,
+serializable workflows.
 
 > **Alpha.** Workflows of coding agents and tools, run from the terminal or the
 > browser (`ork ui`). Expect changes until 1.0.0. See the
@@ -31,8 +32,9 @@ A workflow that names no agent driver runs on the one that's ready, and
 `claude-code` comes first: your own `claude`, logged in or with
 `ANTHROPIC_API_KEY` or a cloud provider set. Your own `opencode` (`open-code`),
 Command Code's `cmd` (`command-code`) and OpenAI's `codex` (`codex`) work too:
-`--driver <id>`, or a driver per node, and one workflow can mix them. oh-my-pi's
-`omp` (`omp`) is built but not yet proven, so a run refuses it for now
+`--driver <id>`, or a driver per node, and one workflow can mix them.
+`codex app-server` (`codex-app-server`) and oh-my-pi's `omp` (`omp`) are built
+but not yet proven, so a run refuses them for now
 ([Drivers](https://github.com/mimshins/ork/blob/main/docs/guides/drivers.md)).
 
 Ork is built with Ork: its own workflows plan, build, review and document its

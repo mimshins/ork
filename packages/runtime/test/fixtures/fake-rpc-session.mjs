@@ -6,8 +6,9 @@
  *   `response` by id, and starts its session (`s1`, or the resumed one) at the
  *   prompt, saying what the prompt asks: `ask` asks to run `bash` and says the
  *   answer, then settles; `hold` calls the hold hook before a tool call and
- *   waits (`hold-nameless` does it before naming its session); any other text
- *   is said, then it settles if it is `again` and waits otherwise. A steer is
+ *   waits (`hold-nameless` does it before naming its session; `hold-wait`
+ *   names it `s2`, whose resumed leg waits at `again`); any other text is
+ *   said, then it settles if it is `again` and waits otherwise. A steer is
  *   said, and settles the session if it is `finish`; an `abort` settles it,
  *   aborted.
  */
@@ -32,6 +33,7 @@ const hook = () => {
 };
 
 const onPrompt = text => {
+  if (text === "hold-wait") session = "s2";
   if (text === "hold-nameless") session = "";
   else out({ type: "started", session });
   if (text.startsWith("hold")) {
@@ -43,7 +45,7 @@ const onPrompt = text => {
     return;
   }
   out({ type: "said", text });
-  if (text === "again") settle("again");
+  if (text === "again" && session !== "s2") settle("again");
 };
 
 out({ type: "ready" });

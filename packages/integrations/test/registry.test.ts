@@ -293,6 +293,73 @@ describe("the codex driver", () => {
   });
 });
 
+/** `codex-app-server`'s check with a `codex` that answers as given. */
+const appServerCheck = (version: string | null, loggedIn: boolean) => {
+  const exec: Exec = (program, args) => {
+    const call = [program, ...args].join(" ");
+    if (call === "codex --version") {
+      return Promise.resolve(
+        version === null
+          ? { ok: false, stdout: "" }
+          : { ok: true, stdout: version },
+      );
+    }
+    return Promise.resolve({
+      ok: call === "codex login status" && loggedIn,
+      stdout: "",
+    });
+  };
+  return AGENT_DRIVERS[4].doctor(exec, {});
+};
+
+describe("the codex-app-server driver", () => {
+  it("is the fifth, not yet proven, and declares what it does itself", () => {
+    const driver = AGENT_DRIVERS[4];
+    expect(driver.id).toBe("codex-app-server");
+    expect([driver.proven, driver.onePerCheckout]).toEqual([false, false]);
+    expect(driver.capabilities).toEqual({
+      questions: true,
+      permissionPrompt: true,
+      price: false,
+      midTurnMessages: true,
+      reportSchema: false,
+      turnLimit: false,
+      mcpServers: false,
+      subagents: false,
+      readDenies: false,
+    });
+  });
+
+  it("is skipped with no hint when codex is missing, while unproven", async () => {
+    const found = await appServerCheck(null, true);
+    expect(found).toMatchObject({
+      name: "codex (codex-app-server driver)",
+      status: "skip",
+    });
+    expect(found.detail).toContain("codex CLI not found");
+    expect(found.hint).toBeUndefined();
+  });
+
+  it("warns about a codex older than the minimum", async () => {
+    expect(await appServerCheck("codex-cli 0.168.9\n", true)).toMatchObject({
+      status: "warn",
+      detail: `codex-cli 0.168.9, older than ${MIN_CODEX_VERSION}`,
+    });
+  });
+
+  it("is skipped, never ok, when logged in but unproven", async () => {
+    const found = await appServerCheck("codex-cli 0.169.0\n", true);
+    expect(found.status).toBe("skip");
+    expect(found.detail).toContain("codex-cli 0.169.0, logged in, unproven");
+  });
+
+  it("is skipped when logged out, saying how to sign in", async () => {
+    const found = await appServerCheck("codex-cli 0.169.0\n", false);
+    expect(found.status).toBe("skip");
+    expect(found.detail).toContain("sign in with `codex login`");
+  });
+});
+
 /** A command that prints `stdout`, or fails on `null`. */
 const answer = (stdout: string | null) =>
   Promise.resolve(
@@ -346,7 +413,7 @@ const list = (out: string | null) =>
   listedOmp().models?.(() => answer(out), {});
 
 describe("the omp driver", () => {
-  it("is the fifth, not yet proven, and declares what it does itself", () => {
+  it("is the sixth, not yet proven, and declares what it does itself", () => {
     const omp = listedOmp();
     expect(omp.id).toBe("omp");
     expect([omp.proven, omp.onePerCheckout]).toEqual([false, false]);

@@ -13,10 +13,12 @@ called and detached runs): the first that applies wins.
 1. **The driver the model names.** A `model` of `<driver>.<model>`
    (`claude-code.opus`, `open-code.anthropic/claude-sonnet-5-5`,
    `command-code.deepseek/deepseek-v4.1-flash`, `codex.gpt-5.1`,
-   `omp.openai/gpt-5.2`) pins its session to that driver, and the rest goes to
-   that tool as written (`-m` on `codex`, `--model` on `omp`, which also reads a
-   fuzzy name or a role the user configured; a node with no model runs the
-   tool's own default for the account). `--driver` does not override it.
+   `omp.openai/gpt-5.2`, `codex-app-server.gpt-5.5-codex`) pins its session to
+   that driver, and the rest goes to that tool as written (`-m` on `codex`,
+   `model` on the thread request of `codex-app-server`, `--model` on `omp`,
+   which also reads a fuzzy name or a role the user configured; a node with no
+   model runs the tool's own default for the account). `--driver` does not
+   override it.
 2. **`--driver`.**
 3. **The node's `driver`** (or its agent's).
 4. **The workflow's `defaults.driver`** (the project's `.ork/project.yaml`
@@ -70,26 +72,26 @@ driver.
 An `agent.subagent` runs inside its leader's session, so it needs the leader's
 driver to run subagents: the `subagents` capability of the
 [descriptor](../runtime.md#the-drivers). `claude-code` has it; `open-code`,
-`command-code`, `codex` and `omp` do not, for now. `ork validate` and `ork run`
-refuse the leader's node, naming the sub-agent and the driver: "sub-agent
-`helper` runs in `lead`'s session on driver `open-code`, which does not run
-subagents". A sub-agent whose model names another driver than its leader's is
-refused too: `ork validate` refuses a written one, and `ork run` also refuses a
-templated one, which is rendered when its leader's session is planned (the plan
-reports each rendered prefix as `subagentPins`). The leader's driver is the one
-the session resolves (the model's prefix, `--driver`, the node's, the workflow's
-or the ready one), so `--driver open-code` or the ready driver counts as well as
-a written prefix. The node fails `invalid_node`: "sub-agent `helper` runs in
-`lead`'s session on driver `claude-code`, but its model `open-code.x` names
-driver `open-code`". Every starter of a session applies the one check,
-`pinClashes` in core's `driver.ts`: `sessionDriverOf`, `runNode` and
-`resumeChat`. An `owner-asks` fork deletes `spec.agents`, so it needs none, and
-`explain` only reports. The wording lives in `subagentClash`, shared with
-`ork validate`'s `subagentRefusals`; a written clash is reported by both the
-unfit-driver check and the pin check, so a caller dedupes the messages (a
-`Set`). Resuming a recorded session re-checks the pins, so an older run can be
-refused. A rendered prefix naming the leader's own driver passes, and the tool
-gets the model without it. A plain model (`deepseek/x`) names no driver.
+`command-code`, `codex`, `codex-app-server` and `omp` do not, for now.
+`ork validate` and `ork run` refuse the leader's node, naming the sub-agent and
+the driver: "sub-agent `helper` runs in `lead`'s session on driver `open-code`,
+which does not run subagents". A sub-agent whose model names another driver than
+its leader's is refused too: `ork validate` refuses a written one, and `ork run`
+also refuses a templated one, which is rendered when its leader's session is
+planned (the plan reports each rendered prefix as `subagentPins`). The leader's
+driver is the one the session resolves (the model's prefix, `--driver`, the
+node's, the workflow's or the ready one), so `--driver open-code` or the ready
+driver counts as well as a written prefix. The node fails `invalid_node`:
+"sub-agent `helper` runs in `lead`'s session on driver `claude-code`, but its
+model `open-code.x` names driver `open-code`". Every starter of a session
+applies the one check, `pinClashes` in core's `driver.ts`: `sessionDriverOf`,
+`runNode` and `resumeChat`. An `owner-asks` fork deletes `spec.agents`, so it
+needs none, and `explain` only reports. The wording lives in `subagentClash`,
+shared with `ork validate`'s `subagentRefusals`; a written clash is reported by
+both the unfit-driver check and the pin check, so a caller dedupes the messages
+(a `Set`). Resuming a recorded session re-checks the pins, so an older run can
+be refused. A rendered prefix naming the leader's own driver passes, and the
+tool gets the model without it. A plain model (`deepseek/x`) names no driver.
 
 ## The ready driver
 
@@ -105,13 +107,15 @@ gets the model without it. A plain model (`deepseek/x`) names no driver.
   a doctor check of `skip`, never `ok`, whatever is installed; with
   `--driver <id>` the run stops as above, and a node or model prefix naming it
   is refused by `ork validate` and `ork run` ("not yet proven on a real
-  session"). `omp` is the one driver not yet proven (its gate run is pending,
-  [its page](./omp.md)), so it is skipped by the doctor and refused by name,
-  whatever is installed. The others are proven; `codex` was, on its gate run
-  (2026-11-18, [the page](./codex.md#measured-on-the-gate-run)), and comes after
-  the first three in registry order, so a signed-in `codex` is taken only when
-  no other proven driver is ready. `omp` comes last, so once proven it is taken
-  only when none of the others is.
+  session"). `omp` and `codex-app-server` are the drivers not yet proven (their
+  gate runs are pending, [`omp`](./omp.md),
+  [`codex-app-server`](./codex-app-server.md)), so the doctor skips them and a
+  run refuses them by name, whatever is installed. The others are proven;
+  `codex` was, on its gate run (2026-11-18,
+  [the page](./codex.md#measured-on-the-gate-run)), and comes after the first
+  three in registry order, so a signed-in `codex` is taken only when no other
+  proven driver is ready. `codex-app-server` and then `omp` come last, so once
+  proven each is taken only when none of the ones before it is.
 - **`ork run` looks once, before anything starts**, and only when a session node
   names no driver and `--driver` isn't given
   ([ready-driver.ts](../../packages/cli/src/run/ready-driver.ts)). It says so in

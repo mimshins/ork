@@ -38,7 +38,7 @@ For the agents (Ork uses your own login, never stores it; see
   own credentials).
 - **Or another driver**, with its tool's own login: `opencode` 2.3.2+
   (`open-code`), Command Code's `cmd` (`command-code`) or OpenAI's `codex`
-  0.169.0+ (`codex`). oh-my-pi's `omp` is built, not yet proven: runs refuse it.
+  0.169.0+ (`codex`). `codex-app-server` and `omp` are built, not yet proven.
 
 Ork is free. What the agents use is billed to your own key, account or plan.
 
@@ -123,7 +123,7 @@ output (`--plain`: `✓` and `-`):
 ```
 
 The `claude-code` and `open-code` drivers are ready, and `cmd`, `codex`, `omp`
-and the optional tools are not: a working setup. `omp` is not yet proven, so it
+and the optional tools are not: a working setup. An unproven driver (`omp`)
 shows `skip` even when installed ([Drivers](../guides/drivers.md)). When nothing
 required is missing, that is all it prints. Else it ends:
 

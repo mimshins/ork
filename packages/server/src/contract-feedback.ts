@@ -66,6 +66,7 @@ const DRIVER_NAMES: { readonly [Id in Driver]: Id } = {
   "open-code": "open-code",
   "command-code": "command-code",
   codex: "codex",
+  "codex-app-server": "codex-app-server",
   omp: "omp",
 };
 

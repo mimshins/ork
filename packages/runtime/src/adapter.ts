@@ -207,6 +207,11 @@ export type Decision = "allow" | "deny";
 export type DecodedFrame = Decoded & {
   /** The handshake is done: the client writes `open`'s frames only after it. */
   ready?: boolean;
+  /**
+   * A turn has started that takes a message now; read only for a codec that
+   * `waitsForTurn`, whose held messages the client then sends.
+   */
+  turn?: boolean;
   /** The response to a request Ork wrote, with the tool's error if it failed. */
   reply?: { id: string; error?: string };
   /** A question for Ork; the client answers it with `answer`. */
@@ -250,8 +255,24 @@ export type Codec = {
   /** Stops the turn; the session settles after it. */
   interrupt: () => FrameRequest;
   answer: (ask: Ask, decision: Decision) => Frame;
-  /** The frame that completes a host tool call (`DecodedFrame.call`). */
-  callResult: (call: HostCall, result: ToolText) => Frame;
+  /**
+   * The frame that completes a host tool call (`DecodedFrame.call`), for a tool
+   * that takes Ork's tools over its protocol (`CliAdapter.hostTools`); a codec
+   * without it decodes no `call`.
+   */
+  callResult?: (call: HostCall, result: ToolText) => Frame;
+  /**
+   * The tool sends no `ready`: it waits for Ork's first request (codex's
+   * `initialize`), so the client writes `open` at spawn, and the start bound
+   * times the responses to `open`'s requests instead of a `ready` frame.
+   */
+  readyAtSpawn?: boolean;
+  /**
+   * The tool takes a message only in a turn the codec has seen start (codex's
+   * `turn/steer` names the running turn): the client holds every message until
+   * a frame the codec decodes with `turn`, not only until `open` is written.
+   */
+  waitsForTurn?: boolean;
 };
 
 /** One agent CLI, as its strategies. */

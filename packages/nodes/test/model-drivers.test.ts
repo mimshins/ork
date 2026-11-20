@@ -98,6 +98,7 @@ const DRIVERS: DriverNeeds[] = [
   "open-code" as const,
   "command-code" as const,
   "codex" as const,
+  "codex-app-server" as const,
   "omp" as const,
 ].map(id => ({
   id,
@@ -105,8 +106,12 @@ const DRIVERS: DriverNeeds[] = [
   onePerCheckout: false,
   capabilities: {
     ...ABLE,
-    turnLimit: id !== "command-code" && id !== "codex" && id !== "omp",
-    readDenies: id !== "codex",
+    turnLimit:
+      id !== "command-code" &&
+      id !== "codex" &&
+      id !== "codex-app-server" &&
+      id !== "omp",
+    readDenies: id !== "codex" && id !== "codex-app-server",
   },
 }));
 

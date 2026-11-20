@@ -45,15 +45,17 @@ const unproven = standInDrivers.map(d =>
 const unasked = () => Promise.reject(new Error("the drivers' checks ran"));
 
 /**
- * Every driver's check but none `ok`: `codex` and `omp` are `skip` (their tool
- * missing), the rest `warn`.
+ * Every driver's check but none `ok`: `codex`, `codex-app-server` and `omp` are
+ * `skip` (their tool missing), the rest `warn`.
  */
 const notReady = AGENT_DRIVERS.map(({ id }) => ({
   id,
   result: {
     name: id,
     status:
-      id === "codex" || id === "omp" ? ("skip" as const) : ("warn" as const),
+      id === "codex" || id === "codex-app-server" || id === "omp"
+        ? ("skip" as const)
+        : ("warn" as const),
     detail: "not ready",
   },
 }));

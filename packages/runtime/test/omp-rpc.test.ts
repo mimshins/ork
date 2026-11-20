@@ -1,9 +1,10 @@
 /**
  * @file The `omp --mode rpc` codec (RFC-027), on frames in the shapes of the
  *   RFC's spike: the handshake and first requests, a steer and an abort with
- *   their responses, an approval allowed and denied, a `select` it cannot read,
- *   a `setWidget` ignored, a turn that settles later, the ends at
- *   `session_settled`, a chunked frame, and a resumed leg's message.
+ *   their responses, an approval allowed and denied, approvals paired with
+ *   their calls first in, first out, a `select` it cannot read, a `setWidget`
+ *   ignored, a turn that settles later, the ends at `session_settled`, a
+ *   chunked frame, and a resumed leg's message.
  */
 
 import type {
@@ -104,7 +105,9 @@ const promptResult = (
 const SETTLED = { type: "session_settled" };
 
 /** A codec past the handshake, its session started as `get_state` says. */
-const opened = (spec: SessionSpec = specOf()): Codec => {
+const opened = (
+  spec: SessionSpec = specOf(),
+): ReturnType<typeof ompRpcCodec> => {
   const codec = ompRpcCodec(spec);
   codec.decode(READY);
   const [state] = codec.open(spec, leg);
@@ -376,6 +379,53 @@ describe("the omp rpc codec", () => {
     expect(decoded[2]).toEqual({
       events: [],
       write: [{ type: "extension_ui_response", id: "u4", cancelled: true }],
+    });
+  });
+
+  it("pairs approvals with their calls first in, first out", () => {
+    const codec = opened();
+    const decoded = decodeAll(codec, [
+      start("t1", "write", { path: "a.txt" }),
+      start("t2", "bash", { command: "ls" }),
+      select("u5", SPIKE_OPTIONS),
+      select("u6", SPIKE_OPTIONS),
+    ]);
+    expect([decoded[2]?.ask, decoded[3]?.ask]).toEqual([
+      { id: "u5", tool: "Write", args: { path: "a.txt" } },
+      { id: "u6", tool: "Bash", args: { command: "ls" } },
+    ]);
+  });
+
+  it("drops an ended call from the queue, so the next approval names the call after it", () => {
+    const codec = opened();
+    const decoded = decodeAll(codec, [
+      start("t1", "write", { path: "a.txt" }),
+      start("t2", "bash", { command: "ls" }),
+      { type: "tool_execution_end", toolCallId: "t1", result: {} },
+      select("u7", SPIKE_OPTIONS),
+      select("u8", SPIKE_OPTIONS),
+    ]);
+    expect(decoded[3]?.ask).toEqual({
+      id: "u7",
+      tool: "Bash",
+      args: { command: "ls" },
+    });
+    expect(decoded[4]?.write).toEqual([
+      { type: "extension_ui_response", id: "u8", cancelled: true },
+    ]);
+  });
+
+  it("takes no call for a select it cannot read", () => {
+    const codec = opened();
+    const decoded = decodeAll(codec, [
+      start("t1", "write", { path: "a.txt" }),
+      select("u9", ["Yes", "No"]),
+      select("u10", SPIKE_OPTIONS),
+    ]);
+    expect(decoded[2]?.ask).toEqual({
+      id: "u10",
+      tool: "Write",
+      args: { path: "a.txt" },
     });
   });
 

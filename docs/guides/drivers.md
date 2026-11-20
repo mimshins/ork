@@ -1,21 +1,22 @@
 # Drivers
 
 A **driver** is how Ork reaches an agent tool: Ork runs that tool's own
-command-line program, headless, and reads what it prints. Ork has five drivers.
-A workflow, a node, a node's `model` (`claude-code.opus`) or `ork run --driver`
+command-line program, headless, and reads what it prints. Ork has six drivers. A
+workflow, a node, a node's `model` (`claude-code.opus`) or `ork run --driver`
 names one by its id.
 
-| Driver         | Runs                | Status                                      |
-| -------------- | ------------------- | ------------------------------------------- |
-| `claude-code`  | your own `claude`   | Proven; the one a run takes when it is here |
-| `open-code`    | your own `opencode` | Proven on a real session                    |
-| `command-code` | your own `cmd`      | Proven on a real session                    |
-| `codex`        | your own `codex`    | Proven on a real session                    |
-| `omp`          | your own `omp`      | Built, not yet proven: a run refuses it     |
+| Driver             | Runs                                  | Status                                      |
+| ------------------ | ------------------------------------- | ------------------------------------------- |
+| `claude-code`      | your own `claude`                     | Proven; the one a run takes when it is here |
+| `open-code`        | your own `opencode`                   | Proven on a real session                    |
+| `command-code`     | your own `cmd`                        | Proven on a real session                    |
+| `codex`            | your own `codex`                      | Proven on a real session                    |
+| `codex-app-server` | your own `codex` (`codex app-server`) | Built, not yet proven: a run refuses it     |
+| `omp`              | your own `omp`                        | Built, not yet proven: a run refuses it     |
 
 Each driver passes Ork's tests against a stand-in for its tool, and a proven one
-has run a real session; the first four have, `omp` has not. A driver that has
-not is refused by `ork validate` and `ork run`
+has run a real session; the first four have, `codex-app-server` and `omp` have
+not. A driver that has not is refused by `ork validate` and `ork run`
 (`not yet proven on a real session`) until it has, and `ork doctor` shows it as
 `skip`, so no run takes it. `ork doctor` lists a driver whose tool it can't find
 as `skip`, with how to install it. Logins, and what each tool needs:
@@ -50,7 +51,7 @@ nodes:
     model: command-code.deepseek/deepseek-v4.1-flash
 ```
 
-The text before the first `.` is the driver when it is one of the five ids; the
+The text before the first `.` is the driver when it is one of the six ids; the
 rest goes to that tool as written. Anything else is a plain model for the run's
 driver, so `deepseek/deepseek-v4.1-flash` still works. A prefixed node needs no
 `driver`, and `ork run --driver` does not change it. `driver: open-code` with
@@ -68,18 +69,18 @@ the node's `driver`, `defaults.driver`, the driver ready on your machine.
 Tools differ. Ork writes down what each driver does itself, and a node that
 needs more is refused rather than half-run:
 
-| Capability                                     | `claude-code` | `open-code`              | `command-code`           | `codex`                  | `omp`                    |
-| ---------------------------------------------- | ------------- | ------------------------ | ------------------------ | ------------------------ | ------------------------ |
-| Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      | yes                      | yes                      |
-| Permission prompts mid-session                 | yes           | no                       | no                       | no                       | yes                      |
-| Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          | no, tokens only          | yes                      |
-| Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      | yes                      | yes                      |
-| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            | no (next leg)            | yes (after the call)     |
-| Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) |
-| Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      | no                       | no                       |
-| A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       | no                       | no                       |
-| Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       | no                       | no                       |
-| A `deny` on a `Read`, `Glob` or `Grep` path    | yes           | yes                      | yes                      | no                       | yes                      |
+| Capability                                     | `claude-code` | `open-code`              | `command-code`           | `codex`                  | `codex-app-server`         | `omp`                    |
+| ---------------------------------------------- | ------------- | ------------------------ | ------------------------ | ------------------------ | -------------------------- | ------------------------ |
+| Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      | yes                      | yes                        | yes                      |
+| Permission prompts mid-session                 | yes           | no                       | no                       | no                       | yes                        | yes                      |
+| Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          | no, tokens only          | no, tokens only            | yes                      |
+| Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      | yes                      | yes                        | yes                      |
+| A message mid-turn                             | yes           | no (next leg)            | no (next leg)            | no (next leg)            | yes (before the turn ends) | yes (after the call)     |
+| Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool) | no (Ork's `report` tool)   | no (Ork's `report` tool) |
+| Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      | no                       | no                         | no                       |
+| A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       | no                       | no                         | no                       |
+| Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       | no                       | no                         | no                       |
+| A `deny` on a `Read`, `Glob` or `Grep` path    | yes           | yes                      | yes                      | no                       | no                         | yes                      |
 
 A dollar budget on a driver that reports no dollars is not refused, but warned
 about (below). Where Ork has a fallback it uses it, and nothing is refused: a
@@ -98,9 +99,9 @@ A node asks for something its driver does not do. Each refusal names both:
   own `ask_user` and run-time messages are not checked,
   [L234](../../specs/gaps.md)).
 - An `agent.subagent` under a leader whose driver does not run subagents.
-- A `deny` on a `Read`, `Glob` or `Grep` path, on `codex`: it has no read tool
-  to gate, so the deny could not hold.
-- A driver that is not yet proven (`omp`, today).
+- A `deny` on a `Read`, `Glob` or `Grep` path, on `codex` or `codex-app-server`:
+  Codex has no read tool to gate, so the deny could not hold.
+- A driver that is not yet proven (`codex-app-server` and `omp`, today).
 
 `ork validate` checks against `--driver` if you give it, else against the driver
 a run would take. `ork run` checks again with the real driver before any session
@@ -134,12 +135,14 @@ warning, and the run goes on:
 `claude-code` asks you when a tool isn't allowed, and the question shows up in
 `ork decide` ([permissions](./permissions.md) says what it allows or refuses
 without asking); `omp` can ask too, for a tool its Ork-written settings do not
-list ([omp](./drivers/omp.md)). `open-code`, `command-code` and `codex` have no
-way to ask in the middle of a session, so Ork **denies by default**: the node's
-`allow` and `deny` lists are written as that tool's own rules, and everything
-else is refused. A node that would have been asked about on `claude-code` is
-refused here, and the session sees the refusal and goes on without it. Give the
-node the tools it needs in its `allow` list.
+list ([omp](./drivers/omp.md)), and so can `codex-app-server`, for a command or
+file change Codex's sandbox would refuse, answered once and never for the
+session ([Codex app-server](./drivers/codex-app-server.md)). `open-code`,
+`command-code` and `codex` have no way to ask in the middle of a session, so Ork
+**denies by default**: the node's `allow` and `deny` lists are written as that
+tool's own rules, and everything else is refused. A node that would have been
+asked about on `claude-code` is refused here, and the session sees the refusal
+and goes on without it. Give the node the tools it needs in its `allow` list.
 
 On `codex`, `command-code` and `omp`, Ork's own reads and the filters and
 printers listed in [permissions](./permissions.md#reads-ork-already-knows) need
@@ -193,9 +196,12 @@ your other entries as they were.
 Ork's and the ones the node names. Command Code still loads your own skills,
 memory and MCP servers; Ork blocks the calls a node did not allow, but those
 servers start. Codex ignores your config and turns plugins off, but still shows
-your own skills ([Codex](./drivers/codex.md#what-a-codex-session-loads)). `omp`
-starts with its skills, rules and other tools' files and MCP servers off, but
-keeps the rest of your own `omp` settings
+your own skills ([Codex](./drivers/codex.md#what-a-codex-session-loads)).
+`codex-app-server` cannot ignore your config: your `~/.codex/config.toml` and
+execution-policy rules still load
+([Codex app-server](./drivers/codex-app-server.md#what-holds-a-node-to-its-rules)).
+`omp` starts with its skills, rules and other tools' files and MCP servers off,
+but keeps the rest of your own `omp` settings
 ([omp](./drivers/omp.md#what-an-omp-session-loads)). A project's own `.mcp.json`
 is never touched.
 
@@ -221,4 +227,5 @@ fine.
 ## Contents
 
 - [Codex](./drivers/codex.md)
+- [Codex app-server](./drivers/codex-app-server.md)
 - [omp](./drivers/omp.md)

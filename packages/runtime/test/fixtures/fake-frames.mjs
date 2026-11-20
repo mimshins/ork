@@ -12,6 +12,9 @@
  *   stderr; `exit-on-steer` exits at a steer without a response; `call` calls
  *   four host tools at once, says each `result` as `<id>:<text>`, and settles
  *   after the fourth; `call-hang` calls `ork_hang` and then acts as `wait`.
+ *   For a codec that needs no `ready`: `mute` says nothing and answers
+ *   nothing; `late-turn` says no `ready` and says `turn` 200 ms after the
+ *   prompt, refusing a steer that comes sooner.
  */
 
 import { createInterface } from "node:readline";
@@ -20,9 +23,11 @@ const mode = process.argv[2] ?? "end";
 const out = frame => {
   process.stdout.write(`${JSON.stringify(frame)}\n`);
 };
+const unready = ["silent", "mute", "late-turn"];
+let turning = mode !== "late-turn";
 
 out({ type: "pid", pid: process.pid });
-if (mode !== "silent") out({ type: "ready" });
+if (!unready.includes(mode)) out({ type: "ready" });
 
 const CALLS = [
   ["c1", "ork_slow"],
@@ -35,6 +40,12 @@ let results = 0;
 const onPrompt = () => {
   out({ type: "started", session: "s1" });
   out({ type: "usage", tokens: 7 });
+  if (mode === "late-turn") {
+    setTimeout(() => {
+      turning = true;
+      out({ type: "turn" });
+    }, 200);
+  }
   if (mode === "end") out({ type: "settled", text: "done" });
   if (mode === "ask") {
     out({ type: "ask", id: "a1", tool: "bash", args: { command: "ls" } });
@@ -64,13 +75,13 @@ const onPrompt = () => {
 
 for await (const line of createInterface({ input: process.stdin })) {
   const frame = JSON.parse(line);
-  if (frame.type === "prompt") {
+  if (frame.type === "prompt" && mode !== "mute") {
     out({ type: "response", id: frame.id });
     onPrompt();
   }
   if (frame.type === "steer" && mode === "exit-on-steer") process.exit(1);
   if (frame.type === "steer" && mode !== "deaf") {
-    const refused = frame.text === "refuse";
+    const refused = frame.text === "refuse" || !turning;
     out({ type: "response", id: frame.id, ...(refused ? { error: "no" } : {}) });
     if (!refused) out({ type: "said", text: frame.text });
   }
@@ -88,5 +99,5 @@ for await (const line of createInterface({ input: process.stdin })) {
     out({ type: "settled", text: "asked" });
   }
 }
-// stdin closed: a well-behaved tool exits; `deaf` and `silent` stay up.
-if (mode === "deaf" || mode === "silent") setInterval(() => undefined, 1000);
+// stdin closed: a well-behaved tool exits; `deaf`, `silent` and `mute` stay up.
+if (["deaf", "silent", "mute"].includes(mode)) setInterval(() => undefined, 1000);

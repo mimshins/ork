@@ -85,6 +85,7 @@ describe("ork doctor", () => {
       "opencode (open-code driver): skip",
       "cmd (command-code driver): skip",
       "codex (codex driver): skip",
+      "codex (codex-app-server driver): skip",
       "omp (omp driver): skip",
       "gh: ok",
       "aws: skip",
@@ -374,6 +375,7 @@ describe("ork doctor with the QA stand-ins", () => {
       "opencode (open-code driver): skip",
       "cmd (command-code driver): ok",
       "codex (codex driver): skip",
+      "codex (codex-app-server driver): skip",
       "omp (omp driver): skip",
     ]);
   });

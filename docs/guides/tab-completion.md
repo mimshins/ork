@@ -105,7 +105,8 @@ completes the long names; type a letter yourself.
   `--severity`, `--due` and `--source`, and your registered projects after
   `--project` and `--for` ([filtering lists](./filtering-lists.md)).
 - **Drivers** after `--driver`: `claude-code`, `open-code`, `command-code`,
-  `codex` or `omp` (a run on `omp` is refused until it is proven).
+  `codex`, `codex-app-server` or `omp` (a run on the last two is refused until
+  they are proven).
 
 Values are read from your project and Ork's store on your machine. Completing
 never changes either, never shows a prompt or an output, and offers nothing

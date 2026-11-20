@@ -5,20 +5,20 @@
  *   `id` the tool answers with a `response` frame (`success`, `error`); it
  *   answers a `host_tool_call` with a `host_tool_result` of the same `id`, and
  *   an `extension_ui_request` of method `select` that offers `Approve` and
- *   `Deny` with an `extension_ui_response`, pairing it by order with the
- *   `tool_execution_start` before it (the request names no call). The tool's
- *   event frames have print mode's shapes, so `omp-events.ts` reads them, usage
- *   and Ork's ledger included. A `prompt_result` only marks a turn; the session
- *   ends at `session_settled`, as the last `prompt_result` says (`completed`,
- *   `aborted`, or an `error` whose `code` is `cost_cap`). Shapes measured in
- *   RFC-027's spike: `ready` (`maxFrameBytes`), `steer`'s `message`,
- *   `response`, the approval request and its `value` answer, `prompt_result`'s
- *   `status` and `sessionSettled`, `host_tool_call`'s `id`, `toolName` and
- *   `arguments`, and the result's `content`. Not measured, so chosen to match
- *   the rest: `prompt`'s `message`, `get_state`'s `data.sessionId`,
- *   `set_host_tools`' `tools`, the result's `isError`, the cancel answer
- *   (`cancelled: true`), an error's `message`, and how a chunked frame is
- *   marked.
+ *   `Deny` with an `extension_ui_response`, pairing it first in, first out with
+ *   the calls that started and are not yet paired or ended (the request names
+ *   no call). The tool's event frames have print mode's shapes, so
+ *   `omp-events.ts` reads them, usage and Ork's ledger included. A
+ *   `prompt_result` only marks a turn; the session ends at `session_settled`,
+ *   as the last `prompt_result` says (`completed`, `aborted`, or an `error`
+ *   whose `code` is `cost_cap`). Shapes measured in RFC-027's spike: `ready`
+ *   (`maxFrameBytes`), `steer`'s `message`, `response`, the approval request
+ *   and its `value` answer, `prompt_result`'s `status` and `sessionSettled`,
+ *   `host_tool_call`'s `id`, `toolName` and `arguments`, and the result's
+ *   `content`. Not measured, so chosen to match the rest: `prompt`'s `message`,
+ *   `get_state`'s `data.sessionId`, `set_host_tools`' `tools`, the result's
+ *   `isError`, the cancel answer (`cancelled: true`), an error's `message`, and
+ *   how a chunked frame is marked.
  */
 
 import type { SessionSpec } from "@krapht/ork-core";
@@ -85,7 +85,7 @@ const cancel = (id: string): Frame => ({
   cancelled: true,
 });
 
-/** The tool call that started and has not ended: what an approval is about. */
+/** A tool call that started and has not ended: what an approval is about. */
 type Call = { id: string; tool: string; args: Json };
 
 /**
@@ -95,7 +95,7 @@ type Call = { id: string; tool: string; args: Json };
 export const ompRpcCodec = (
   spec: Pick<SessionSpec, "model" | "cwd" | "fork">,
   options: OmpDecoderOptions = {},
-): Codec => {
+): Codec & Required<Pick<Codec, "callResult">> => {
   const events = ompDecoder(spec, options);
   let count = 0;
   const request = (frame: Frame): FrameRequest => {
@@ -106,7 +106,8 @@ export const ompRpcCodec = (
   let stateId = "";
   let started = false;
   let limit = OMP_MAX_FRAME_BYTES;
-  let call: Call | undefined;
+  /** Calls started and not yet paired or ended, oldest first. */
+  const calls: Call[] = [];
   /** The last `prompt_result`, which the settled session ends with. */
   let result: unknown;
 
@@ -136,19 +137,18 @@ export const ompRpcCodec = (
   };
 
   /**
-   * An approval of the call before it; anything else it cannot read is
-   * cancelled.
+   * An approval of the oldest unpaired call; anything else it cannot read is
+   * cancelled, and takes no call.
    */
   const select = (frame: Frame): DecodedFrame => {
     const id = str(frame["id"]);
     if (id === "") return { events: [] };
     const offered = frame["options"];
     const labels = Array.isArray(offered) ? offered : [];
-    const about = call;
-    call = undefined;
     if (!labels.includes(APPROVE) || !labels.includes(DENY)) {
       return { events: [], write: [cancel(id)] };
     }
+    const about = calls.shift();
     if (about === undefined) return { events: [], write: [cancel(id)] };
     return { events: [], ask: { id, tool: about.tool, args: about.args } };
   };
@@ -192,15 +192,18 @@ export const ompRpcCodec = (
       case "tool_execution_start": {
         const name = str(frame["toolName"]);
         const args = frame["args"];
-        call = {
+        calls.push({
           id: str(frame["toolCallId"]),
           tool: ompToolName(name) ?? name,
           args: isObject(args) ? args : {},
-        };
+        });
         return events.frame(frame);
       }
       case "tool_execution_end": {
-        if (call?.id === str(frame["toolCallId"])) call = undefined;
+        const ended = calls.findIndex(
+          each => each.id === str(frame["toolCallId"]),
+        );
+        if (ended !== -1) calls.splice(ended, 1);
         return events.frame(frame);
       }
       case "extension_ui_request": {

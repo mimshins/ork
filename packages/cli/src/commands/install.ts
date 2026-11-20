@@ -48,7 +48,7 @@ export const ORK_META = {
   name: "ork",
   version: ORK_VERSION,
   description:
-    "Orchestrate coding agents (Claude Code, OpenCode, Command Code, Codex, omp) on your machine",
+    "Orchestrate coding agents (Claude Code, OpenCode, Command Code, Codex, Codex app-server, omp) on your machine",
 };
 
 export const doctor = defineCommand({

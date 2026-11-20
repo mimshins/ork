@@ -23,7 +23,8 @@ import {
   type SessionUsage,
 } from "@krapht/ork-core";
 
-import type { LegDecoder, UsageReader } from "../adapter.ts";
+import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
+import { parsed } from "../frame-lines.ts";
 import { classifyProviderError } from "../provider-errors.ts";
 import { errorEnd } from "../session-end.ts";
 import { isBadArguments, orkMessage } from "../tools/tool.ts";
@@ -110,14 +111,6 @@ const itemResult = (item: unknown, id: string): RuntimeEvent => {
   };
 };
 
-const parseLine = (line: string): unknown => {
-  try {
-    return JSON.parse(line) as unknown;
-  } catch {
-    return undefined;
-  }
-};
-
 /**
  * One `turn.completed`'s usage, as a session's of one turn. `input_tokens`
  * includes the cached part (measured at the gate run: Codex's own total is
@@ -162,14 +155,18 @@ export const NONE: SessionUsage = {
 const HOOK_TRUST_WARNING = /hooks?\W?trust|bypass-hook-trust/iu;
 
 /** The exit code Codex gives an interrupted session. */
-const INTERRUPTED = 130;
+export const CODEX_INTERRUPTED_EXIT = 130;
 
 /**
  * One leg's decoder, and whether the leg finished a tool call (a shell command,
  * a patch or an MCP call): the hook must have seen each, so a leg that ran one
- * while the hook was never called ran unguarded.
+ * while the hook was never called ran unguarded. `frame` reads a line already
+ * parsed (the `codex-app-server` codec feeds it its frames in these shapes).
  */
-export type CodexDecoder = LegDecoder & { toolsRan: () => boolean };
+export type CodexDecoder = LegDecoder & {
+  toolsRan: () => boolean;
+  frame: (message: unknown) => Decoded;
+};
 
 /**
  * A decoder for one leg of a Codex session: it starts the session at
@@ -203,7 +200,8 @@ export const codexDecoder = (
     const name = itemTool(value);
     if (name === undefined) return [];
     // Codex runs its hook before a call, so a finished one was seen by it.
-    ranTools ||= type === "item.completed";
+    // A declined call may never have reached the hook (`codex app-server`).
+    ranTools ||= type === "item.completed" && get(value, "declined") !== true;
     const id = str(get(value, "id"));
     const call: RuntimeEvent[] = started.has(id)
       ? []
@@ -228,49 +226,51 @@ export const codexDecoder = (
       : errorEnd(errors().join("\n"), "driver_crashed");
   };
 
-  return {
-    decode: line => {
-      const message = parseLine(line);
-      const type = get(message, "type");
-      switch (type) {
-        case "thread.started": {
-          sessionId = str(get(message, "thread_id"));
-          return {
-            events: [
-              {
-                type: "session.started",
-                sessionId,
-                model: spec.model ?? "default",
-                cwd: spec.cwd,
-              },
-            ],
-          };
-        }
-        case "item.started":
-        case "item.completed": {
-          return { events: item(type, get(message, "item")) };
-        }
-        case "turn.completed": {
-          usage = addUsage(usage, codexTurnUsage(get(message, "usage")));
-          return { events: [], usage };
-        }
-        case "turn.failed": {
-          const words = str(get(get(message, "error"), "message")) || "error";
-          saying(words);
-          failed ??= errorEnd(words);
-          return { events: [] };
-        }
-        case "error": {
-          saying(str(get(message, "message")));
-          return { events: [] };
-        }
-        default: {
-          return { events: [] };
-        }
+  const frame = (message: unknown): Decoded => {
+    const type = get(message, "type");
+    switch (type) {
+      case "thread.started": {
+        sessionId = str(get(message, "thread_id"));
+        return {
+          events: [
+            {
+              type: "session.started",
+              sessionId,
+              model: spec.model ?? "default",
+              cwd: spec.cwd,
+            },
+          ],
+        };
       }
-    },
+      case "item.started":
+      case "item.completed": {
+        return { events: item(type, get(message, "item")) };
+      }
+      case "turn.completed": {
+        usage = addUsage(usage, codexTurnUsage(get(message, "usage")));
+        return { events: [], usage };
+      }
+      case "turn.failed": {
+        const words = str(get(get(message, "error"), "message")) || "error";
+        saying(words);
+        failed ??= errorEnd(words);
+        return { events: [] };
+      }
+      case "error": {
+        saying(str(get(message, "message")));
+        return { events: [] };
+      }
+      default: {
+        return { events: [] };
+      }
+    }
+  };
+
+  return {
+    decode: line => frame(parsed(line)),
+    frame,
     exit: code => {
-      const interrupted = code === INTERRUPTED;
+      const interrupted = code === CODEX_INTERRUPTED_EXIT;
       const end = interrupted
         ? endFor("interrupted", {}, errors().join("\n"))
         : (failed ?? (code === 0 ? endFor("no_report") : crashed()));

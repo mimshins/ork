@@ -1044,12 +1044,12 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session, and `omp`, built and not yet proven. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session, and `codex-app-server` and `omp`, built and not yet proven. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
       "A subscription's rate limit reaches the engine as `plan.limit`; only `rejected` stops anything, and it stops the run rather than failing the node. A warning is dated, and stale after 3 hours.",
-      "`Session.send` injects a message between turns, or on `omp` (the two-way client, RFC-027) before the turn ends, once the running call finishes; `interrupt()` stops the session.",
+      "`Session.send` injects a message between turns, or on `omp` and `codex-app-server` (the two-way client, RFC-027) before the turn ends (a running call or command finishes first); `interrupt()` stops the session.",
       "A session's driver: the one its model names (`claude-code.opus`), else `--driver`, else the node's or its agent's, else the workflow's or project's `defaults.driver`, else the one ready on this machine when the run started. A committed workflow needn't name one. The retired ids `sdk` and `cli` are refused; a stored run that recorded one resumes as `claude-code`.",
       "`SessionSpec.fork` with `resume` starts a copy of a session and leaves the original as it was; a leader's fork answers its children's questions.",
       "Every session starts clean of the machine's Claude setup: no MCP server but Ork's, no auto-memory, the per-machine prompt sections out of the cached prefix. `ork run --machine-claude` loads the machine's MCP servers and memory for a run; the run records it, and resumes, chats and called runs keep it.",
@@ -1126,7 +1126,7 @@ export const NODES = [
     summary:
       "Runs a node through your installed `claude` command in headless mode, with JSON streams in and out. Uses whatever login that `claude` has, or `ANTHROPIC_API_KEY`, Bedrock, Vertex or Foundry; `ork doctor` says which.",
     facts: [
-      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it; `omp` (RFC-026) is built and waits for its gate run.",
+      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it; `omp` (RFC-026) and `codex-app-server` (RFC-027) are built and wait for their gate runs.",
       "An adapter of small strategies (command, event decoder, MCP wiring, permissions, usage, context layers, hold hook), run by the session runner every driver shares.",
       "`--input-format stream-json --output-format stream-json --verbose`.",
       "The report comes back through `--json-schema`; Ork's tools through `--mcp-config`.",
@@ -1192,7 +1192,7 @@ export const NODES = [
       "One set of tests that every adapter passes against a fake of its tool, so a driver keeps the same promises: events, reports, denials, cleanup, usage, interrupt and messages.",
     facts: [
       "Covers: events normalized; a report that fits kept and one that breaks the schema rejected; a denied tool stays denied; Ork's endpoint reached and then gone; usage counted; an interrupt ends the session; a mid-session message arrives.",
-      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`, `fake-codex`, `fake-omp`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
+      "Each adapter has a fake tool (`fake-claude`, `fake-command`, `fake-opencode`, `fake-codex`, `fake-codex-app-server`, `fake-omp`) that replays that CLI's output. A registered adapter with no entry fails the suite.",
       "Runs on fakes, so CI needs no account. A real session is the maintainer's gate, outside the suite.",
     ],
     docs: [RUNTIME.contract, RUNTIME.runner, DESIGN.packages],
@@ -1209,7 +1209,7 @@ export const NODES = [
     summary:
       "How a node ends with a report on a driver that can't return structured output: the model calls `report`, Ork checks it against the node's schema, and a bad one comes back to the model with the violations.",
     facts: [
-      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`, `codex`, `omp`); `claude-code` uses `--json-schema`.",
+      "Bound only when the driver's `reportSchema` capability is false (`open-code`, `command-code`, `codex`, `codex-app-server`, `omp`); `claude-code` uses `--json-schema`.",
       "The session ends with the last report it accepted; one that breaks the schema is refused and the model tries again.",
       "A schema it can't read falls back to any object with a valid `status` and `summary` (gap L237).",
     ],
@@ -1282,12 +1282,41 @@ export const NODES = [
       "Ork's MCP endpoint is `-c mcp_servers.ork.*`, its token in the leg's environment only and kept out of Codex's shell. Never `--skip-git-repo-check`, `--trust`, `--ephemeral` or the full bypass.",
       "Deny by default: `read-only` or `workspace-write` sandbox (never wider, `--yolo` too), and a `PreToolUse` hook Ork writes in a 0700 private folder outside the checkout, with the same matcher as Command Code's mod; an unknown tool is refused.",
       "Fails closed: a user or system `hooks.json` ends the node before any model call, and a leg that ran tools with no hook call is killed and ends as a driver error.",
-      "Tokens only (`budgetUsd` alone is warned about); no `hold`, so pause and stop land at a leg's end. A node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped `Read` deny is refused. Reports go by Ork's `report` tool, as the API refuses Ork's report schemas under `--output-schema`. A message sent mid-leg waits for the next leg, and a refused call is logged with no input (gaps G39 to G44, L438 to L454).",
+      "Tokens only (`budgetUsd` alone is warned about); no `hold`, so pause and stop land at a leg's end. A node with `mcp` servers, sub-agents, `maxTurns` or a path-scoped `Read` deny is refused. Reports go by Ork's `report` tool, as the API refuses Ork's report schemas under `--output-schema`. A message sent mid-leg waits for the next leg (`codex-app-server` takes one before the turn ends), and a refused call is logged with no input (gaps G40 to G44, L438 to L454).",
     ],
     docs: [
       RUNTIME.codex,
       RUNTIME.codexHook,
       RUNTIME.codexSpec,
+      RUNTIME.driverGuide,
+    ],
+  },
+  {
+    id: "codexAppServerDriver",
+    title: "codex-app-server driver",
+    sub: "`codex app-server` · JSON-RPC · steer",
+    zone: "runtime",
+    x: 1720,
+    y: 960,
+    status: "built",
+    pkg: "runtime",
+    src: "packages/runtime/src/adapters/codex-app-server.ts",
+    summary:
+      "Built, not yet proven on a real session (RFC-027): until its gate run passes, `ork validate` and `ork run` refuse a node on it and `ork doctor` shows it `skip`. Runs a node through your `codex` as `codex app-server`, one process per leg over the two-way session client, so a message reaches the model before the turn ends and Ork answers Codex's approvals.",
+    facts: [
+      "Each leg is `codex app-server` (plugins and apps off) talked to in JSON-RPC 2.0 over stdio: `initialize`, then `thread/start`, `thread/resume` by id or `thread/fork`, then `turn/start` with the brief. The session id Ork keeps is the thread id.",
+      "A message is a `turn/steer` on the running turn, held until the turn has begun, so it arrives before the turn ends, not at once (a running command may finish first); a stop is a `turn/interrupt` and the session ends `interrupted` at the turn's completion.",
+      "Ork answers a command or file-change approval through the human channel, accept or decline once, never for the session; every other request Codex makes of the host (host tools, user input, elicitation, permissions) is refused at once, never served.",
+      "Rules bind as on `codex`: the sandbox (`read-only` or `workspace-write`, never wider) and a per-session `PreToolUse` hook, with Ork's token in the process environment only. A user or system hooks file, a hook Ork did not pass, or a hook Codex did not load ends the node before any thread; a tool call with no hook call behind it ends the leg as a driver error.",
+      "Weaker than `codex`: `app-server` cannot ignore your `config.toml` or execution-policy rules, so they still load, with Ork's hook still seeing every call. No `hold`, so a pause lands at the turn's end. Tokens only; `mcp` servers, sub-agents, `maxTurns` and path-scoped read denies are refused.",
+      "Unmeasured until the gate run, on a fake `codex app-server` built from the generated schema: a steer during a running command, an approval, an interrupt, the hook's trust setting and every wire shape the schema does not name.",
+    ],
+    docs: [
+      RUNTIME.codexAppServer,
+      RUNTIME.codexRpc,
+      RUNTIME.duplexLeg,
+      RUNTIME.duplexSpec,
+      RUNTIME.codexAppServerSpec,
       RUNTIME.driverGuide,
     ],
   },
@@ -1305,7 +1334,7 @@ export const NODES = [
       "Built, not yet proven on a real session (RFC-026): until its gate run passes, `ork validate` and `ork run` refuse a node on it and `ork doctor` shows it `skip`. Runs a node through your `omp` (oh-my-pi), one process per leg over the two-way session client (RFC-027), with Ork's tools as host tools on that pipe and a guard Ork writes as the fence.",
     facts: [
       "Each leg is `omp --mode rpc` with `omp`'s extras off, `--tools` holding only the built-ins the node's rules can allow, `--thinking` (the node's effort, else `medium`) and Ork's instructions on every leg; the brief is a `prompt` frame once `omp` says it is ready, a message is a `steer` frame that reaches the model before the turn ends (a running call finishes first), a stop is an `abort`, and a question fork is `--fork <id>`.",
-      "Ork answers `omp`'s own approval asks (a `select` of `Approve` or `Deny`) through the human channel, paired by order with the call before it, and never sends `Approve for this session`; a session ends at `session_settled`, not at a turn's result.",
+      "Ork answers `omp`'s own approval asks (a `select` of `Approve` or `Deny`) through the human channel, paired first in, first out with the calls that started and are not yet paired or ended, and never sends `Approve for this session`; a session ends at `session_settled`, not at a turn's result.",
       "Ork's tools are host tools (`set_host_tools`, named `ork_<tool>`) that the runner runs in process when `omp` sends a `host_tool_call`, so no plugin or tool server exists; the token is only in the guard's `hold.json` (0600), never in an argument or variable. A settings overlay (`--config`) allows the offered tools and each Ork tool by name and denies the rest, `eval` and `task` always. Sessions go to `~/.ork/omp/sessions`.",
       "Deny by default: the guard (`--trusted-extension`, the only extension) refuses what the node's rules refuse, a tool it doesn't know, and an edit outside the worktree, `--yolo` included. It fails closed: a guard or overlay that doesn't load, or host tools `omp` refuses, ends the leg before any model call.",
       "Holds a paused node's next call by asking Ork's hold endpoint, and takes `heavy` slots the same way. A pause past the 9-minute window ends the leg with an `abort` and `ork continue` resumes it (`--resume <id>`) with a message giving the real reason (a pause, or a `heavy` slot that was not free) and asking the model to make the held call again, so a pause costs one resume; a stop writes a marker the guard checks, so a held call never runs.",

@@ -2,15 +2,16 @@
  * @file Tests for the duplex leg (`runDuplexLeg`, RFC-027) on a tiny fake tool
  *   that speaks JSON frames (`fixtures/fake-frames.mjs`) and a trivial codec:
  *   the handshake, requests matched by id and failed at the end, approvals,
- *   host tool calls, stop and kill, deferral, and the failures a frame or an
- *   exit ends it with.
+ *   host tool calls, stop and kill, deferral, messages held or dropped, no
+ *   timer left behind, a codec ready at spawn or waiting for a turn, and the
+ *   failures a frame or an exit ends it with.
  */
 
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   Ask,
@@ -21,10 +22,33 @@ import type {
   Frame,
   HostTool,
 } from "../src/adapter.ts";
+import type * as FrameLines from "../src/frame-lines.ts";
 import type { Leg } from "../src/leg-step.ts";
 import { runDuplexLeg } from "../src/session-duplex-leg.ts";
 import type { DuplexIo } from "../src/session-leg.ts";
 import { text as toolText } from "../src/tools/tool.ts";
+
+/** Every request the leg waited on, so a test can see none is left pending. */
+const waited = vi.hoisted((): { id: string; reply: Promise<void> }[] => []);
+
+vi.mock("../src/frame-lines.ts", async importOriginal => {
+  const real = await importOriginal<typeof FrameLines>();
+  return {
+    ...real,
+    requestTable: (ended: () => Error) => {
+      const table = real.requestTable(ended);
+      return {
+        ...table,
+        wait: (id: string) => {
+          const reply = table.wait(id);
+          reply.catch(() => null);
+          waited.push({ id, reply });
+          return reply;
+        },
+      };
+    },
+  };
+});
 
 const FAKE = path.join(import.meta.dirname, "fixtures/fake-frames.mjs");
 
@@ -41,8 +65,11 @@ const usageOf = (tokens: number): SessionUsage => ({
 /** What the fake codec saw: the tool's pid, and the host calls it answered. */
 type Seen = { pid: number; answered: string[] };
 
+/** The codec's optional parts a test turns on. */
+type Parts = Pick<Codec, "readyAtSpawn" | "waitsForTurn">;
+
 /** The fake tool's frames as Ork's events; `seen` keeps what it saw. */
-const fakeCodec = (seen: Seen): Codec => {
+const fakeCodec = (seen: Seen, parts: Parts): Codec => {
   let n = 0;
   const request = (frame: Frame) => {
     n += 1;
@@ -55,6 +82,7 @@ const fakeCodec = (seen: Seen): Codec => {
       return { events: [] };
     },
     ready: () => ({ events: [], ready: true }),
+    turn: () => ({ events: [], turn: true }),
     response: frame => ({
       events: [],
       reply: {
@@ -114,6 +142,7 @@ const fakeCodec = (seen: Seen): Codec => {
     }),
   };
   return {
+    ...parts,
     open: spec => [request({ type: "prompt", text: spec.prompt })],
     decode: frame =>
       (decoders[String(frame["type"])] ?? (() => ({ events: [] })))(frame),
@@ -166,6 +195,8 @@ type Started = {
   io: () => DuplexIo;
   seen: Seen;
   asked: Ask[];
+  /** The session's queue of messages for a later send or leg. */
+  pending: string[];
   finish: Promise<Leg>;
 };
 
@@ -175,10 +206,12 @@ const start = (
   permit: (ask: Ask) => Promise<Decision> = () => Promise.resolve("allow"),
   readyMs = 5000,
   hostTools: HostTool[] = [],
+  parts: Parts = {},
 ): Started => {
   const events: RuntimeEvent[] = [];
   const seen: Seen = { pid: 0, answered: [] };
   const asked: Ask[] = [];
+  const pending: string[] = [];
   let attached: DuplexIo | undefined;
   const leg = runDuplexLeg({
     adapter,
@@ -187,11 +220,11 @@ const start = (
     cwd: process.cwd(),
     args: [FAKE, mode],
     carried: undefined,
-    pending: [],
+    pending,
     deferred: () => false,
     withhold: () => false,
     scope: { facts: { program: "fake-frames" } },
-    codec: fakeCodec(seen),
+    codec: fakeCodec(seen, parts),
     spec,
     leg: { endpoint: { url: "", token: "" }, allowed: [], hostTools },
     permit: ask => {
@@ -216,7 +249,7 @@ const start = (
     if (attached === undefined) throw new Error("not attached");
     return attached;
   };
-  return { events, io, seen, asked, finish };
+  return { events, io, seen, asked, pending, finish };
 };
 
 const hostTool = (name: string, call: HostTool["call"]): HostTool => ({
@@ -246,6 +279,8 @@ const yielded = async (run: Started, type: RuntimeEvent["type"]) => {
 };
 
 const gone = async (pid: number) => {
+  // Pid 0 would signal this process's own group, which is always alive.
+  expect(pid).toBeGreaterThan(0);
   await vi.waitFor(() => {
     expect(isAlive(pid)).toBe(false);
   }, WAIT);
@@ -418,10 +453,11 @@ describe("runDuplexLeg", () => {
   });
 
   it("fails when the tool never says it is ready", async () => {
-    const run = start("silent", undefined, 200);
+    // Long enough for the fake to say its pid first on a loaded machine.
+    const run = start("silent", undefined, 1000);
     await expect(run.finish).resolves.toMatchObject({
       kind: "failed",
-      reason: "fake-frames did not say it was ready within 0.2 s",
+      reason: "fake-frames did not say it was ready within 1 s",
     });
     await gone(run.seen.pid);
   });
@@ -449,5 +485,166 @@ describe("runDuplexLeg", () => {
       usage: { inputTokens: 7 },
     });
     await gone(run.seen.pid);
+  });
+});
+
+describe("runDuplexLeg's messages", () => {
+  beforeEach(() => {
+    waited.length = 0;
+  });
+
+  it("takes a message while a tool call runs, matched by id, leaving the leg as it was", async () => {
+    const gate = Promise.withResolvers<Decision>();
+    const run = start("ask", () => gate.promise);
+    await vi.waitFor(() => {
+      expect(run.asked).toHaveLength(1);
+    }, WAIT);
+    await expect(run.io().message("mid-call")).resolves.toBeUndefined();
+    gate.resolve("allow");
+    await expect(run.finish).resolves.toEqual({ kind: "finished" });
+    expect(texts(run.events)).toEqual(["mid-call", "allow"]);
+  });
+
+  it("rejects the interrupt's own request and a pending message when the leg ends", async () => {
+    const run = start("deaf");
+    await yielded(run, "session.started");
+    const pending = run.io().message("hi");
+    run.io().stop();
+    await expect(pending).rejects.toThrow("ended");
+    await run.finish;
+    const replies = await Promise.allSettled(waited.map(({ reply }) => reply));
+    // The prompt, the message, the interrupt.
+    expect(waited.map(({ id }) => id)).toEqual(["r1", "r2", "r3"]);
+    expect(replies.map(({ status }) => status)).toEqual([
+      "fulfilled",
+      "rejected",
+      "rejected",
+    ]);
+  });
+
+  it("keeps a message sent once deferring began for the resumed leg, never the dying turn", async () => {
+    const run = start("wait");
+    await yielded(run, "session.started");
+    run.io().defer();
+    run.io().write("late");
+    await expect(run.io().message("later")).resolves.toBeUndefined();
+    await expect(run.finish).resolves.toMatchObject({ kind: "deferred" });
+    expect(run.pending).toEqual(["late", "later"]);
+    // Only the prompt and the interrupt were written.
+    expect(waited.map(({ id }) => id)).toEqual(["r1", "r2"]);
+  });
+
+  it("drops a message sent after a stop", async () => {
+    const run = start("wait");
+    await yielded(run, "session.started");
+    run.io().stop();
+    run.io().write("late");
+    await expect(run.io().message("later")).rejects.toThrow("stopped");
+    await run.finish;
+    expect(run.pending).toEqual([]);
+    expect(waited.map(({ id }) => id)).toEqual(["r1", "r2"]);
+  });
+
+  it("writes open at spawn for a codec ready at spawn", async () => {
+    const run = start("silent", undefined, 5000, [], { readyAtSpawn: true });
+    await yielded(run, "session.started");
+    await expect(run.io().message("hi")).resolves.toBeUndefined();
+    run.io().stop();
+    await expect(run.finish).resolves.toMatchObject({ end: "interrupted" });
+    expect(texts(run.events)).toEqual(["hi"]);
+    await gone(run.seen.pid);
+  });
+
+  it("fails a codec ready at spawn whose start is never answered", async () => {
+    const run = start("mute", undefined, 200, [], { readyAtSpawn: true });
+    await expect(run.finish).resolves.toEqual({
+      kind: "failed",
+      reason: "fake-frames did not answer the session's start within 0.2 s",
+      end: "driver_crashed",
+    });
+  });
+
+  it("holds messages until the turn starts, for a codec that waits for one", async () => {
+    const run = start("late-turn", undefined, 5000, [], {
+      readyAtSpawn: true,
+      waitsForTurn: true,
+    });
+    run.io().write("early");
+    // The fake refuses a steer before its turn, so this rejects if sent early.
+    await expect(run.io().message("also early")).resolves.toBeUndefined();
+    await vi.waitFor(() => {
+      expect(texts(run.events)).toEqual(["early", "also early"]);
+    }, WAIT);
+    run.io().stop();
+    await expect(run.finish).resolves.toMatchObject({ end: "interrupted" });
+  });
+});
+
+const none = () => Promise.resolve();
+
+/** Waits, on no timer, until the leg has yielded the session's start. */
+const begun = async (run: Started) => {
+  const until = Date.now() + WAIT.timeout;
+  while (
+    !run.events.some(event => event.type === "session.started") &&
+    Date.now() < until
+  ) {
+    // oxlint-disable-next-line eslint/no-await-in-loop -- polling, not a timer
+    await new Promise(resolve => {
+      setImmediate(resolve);
+    });
+  }
+};
+
+describe("runDuplexLeg's timers", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const cases: [string, string, (run: Started) => Promise<void>][] = [
+    ["ends", "end", none],
+    ["fails", "chunk", none],
+    [
+      "is stopped",
+      "wait",
+      async run => {
+        await begun(run);
+        run.io().stop();
+      },
+    ],
+    [
+      "is stopped and killed",
+      "deaf",
+      async run => {
+        await begun(run);
+        run.io().stop();
+        await vi.advanceTimersByTimeAsync(300);
+      },
+    ],
+    [
+      "is deferred",
+      "wait",
+      async run => {
+        await begun(run);
+        run.io().defer();
+      },
+    ],
+    [
+      "is never ready",
+      "silent",
+      async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      },
+    ],
+  ];
+
+  it.each(cases)("leaves no timer once a leg %s", async (_how, mode, act) => {
+    const run = start(mode, undefined, 200);
+    await act(run);
+    await run.finish;
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

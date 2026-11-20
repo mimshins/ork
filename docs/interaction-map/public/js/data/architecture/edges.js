@@ -506,6 +506,17 @@ export const EDGES = [
     docs: [DESIGN.runtime],
   },
   {
+    id: "runner-codex-app-server",
+    from: "sessionRunner",
+    to: "codexAppServerDriver",
+    kind: "local",
+    label: "strategies · codec · -c keys",
+    detail:
+      "The `codex-app-server` adapter supplies its own strategies, with a JSON-RPC codec for the two-way session client, `-c` keys as its MCP wiring (the token in the process environment) and a per-session hook file for the node's rules. Built, not yet proven on a real session.",
+    status: "built",
+    docs: [DESIGN.runtime],
+  },
+  {
     id: "runner-omp",
     from: "sessionRunner",
     to: "ompDriver",

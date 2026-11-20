@@ -4,7 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { driverOf } from "../src/index.ts";
 
-const DRIVERS = ["claude-code", "open-code", "command-code", "codex", "omp"];
+const DRIVERS = [
+  "claude-code",
+  "open-code",
+  "command-code",
+  "codex",
+  "codex-app-server",
+  "omp",
+];
 
 describe("driverOf", () => {
   it("splits a registered driver id from the model", () => {
@@ -28,6 +35,10 @@ describe("driverOf", () => {
     expect(driverOf("open-code.anthropic/claude-sonnet-5-5", DRIVERS)).toEqual({
       driver: "open-code",
       model: "anthropic/claude-sonnet-5-5",
+    });
+    expect(driverOf("codex-app-server.gpt-5.5-codex", DRIVERS)).toEqual({
+      driver: "codex-app-server",
+      model: "gpt-5.5-codex",
     });
     expect(driverOf("omp.openai/gpt-5.2", DRIVERS)).toEqual({
       driver: "omp",

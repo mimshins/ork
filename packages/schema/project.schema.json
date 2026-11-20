@@ -157,6 +157,7 @@
             "open-code",
             "command-code",
             "codex",
+            "codex-app-server",
             "omp"
           ]
         },

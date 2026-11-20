@@ -12,7 +12,7 @@ files ([omp-config.ts](../../packages/runtime/src/adapters/omp-config.ts)) and
 spend ledger
 ([omp-ledger.ts](../../packages/runtime/src/adapters/omp-ledger.ts)) are built,
 and the contract suite passes on a fake `omp --mode rpc` that replays the frames
-[RFC-027](../../rfcs/active/RFC-027-long-lived-protocol-drivers.md)'s spike
+[RFC-027](../../rfcs/archived/RFC-027-long-lived-protocol-drivers.md)'s spike
 captured, and on its host-tool frames (`set_host_tools`, `host_tool_call`, whose
 shapes are partly guessed: [L534 to L537](../gaps/omp-limits.md)). Until a
 capped gate run on a real `omp` passes, `ork validate` and `ork run` refuse a
@@ -27,12 +27,13 @@ a stand-in model server and never touched a real login. What is not measured is
 
 Why: [ADR-105](../../decisions/ADR-105-omp-driver.md) (this driver),
 [ADR-108](../../decisions/ADR-108-duplex-session-client.md) (the rpc path),
-[RFC-027](../../rfcs/active/RFC-027-long-lived-protocol-drivers.md) (the two-way
-client and the rpc path), [ADR-076](../../decisions/ADR-076-cli-drivers-only.md)
-(CLI drivers only), [ADR-004](../../decisions/ADR-004-no-credentials.md) (no
-credentials), [ADR-041](../../decisions/ADR-041-pause-continue-stop.md) (pause,
-continue and stop), [ADR-046](../../decisions/ADR-046-usage-ledger-and-prune.md)
-(a resumed session's total),
+[RFC-027](../../rfcs/archived/RFC-027-long-lived-protocol-drivers.md) (the
+two-way client and the rpc path),
+[ADR-076](../../decisions/ADR-076-cli-drivers-only.md) (CLI drivers only),
+[ADR-004](../../decisions/ADR-004-no-credentials.md) (no credentials),
+[ADR-041](../../decisions/ADR-041-pause-continue-stop.md) (pause, continue and
+stop), [ADR-046](../../decisions/ADR-046-usage-ledger-and-prune.md) (a resumed
+session's total),
 [ADR-083](../../decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md)
 (`omp.<model>`) and
 [ADR-103](../../decisions/ADR-103-fresh-session-for-the-next-task.md)

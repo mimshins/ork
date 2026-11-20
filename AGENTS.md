@@ -1,11 +1,12 @@
 # AGENTS.md
 
 Ork is a local, open-source orchestration harness for coding agents (Claude
-Code, OpenCode, Command Code, Codex, omp): a workflow of hierarchical agent and
-tool nodes, designed in a CLI or a localhost UI, serialized to git-friendly
-YAML, and run on the user's own machine with the user's own accounts. See
-[README.md](./README.md), the overview in [specs/design.md](./specs/design.md),
-and the contracts in [specs/](./specs/README.md).
+Code, OpenCode, Command Code, Codex, Codex app-server, omp): a workflow of
+hierarchical agent and tool nodes, designed in a CLI or a localhost UI,
+serialized to git-friendly YAML, and run on the user's own machine with the
+user's own accounts. See [README.md](./README.md), the overview in
+[specs/design.md](./specs/design.md), and the contracts in
+[specs/](./specs/README.md).
 
 AI knowledge layer: [.ai/README.md](./.ai/README.md).
 

@@ -1,13 +1,21 @@
 /**
  * @file The agent drivers Ork can run a session with, as descriptors: id, label
  *   and doctor check (RFC-014: `claude-code`, `open-code` and `command-code`;
- *   RFC-024: `codex`; each proven on a real session; RFC-026: `omp`, not yet
- *   proven). `@krapht/ork-runtime` registers a factory for each id, so adding a
- *   driver is one descriptor here and one factory there (ADR-022). Ork never
- *   handles the user's login (ADR-004).
+ *   RFC-024: `codex`; each proven on a real session; RFC-026: `omp` and
+ *   RFC-027: `codex-app-server`, not yet proven). `@krapht/ork-runtime`
+ *   registers a factory for each id, so adding a driver is one descriptor here
+ *   and one factory there (ADR-022). Ork never handles the user's login
+ *   (ADR-004).
  */
 
-import { codex, commandCode, olderThan, omp, openCode } from "./cli-drivers.ts";
+import {
+  codex,
+  codexAppServer,
+  commandCode,
+  olderThan,
+  omp,
+  openCode,
+} from "./cli-drivers.ts";
 import type { CheckResult, Env, Exec } from "./integration.ts";
 import { field, firstLine, parseJson } from "./json.ts";
 
@@ -174,6 +182,7 @@ export const AGENT_DRIVERS = [
   openCode,
   commandCode,
   codex,
+  codexAppServer,
   omp,
 ] as const;
 
@@ -182,6 +191,7 @@ export type DriverId =
   | "open-code"
   | "command-code"
   | "codex"
+  | "codex-app-server"
   | "omp";
 
 /** The drivers' ids, for the workflow schema's `driver` field. */
@@ -190,6 +200,7 @@ export const DRIVER_IDS: readonly [DriverId, ...DriverId[]] = [
   "open-code",
   "command-code",
   "codex",
+  "codex-app-server",
   "omp",
 ];
 

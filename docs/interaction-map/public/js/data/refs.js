@@ -1373,6 +1373,18 @@ export const RUNTIME = {
     "Code: the codex hook that holds a node's rules",
   ),
   codexSpec: d("specs/runtime/codex.md", "Spec: the codex driver"),
+  codexAppServer: d(
+    "packages/runtime/src/adapters/codex-app-server.ts",
+    "Code: the codex-app-server adapter",
+  ),
+  codexRpc: d(
+    "packages/runtime/src/adapters/codex-rpc.ts",
+    "Code: the codex app-server codec",
+  ),
+  codexAppServerSpec: d(
+    "specs/runtime/codex-app-server.md",
+    "Spec: the codex-app-server driver",
+  ),
   omp: d("packages/runtime/src/adapters/omp.ts", "Code: the omp adapter"),
   ompGuard: d(
     "packages/runtime/src/adapters/omp-guard.ts",

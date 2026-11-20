@@ -97,6 +97,26 @@ What lands on `main` is listed here until it ships.
   writer worked, keep copies nothing and names it
   ([Onboarding](../guides/onboarding.md#in-a-project-attached-with-ork-register)).
 
+- **`codex-app-server`, a sixth driver, for Codex.** It runs your own `codex` as
+  `codex app-server` and talks to it in both directions, so a message
+  (`ork chat`, `ork send`) reaches the model before the turn ends instead of
+  waiting for the stretch to end (a running command may finish first),
+  `ork stop` interrupts the turn, and Codex's questions about a command or file
+  change come to you in `ork decide`, answered once and never for the session.
+  The `codex` driver is unchanged. It is built and **not yet proven**:
+  `ork validate` and `ork run` refuse a node on it and `ork doctor` shows it as
+  `skip`, until a capped run on a real `codex` passes. It is also looser than
+  `codex`: your own `config.toml` and execution-policy rules still load (Ork's
+  hook and sandbox still hold the node), and a hooks file of yours stops the
+  node before it starts. The README, the docs overview, `ork --help` and the npm
+  description now name six drivers
+  ([Codex app-server](../guides/drivers/codex-app-server.md)). Upgrade: none
+  required.
+
+- **`omp` fixes.** A message sent while an `omp` node was pausing for a deferral
+  is no longer lost, and `omp`'s approvals are matched to their calls by call
+  order. Upgrade: none required.
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

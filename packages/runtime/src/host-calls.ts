@@ -5,7 +5,8 @@
  *   the call's id. Calls may overlap; each is answered on its own. A name Ork
  *   does not offer or a call that throws is answered with an error result
  *   carrying Ork's markers, as the MCP server's tools give; an answer that
- *   comes after the leg has ended is dropped.
+ *   comes after the leg has ended is dropped. A codec without `callResult` (its
+ *   tool reaches Ork's tools over MCP) decodes no call.
  */
 
 import type { Codec, Frame, HostCall, HostTool } from "./adapter.ts";
@@ -50,9 +51,12 @@ export const hostCalls =
     ended: AbortSignal,
   ) =>
   (call: HostCall): void => {
+    const { callResult } = codec;
+    // A codec with no result frame decodes no call: nothing to answer.
+    if (callResult === undefined) return;
     const answer = async () => {
       const result = await callHostTool(tools, call);
-      if (!ended.aborted) write(codec.callResult(call, result));
+      if (!ended.aborted) write(callResult(call, result));
     };
     void answer();
   };

@@ -19,9 +19,12 @@ const messages = (
 ) => (result.ok ? [] : result.diagnostics.map(d => d.message));
 
 describe("the driver field", () => {
-  it.each(["claude-code", "codex", "omp"])("takes %s", id => {
-    expect(workflow(id).ok).toBe(true);
-  });
+  it.each(["claude-code", "codex", "codex-app-server", "omp"])(
+    "takes %s",
+    id => {
+      expect(workflow(id).ok).toBe(true);
+    },
+  );
 
   it.each(["sdk", "cli"])("refuses `%s` and names claude-code", id => {
     expect(messages(workflow(id))).toEqual([
@@ -34,7 +37,7 @@ describe("the driver field", () => {
 
   it("refuses an unknown id with the list", () => {
     expect(messages(workflow("gemini"))).toEqual([
-      "Invalid option: expected one of `claude-code`|`open-code`|`command-code`|`codex`|`omp`",
+      "Invalid option: expected one of `claude-code`|`open-code`|`command-code`|`codex`|`codex-app-server`|`omp`",
     ]);
   });
 });

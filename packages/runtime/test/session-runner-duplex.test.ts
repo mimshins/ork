@@ -7,8 +7,10 @@
  *   with no report, and a deferred call ends the leg and resumes the session on
  *   continue with the codec's resume message and the legs' usage combined (or
  *   once a heavy slot frees, saying the slot was the reason), or never resumes
- *   it once stopped, or fails it when it has no session id. A driver that takes
- *   host tools gets Ork's tools on its leg and an endpoint that lists none.
+ *   it once stopped, or fails it when it has no session id. A message sent
+ *   during the deferral's abort or between legs reaches the resumed leg once;
+ *   one sent after a stop is dropped. A driver that takes host tools gets Ork's
+ *   tools on its leg and an endpoint that lists none.
  */
 
 import { mkdtempSync } from "node:fs";
@@ -51,7 +53,13 @@ const usageOf = (tokens: number): SessionUsage => ({
 });
 
 /** What the codecs of a session were asked to write, and the last leg's context. */
-type Written = { interrupts: number; opened: string[]; leg?: LegContext };
+type Written = {
+  interrupts: number;
+  opened: string[];
+  leg?: LegContext;
+  /** Called as a leg writes its interrupt, while it is still deferring. */
+  onInterrupt?: () => void;
+};
 
 const decoders: Record<string, (frame: Frame) => DecodedFrame> = {
   ready: () => ({ events: [], ready: true }),
@@ -118,6 +126,7 @@ const codecOf = (written: Written): Codec => {
     message: text => request({ type: "steer", text }),
     interrupt: () => {
       written.interrupts += 1;
+      written.onInterrupt?.();
       return request({ type: "abort" });
     },
     answer: (ask, decision) => ({
@@ -229,6 +238,16 @@ const start = (
   });
   if (options.paused === true) holds.pause();
   const { asked, human } = humanOf(options.answer ?? { allow: true });
+  const port = holds.forNode("worker");
+  /** The hold waits so far: the hook's, then the runner's between legs. */
+  const waits = { count: 0 };
+  const hold: typeof port = {
+    ...port,
+    wait: (at, signal) => {
+      waits.count += 1;
+      return port.wait(at, signal);
+    },
+  };
   const session = createSessionRuntime(adapterOf(written, options.hostTools), {
     bin: process.execPath,
     holdWindowMs: 30,
@@ -238,7 +257,7 @@ const start = (
       : specOf(prompt),
     {
       human,
-      hold: holds.forNode("worker"),
+      hold,
       ...(options.machine === undefined ? {} : { machine: options.machine }),
     },
   );
@@ -246,7 +265,7 @@ const start = (
   const finish = (async () => {
     for await (const event of session.events) events.push(event);
   })();
-  return { session, events, finish, written, holds, asked };
+  return { session, events, finish, written, holds, asked, waits };
 };
 
 /** Long enough for a Node process to start on a loaded machine. */
@@ -400,6 +419,51 @@ describe("the session runner, for a tool that speaks frames both ways", () => {
     ]);
     expect(run.written.opened).toEqual(["hold", "again (slot)"]);
     expect(ledger.holders()).toEqual([]);
+  });
+
+  it("delivers a message sent during a deferral's abort once, to the resumed leg", async () => {
+    const run = start("hold-wait", { paused: true });
+    run.written.onInterrupt = () => {
+      run.session.send("finish");
+    };
+    await deferredOnce(run.written);
+    run.holds.proceed();
+    await run.finish;
+    expect(run.written.opened).toEqual(["hold-wait", "again (pause)"]);
+    expect(texts(run.events)).toEqual(["again", "finish"]);
+    expect(outcomes(run.events)).toMatchObject([
+      { sessionId: "s2", text: "finished" },
+    ]);
+  });
+
+  it("delivers a message sent while idle between legs once, to the resumed leg", async () => {
+    const run = start("hold-wait", { paused: true });
+    // The second wait is the runner's, once the deferred leg has ended.
+    await vi.waitFor(() => {
+      expect(run.waits.count).toBe(2);
+    }, WAIT);
+    run.session.send("finish");
+    run.holds.proceed();
+    await run.finish;
+    expect(run.written.opened).toEqual(["hold-wait", "again (pause)"]);
+    expect(texts(run.events)).toEqual(["again", "finish"]);
+    expect(outcomes(run.events)).toMatchObject([
+      { sessionId: "s2", text: "finished" },
+    ]);
+  });
+
+  it("drops a message sent after a stop and starts no leg for it", async () => {
+    const run = start("wait");
+    await saidAll(run.events, ["wait"]);
+    await run.session.interrupt();
+    run.session.send("late");
+    await run.finish;
+    run.session.send("later");
+    expect(run.written.opened).toEqual(["wait"]);
+    expect(texts(run.events)).toEqual(["wait"]);
+    expect(outcomes(run.events)).toMatchObject([
+      { end: { kind: "interrupted" } },
+    ]);
   });
 
   it("never resumes a session stopped while deferred", async () => {

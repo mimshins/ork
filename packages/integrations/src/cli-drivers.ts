@@ -1,13 +1,14 @@
 /**
  * @file The drivers Ork finds by `<program> --version` (`open-code`,
- *   `command-code`, `codex`, `omp`): one shared doctor check, the version
- *   comparison it uses, and each driver's descriptor. `drivers.ts` registers
- *   them. Ork never handles the user's login (ADR-004).
+ *   `command-code`, `codex`, `codex-app-server`, `omp`): one shared doctor
+ *   check, the version comparison it uses, and each driver's descriptor.
+ *   `drivers.ts` registers them. Ork never handles the user's login (ADR-004).
  */
 
 import type { AgentDriver, DriverId } from "./drivers.ts";
 import type { Exec } from "./integration.ts";
-import { field, firstLine, parseJson } from "./json.ts";
+import { firstLine } from "./json.ts";
+import { ompModels, ompSelectors } from "./omp-models.ts";
 
 /**
  * The first OpenCode found to honour a server's `codemode: false`, so Ork's
@@ -221,34 +222,39 @@ export const codex = installedCli("codex", "codex", "codex login", {
   },
 });
 
-/** `omp models --json`'s count of models: none is not signed in. */
-const ompModels = (stdout: string): string | null => {
-  const models = field(parseJson(stdout), "models");
-  if (!Array.isArray(models) || models.length === 0) return null;
-  return `logged in (${models.length} model${models.length === 1 ? "" : "s"})`;
-};
-
-/**
- * The `selector` of each model `omp models --json` lists (an entry has
- * `provider`, `id` and `selector`), else `provider/id`; `null` when none.
- */
-const ompSelectors = (stdout: string): string[] | null => {
-  const models = field(parseJson(stdout), "models");
-  if (!Array.isArray(models)) return null;
-  const selectors = models.flatMap(model => {
-    const selector = field(model, "selector");
-    if (typeof selector === "string" && selector !== "") return [selector];
-    const provider = field(model, "provider");
-    const id = field(model, "id");
-    return typeof provider === "string" &&
-      typeof id === "string" &&
-      provider !== "" &&
-      id !== ""
-      ? [`${provider}/${id}`]
-      : [];
-  });
-  return selectors.length === 0 ? null : selectors;
-};
+// RFC-027, option A: `codex app-server` (JSON-RPC over stdio) beside `codex
+// exec`, under its own id. Not yet proven: no run takes it until a capped gate
+// run passes.
+export const codexAppServer = installedCli(
+  "codex-app-server",
+  "codex",
+  "codex login",
+  {
+    label: "the `codex app-server` of OpenAI's `codex` CLI",
+    proven: false,
+    onePerCheckout: false,
+    min: {
+      version: MIN_CODEX_VERSION,
+      why: "Update Codex: an older one lacks flags Ork passes to `codex app-server`.",
+    },
+    // Only its exit status: 0 is logged in. Ork never reads `auth.json`.
+    loginStatus: ["login", "status"],
+    capabilities: {
+      questions: true,
+      // Command and file-change approvals arrive as requests Ork answers.
+      permissionPrompt: true,
+      price: false,
+      // A `turn/steer` request: read before the turn ends, not at once; a
+      // running command may finish first.
+      midTurnMessages: true,
+      reportSchema: false,
+      turnLimit: false,
+      mcpServers: false,
+      subagents: false,
+      readDenies: false,
+    },
+  },
+);
 
 /**
  * RFC-026's descriptor, proven or not: the doctor check reads `proven` when it

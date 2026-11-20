@@ -4,8 +4,9 @@
 - **Date:** 2026-11-21
 - **Topic:** runtime
 - **RFC:** waived: the maintainer decided it directly, from RFC-027's open
-  question 8 ([RFC-027](../rfcs/active/RFC-027-long-lived-protocol-drivers.md),
-  which stays Active); the options considered are below
+  question 8
+  ([RFC-027](../rfcs/archived/RFC-027-long-lived-protocol-drivers.md), which
+  stays Active); the options considered are below
 - **Amends:** [ADR-105](./ADR-105-omp-driver.md)
 
 ## Context

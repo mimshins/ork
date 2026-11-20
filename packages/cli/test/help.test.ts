@@ -99,6 +99,7 @@ describe("ork --help", () => {
       "open-code",
       "command-code",
       "codex",
+      "codex-app-server",
       "omp",
     ]);
   });
@@ -120,7 +121,7 @@ describe("ork --help, grouped", () => {
     expect(at.every(index => index > 0)).toBe(true);
     expect(at).toEqual(at.toSorted((a, b) => a - b));
     expect(text).toMatch(
-      /^Orchestrate coding agents \(Claude Code, OpenCode, Command Code, Codex, omp\) on your machine\.\nDocs: https:/u,
+      /^Orchestrate coding agents \(Claude Code, OpenCode, Command Code, Codex, Codex app-server, omp\) on your machine\.\nDocs: https:/u,
     );
     expect(text).toContain("Usage: ork <command> [flags]");
     expect(text).toContain(

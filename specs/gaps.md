@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L548, and the next chore is
+closes it. Ids are never reused: the next limit is L560, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
 adds that a fetched ref already has before the change is rebased). At a review,
@@ -69,6 +69,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building permissions without asking](./gaps/permissions-limits.md)
 - [Limits found keeping Ork's sessions apart from a project's own agent process](./gaps/session-apart-limits.md)
 - [Limits found tying the Builder's problems to its controls](./gaps/builder-problems-limits.md)
+- [Limits found building the `codex-app-server` driver](./gaps/codex-app-server-limits.md)
 
 ## Gaps
 
@@ -224,21 +225,27 @@ Ork's own workflows (`.ork/`, 2026-11-08), to decide at the next review:
   and scrubbing with that would close it.
   ([event store](./event-store.md#masking))
 
-Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18):
+Found building [the `codex` driver](./runtime/codex.md) (RFC-024, 2026-11-18;
+the limits found with them are L438 to L454, in
+[their chunk](./gaps/codex-limits.md)). G39 (no message mid-turn, no approval
+through Ork) was closed by the
+[`codex-app-server` driver](./runtime/codex-app-server.md) (RFC-027,
+2026-11-21), on the [two-way client](./runtime/duplex-client.md): `codex` itself
+still takes no message mid-turn and asks no approval, by design, since it runs
+`codex exec` per leg (`midTurnMessages: false`, no `permissionPrompt`), while
+`codex-app-server` takes a message before the turn ends and asks Ork about each
+command and file change. The new driver is unproven, so what it leaves is in
+[its limits](./gaps/codex-app-server-limits.md) (L548 to L559).
 
-- **G39 · `codex` takes no message mid-turn and asks no approval through Ork.**
-  The driver runs `codex exec` per leg, so a message waits for the leg's end
-  (`midTurnMessages: false`), and `exec` asks nothing, so there is no
-  `permissionPrompt`. `codex app-server` (JSON-RPC over stdio, experimental)
-  could do both. The [two-way client](./runtime/duplex-client.md) it needs is
-  built, with `omp`'s codec; the `codex app-server` codec is a later plan under
-  [RFC-027](../rfcs/active/RFC-027-long-lived-protocol-drivers.md), so this
-  stays open.
-- **G40 · Pause, stop and `heavy` do not reach a Codex call.** Ork's hook
-  decides locally and does not hold a call (holding from a Codex command hook
-  was never tried), so `ork pause` and `ork stop` land at a leg's end, and a
-  Codex shell call takes no `heavy` slot
-  ([machine](./machine.md#a-sessions-bash-call)).
+- **G40 · Pause and `heavy` do not reach a Codex call, and stop lands late on
+  `codex`.** Ork's hook decides locally and does not hold a call (holding from a
+  Codex command hook was never tried), so `ork pause` lands at a leg's end, and
+  a Codex shell call takes no `heavy` slot
+  ([machine](./machine.md#a-sessions-bash-call)). On `codex`, `ork stop` also
+  lands at a leg's end. On `codex-app-server` a stop is a real `turn/interrupt`,
+  so it does not wait for the turn; whether the interrupt ends a running command
+  at once is unmeasured, and the driver has no `hold` hook either, so a pause
+  and `heavy` stay as above.
 - **G41 · Reads outside the worktree are not fenced on `codex`.** Codex has no
   read tool for the hook to gate, and its sandbox reads anywhere, so a shell
   `cat` of a file outside the folder runs. A `deny` on a `Read`, `Glob` or

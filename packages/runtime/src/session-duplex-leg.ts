@@ -1,14 +1,14 @@
 /**
  * @file One process (leg) of a session whose tool speaks JSON frames both ways
  *   over stdin and stdout (RFC-027): the duplex counterpart of `runLeg`. It
- *   waits for the tool's `ready`, writes the codec's first requests, matches
- *   each response to its request by id, answers the tool's approval asks
- *   through the runner's `permit` and its calls of Ork's tools with
- *   `hostCalls`, and ends the session at the codec's settled end. A stop or a
- *   deferral writes the codec's interrupt and waits a bounded time for the
- *   session to settle before it closes and kills the process. It spawns as
- *   `runLeg` does (`leg-spawn.ts`, the orphan guard), and settles events and
- *   ends with the same `legStep`.
+ *   waits for the tool's `ready` (or, for a codec `readyAtSpawn`, not), writes
+ *   the codec's first requests, holds messages until the session takes them
+ *   (until a turn starts, for a codec that `waitsForTurn`; past a deferral, for
+ *   the resumed leg), matches responses to requests by id, answers approval
+ *   asks with the runner's `permit` and host tool calls with `hostCalls`, and
+ *   ends at the codec's settled end. A stop or deferral writes the interrupt
+ *   and waits a bounded time to settle before it kills the process. It spawns
+ *   and settles events as `runLeg` does (`leg-spawn.ts`, `legStep`).
  */
 
 import {
@@ -24,6 +24,7 @@ import {
   type FrameRequest,
   MAX_FRAME_LINE_BYTES,
 } from "./adapter.ts";
+import { deferredLeg, failedLeg, interruptedLeg } from "./duplex-ends.ts";
 import {
   decodeSafely,
   inbox,
@@ -34,14 +35,8 @@ import {
 } from "./frame-lines.ts";
 import { hostCalls } from "./host-calls.ts";
 import { spawnLeg } from "./leg-spawn.ts";
-import { type Leg, legStep, tokenCapEnd, withCarried } from "./leg-step.ts";
-import { classifyProviderError } from "./provider-errors.ts";
-import {
-  driverFailure,
-  failureKind,
-  failureReason,
-  NOTHING_SPENT,
-} from "./session-end.ts";
+import { type Leg, legStep, tokenCapEnd } from "./leg-step.ts";
+import { failureKind, failureReason } from "./session-end.ts";
 import type { DuplexLegInput } from "./session-leg.ts";
 
 /** How long the tool may take to say it is ready (the spike saw 25 s once). */
@@ -74,6 +69,7 @@ export const runDuplexLeg = async function* (
   /** Aborted at the leg's end: a pending `permit` is withdrawn. */
   const done = new AbortController();
   const requests = requestTable(() => new Error(`${name}'s session has ended`));
+  /** Messages wait for it: `open` written (or a turn, if it `waitsForTurn`). */
   const opened = Promise.withResolvers<void>();
   // A message waiting for `ready` must not reject unseen if the leg ends first.
   opened.promise.catch(ignore);
@@ -86,23 +82,47 @@ export const runDuplexLeg = async function* (
     write(request.frame);
     return reply;
   };
-  const message = async (text: string): Promise<void> => {
-    await opened.promise;
-    await send(codec.message(text));
-  };
   let isOpen = false;
+  /** `opened` has resolved: a message is sent, not held. */
+  let steerable = false;
+  /** Every response to `open`'s requests has come. */
+  let started = false;
   let stopped = false;
   let deferring = false;
+  const message = async (text: string): Promise<void> => {
+    // Sent at once when it can be, so a stop right after comes after it.
+    if (!steerable) await opened.promise;
+    if (stopped) throw new Error(`${name}'s session was stopped`);
+    // The deferred turn is ending: the resumed leg sends it instead.
+    if (deferring) {
+      input.pending.push(text);
+      return;
+    }
+    await send(codec.message(text));
+  };
+  /** The session takes messages now: the ones that waited go first. */
+  const steer = () => {
+    steerable = true;
+    opened.resolve();
+    for (const text of input.pending.splice(0)) message(text).catch(ignore);
+  };
   /** Writes the interrupt, and gives the session a bounded time to settle. */
   const interrupt = () => {
-    if (isOpen) send(codec.interrupt()).catch(ignore);
-    // Before `ready` there is no turn to stop: the process just ends.
+    // A leg that has returned has nothing to stop, and no timer to start.
+    if (done.signal.aborted) return;
+    if (steerable) send(codec.interrupt()).catch(ignore);
+    // Before `ready` (or the turn) there is no turn to stop: the process ends.
     else child.stdin.end();
     later(settleMs, { kind: "settle-late" });
   };
   input.attach({
+    // Held in the shared queue until the session takes messages, and while a
+    // deferral ends the turn (the resumed leg's `open` sends it); a stopped
+    // session drops it.
     write: text => {
-      message(text).catch(ignore);
+      if (stopped) return;
+      if (steerable && !deferring) message(text).catch(ignore);
+      else input.pending.push(text);
     },
     stop: () => {
       if (stopped) return;
@@ -116,20 +136,14 @@ export const runDuplexLeg = async function* (
       interrupt();
     },
   });
-  later(readyMs, { kind: "ready-late" });
 
   /** A failure of the tool's, explained with its stderr's last words. */
-  const failed = (why: string): Leg => {
-    const reason =
+  const failed = (why: string): Leg =>
+    failedLeg(
       stderr().trim() === ""
         ? why
-        : `${why}: ${failureReason(name, stderr(), null)}`;
-    return {
-      kind: "failed",
-      reason,
-      end: classifyProviderError(reason)?.kind ?? "driver_crashed",
-    };
-  };
+        : `${why}: ${failureReason(name, stderr(), null)}`,
+    );
   const decide = async (ask: Ask) => {
     const decision = await input
       .permit(ask, done.signal)
@@ -140,17 +154,23 @@ export const runDuplexLeg = async function* (
   /** The tool is ready: the first requests, then the messages that waited. */
   const open = () => {
     isOpen = true;
-    for (const request of codec.open(input.spec, input.leg)) {
+    const replies = codec.open(input.spec, input.leg).map(request =>
       send(request).catch((error: unknown) => {
         box.push({
           kind: "fail",
           reason: `${name} refused the session's start: ${messageOf(error)}`,
         });
-      });
-    }
-    opened.resolve();
-    for (const text of input.pending.splice(0)) message(text).catch(ignore);
+      }),
+    );
+    // A codec that waits for the turn is started by it: bounds the whole handshake.
+    void Promise.all(replies).then(() => {
+      if (codec.waitsForTurn !== true) started = true;
+      return null;
+    });
+    if (codec.waitsForTurn !== true) steer();
   };
+  if (codec.readyAtSpawn === true) open();
+  later(readyMs, { kind: "ready-late" });
 
   let outcome: Leg | undefined;
   let sessionId = "";
@@ -175,6 +195,9 @@ export const runDuplexLeg = async function* (
     if (decoded.ask !== undefined) void decide(decoded.ask);
     if (decoded.call !== undefined) serve(decoded.call);
     if (decoded.ready === true && !isOpen && !stopped && !deferring) open();
+    const turned = decoded.turn === true && codec.waitsForTurn === true;
+    if (turned) started = true;
+    if (turned && isOpen && !steerable && !stopped && !deferring) steer();
     used = decoded.usage ?? used;
     for (const event of decoded.events) {
       if (event.type === "session.started") sessionId = event.sessionId;
@@ -202,44 +225,15 @@ export const runDuplexLeg = async function* (
       : { events: [...events, capped], leg: { kind: "finished" } };
   };
 
-  /** An interrupted leg, with what the session had spent and its id. */
-  const interrupted = (): Leg => {
-    const usage = withCarried(input, used);
-    const spent = usage === undefined ? {} : { spent: { usage, sessionId } };
-    return {
-      kind: "failed",
-      reason: "interrupted",
-      end: "interrupted",
-      ...spent,
-    };
-  };
-
-  /** The deferred leg, when its session never says it settled. */
-  const deferredLeg = (): Leg => {
-    const spent = withCarried(input, used) ?? NOTHING_SPENT.usage;
-    const last = driverFailure("interrupted", "interrupted", input.scope, {
-      usage: spent,
-      sessionId,
-    });
-    return {
-      kind: "deferred",
-      sessionId,
-      usage: used ?? NOTHING_SPENT.usage,
-      last,
-    };
-  };
+  const interrupted = () => interruptedLeg(input, used, sessionId);
+  const deferred = () => deferredLeg(input, used, sessionId);
 
   /** How the process's exit ends the leg. */
   const onExit = (code: number | null, signal: NodeJS.Signals | null): Leg => {
     if (outcome !== undefined) return outcome;
-    if (deferring && !stopped) return deferredLeg();
+    if (deferring && !stopped) return deferred();
     if (stopped || signal !== null) return interrupted();
-    const reason = failureReason(name, stderr(), code);
-    return {
-      kind: "failed",
-      reason,
-      end: classifyProviderError(reason)?.kind ?? "driver_crashed",
-    };
+    return failedLeg(failureReason(name, stderr(), code));
   };
 
   /** How anything but a line ends the leg, if it does. */
@@ -258,14 +252,19 @@ export const runDuplexLeg = async function* (
       return outcome === undefined ? failed(item.reason) : undefined;
     }
     if (item.kind === "ready-late") {
-      return isOpen || stopped || deferring
+      const within = `within ${String(readyMs / 1000)} s`;
+      if (stopped || deferring) return undefined;
+      if (codec.readyAtSpawn === true) {
+        return started
+          ? undefined
+          : failed(`${name} did not answer the session's start ${within}`);
+      }
+      return isOpen
         ? undefined
-        : failed(
-            `${name} did not say it was ready within ${String(readyMs / 1000)} s`,
-          );
+        : failed(`${name} did not say it was ready ${within}`);
     }
     if (outcome !== undefined) return outcome;
-    if (deferring && !stopped) return deferredLeg();
+    if (deferring && !stopped) return deferred();
     // A stop the tool did not settle in time: its exit ends it, interrupted.
     child.stdin.end();
     child.kill("SIGKILL");

@@ -1,6 +1,6 @@
 # RFC-027 — A two-way client for `omp --mode rpc` and `codex app-server`
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-20
 - **Supersedes:** —
 - **Superseded by:** —
@@ -222,6 +222,13 @@ its codec is built.
   as a message to an `omp` node now arrives mid-turn.
 - **Cost:** a new runner path and a new strategy to keep true; a pending request
   table that must be failed on exit and on interrupt.
+- **Built in two steps (2026-11-21 note).** The first build covered `omp`
+  ([ADR-108](../../decisions/ADR-108-duplex-session-client.md)); the second
+  added the `codex app-server` codec as the `codex-app-server` driver
+  ([ADR-115](../../decisions/ADR-115-codex-app-server-driver.md)), beside the
+  unchanged `codex`, with two optional parts on the codec (`readyAtSpawn`,
+  `waitsForTurn`) that `omp` does not use. G39 closes with it. Host tools stay a
+  later change on both codecs, so the RFC is fully built without them.
 
 ## Open questions
 
@@ -258,7 +265,13 @@ Unknowns for the build and its gate run; none changes the decision.
 9. **Codex.** The codec's needs come from method names only. `turn/steer` while
    a command runs may wait for the command as `omp`'s does; the handshake,
    `thread/resume`, approvals, `item/tool/call` and `thread/tokenUsage/updated`
-   were not run. The protocol is experimental.
+   were not run. The protocol is experimental. **Outcome (2026-11-21):** the
+   codec shipped as a new driver id, `codex-app-server`, unproven
+   ([ADR-115](../../decisions/ADR-115-codex-app-server-driver.md)), with its
+   shapes read from `codex app-server generate-json-schema` of codex-cli 0.169.0
+   and no paid spike first (the maintainer's call); every shape a run alone can
+   measure, the steer's wait for a running command included, is a recorded limit
+   ([L548 to L559](../../specs/gaps/codex-app-server-limits.md)).
 
 ## Spike, step 13, 2026-11-20
 

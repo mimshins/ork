@@ -5,7 +5,7 @@ _Part of [Known gaps and limits](../gaps.md)._
 Status: **Open**: to decide at the next review, as the register's other entries.
 The gaps found with them are G47 to G49 in [the register](../gaps.md#gaps) (G45
 and G46 are closed). L497 to L502 came with the rpc path
-([RFC-027](../../rfcs/active/RFC-027-long-lived-protocol-drivers.md),
+([RFC-027](../../rfcs/archived/RFC-027-long-lived-protocol-drivers.md),
 [the client](../runtime/duplex-client.md)), built and tested on a fake `omp`
 that replays the spike's frames, never run on a real `omp`. L534 to L540 came
 with host tools, the model check and the deferral reason
@@ -168,10 +168,14 @@ was left simpler, or could not be checked:
   `data.sessionId`, the cancel answer's `cancelled: true`, an error's `message`
   and the chunk marker (L497). The gate run reads them off a real session.
 - **L502 · An approval is paired with its call by order.** The `select` names no
-  call, so the codec pairs it with the last `tool_execution_start`. If `omp`
-  interleaves calls, a person is shown the wrong tool or arguments. It cannot
-  allow a tool the overlay lists as denied, and a `select` with no call to pair
-  is cancelled.
+  call, so the codec pairs it first in, first out: it keeps the calls that
+  started and are not yet paired, a `select` takes the oldest, and a
+  `tool_execution_end` drops its call. A call the approval map decides up front
+  (no `select`) still sits ahead of an asking call until its end frame, so if
+  `omp` starts such a call and an asking one before either ends, a person is
+  shown the wrong tool or arguments. It cannot allow a tool the overlay lists as
+  denied; a `select` with no call to pair is cancelled, and one that offers no
+  `Approve` and `Deny` is cancelled without taking a call.
 - **L534 · A host tool call has no timeout of Ork's own.** The runner waits for
   an Ork tool as long as it runs (`delegate` and `ask_user` can wait for hours),
   and writes its `host_tool_result` when it ends. Whether `omp` cuts a

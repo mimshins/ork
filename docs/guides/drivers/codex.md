@@ -104,6 +104,6 @@ session in its own `$CODEX_HOME/sessions`; Ork does not clean it. A new session
 started at about 19,000 input tokens with plugins off.
 
 The register has what is left open:
-[the codex limits](../../../specs/gaps/codex-limits.md) and G39 to G44 in
+[the codex limits](../../../specs/gaps/codex-limits.md) and G40 to G44 in
 [the gaps](../../../specs/gaps.md#gaps). Why Ork does it this way:
 [ADR-102](../../../decisions/ADR-102-codex-driver.md).

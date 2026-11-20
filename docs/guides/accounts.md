@@ -10,15 +10,16 @@ What the agents use is billed to your API key or cloud account, or counts
 against your Claude plan's limits; a budget caps each run
 ([models and budgets](./models-and-budgets.md)).
 
-| Integration  | How Ork reaches it                                                                                                           | You log in with                                                          |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Claude       | the `claude-code` driver, running your own `claude`                                                                          | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
-| OpenCode     | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
-| Command Code | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
-| Codex        | the `codex` driver, running your own `codex`                                                                                 | `codex login`                                                            |
-| omp          | the `omp` driver, running your own `omp` (built, not yet proven)                                                             | `omp login`                                                              |
-| GitHub       | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
-| AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
+| Integration      | How Ork reaches it                                                                                                           | You log in with                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Claude           | the `claude-code` driver, running your own `claude`                                                                          | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
+| OpenCode         | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
+| Command Code     | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
+| Codex            | the `codex` driver, running your own `codex`                                                                                 | `codex login`                                                            |
+| Codex app-server | the `codex-app-server` driver, running your own `codex` as `codex app-server` (built, not yet proven)                        | `codex login`                                                            |
+| omp              | the `omp` driver, running your own `omp` (built, not yet proven)                                                             | `omp login`                                                              |
+| GitHub           | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
+| AWS              | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
 `ork doctor` runs each tool's own status check and prints whether it is ready,
 never a token.
@@ -28,8 +29,9 @@ never a token.
 Ork runs agents through a **driver**: the CLI of an agent tool, run headless
 ([Drivers](./drivers.md) says what each does and refuses). `claude-code`, your
 own `claude`, `open-code`, your own `opencode`, `command-code`, your own `cmd`,
-and `codex`, your own `codex`, have each run a real session; `omp`, your own
-`omp`, is built and has not yet, so a node on it is refused until it has.
+and `codex`, your own `codex`, have each run a real session; `codex-app-server`
+(the same `codex`, run as `codex app-server`) and `omp`, your own `omp`, are
+built and have not yet, so a node on either is refused until it has.
 `ork doctor` finds the `opencode`, `cmd`, `codex` and `omp` binaries (it does
 not read their logins, except that it reads the exit status of
 `codex login status` and counts the models `omp models --json` lists), and lists
@@ -84,6 +86,14 @@ account), headless. Log in with `codex login`; Ork runs `codex login status` and
 reads only its exit status, never Codex's own login files (`auth.json`).
 `OPENAI_API_KEY` is not counted as a login. Ork's token for its own tools is
 kept out of the shell Codex starts ([Codex](./drivers/codex.md)).
+
+### The codex-app-server driver (`driver: codex-app-server`)
+
+Runs the same `codex` as the `codex` driver, as `codex app-server`, with the
+same login: `codex login`, and Ork reads only the exit status of
+`codex login status` and never Codex's own login files. It is **built and not
+yet proven**: `ork validate` and `ork run` refuse a node on it until a real
+session has proven it ([Codex app-server](./drivers/codex-app-server.md)).
 
 ### The omp driver (`driver: omp`)
 

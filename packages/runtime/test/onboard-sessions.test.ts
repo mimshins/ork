@@ -208,13 +208,19 @@ describe("the token caps of the built-ins on drivers that report no dollars", ()
   // there must stop at its `budgetTokens` with no dollar cap beside it.
   const noDollars = CONTRACT.filter(entry => !entry.capabilities.price);
 
-  it("covers command-code, open-code and codex's fake tools", () => {
+  it("covers command-code, open-code, codex and codex-app-server's fake tools", () => {
     expect(CONTRACT.map(entry => entry.driver)).toEqual(
-      expect.arrayContaining(["command-code", "open-code", "codex"]),
+      expect.arrayContaining([
+        "command-code",
+        "open-code",
+        "codex",
+        "codex-app-server",
+      ]),
     );
     expect(noDollars.map(entry => entry.driver)).toEqual([
       "command-code",
       "codex",
+      "codex-app-server",
     ]);
   });
 

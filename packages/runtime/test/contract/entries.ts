@@ -19,6 +19,7 @@ import {
   type CliAdapter,
   claudeCodeAdapter,
   codexAdapter,
+  codexAppServerAdapter,
   commandCodeAdapter,
   ompAdapter,
   openCodeAdapter,
@@ -106,6 +107,16 @@ export const CONTRACT: readonly ContractEntry[] = [
     fakeTool: fixture("fake-codex.mjs"),
     capabilities: capabilitiesOf("codex"),
     // No key caps a Codex session's turns (RFC-024 spike), so none ends there.
+    ends: TOOL_ENDS.filter(kind => kind !== "turn_limit"),
+    cannot: ["turn_limit"],
+    modelError: "not supported when using Codex",
+  },
+  {
+    driver: "codex-app-server",
+    adapter: codexAppServerAdapter,
+    fakeTool: fixture("fake-codex-app-server.mjs"),
+    capabilities: capabilitiesOf("codex-app-server"),
+    // As `codex`: no key caps a session's turns.
     ends: TOOL_ENDS.filter(kind => kind !== "turn_limit"),
     cannot: ["turn_limit"],
     modelError: "not supported when using Codex",

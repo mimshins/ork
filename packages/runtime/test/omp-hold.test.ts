@@ -80,7 +80,8 @@ const until = async (recorded: RunEvent[], type: RunEvent["type"]) => {
 
 /**
  * Collects a session's events; once the node is held (and `ms` later), notes
- * the events seen so far and does `act`.
+ * the events seen so far and does `act`. The 80 ms default stays: it gives a
+ * call that must not run the time to run, so the test can assert it did not.
  */
 const whileHeld = async (
   events: AsyncIterable<RuntimeEvent>,
@@ -163,10 +164,17 @@ describe("an omp session's paused node", () => {
     const { all } = await whileHeld(
       session.events,
       recorded,
-      () => {
+      async () => {
+        // Deferred: wait for the abort that ends the first leg, not a fixed time.
+        await vi.waitFor(
+          () => {
+            expect(frames()).toContain("abort");
+          },
+          { timeout: 5000 },
+        );
         holds.proceed();
       },
-      300,
+      0,
     );
     expect(calls("refused").map(call => call.reason)).toEqual([OMP_PAUSED]);
     // The first leg ends with an abort; the second resumes it, asking once,

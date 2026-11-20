@@ -59,7 +59,14 @@ export const readyOnly =
   () =>
     Promise.resolve(
       (
-        ["open-code", "claude-code", "command-code", "codex", "omp"] as const
+        [
+          "open-code",
+          "claude-code",
+          "command-code",
+          "codex",
+          "codex-app-server",
+          "omp",
+        ] as const
       ).map(id => check(id, ready.includes(id))),
     );
 
@@ -76,7 +83,14 @@ export const openCodeReady = readyOnly("open-code");
  * Refusals have their own tests, with descriptors that lack things.
  */
 export const standInDrivers: readonly DriverNeeds[] = (
-  ["claude-code", "open-code", "command-code", "codex", "omp"] as const
+  [
+    "claude-code",
+    "open-code",
+    "command-code",
+    "codex",
+    "codex-app-server",
+    "omp",
+  ] as const
 ).map(id => ({
   id,
   proven: true,

@@ -1,10 +1,12 @@
 # ADR-108 — A two-way session client in the runner, with `omp` on `--mode rpc`
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-115](./ADR-115-codex-app-server-driver.md)
 - **Date:** 2026-11-20
 - **Topic:** runtime
-- **RFC:** [RFC-027](../rfcs/active/RFC-027-long-lived-protocol-drivers.md)
-  (Accepted; stays open until the `codex app-server` codec ships)
+- **RFC:** [RFC-027](../rfcs/archived/RFC-027-long-lived-protocol-drivers.md)
+  (Accepted; closed by [ADR-115](./ADR-115-codex-app-server-driver.md), which
+  ships the `codex app-server` codec)
 - **Amends:** [ADR-105](./ADR-105-omp-driver.md)
 
 ## Context
@@ -70,9 +72,9 @@ this build, 2026-11-20. None is hard to reverse beyond the code and its tests.
   endpoint (host tools over rpc are a later change); the ledger and `--max-cost`
   arithmetic; `proven: false`, so `ork validate` and `ork run` still refuse
   `omp`. No workflow-format field, no `schemaVersion` impact, no new dependency.
-- **The `codex app-server` codec is a later plan,** on this client. It amends
-  this ADR (whether it replaces `codex exec` or is a new driver id is then the
-  maintainer's), and RFC-027 closes with it.
+- **The `codex app-server` codec was a later plan,** on this client; it shipped
+  as a new driver id, `codex-app-server`
+  ([ADR-115](./ADR-115-codex-app-server-driver.md)), and RFC-027 closes with it.
 
 Contract: [the runtime spec](../specs/runtime.md),
 [session ends](../specs/runtime/session-ends.md) and
@@ -107,8 +109,10 @@ tool's approval request from being allowed by default.
   `omp`; the gate run measures it, and until then it is a limit in
   [the register](../specs/gaps/omp-limits.md) (with chunked frames, the cost cap
   over prompts, start-up time, and protocol version 2). G45 and G46 close; G39
-  stays open until the `codex` codec.
+  closed by the `codex app-server` codec
+  ([ADR-115](./ADR-115-codex-app-server-driver.md)).
 - Each leg pays `omp`'s start-up (10 to 25 s) and a deferral pays it again; the
   unfiltered event stream is not trimmed yet.
 - Follow-ups after merge: the capped gate run that sets `omp` to `proven`, the
-  `codex app-server` codec, and host tools over `set_host_tools`.
+  `codex app-server` codec (done in ADR-115), and host tools over
+  `set_host_tools`.

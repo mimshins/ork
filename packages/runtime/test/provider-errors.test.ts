@@ -173,7 +173,7 @@ const FIXTURES: readonly (readonly [string, number | undefined, string])[] = [
     "invalid_node",
   ],
   [
-    "/home/x/.codex/hooks.json exists: Ork runs its own Codex hook with --dangerously-bypass-hook-trust, which would run that file's hooks untrusted too.",
+    "/home/x/.codex/hooks.json exists: Ork runs its own Codex hook with its trust bypassed (--dangerously-bypass-hook-trust on codex, a bypass_hook_trust setting on codex-app-server), which would run that file's hooks untrusted too.",
     undefined,
     "invalid_node",
   ],

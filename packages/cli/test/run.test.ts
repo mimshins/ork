@@ -86,7 +86,14 @@ const project = () => {
  * what a real driver lacks.
  */
 const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
-  ["claude-code", "open-code", "command-code", "codex", "omp"] as const
+  [
+    "claude-code",
+    "open-code",
+    "command-code",
+    "codex",
+    "codex-app-server",
+    "omp",
+  ] as const
 ).map(id => ({
   id,
   proven: true,

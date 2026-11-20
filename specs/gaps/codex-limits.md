@@ -3,7 +3,8 @@
 _Part of [Known gaps and limits](../gaps.md)._
 
 Status: **Open**: to decide at the next review, as the register's other entries.
-The gaps found with them are G39 to G44 in [the register](../gaps.md#gaps).
+The gaps found with them are G40 to G44 in [the register](../gaps.md#gaps) (G39
+is closed by the [`codex-app-server` driver](../runtime/codex-app-server.md)).
 
 Found building [the `codex` driver](../runtime/codex.md)
 ([RFC-024](../../rfcs/archived/RFC-024-codex-driver.md)) and on its gate run
