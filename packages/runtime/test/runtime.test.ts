@@ -132,6 +132,31 @@ describe("normalize", () => {
     ).toEqual([
       { type: "plan.limit", status: "allowed_warning", window: "five_hour" },
     ]);
+    expect(
+      normalize({
+        type: "rate_limit_event",
+        rate_limit_info: {
+          status: "allowed_warning",
+          rateLimitType: "seven_day",
+          utilization: 0.31,
+          unifiedWindows: {
+            seven_day: { utilization: 0.31, status: "allowed" },
+          },
+        },
+      }),
+    ).toEqual([{ type: "plan.limit", status: "allowed", window: "seven_day" }]);
+    expect(
+      normalize({
+        type: "rate_limit_event",
+        rate_limit_info: {
+          status: "allowed_warning",
+          rateLimitType: "seven_day",
+          unifiedWindows: { seven_day: { status: "allowed_warning" } },
+        },
+      }),
+    ).toEqual([
+      { type: "plan.limit", status: "allowed_warning", window: "seven_day" },
+    ]);
     expect(normalize({ type: "stream_event" })).toEqual([]);
     expect(normalize("not json")).toEqual([]);
   });
