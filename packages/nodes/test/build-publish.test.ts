@@ -7,7 +7,7 @@
  *   is asked about, and `stop` leaves the rebase open and pushes nothing.
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   mkdirSync,
@@ -24,7 +24,9 @@ import {
   compileWorkflow,
   type ExecuteContext,
   fileLockLedgers,
+  isHeavyScript,
   loadAgents,
+  loadProject,
   parseTemplate,
   type NodeExecutor,
   type NodeOutput,
@@ -667,5 +669,138 @@ describe("build's follow-ups", () => {
     const { result, ran } = await run(w, { change: "new\n", choice: "main" });
     expect(result.status).toBe("succeeded");
     expect(steps(ran).slice(0, 2)).toEqual(["followups", "ratify"]);
+  });
+});
+
+/** The shell script of one of `build`'s tool nodes. */
+const scriptOf = (id: string): string => {
+  const node = parsedOrThrow().nodes[id];
+  if (node === undefined || !("script" in node)) {
+    throw new Error(`${id} has no script`);
+  }
+  return String(node.script);
+};
+
+type Ran = { code: number; stdout: string; stderr: string };
+
+/** Runs a script with `sh`, never throwing on a non-zero exit. */
+const sh = (cwd: string, script: string, env: NodeJS.ProcessEnv): Ran => {
+  const done = spawnSync("sh", ["-c", script], {
+    cwd,
+    env: { ...process.env, ...env },
+    encoding: "utf8",
+  });
+  return { code: done.status ?? -1, stdout: done.stdout, stderr: done.stderr };
+};
+
+const tempRepo = (): string => {
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-amend-")));
+  git(dir, "init", "-q", "-b", "main");
+  for (const [key, value] of [
+    ["user.name", "t"],
+    ["user.email", "t@example.com"],
+    ["commit.gpgsign", "false"],
+  ] as const) {
+    git(dir, "config", key, value);
+  }
+  writeFileSync(path.join(dir, "app.txt"), "base\n");
+  git(dir, "add", "app.txt");
+  git(dir, "commit", "-q", "-m", "change");
+  return dir;
+};
+
+/**
+ * A `pnpm` that prints 200 numbered lines, two of them noise, and exits with
+ * `$CODE`.
+ */
+const noisyPnpm = (): string => {
+  const bin = mkdtempSync(path.join(tmpdir(), "ork-check-bin-"));
+  const file = path.join(bin, "pnpm");
+  writeFileSync(
+    file,
+    `#!/bin/sh
+echo "HTMLCanvasElement's getContext is not implemented"
+i=1
+while [ "$i" -le 200 ]; do echo "line $i"; i=$((i + 1)); done
+echo "not configured to support act"
+exit "$CODE"
+`,
+  );
+  chmodSync(file, 0o755);
+  return bin;
+};
+
+const check = (code: number): Ran =>
+  sh(tmpdir(), scriptOf("check"), {
+    CODE: String(code),
+    PATH: `${noisyPnpm()}:${process.env["PATH"] ?? ""}`,
+  });
+
+/** Whether this repository's `heavy` list matches the node's script. */
+const takesSlot = (id: string): boolean => {
+  const { project } = loadProject(
+    fileURLToPath(new URL("../../..", import.meta.url)),
+  );
+  return isHeavyScript(project?.heavy ?? [], scriptOf(id));
+};
+
+/** The `maxRounds` of each `amend` edge that has one. */
+const amendRounds = (): unknown[] =>
+  (parsedOrThrow().edges ?? []).flatMap(edge =>
+    typeof edge === "object" && edge.from === "amend" ? [edge.maxRounds] : [],
+  );
+
+describe("build's final check and its repair", () => {
+  it("takes a machine slot: the project's `heavy` list matches the check script", () => {
+    expect(takesSlot("check")).toBe(true);
+  });
+
+  it("exits 0 with no output on a pass", () => {
+    expect(check(0)).toEqual({ code: 0, stdout: "", stderr: "" });
+  });
+
+  it("prints the last 150 lines of a failure, without the noise, to stderr", () => {
+    const { code, stdout, stderr } = check(3);
+    const lines = stderr.trim().split("\n");
+    expect(code).toBe(1);
+    expect(stdout).toBe("");
+    expect(lines).toHaveLength(150);
+    expect(lines.at(-1)).toBe("line 200");
+    expect(stderr).not.toContain("getContext");
+    expect(stderr).not.toContain("not configured to support act");
+  });
+
+  it("amends the commit with what the repair changed", () => {
+    const dir = tempRepo();
+    writeFileSync(path.join(dir, "app.txt"), "fixed\n");
+    const { code } = sh(dir, scriptOf("amend"), { FLAKE: "false" });
+    expect(code).toBe(0);
+    expect(git(dir, "rev-list", "--count", "HEAD").trim()).toBe("1");
+    expect(git(dir, "show", "HEAD:app.txt")).toBe("fixed\n");
+  });
+
+  it("goes on to run the check again when the repair found a flake and changed nothing", () => {
+    const { code, stdout } = sh(tempRepo(), scriptOf("amend"), {
+      FLAKE: "true",
+    });
+    expect(code).toBe(0);
+    expect(stdout).toContain("the check will run again");
+  });
+
+  it("fails, saying the change is committed and not pushed, when nothing changed and it is no flake", () => {
+    const { code, stderr } = sh(tempRepo(), scriptOf("amend"), {
+      FLAKE: "false",
+    });
+    expect(code).toBe(1);
+    expect(stderr).toContain("committed in this checkout and not pushed");
+  });
+
+  it("runs the check again after `amend`, and `repair` reports whether it was a flake", () => {
+    expect(targetsOf("amend")).toEqual(["check"]);
+    expect(amendRounds()).toEqual([2]);
+    expect(scriptOf("amend")).toContain('"$FLAKE" = true');
+    expect(JSON.stringify(parsedOrThrow().nodes["repair"])).toContain(
+      '"flake":"boolean"',
+    );
   });
 });

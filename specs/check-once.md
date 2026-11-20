@@ -139,6 +139,15 @@ before. Old files mean the same; `schemaVersion` does not change.
   [read-guard-check.ts](../tools/vitest/read-guard-check.ts) asks git which the
   pathspecs keep when the run ends), so the list can't go stale
   ([L375 and L377](./gaps/check-once-limits.md)).
+- `pnpm test` is `node tools/check/run-tests.ts`
+  ([run-tests.ts](../tools/check/run-tests.ts)). It runs vitest with the JSON
+  reporter beside the default one. When the bare form fails and every failing
+  file failed only by `Test timed out in …ms` or `Hook timed out in …ms`, it
+  runs those files once more in one process with `--maxWorkers=1`, prints which
+  passed only when run alone, and exits with the retry's code. Any other
+  failure, a suite error, a crash or an unreadable report keeps the original
+  exit code, and `pnpm test <args>` never retries
+  ([L490](./gaps/check-flake-limits.md)).
 - `pnpm check:quick` ([tools/check/quick.ts](../tools/check/quick.ts)) is the
   loop between edits: `oxfmt --check` and `oxlint` on the files changed since
   `HEAD` (and untracked ones), then both typechecks. It never records a pass and
@@ -153,7 +162,14 @@ before. Old files mean the same; `schemaVersion` does not change.
   four full suites in a row near a build's end, 150 to 250 seconds each (six
   builds on 2026-11-12 and 13), because each step had changed a file or two
   since the last pass. A failure only the full suite finds now shows at publish,
-  where `repair` takes it.
+  where `repair` takes it. That `check` script runs `pnpm run check` on a line
+  of its own, so `heavy` (`pnpm run check *`) matches it and it waits for a
+  check slot inside its `branch:main` lock. When `repair` finds the failure is a
+  flake (a timeout under load, a test unrelated to the change that passes
+  alone), it changes nothing and reports `flake: true`; `amend` then exits 0 and
+  the `amend -> check` edge runs the check again, bounded by its `maxRounds: 2`.
+  Without a flake, a `repair` that changes nothing still fails the run, and the
+  message says the change is committed in the worktree and unpushed.
 - Those `verify:` steps do not set `once: true`: the scripts already go through
   `ork once`, and wrapping them again would key the same files twice.
 

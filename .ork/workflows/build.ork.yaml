@@ -965,7 +965,10 @@ nodes:
       # On a failure, the end of the output goes to stderr for repair.
       log=$(mktemp)
       trap 'rm -f "$log"' EXIT
-      if pnpm run check > "$log" 2>&1; then
+      # The command stands alone on its line, so the project's `heavy` list matches it and the check takes a machine slot.
+      rc=0
+      pnpm run check > "$log" 2>&1 || rc=$?
+      if [ "$rc" -eq 0 ]; then
         exit 0
       fi
       grep -v -e "HTMLCanvasElement's getContext" -e "not configured to support act" "$log" | tail -n 150 >&2
@@ -982,6 +985,8 @@ nodes:
 
       Most such failures come from two changes that were each fine alone: a gap id that both took (give this change's entries the next free ids, update every link to them and the next id in specs/gaps.md), a document the two together push over 200 lines (tighten it, or split it into a hub and chunks), or a test the other change broke. What main already has stays as it is: change this change's side. Keep what the reviewed change does; when a fix would change that, report fail and say why, and the maintainer decides.
 
+      A flake is a failure that is not the change's: a timeout under load, a test unrelated to the change, that passes when its file runs alone. For a flake change nothing and report `flake: true`; otherwise report `flake: false`.
+
       Ork runs the check again after you. Run no git: Ork amends the commit with what you change.
 
       The end of the check's output:
@@ -994,13 +999,20 @@ nodes:
         - Edit
         - Write
         - Bash
+    output:
+      schema:
+        flake: boolean
     lock: branch:main
   amend:
     type: tool.shell
     script: |-
       git add -A -- . ':!.ork'
       if git diff --cached --quiet; then
-        echo "The repair changed nothing, so the check would fail the same way." >&2
+        if [ "$FLAKE" = true ]; then
+          echo "The repair found a flake and changed nothing; the check will run again."
+          exit 0
+        fi
+        echo "The repair changed nothing, so the check would fail the same way. The change is committed in this checkout and not pushed." >&2
         exit 1
       fi
       git commit -q --amend --no-edit
@@ -1008,6 +1020,8 @@ nodes:
     allow:
       - sh
     cwd: "{{nodes.docs.output.worktree}}"
+    env:
+      FLAKE: "{{nodes.repair.output.flake}}"
     lock: branch:main
   push:
     type: tool.shell

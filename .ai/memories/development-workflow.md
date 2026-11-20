@@ -88,3 +88,6 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   so the `existsSync(STOPPED)` check in `omp-guard.ts` is the only guard against
   a held call running. `FAKE_OMP_IGNORE_SIGINT=1` keeps the fake alive past
   SIGINT to test it.
+- `specs/check-once.md` is near the 200-line hub limit; the next addition to it
+  needs a chunk split first
+  ([docs-structure](../skills/docs-structure/SKILL.md)).

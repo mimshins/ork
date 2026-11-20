@@ -35,7 +35,10 @@ from the code goes under Open questions; never invent numbers.
 Use the next free number in `rfcs/`. Write the Context, the Options with their
 pros and cons, and the Decision the maintainer picked, and add the index row.
 Set the Status to `Accepted`: the file reaches the repository only if the
-maintainer publishes it at the gate after you.
+maintainer publishes it at the gate after you. Publishing re-checks the number
+against `origin/main` and renumbers the file, its heading, its own `RFC-NNN`
+mentions and its index row when another RFC took it, so write the number as you
+found it and never link to it from another file.
 
 ## Revising
 

@@ -97,6 +97,7 @@ permissions:
 heavy:
   - pnpm check
   - pnpm run check
+  - pnpm run check *
   - pnpm check:changed
   - pnpm run check:changed
   - pnpm test

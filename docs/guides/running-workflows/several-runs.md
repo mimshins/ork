@@ -116,6 +116,15 @@ guides reruns the static checks but not the tests. Between edits, builders run
 `pnpm check:quick` (format and lint on the changed files, then types). Vitest
 uses at most a third of your cores, in a run or not.
 
+Two more things keep a busy machine from failing a check in this repository. The
+`build` workflow's final check takes a check slot like any heavy command, so
+overlapping builds queue for it instead of timing out together. And `pnpm test`
+(no arguments) runs a test file that failed only by timing out once more, alone,
+and says which files passed only when run alone. When the final check fails in a
+way `repair` judges a flake, not caused by the change, `build` runs the check
+again rather than failing with the change committed and unpushed; a second flake
+ends the run as any exhausted loop does.
+
 ## Run a check once: `ork once`
 
 `ork once -- <command>` runs the command unless the same check already passed on

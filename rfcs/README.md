@@ -26,7 +26,12 @@ an accepted ADR.
 
 - **Location:** `rfcs/active/` and `rfcs/archived/`.
 - **Naming:** `RFC-NNN-<kebab-case-title>.md`; the next free number, never
-  reused. Start from [`.ai/templates/rfc.md`](../.ai/templates/rfc.md).
+  reused. Start from [`.ai/templates/rfc.md`](../.ai/templates/rfc.md). The
+  number is picked in a checkout that may be behind `origin/main`, so the `rfc`
+  workflow re-checks it when it publishes: when another RFC took it, the file,
+  its heading, its own `RFC-NNN` mentions and its index row move to the next
+  free number above every RFC on `origin/main` and the target branch
+  ([limits](../specs/gaps/check-flake-limits.md)).
 - **Sections:** metadata (Status, Date, Supersedes, Superseded by), Context,
   Options (each with pros and cons), Decision, Consequences.
 - **Self-contained:** understandable on its own; link out for context only.
