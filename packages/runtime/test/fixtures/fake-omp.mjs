@@ -21,7 +21,8 @@
  *   entry: after its `tool_execution_start` it sends a `setWidget` and a
  *   `select` (`Approve`, `Approve <tool> for this session`, `Deny`) and runs
  *   only on `Approve`. A session ends with `prompt_result` then
- *   `session_settled`, and stdin's end exits 0. It prints the recorded line shapes: `session` (a
+ *   `session_settled`, and stdin's end exits 0 once a `tool_call` handler still
+ *   waiting has answered (at most 2 s). It prints the recorded line shapes: `session` (a
  *   fork's, and a resumed fork's, with `parentSession`), `advisor_cost_changed`, `agent_start`,
  *   `turn_start`, `message_start`/`message_update`/`message_end`,
  *   `tool_execution_start`/`_end`, `turn_end`, `agent_end`, and a resumed leg
@@ -46,7 +47,7 @@
  *   gets the URL of Ork's endpoint, `FAKE_SPENT_FILE` is written once `spend`
  *   printed its usage, and `FAKE_SCENARIO` plays one case: unset (asks through
  *   Ork's `ask_user` on a first leg, then reports through Ork's `report`),
- *   `invalid-report`, `report-tool`, `try-denied` (a `bash` `ls`), `extract`,
+ *   `invalid-report`, `report-tool`, `try-denied` (a `bash` `git status`), `extract`,
  *   `wait-message`, `hang`, `spend` (three requests, then waits as `hang` does)
  *   and `end:<kind>` (exit 1 with that cause's words on stderr; `budget_limit`
  *   spends past `--max-cost`; the words are stand-ins except
@@ -359,8 +360,14 @@ process.on("SIGINT", () => {
   process.exit(130);
 });
 
+/** The `tool_call` handlers' answer being awaited, if any: stdin's end waits for it. */
+let asking;
 /** Each `tool_call` handler in turn, cut after the overlay's timeout; the refusal's reason, or `undefined`. */
-const askHandlers = async event => {
+const askHandlers = event => {
+  asking = handlersOf(event);
+  return asking;
+};
+const handlersOf = async event => {
   const timeoutMs = setting("extensionHandlers", "toolCallTimeoutMs") ?? 30_000;
   for (const handler of handlers.tool_call ?? []) {
     let timer;
@@ -581,7 +588,7 @@ const play = async () => {
     return finish("under the cap");
   }
   if (scenario === "try-denied") {
-    const [shellRun] = await call({ tool: "bash", input: { command: "ls" } });
+    const [shellRun] = await call({ tool: "bash", input: { command: "git status" } });
     return finish(shellRun.isError ? "shell was refused" : "shell ran");
   }
   if (scenario === "wait-message") return finish(`got: ${await nextSteer()}`);
@@ -634,4 +641,7 @@ for await (const line of createInterface({ input: process.stdin })) {
     approvals.delete(frame.id);
   }
 }
+// A handler still waiting (a held call Ork just stopped) gets its answer first,
+// so what it refused is recorded whichever reaches the fake first; bounded.
+await Promise.race([asking, new Promise(done => setTimeout(done, 2000))]);
 process.exit(0);

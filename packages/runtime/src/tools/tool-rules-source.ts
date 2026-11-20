@@ -8,16 +8,26 @@
  *   reader (`readShellLine`, embedded by its source) and checked command by
  *   command, inside subshells, loops and `if` too: each must be allowed, and a
  *   line the reader can't read (a substitution, `eval`, a heredoc) is allowed
- *   only by a plain `Bash` rule. Ork's own tools (`mcp__ork__*`) always go
- *   through, and the tool's read tools need no rule inside the worktree (by its
- *   real path, links followed), as with Claude Code. A yolo run (`ork run
- *   --yolo`) allows every call the node's `deny` and `only` don't refuse. Under
- *   a write limit (`writeOnly`), an edit whose files are outside those folders
- *   (links followed), or named CLAUDE.md or AGENTS.md, is refused, yolo or not
+ *   only by a plain `Bash` rule. A command no allow rule covers may still run
+ *   when it is one of Ork's shipped reads (core's `isShippedRead`, embedded by
+ *   its source) and every path it names lies inside the worktree, as on Claude
+ *   Code (`permission-verdict.ts`); a line with a `cd` or an expanded word has
+ *   none (RFC-028). Ork's own tools (`mcp__ork__*`) always go through, and the
+ *   tool's read tools need no rule inside the worktree (by its real path, links
+ *   followed), as with Claude Code. A yolo run (`ork run --yolo`) allows every
+ *   call the node's `deny` and `only` don't refuse. Under a write limit
+ *   (`writeOnly`), an edit whose files are outside those folders (links
+ *   followed), or named CLAUDE.md or AGENTS.md, is refused, yolo or not
  *   (`write-limit.ts`).
  */
 
-import { readShellLine, type SessionSpec } from "@krapht/ork-core";
+import {
+  isShippedRead,
+  LISTS,
+  NO_FILES,
+  readShellLine,
+  type SessionSpec,
+} from "@krapht/ork-core";
 
 import { shellReadReason, textReadReason } from "./shell-reads.ts";
 import { writeOnlyReason } from "./write-limit.ts";
@@ -126,11 +136,12 @@ const real = at => {
   }
 };
 const ROOT = real(RULES.cwd);
-const inside = input => pathsOf(input).every(each => {
+const inWorktree = each => {
   if (each.startsWith("~")) return false;
   const from = relative(ROOT, real(resolve(RULES.cwd, each)));
   return from === "" || (from !== ".." && !from.startsWith("../") && !isAbsolute(from));
-});
+};
+const inside = input => pathsOf(input).every(inWorktree);
 const TOOLS = ${JSON.stringify(words.tools)};
 // A rule's word, as the tool reads it, covers these of Ork's tool names.
 const COVERS = ${JSON.stringify(words.covers)};
@@ -153,6 +164,42 @@ const callsOf = (name, input) => {
   if ((TOOLS[name] ?? name) !== "Bash" || typeof input?.command !== "string") return [input];
   const line = readShellLine(input.command);
   return line === null ? [{}] : line.commands.map(each => ({ ...input, command: each.text }));
+};
+// Ork's shipped reads (RFC-028), core's own check and sets, so this verdict and
+// Claude Code's (permission-verdict.ts) cannot drift.
+const isShippedRead = ${isShippedRead.toString()};
+const NO_FILES = new Set(${JSON.stringify([...NO_FILES])});
+const LISTS = new Set(${JSON.stringify([...LISTS])});
+// A Read deny may name a path a shipped read names; the guard does not match
+// paths to it, so a shipped read that names any path is then not covered.
+const READ_DENIED = RULES.deny.some(rule => split(rule).token.toLowerCase() === "read");
+// The words of a command that name a path, as permission-verdict.ts reads them:
+// its \`<\` inputs, then (but for a program that reads no file) each operand and
+// each option's value.
+const pathWordsOf = command => {
+  const [program = "", ...args] = command.words;
+  if (NO_FILES.has(program)) return command.inputs;
+  return [...command.inputs, ...args.flatMap(word => {
+    if (!word.startsWith("-")) return [word];
+    const value = word.split("=").slice(1).join("=");
+    return value === "" ? [] : [value];
+  })];
+};
+const shippedInside = command => {
+  if (!isShippedRead(command)) return false;
+  const paths = pathWordsOf(command);
+  if (READ_DENIED) return paths.length === 0;
+  return LISTS.has(command.words[0]) || paths.every(inWorktree);
+};
+// Per command of a shell line, whether it is a shipped read inside the
+// worktree; none for another tool, a line Ork can't read, or one with a \`cd\`
+// or an expanded word, whose paths the guard does not follow.
+const shippedOf = (name, input) => {
+  if ((TOOLS[name] ?? name) !== "Bash" || typeof input?.command !== "string") return [];
+  const line = readShellLine(input.command);
+  if (line === null) return [];
+  if (line.commands.some(each => each.words[0] === "cd" || each.dynamic.includes(true))) return [];
+  return line.commands.map(shippedInside);
 };
 const shellMatches = (command, pattern) => {
   let p = norm(pattern);
@@ -213,7 +260,10 @@ export const decide = (name, input) => {
   }
   if (RULES.yolo === true) return undefined;
   if (READS.has(name) && inside(input)) return undefined;
-  if (allCovered(RULES.allow, name, calls)) return undefined;
+  const shipped = shippedOf(name, input);
+  const covered = calls.every((call, index) =>
+    shipped[index] === true || RULES.allow.some(rule => matches(rule, name, call) === true));
+  if (covered) return undefined;
   return "not allowed for this node";
 };
 `;

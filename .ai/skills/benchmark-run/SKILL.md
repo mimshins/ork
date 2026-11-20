@@ -37,7 +37,7 @@ itself, and the README's account of what happened.
 
 ## Steps
 
-1. **Check that it ended.** Run `pnpm ork ps --project all` and find the run. If it is
+1. **Check that it ended.** Run `ork ps --project all` and find the run. If it is
    still `running` (or waiting at a gate), say so and stop; benchmark it once it
    ends.
 2. **Name it.** Use the name given. Otherwise take a short kebab-case name for
@@ -75,7 +75,7 @@ itself, and the README's account of what happened.
    ```
    This rewrites `<folder>/CONTROL.md` and `control.json` for every benchmark
    in the folder, with this run's row among them.
-7. **What happened.** Read `pnpm ork logs <id>` for each run in the tree
+7. **What happened.** Read `ork logs <id>` for each run in the tree
    (`summary.json`'s `runs`), and `summary.json`'s `activations`, to find:
    failed sessions and why (turn cap, budget, an error, an Ork bug), review
    rounds, what each permission request asked, conflicts, and how builders

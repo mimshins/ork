@@ -118,6 +118,25 @@ const NONE: SessionUsage = {
   durationMs: 0,
 };
 
+/**
+ * OpenCode's own refusal of a call, read from the 2.3.2 source: a deny rule's
+ * `Permission denied: <action>` (Ork's rules carry no message), and the
+ * rejection `opencode run` gives a call a rule would ask about.
+ */
+const isRefused = (body: string): boolean =>
+  /^Permission denied: \S+$/u.test(body.trim()) ||
+  body.startsWith(
+    "This non-interactive run cannot ask the user for permission",
+  );
+
+/** Why a failed call failed, when it was the agent's doing. */
+const faultOf = (body: string): { fault?: "arguments" | "refused" } =>
+  isBadArguments(body)
+    ? { fault: "arguments" }
+    : isRefused(body)
+      ? { fault: "refused" }
+      : {};
+
 /** One finished tool call: its call and its result. */
 const toolEvents = (part: unknown): RuntimeEvent[] => {
   const id = str(get(part, "id")) || str(get(part, "partID"));
@@ -139,7 +158,7 @@ const toolEvents = (part: unknown): RuntimeEvent[] => {
       type: "tool.result",
       id,
       isError,
-      ...(isBadArguments(body) ? { fault: "arguments" as const } : {}),
+      ...faultOf(body),
       ...(message === undefined ? {} : { message }),
     },
   ];

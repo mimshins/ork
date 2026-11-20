@@ -141,7 +141,7 @@ describe("an omp session's paused node", () => {
     const { session, calls } = played({
       ports: { hold },
       over: { tools: { allow: ["Bash(git status)"], deny: [] } },
-      script: shell("ls"),
+      script: shell("rm x"),
     });
     expect(await endedIn(collect(session))).not.toBe("hung");
     expect(recorded.filter(event => event.type === "node.held")).toEqual([]);

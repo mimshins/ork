@@ -1,9 +1,13 @@
 /**
  * @file Tests for the read-only commands Ork ships (RFC-028): the evidence
- *   lines of run 92029b1e are covered with no rule, each program that can write
- *   or run another one is covered only without that form, and programs outside
- *   the set (unknown wrappers, interpreters, `sed`, `find`) never are.
+ *   lines of run 92029b1e, in their installed-`ork` form, are covered with no
+ *   rule, each program that can write or run another one is covered only
+ *   without that form, and programs outside the set (unknown wrappers,
+ *   interpreters, `sed`, `find`, `pnpm ork`) never are. `isShippedRead`'s
+ *   source runs alone, as a guard embeds it.
  */
+
+import { runInNewContext } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
@@ -16,11 +20,11 @@ const covered = (line: string): boolean =>
 
 describe("isShippedRead", () => {
   it.each([
-    "pnpm -s ork logs 92029b1e --json | jq '.[] | select(.type == \"node.ended\") | .node'",
+    "ork logs 92029b1e --json | jq '.[] | select(.type == \"node.ended\") | .node'",
     "for r in 88c3f7b5 92029b1e; do ork logs $r --json | jq -r '.[].type' | sort | uniq -c; done",
-    "( pnpm -s ork logs 92029b1e | head -40 ); ls ~/.ork/projects",
-    "timeout 60 pnpm -s ork logs 92029b1e --json | jq length",
-    'for r in a b; do echo "== $r"; pnpm -s ork tree $r 2>/dev/null | head -20; done',
+    "( ork logs 92029b1e | head -40 ); ls ~/.ork/projects",
+    "timeout 60 ork logs 92029b1e --json | jq length",
+    'for r in a b; do echo "== $r"; ork tree $r 2>/dev/null | head -20; done',
     "ork ps --limit 5 && ork usage --since 7d",
     "ork feedback list --json | jq '.[0]'; ork follow-ups show f1",
   ])("covers the evidence line %s", line => {
@@ -40,8 +44,15 @@ describe("isShippedRead", () => {
     "printf '%s\\n' a",
     "ork logs $r",
     "ork feedback show $X",
-    "pnpm ork tree r1",
-    "pnpm --silent ork follow-ups list",
+    "ork logs r1",
+    "ork ps",
+    "ork tree r1",
+    "ork feedback list",
+    "ork feedback show f1",
+    "ork follow-ups list",
+    "ork follow-ups show f1",
+    "ork usage",
+    "ork usage --since 7d",
     "cd .. && pwd && basename a/b && dirname a/b",
     "true || false",
     "wc -l < a.txt",
@@ -78,6 +89,10 @@ describe("isShippedRead", () => {
     ["tail with an expanded argument", "tail $X"],
     ["date -s", "date -s now"],
     ["date --set", "date --set=now"],
+    ["date -f, which prints a file's unparsable lines", "date -f /etc/hosts"],
+    ["date -f in a cluster", "date -uf /etc/hosts"],
+    ["date --file", "date --file=/etc/hosts"],
+    ["date --file abbreviated", "date --fi /etc/hosts"],
     ["date with a time to set", "date 0101"],
     ["date with an expanded argument", "date $X"],
     ["jq -f", "jq -f prog.jq"],
@@ -95,6 +110,16 @@ describe("isShippedRead", () => {
     ["printf -v", "printf -v PATH /tmp"],
     ["ork decide", "ork decide x"],
     ["ork decide through pnpm", "pnpm -s ork decide x"],
+    [
+      "ork logs through pnpm, which runs the project's script",
+      "pnpm ork logs r1",
+    ],
+    ["ork tree through pnpm -s", "pnpm -s ork tree r1"],
+    [
+      "ork follow-ups through pnpm --silent",
+      "pnpm --silent ork follow-ups list",
+    ],
+    ["a program named after an Object method", "toString x"],
     ["ork decide under timeout", "timeout 60 ork decide x"],
     ["ork usage --clear-plan-limits", "ork usage --clear-plan-limits"],
     ["ork usage --clearPlanLimits", "ork usage --clearPlanLimits"],
@@ -132,5 +157,33 @@ describe("isShippedRead", () => {
   it("names the set in one line", () => {
     expect(SHIPPED_READS).not.toContain("\n");
     expect(SHIPPED_READS).toContain("`jq`");
+    expect(SHIPPED_READS).not.toMatch(/pnpm (-s |--silent )?ork/u);
+  });
+});
+
+/** The commands of every line; unread lines give none. */
+const commandsOf = (lines: readonly string[]) =>
+  lines.flatMap(line => readShellLine(line)?.commands ?? []);
+
+describe("isShippedRead's source", () => {
+  it("runs alone, as a guard embeds it", () => {
+    const commands = commandsOf([
+      "ork logs r1 --json | jq length",
+      "pnpm -s ork tree r1",
+      "sort -o out.txt in.txt",
+      "tail -f a.log",
+      "date +%F",
+      "uniq -c in.txt out.txt",
+      "ork usage --clear-plan-limits",
+      "HOME=/x ls",
+      "toString x",
+    ]);
+    const embedded: unknown = runInNewContext(
+      `JSON.stringify(COMMANDS.map(command => (${isShippedRead.toString()})(command)))`,
+      { COMMANDS: commands },
+    );
+    expect(embedded).toBe(
+      JSON.stringify(commands.map(command => isShippedRead(command))),
+    );
   });
 });

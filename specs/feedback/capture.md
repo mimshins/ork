@@ -21,9 +21,32 @@ sees the tool's answer start with "Invalid arguments, nothing ran:" and sets the
 `tool.result`'s `fault`, on every driver: Command Code's decoder reads it from a
 `tool_errored` frame's `error`), a gate that timed out and took its default
 (`gate.timeout`), an answer other than the recommended one
-(`recommendation.overridden`), and a shell rule people keep allowing
+(`recommendation.overridden`), a tool a driver's own guard keeps refusing
+(`tool.refused`, below), and a shell rule people keep allowing
 (`permission.suggest`, below). They are derived where a run's events are
 recorded, so the decision queue's events count too.
+
+**A tool the guard keeps refusing is the agent's context gap** (`tool.refused`,
+[ADR-112](../../decisions/ADR-112-shipped-reads-without-pnpm.md)):
+
+- The decoders of Codex, Command Code, omp and OpenCode set `fault: "refused"`
+  on the `tool.result` of a call the driver's guard refused: Codex on the hook's
+  own refused result, the others by recognising the guard's refusal text
+  ([refusal.ts](../../packages/runtime/src/tools/refusal.ts)). A pause, a stop
+  and a gate that could not be asked are not marked. `claude-code` has no marker
+  (its refusal is the `permission` tool's), so it never files this signal.
+- The observer counts marked results by node and tool (the name from the call's
+  `tool.called`; a refused result with no call before it is not counted). The
+  third refusal of one tool by one node files one record
+  ([refused-signal.ts](../../packages/core/src/feedback/refused-signal.ts)); one
+  or two file none.
+- The record is a low `context-gap` for the `workflow`, titled
+  `<tool> was refused repeatedly`; its body says to add a rule to the node's
+  `tools.allow` or tell the node not to use the tool, and its evidence is the
+  tool's name, never a command or its output. The node is not in the title, so
+  two nodes refused the same tool give one item.
+- A guard-refused Ork tool counts here, not as `tool.error`, and never changes a
+  run's result. Limits: [L530, L532](../gaps/permissions-limits.md).
 
 **A rule people keep allowing is proposed, not written** (`permission.suggest`,
 [RFC-028](../../rfcs/archived/RFC-028-permissions-without-asking.md) part 4):

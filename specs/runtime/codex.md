@@ -129,10 +129,10 @@ the model reads the reason. Printing nothing allows.
   `mcp__ork__*` always goes through. **Any other name is denied, `--yolo`
   included**, as Ork cannot say what it does.
 - **`deny` and `only` are honoured**; `--yolo` allows what they don't refuse. A
-  shell line is checked command by command, as on `command-code`
-  ([its page](../architecture/command-code.md)). `Edit` and `Write` rules cover
-  a patch. A rule with no Codex action (a `Read`, `Glob`, `Grep` or `WebFetch`
-  allow) allows nothing.
+  shell line is checked command by command, and a shipped read needs no rule, as
+  on `command-code` ([its page](../architecture/command-code.md)). `Edit` and
+  `Write` rules cover a patch; a `Read`, `Glob`, `Grep` or `WebFetch` allow has
+  no Codex action and allows nothing.
 - **`reading`** refuses a shell read, and a text read when it is `extract-only`,
   with the `extract` call to make ([extract](./extract-tool.md)); Codex has no
   read tool to gate. The sandbox may read outside the worktree, so a `deny` on a
@@ -145,7 +145,7 @@ the model reads the reason. Printing nothing allows.
   [codex.ts](../../packages/runtime/src/adapters/codex.ts)) reads the refused
   ones (`HookFile.refusals()`) at the next output line or the leg's exit and
   emits each as a `tool.called` (the tool's name in Claude Code's words, no
-  input) and a `tool.result` with `isError`. No event type is added.
+  input) and a `tool.result` with `isError`, `fault: "refused"` (no new event).
 
 ### Fail closed
 

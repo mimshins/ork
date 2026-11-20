@@ -279,7 +279,7 @@ const answering = (permission: string, question: string): RunEvent[] => [
 const toolCall = (
   id: string,
   tool: string,
-  result: { fault?: "arguments"; message?: string },
+  result: { fault?: "arguments" | "refused"; message?: string },
 ): RunEvent[] => [
   {
     type: "node.event",
@@ -297,6 +297,32 @@ const toolCall = (
     event: { type: "tool.result", id: "t2", isError: true, ...result },
   },
 ];
+
+/** Node `id`'s `count` calls of `tool` that the driver's guard refused. */
+const refused = (id: string, tool: string, count: number): RunEvent[] =>
+  Array.from({ length: count }, (_, n): RunEvent[] => [
+    {
+      type: "node.event",
+      id,
+      event: {
+        type: "tool.called",
+        id: `r${String(n)}`,
+        name: tool,
+        input: {},
+      },
+    },
+    {
+      type: "node.event",
+      id,
+      event: {
+        type: "tool.result",
+        id: `r${String(n)}`,
+        isError: true,
+        fault: "refused",
+        message: "Ork: Bash is not allowed for this node. Do not retry it.",
+      },
+    },
+  ]).flat();
 
 /** The records of `events`, observed with the run's scrubber. */
 const scrubbed = (events: readonly RunEvent[]): FeedbackReport[] => {
@@ -353,6 +379,51 @@ describe("system signals", () => {
     expect(recorded[0]?.title).toBe(
       "Ork's extract tool refused a call's arguments",
     );
+  });
+
+  it("file a tool the driver's guard refused three times in one node, once", () => {
+    const counts = [1, 2, 3, 4].map(
+      count => reports(observe(refused("fix", "Bash", count))).length,
+    );
+    expect(counts).toEqual([0, 0, 1, 1]);
+    const namesAllow: unknown = expect.stringContaining("`tools.allow`");
+    expect(reports(observe(refused("fix", "Bash", 3)))).toEqual([
+      expect.objectContaining({
+        source: "system",
+        code: "tool.refused",
+        kind: "context-gap",
+        target: "workflow",
+        severity: "low",
+        title: "Bash was refused repeatedly",
+        body: namesAllow,
+        evidence: ["Bash"],
+      }),
+    ]);
+  });
+
+  it("count refusals per node and tool, and give one record across nodes", () => {
+    const spread = reports(
+      observe([
+        ...refused("fix", "Bash", 2),
+        ...refused("review", "Bash", 2),
+        ...refused("fix", "Edit", 2),
+      ]),
+    );
+    expect(spread).toEqual([]);
+    const both = reports(
+      observe([...refused("fix", "Bash", 3), ...refused("review", "Bash", 3)]),
+    );
+    expect(both.map(r => r.code)).toEqual(["tool.refused"]);
+  });
+
+  it("keep an argument refusal as tool.arguments, and a guard's refusal out of tool.error", () => {
+    const recorded = reports(
+      observe([
+        ...toolCall("fix", "extract", { fault: "arguments", message: "bad" }),
+        ...toolCall("fix", "extract", { fault: "refused" }),
+      ]),
+    );
+    expect(recorded.map(r => r.code)).toEqual(["tool.arguments"]);
   });
 
   it("keep the message of an Ork tool's error, and leave it out when there is none", () => {

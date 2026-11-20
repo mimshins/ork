@@ -38,9 +38,11 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
      `glob` outside the worktree needs a rule.
   4. `decide`: the node's `deny`, `only` and `allow` rules and the reading rule,
      with the words used on `command-code`. A shell line is checked command by
-     command ([command-code](../architecture/command-code.md)). Under
-     `reading: extract` a shell read is refused with the `extract` call to make;
-     under `extract-only` so is a `read` of a text file (an image or a PDF
+     command ([command-code](../architecture/command-code.md)); a shipped read
+     inside the worktree, with no `cd` on the line, needs no rule
+     ([permissions](../project-rules/permissions.md#the-other-drivers-guards)).
+     Under `reading: extract` a shell read is refused with the `extract` call to
+     make; under `extract-only` so is a `read` of a text file (an image or a PDF
      passes); `open` applies none ([extract](./extract-tool.md)).
   5. Ask Ork's hold endpoint, when the session has one
      ([pausing](#pausing-and-heavy-slots)).

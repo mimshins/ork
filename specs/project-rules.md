@@ -123,7 +123,10 @@ without a prompt, a deny rule denies it, and a node with `unlisted: refuse` (a
 `readonly` node's default) refuses the rest with a message. A prompt for a line
 Ork read offers to allow its rules for the node, the run, or always, which
 appends them to `permissions.allow` here; a rule allowed often is proposed as a
-feedback item. The detail is in
+feedback item. The Codex, Command Code and omp guards allow the same shipped
+reads inside the worktree (never `pnpm ork …`, which runs the project's own
+script), and a call a driver's guard refused three times in a node is filed as a
+`tool.refused` item on every driver but `claude-code`. The detail is in
 [permissions without asking](./project-rules/permissions.md). Why:
 [ADR-109](../decisions/ADR-109-permissions-without-asking.md).
 

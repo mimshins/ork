@@ -331,6 +331,10 @@ describe("the open-code permission rules", () => {
     ]);
   });
 
+  it("allow no shell line on a node with no rules, shipped reads included (L528)", () => {
+    expect(allowedActions(rules({ allow: [], deny: [] }), "shell")).toEqual([]);
+  });
+
   it("refuse a shell line that starts by reading files, before the node's denies (RFC-025)", () => {
     const written = rules(
       { allow: ["Bash"], deny: [] },

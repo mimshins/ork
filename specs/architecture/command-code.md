@@ -78,9 +78,14 @@ a throwaway `HOME` (no model session), the headless docs
   leg's state: `run_start {sessionId}` is the session's start, `turn_start`
   frames count its turns, `message_end {content}` text blocks are its text,
   `tool_queued` a call, `tool_completed` a result, and `tool_errored`,
-  `tool_denied` and `tool_hook_blocked` a refused one. Command Code's tool names
-  are shown as Ork's (`shell` as `Bash`, `read_file` as `Read`, `edit_file` as
-  `Edit`, `write_file` as `Write`, `web_fetch` as `WebFetch`). The result line's
+  `tool_denied` and `tool_hook_blocked` a refused one (a `tool_hook_blocked`
+  whose `hookOutput` is the mod's own refusal,
+  `Ork: <tool> is … Do not retry it.` or `Ork refuses …`, also carries
+  `fault: "refused"`, and three of one tool in a node file a `tool.refused`
+  item: [refusal.ts](../../packages/runtime/src/tools/refusal.ts),
+  [capture](../feedback/capture.md)). Command Code's tool names are shown as
+  Ork's (`shell` as `Bash`, `read_file` as `Read`, `edit_file` as `Edit`,
+  `write_file` as `Write`, `web_fetch` as `WebFetch`). The result line's
   `success`, `max_turns` (exit code 8) and `error` become `success`,
   `error_max_turns` and `error_during_execution`; usage is tokens, never
   dollars. The session's context (`contextTokens`) is the last
@@ -114,12 +119,15 @@ a throwaway `HOME` (no model session), the headless docs
   starts at `/` or `~` or climbs with `..`; each is checked by its real path,
   links followed, and one under `~` is always outside. A shell line is checked
   command by command, split at `;`, `&`, `|`, `&&`, `||` and line breaks outside
-  quotes: every command must be allowed, and a deny that covers any one refuses
-  the line. Output goes only to `/dev/null` or to another stream (`2>&1`); a
-  line with another redirect target, a command or process substitution, or an
-  unclosed quote is one Ork can't read, so only a plain `Bash` rule allows it. A
-  specifier Ork does not read (a path, a domain) never allows a call and always
-  denies one. An `acceptEdits` node is allowed `Edit`.
+  quotes: every command must be allowed (by an allow rule, or as a shipped read
+  inside the worktree on a line with no `cd` and no expanded word,
+  [permissions](../project-rules/permissions.md#the-other-drivers-guards)), and
+  a deny that covers any one refuses the line. Output goes only to `/dev/null`
+  or to another stream (`2>&1`); a line with another redirect target, a command
+  or process substitution, or an unclosed quote is one Ork can't read, so only a
+  plain `Bash` rule allows it. A specifier Ork does not read (a path, a domain)
+  never allows a call and always denies one. An `acceptEdits` node is allowed
+  `Edit`.
 - **Context:** Command Code reads `AGENTS.md`, `.commandcode/skills` and
   `.commandcode/agents` in the checkout. **Limits:** the machine's own Command
   Code setup (user skills, memory, installed mods, user and project MCP servers)

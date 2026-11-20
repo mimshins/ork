@@ -205,7 +205,7 @@ if (scenario === "end:turn_limit") {
 } else if (scenario === "max-turns") {
   finish("", "max_turns", 8);
 } else if (scenario === "try-denied") {
-  const { isError } = await toolCall("t9", "shell", { command: "ls" }, () => ({ isError: false, text: "ok" }));
+  const { isError } = await toolCall("t9", "shell", { command: "git status" }, () => ({ isError: false, text: "ok" }));
   finish(isError ? "shell was refused" : "shell ran");
 } else if (scenario === "wait-message") {
   if (resumed === undefined) {

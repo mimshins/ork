@@ -35,6 +35,14 @@ a refusal that remains is a real mistake in the call, and a path that does not
 exist counts as one. Git's own warnings are not an Ork bug: a search that only
 warns is a result (`[no matches]`), not a failed call.
 
+On `codex`, `open-code`, `command-code` and `omp`, a tool the driver's own guard
+refuses is counted too. When one node has had the same tool refused 3 times, Ork
+files one item (`tool.refused`, a context gap, titled
+`<tool> was refused repeatedly`), so every node that hits it adds to the same
+item. It names the tool and keeps no command or output. To fix it, add the rule
+to the node's `tools.allow`, or tell the node in its prompt not to use the tool.
+`claude-code` refusals are not counted. The count of 3 is a first guess.
+
 Each one shows in the transcript as it happens:
 
 ```

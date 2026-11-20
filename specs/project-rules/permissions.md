@@ -23,8 +23,9 @@ Tests: [reader](../../packages/core/test/shell-line.test.ts),
 [tool](../../packages/runtime/test/permission.test.ts),
 [scopes](../../packages/core/test/permission-scopes.test.ts),
 [write](../../packages/core/test/allow-rules.test.ts),
-[suggestions](../../packages/core/test/permission-suggest.test.ts). The other
-drivers' guards use the reader only. Why:
+[suggestions](../../packages/core/test/permission-suggest.test.ts). The Codex,
+Command Code and omp guards use the reader and the shipped reads
+([guards](#the-other-drivers-guards)); OpenCode's use neither. Why:
 [ADR-109](../../decisions/ADR-109-permissions-without-asking.md),
 [RFC-028](../../rfcs/archived/RFC-028-permissions-without-asking.md).
 
@@ -55,13 +56,22 @@ node's rules too
 
 Every node of every project may run these without a rule (`SHIPPED_READS`):
 Ork's own reads (`ork logs`, `ps`, `tree`, `usage`, `feedback list|show`,
-`follow-ups list|show`, also as `pnpm ork` and `pnpm -s ork`), and `jq`, `wc`,
-`cut`, `sort`, `uniq`, `head`, `tail`, `tr`, `ls`, `echo`, `printf`, `pwd`,
-`basename`, `dirname`, `date`, `cd`, `true` and `false`.
+`follow-ups list|show`; the installed `ork` binary only), and `jq`, `wc`, `cut`,
+`sort`, `uniq`, `head`, `tail`, `tr`, `ls`, `echo`, `printf`, `pwd`, `basename`,
+`dirname`, `date`, `cd`, `true` and `false`.
+
+- **`pnpm ork …`, `pnpm -s ork …` and `pnpm --silent ork …` are not shipped
+  reads.** `pnpm` runs whatever the project's `package.json` names `ork`, so a
+  node that edits it could change what a later node runs without anyone being
+  asked ([ADR-112](../../decisions/ADR-112-shipped-reads-without-pnpm.md)). Such
+  a line asks, or is refused, like any command no rule covers.
 
 - A program that can write or run something is in only without that form:
   `sort -o`, `--output`, `--compress-program` or `-T`; `uniq` with a second
-  operand; `tail -f` or `-F`; `date -s` or an operand that sets the date;
+  operand; `tail -f` or `-F`; `date -s` or an operand that sets the date, and
+  `date -f` (it prints a file's lines in its error text), in any short cluster
+  and as `--file` or `--set`, with `=` or abbreviated (`-r` stays; a false
+  refusal such as macOS `date -j -f` costs one prompt, never a wrong allow);
   `printf -v`; `jq -f`, `-L`, `--from-file`, `--rawfile`, `--slurpfile`,
   `--argfile`, or a program naming `env`, `$ENV`, `input_filename`, `import` or
   `include`; `sort` and `wc` with `--files0-from`; `ork usage --clear-…`. Such a
@@ -80,6 +90,30 @@ Ork's own reads (`ork logs`, `ps`, `tree`, `usage`, `feedback list|show`,
   and `sed`, `awk`, `find`, `tee`, `xargs` and interpreters are never covered.
 - A shipped read of a file outside the session's folder (and `~/.ork`) is not
   covered; `ls` lists any folder.
+- `isShippedRead` is one self-contained function, as `readShellLine` is, so the
+  guards embed its source; `NO_FILES` (programs that read no file) and `LISTS`
+  (`ls`) are exported from `@krapht/ork-core` so the verdicts cannot drift.
+
+## The other drivers' guards
+
+The Codex hook, Command Code's mod and omp's guard share one matcher
+([tool-rules-source.ts](../../packages/runtime/src/tools/tool-rules-source.ts)).
+After a deny rule, the write limit, the `reading: extract` refusal, `only` and
+the yolo and read checks, and before "not allowed for this node", a `Bash` line
+is allowed when every command is covered by an allow rule or is a shipped read.
+A shipped read counts only when:
+
+- the line has no `cd` and no command has an expanded word (the guards do not
+  model `cd`, [L527](../gaps/permissions-limits.md)); and
+- each path word, and a `<` input, resolves inside the worktree by the guard's
+  own `inside` check. `NO_FILES` programs need no path check and `ls` may list
+  any folder, as in the verdict above.
+
+An allow-rule command and a shipped read mix on one line. A line the reader
+cannot read is covered only by a plain `Bash` rule. A node with a `Read(...)`
+deny rule has a shipped read that names any path refused, stricter than the
+verdict ([L529](../gaps/permissions-limits.md)). OpenCode matches globs itself,
+and no shipped read is allowed there ([L528](../gaps/permissions-limits.md)).
 
 ## The verdict
 
@@ -122,14 +156,15 @@ description names the exact rules. The options and how a run remembers them are
 in [messaging](../messaging.md#decisions).
 
 `ruleFor` gives a command's program and subcommand with ` *` after them, and no
-further: `pnpm -s ork logs r1 --json` gives `Bash(pnpm -s ork logs *)` and
-`git -C x log` gives `Bash(git log *)`. A runner's script keeps its own
-subcommand (`pnpm ork logs`). Interpreters and shells, programs that run another
-(`xargs`, `find`, `sed`, `awk`, `env`, `timeout`, `sudo`, `npx`, …), a runner's
-subcommand that runs a package it is handed (`pnpm exec`, `pnpm dlx`, `npm x`,
-`uv run`, …), a program named by a path, a command with an assignment, and an
-expanded program or subcommand get no rule. A line with one such uncovered
-command offers only `allow` and `deny`.
+further: `ork logs r1 --json` gives `Bash(ork logs *)` and `git -C x log` gives
+`Bash(git log *)`. A runner's script keeps its own subcommand (`pnpm ork logs`
+gives `Bash(pnpm ork logs *)`): a person asked about it is still offered that
+rule, but it is not a shipped read. Interpreters and shells, programs that run
+another (`xargs`, `find`, `sed`, `awk`, `env`, `timeout`, `sudo`, `npx`, …), a
+runner's subcommand that runs a package it is handed (`pnpm exec`, `pnpm dlx`,
+`npm x`, `uv run`, …), a program named by a path, a command with an assignment,
+and an expanded program or subcommand get no rule. A line with one such
+uncovered command offers only `allow` and `deny`.
 
 ### On the terminal
 

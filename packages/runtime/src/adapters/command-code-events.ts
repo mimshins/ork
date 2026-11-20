@@ -20,6 +20,7 @@ import {
 
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
+import { isGuardRefusal } from "../tools/refusal.ts";
 import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { addUsage, promptOf, withContext } from "./session-usage.ts";
 
@@ -164,12 +165,17 @@ export const commandCodeDecoder = (): LegDecoder => {
       // An Ork tool's answer to arguments it refused: the agent's mistake.
       const body = type === "tool_errored" ? str(event["error"]) : "";
       const message = orkMessage(body);
+      // The session mod's refusal: what its hook gave, in the blocked frame.
+      const refused =
+        type === "tool_hook_blocked" &&
+        isGuardRefusal(str(event["hookOutput"]));
       return [
         {
           type: "tool.result",
           id,
           isError: true,
           ...(isBadArguments(body) ? { fault: "arguments" as const } : {}),
+          ...(refused ? { fault: "refused" as const } : {}),
           ...(message === undefined ? {} : { message }),
         },
       ];

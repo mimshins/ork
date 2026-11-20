@@ -168,8 +168,12 @@ export type RuntimeEvent = (
       type: "tool.result";
       id: string;
       isError: boolean;
-      /** `arguments`: an Ork tool refused its arguments (agent, not Ork). */
-      fault?: "arguments";
+      /**
+       * `arguments`: an Ork tool refused its arguments (agent, not Ork).
+       * `refused`: the driver's own guard refused the call, the agent's context
+       * gap, not a failure of the tool. Absent on older events.
+       */
+      fault?: "arguments" | "refused";
       /** Only an Ork tool's error: its first line, ≤300 chars (ADR-106). */
       message?: string;
       /** For an Ork tool command: the CPU it used, its children's included. */

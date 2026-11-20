@@ -65,13 +65,15 @@ whole rule set every session, never `--auto`. The last matching rule wins:
 2. `read *` allow, as `claude` reads without asking; under `acceptEdits`,
    `edit *` too. A path is matched relative to the worktree, and one outside it
    is `external_directory`, which rule 1 denies.
-3. The node's allows: `Read`, `Glob`, `Grep` as `read`, `glob`, `grep`; `Edit`,
-   `Write`, `MultiEdit`, `NotebookEdit` as `edit` (a path relative to the
-   worktree); `Bash(<cmd>)` as `shell <cmd>` (`git status:*` is `git status *`);
-   `WebFetch`, `WebSearch`, `Task`, `Skill`, `TodoWrite` as `webfetch`,
-   `websearch`, `subagent`, `skill`, `todowrite`; `mcp__<server>__<tool>` as
-   `<server>_<tool>`. A tool with no OpenCode action is left out, so denied.
-   With `only`, a built-in tool outside it is left out.
+3. The node's allows (no shipped reads are added here: an allowed `ls *` would
+   also match `ls > f`, [L528](../gaps/permissions-limits.md)): `Read`, `Glob`,
+   `Grep` as `read`, `glob`, `grep`; `Edit`, `Write`, `MultiEdit`,
+   `NotebookEdit` as `edit` (a path relative to the worktree); `Bash(<cmd>)` as
+   `shell <cmd>` (`git status:*` is `git status *`); `WebFetch`, `WebSearch`,
+   `Task`, `Skill`, `TodoWrite` as `webfetch`, `websearch`, `subagent`, `skill`,
+   `todowrite`; `mcp__<server>__<tool>` as `<server>_<tool>`. A tool with no
+   OpenCode action is left out, so denied. With `only`, a built-in tool outside
+   it is left out.
 4. One allow per registered Ork tool, by its exact name (`ork_report`,
    `ork_delegate`, …), from the tool registry. Not `ork_*`: a repo server named
    `ork_evil` would map to `ork_evil_<tool>` and match it.
@@ -111,6 +113,14 @@ two; whether a sub-agent's steps reach the stream is not verified. Tool names
 come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
 `mcp__ork__report`), the words a node's rules use.
 
+**A refused call** is a `tool_use` with `state.status` `error`; its result
+carries `fault: "refused"` when the error is exactly
+`Permission denied: <one word>` (the deny rule's text) or starts with
+`This non-interactive run cannot ask the user for permission, so the request was rejected.`,
+and three of one tool in a node file a `tool.refused` item
+([capture](../feedback/capture.md)). The wording was read from the 2.3.2 source,
+not confirmed by a live run ([L532](../gaps/permissions-limits.md)).
+
 **The version floor.** On 2026-11-18, sessions of `opencode` 2.1.0 saw none of
 Ork's tools, only `read` and `shell`, so every node ended with no report; after
 `opencode upgrade` to 2.3.2 they saw every `ork_<tool>` with `codemode: false`.
@@ -133,8 +143,11 @@ Flash, two nodes for $0.002 in all:
   matched nothing, so every read was refused.
 - `ork_report` is in the model's tool list with Code Mode off, and the report it
   hands in ends the session.
-- `shell` runs in the worktree; a command the node did not allow, and a read
-  outside the worktree, are refused (`permission.rejected`).
+- `shell` runs in the worktree; a command the node did not allow is refused
+  (`permission.rejected`), and so was a read outside the worktree, measured on
+  2.1.0. On 2.3.2 only a `cd`-style command reaches `external_directory`, and an
+  allowed shell glob also matches a redirect
+  ([L531](../gaps/permissions-limits.md)).
 - `steps` caps the turns: at the cap the model has no tools and cannot report.
   OpenCode prints nothing at the cap, so the decoder counts the steps and ends
   the node `turn_limit`, as `claude-code` and `command-code` do.

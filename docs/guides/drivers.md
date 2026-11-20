@@ -141,6 +141,20 @@ else is refused. A node that would have been asked about on `claude-code` is
 refused here, and the session sees the refusal and goes on without it. Give the
 node the tools it needs in its `allow` list.
 
+On `codex`, `command-code` and `omp`, Ork's own reads and the filters and
+printers listed in [permissions](./permissions.md#reads-ork-already-knows) need
+no rule either: a shell line is allowed when every command in it is covered by
+an `allow` rule or is one of those reads, each path is inside the node's
+worktree, and the line has no `cd` and no `$VAR`, `~` or glob. A `deny` rule, an
+`only` list and a read-only node's `extract` refusal still win. `open-code` gets
+none of this: OpenCode matches a rule against the whole command text, a redirect
+included, so a rule for `ls` could also allow `ls > file`. A read there needs an
+`allow` rule.
+
+When one of these four drivers refuses the same tool three times in one node,
+Ork files a [feedback](./feedback/reading.md#where-it-comes-from) item
+(`tool.refused`) that names the tool.
+
 `ork run --yolo` turns this around for one run, on every driver: nothing is
 asked, and every tool is allowed but what a node's `deny` list refuses
 ([with no permission prompts](./running-workflows/running-and-answering.md#with-no-permission-prompts---yolo)).

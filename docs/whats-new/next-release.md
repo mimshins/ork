@@ -49,6 +49,30 @@ What lands on `main` is listed here until it ships.
   this fix may have dropped the prefix too, so `ork chat` on it now refuses when
   the sub-agent's model clashes with the session's driver.
 
+- **Reads through `pnpm ork …` are no longer Ork's own reads.** `pnpm ork logs`
+  and `pnpm -s ork logs` (and the other reads, with `--silent` too) used to be
+  allowed without a question on `claude-code`, because Ork treated them as
+  `ork logs`. pnpm runs whatever the project's `package.json` calls `ork`, so a
+  node that edited it could change what a later read ran. Only the installed
+  `ork` is covered now
+  ([permissions](../guides/permissions.md#reads-ork-already-knows)). Upgrade: a
+  node that read through `pnpm ork …` is now asked or refused; use `ork …`, or
+  allow `Bash(pnpm -s ork logs *)` for the node.
+
+- **`codex`, `command-code` and `omp` allow Ork's reads without a rule.** A
+  shell line whose every command is covered by an `allow` rule or is one of
+  Ork's own reads or a filter such as `jq`, `wc` or `head`, with each path
+  inside the worktree and no `cd` or expansion, is allowed, so these nodes are
+  refused less often. `open-code` is not changed: it still needs a rule for each
+  read ([Drivers](../guides/drivers.md#permissions-denied-unless-allowed)).
+  Upgrade: none required.
+
+- **A tool refused 3 times in one node is feedback.** On `codex`, `open-code`,
+  `command-code` and `omp`, the third refusal of the same tool by one node files
+  one `tool.refused` item that names the tool, shared by every node, with what
+  to do: add the rule to the node's `tools.allow` or say in its prompt not to
+  use the tool ([feedback](../guides/feedback/reading.md#where-it-comes-from)).
+  Upgrade: none required.
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

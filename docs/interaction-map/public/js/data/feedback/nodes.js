@@ -191,6 +191,7 @@ export const NODES = [
     facts: [
       "Built: a loop out of rounds, a budget that ran out, a tool you denied, an Ork tool that failed, a gate that timed out, and an answer other than the recommended one.",
       "An Ork tool call whose arguments the tool's schema refused is the agent's context gap (`tool.arguments`), not an Ork bug (`tool.error`), on every driver. Both carry the tool's own message (first line, 300 characters, masked) as evidence when the result is Ork-marked, and are titled by tool, so one item covers every node.",
+      "A tool the driver's own guard refuses (codex, open-code, command-code, omp; the result carries `fault: \"refused\"`) three times in one node is the agent's context gap (`tool.refused`, low), titled by tool so one item covers every node; the evidence is the tool's name, never a command. claude-code's refusals are not counted.",
       "Derived where the run's events are recorded, decisions included, and recorded right after the event that shows them.",
       "A node's end files by who should act: Ork's own bug (an unknown or crashed end, with the scrubbed detail), the workflow's, or the agent's context gap. An account's, provider's or user's end is a setup hint, not feedback, and a report the `report` tool refuses is the agent's.",
     ],

@@ -175,7 +175,7 @@ describe("ork:onboard-propose's session", () => {
     expect(decide("mcp__ork__ask_user", {})).toBeUndefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
     expect(decide("edit_file", inside)).toBeDefined();
-    expect(decide("shell", { command: "ls" })).toBeDefined();
+    expect(decide("shell", { command: "git status" })).toBeDefined();
   });
 
   it("reads through extract on codex, read-only, and is refused edits and the shell", async () => {
@@ -186,7 +186,7 @@ describe("ork:onboard-propose's session", () => {
     expect(decide("mcp__ork__ask_user", {})).toBeUndefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
     expect(decide("apply_patch", PATCH)).toBeDefined();
-    expect(decide("Bash", { command: "ls" })).toBeDefined();
+    expect(decide("Bash", { command: "git status" })).toBeDefined();
   });
 
   it.each(CONTRACT)(

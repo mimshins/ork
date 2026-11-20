@@ -19,7 +19,7 @@
  *   `fork-of-<id>`. It follows fake-claude.mjs's protocol: `FAKE_ENDPOINT_FILE`
  *   gets the URL of Ork's endpoint, and `FAKE_SCENARIO` plays one case: unset
  *   (asks through Ork's `ask_user`, then reports through Ork's `report`),
- *   `invalid-report`, `try-denied` (a shell `ls`), `wait-message` (a slow first
+ *   `invalid-report`, `try-denied` (a shell `git status`), `wait-message` (a slow first
  *   leg; a resumed one ends with `got: <the message>`), `hang` (starts and waits
  *   for SIGINT, then exits 130), `spend` (three `turn.completed` lines, where
  *   the real one prints one a leg, then waits as `hang` does), `report-tool`,
@@ -230,10 +230,10 @@ if (scenario === "hang" || scenario === "spend") {
   }
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "try-denied") {
-  finish(shell("ls").isError ? "shell was refused" : "shell ran");
+  finish(shell("git status").isError ? "shell was refused" : "shell ran");
 } else if (scenario === "edit") {
   const patched = patch("b.txt");
-  const ran = shell("ls");
+  const ran = shell("git status");
   finish(`patch ${patched.isError ? "refused" : "ran"}, shell ${ran.isError ? "refused" : "ran"}`);
 } else if (scenario === "two-shells") {
   shell("ls");

@@ -45,8 +45,8 @@ export type PermissionVerdict =
   | { verdict: "refuse"; message: string }
   | { verdict: "ask"; uncovered: ShellCommand[] };
 
-/** Programs whose arguments name no file they read. */
-const NO_FILES = new Set([
+/** Programs whose arguments name no file they read; drivers' guards embed it. */
+export const NO_FILES: ReadonlySet<string> = new Set([
   "echo",
   "printf",
   "pwd",
@@ -60,7 +60,7 @@ const NO_FILES = new Set([
 ]);
 
 /** Programs that list names but read no file's content: any folder will do. */
-const LISTS = new Set(["ls"]);
+export const LISTS: ReadonlySet<string> = new Set(["ls"]);
 
 const norm = (text: string): string => text.trim().replaceAll(/\s+/gu, " ");
 

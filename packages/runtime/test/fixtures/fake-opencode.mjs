@@ -110,10 +110,11 @@ const tool = async (name, input, run) => {
   return result;
 };
 
-const refused = { isError: true, text: "This non-interactive run cannot ask the user for permission, so the request was rejected." };
+/** A deny rule's refusal, as OpenCode 2.3.2 words it (`Permission.BlockedError`). */
+const refused = action => ({ isError: true, text: `Permission denied: ${action}` });
 const callOrk = (name, input) =>
   tool(`ork_${name}`, input, async () => {
-    if (!allowed(`ork_${name}`, "*")) return refused;
+    if (!allowed(`ork_${name}`, "*")) return refused(`ork_${name}`);
     const reply = await rpc("tools/call", { name, arguments: input });
     const text = (reply.result?.content ?? []).map(c => c.text ?? "").join("") || (reply.error?.message ?? "");
     return { isError: reply.result?.isError === true || reply.error !== undefined, text };
@@ -180,7 +181,7 @@ if (scenario === "hang" || scenario === "spend") {
   process.exit(1);
 } else if (scenario === "try-denied") {
   const ran = await tool("shell", { command: "ls" }, () =>
-    allowed("shell", "ls") ? { isError: false, text: "ok" } : refused,
+    allowed("shell", "ls") ? { isError: false, text: "ok" } : refused("shell"),
   );
   finish(ran.isError ? "shell was refused" : "shell ran");
 } else if (scenario === "wait-message") {

@@ -27,6 +27,7 @@ import {
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
+import { isGuardRefusal } from "../tools/refusal.ts";
 import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { ompToolName } from "./omp-names.ts";
 import { sumUsage } from "./open-code-events.ts";
@@ -169,6 +170,8 @@ export const ompDecoder = (
     const bad = isBadArguments(body);
     const isError = get(line, "isError") === true || bad;
     const message = isError ? orkMessage(body) : undefined;
+    // The guard's refusal: a blocked call ends with its reason as the text.
+    const refused = !bad && isError && isGuardRefusal(body);
     return [
       ...called(line, id),
       {
@@ -176,6 +179,7 @@ export const ompDecoder = (
         id,
         isError,
         ...(bad ? { fault: "arguments" as const } : {}),
+        ...(refused ? { fault: "refused" as const } : {}),
         ...(message === undefined ? {} : { message }),
       },
     ];

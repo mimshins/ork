@@ -174,7 +174,9 @@ describe("the codex hook's rules", () => {
     expect(answer(rules(["Read", "WebFetch"]), "apply_patch", PATCH)).toContain(
       "not allowed",
     );
-    expect(bash(rules(["Read", "WebFetch"]), "ls")).toContain("not allowed");
+    expect(bash(rules(["Read", "WebFetch"]), "git status")).toContain(
+      "not allowed",
+    );
   });
 
   it("always lets Ork's tools through, and holds other MCP servers to rules", () => {

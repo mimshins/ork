@@ -2,12 +2,13 @@
  * @file System signals (specs/feedback.md): feedback Ork derives from a run's
  *   own events, with no model call. A loop out of rounds, a budget that ran
  *   out, a tool the user denied, an Ork tool that failed, a report the `report`
- *   tool refused, a gate that timed out, a node that ended in a way its actor
- *   should act on (specs/runtime/session-ends.md), an answer that differs from
- *   the recommended one, and a shell rule allowed often across the project's
- *   runs each become a `feedback.recorded` event. The same observer fills in
- *   every record's origin (workflow, node type, model, driver, Ork version) and
- *   drops a run's duplicates.
+ *   tool refused, a tool a driver's guard refused repeatedly, a gate that timed
+ *   out, a node that ended in a way its actor should act on
+ *   (specs/runtime/session-ends.md), an answer that differs from the
+ *   recommended one, and a shell rule allowed often across the project's runs
+ *   each become a `feedback.recorded` event. The same observer fills in every
+ *   record's origin (workflow, node type, model, driver, Ork version) and drops
+ *   a run's duplicates.
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -22,6 +23,7 @@ import {
 } from "./decision-signals.ts";
 import { endSignal, type Signal } from "./end-signals.ts";
 import { fingerprint } from "./fingerprint.ts";
+import { REFUSED_AT, refusedSignal } from "./refused-signal.ts";
 import type { FeedbackOrigin } from "./types.ts";
 
 export type SignalOptions = {
@@ -57,6 +59,7 @@ export const createSignals = (
   const tools = new Map<string, string>();
   const asked = new Map<string, Asked>();
   const seen = new Set<string>();
+  const refusals = new Map<string, number>();
 
   /**
    * A tool's message as evidence: its first line, masked, then clipped (so a
@@ -149,6 +152,14 @@ export const createSignals = (
     }
     if (event.type === "node.event" && event.event.type === "tool.result") {
       const name = tools.get(`${event.id}\0${event.event.id}`);
+      // A call the driver's guard refused counts per node and tool.
+      if (event.event.fault === "refused") {
+        if (name === undefined) return null;
+        const key = `${event.id}\0${name}`;
+        const count = (refusals.get(key) ?? 0) + 1;
+        refusals.set(key, count);
+        return count === REFUSED_AT ? [event.id, refusedSignal(name)] : null;
+      }
       if (!event.event.isError || name?.startsWith(ORK_TOOL) !== true) {
         return null;
       }

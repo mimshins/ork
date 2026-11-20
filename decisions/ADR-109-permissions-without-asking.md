@@ -1,6 +1,7 @@
 # ADR-109 — Permissions without asking: a shell reader in core, and `unlisted`
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-112](./ADR-112-shipped-reads-without-pnpm.md)
 - **Date:** 2026-11-20
 - **Topic:** runtime port, workflow format, project rules
 - **RFC:** [RFC-028](../rfcs/archived/RFC-028-permissions-without-asking.md)

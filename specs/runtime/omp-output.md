@@ -36,8 +36,12 @@ What the print-mode shapes give, as before:
   gives `tool.called` (`toolCallId`, the name in Ork's words, `args`);
   `tool_execution_end` gives `tool.result` with `isError`, and
   `fault: "arguments"` for an Ork tool's bad-arguments answer. A refused call is
-  a `tool.result` with `isError` and the guard's reason. Calls pair by
-  `toolCallId`, in any order.
+  a `tool.result` with `isError` and the guard's reason, and `fault: "refused"`
+  when that text is the guard's own refusal
+  (`Ork: <tool> is … Do not retry it.`, `Ork refuses …`;
+  [refusal.ts](../../packages/runtime/src/tools/refusal.ts)): three of one tool
+  in a node file a `tool.refused` item ([capture](../feedback/capture.md)).
+  Calls pair by `toolCallId`, in any order.
 - `message_start`, `message_update`, `tool_execution_update`, `turn_start`,
   `turn_end`, `agent_start`, `advisor_cost_changed` give no event, and the
   messages `turn_end` and `agent_end` repeat are not counted again.

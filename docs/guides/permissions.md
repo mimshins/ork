@@ -13,20 +13,22 @@ Ork allows it with no question when **every** command in it is covered by the
 node's `allow` rules or by Ork's own list of reads:
 
 - Ork's reads: `ork logs`, `ork ps`, `ork tree`, `ork usage`,
-  `ork feedback list|show` and `ork follow-ups list|show`, also as `pnpm ork` or
-  `pnpm -s ork`.
+  `ork feedback list|show` and `ork follow-ups list|show`, run as the installed
+  `ork`. `pnpm ork …` and `pnpm -s ork …` are not in the list: pnpm runs the
+  project's own `ork` script, so an edited `package.json` would change what a
+  read runs.
 - Filters and printers: `jq`, `wc`, `cut`, `sort`, `uniq`, `head`, `tail`, `tr`,
   `ls`, `echo`, `printf`, `pwd`, `basename`, `dirname`, `date`, `cd`, `true` and
   `false`.
 
 Each is in the list only without the form that writes a file, follows one or
 runs a program: `sort -o`, `uniq` with an output file, `tail -f`, `date -s`,
-`jq -f` or a `jq` program that reads the environment, `printf -v`. A path
-outside the session's folder and `~/.ork` still asks, and so does a path a
+`date -f`, `jq -f` or a `jq` program that reads the environment, `printf -v`. A
+path outside the session's folder and `~/.ork` still asks, and so does a path a
 `Read(…)` deny rule of the node names. A line such as this one no longer asks:
 
 ```sh
-for r in r1 r2; do pnpm -s ork logs "$r" --json | jq '.[0]' | head; done
+for r in r1 r2; do ork logs "$r" --json | jq '.[0]' | head; done
 ```
 
 The wrappers `timeout`, `env`, `cd`, `time` and `nice` are looked through, so
@@ -80,12 +82,13 @@ answers, in the terminal, `ork decide`, the browser and Ork's MCP tools:
 - **deny**.
 
 The descriptions show the exact rules before you choose, and `always` shows the
-file. A rule is the program and its subcommand: `pnpm -s ork logs r1 --json`
-offers `Bash(pnpm -s ork logs *)`, `git -C x log` offers `Bash(git log *)`. Ork
-offers no rule for an interpreter, a wrapper, `sh`, `xargs`, `find`, `sed`,
-`awk`, `pnpm exec` or `npx`, and no scopes for a line it cannot read: those ask
-`Allow` or `Deny` only. A question that comes back after a resume reads the same
-answers.
+file. A rule is the program and its subcommand: `ork logs r1 --json` offers
+`Bash(ork logs *)`, `git -C x log` offers `Bash(git log *)`, and a `pnpm` script
+such as `pnpm -s ork logs r1` offers its own rule (`Bash(pnpm -s ork logs *)`)
+but is never one of the reads above. Ork offers no rule for an interpreter, a
+wrapper, `sh`, `xargs`, `find`, `sed`, `awk`, `pnpm exec` or `npx`, and no
+scopes for a line it cannot read: those ask `Allow` or `Deny` only. A question
+that comes back after a resume reads the same answers.
 
 "Always" keeps the file's comments and every line it did not touch, creates the
 file with `schemaVersion: 1` when there is none, and adds nothing already there.
@@ -107,5 +110,13 @@ never a command's arguments.
 The refusal, the five answers and the suggestions are `claude-code` only. The
 guards that Codex, Command Code and omp write from a node's rules read loops,
 subshells and the wrappers above with the same reader, so a rule you wrote
-covers what it covers in a loop. They do not use Ork's list of reads, so what
-they allow does not widen.
+covers what it covers in a loop. They also allow
+[the reads Ork already knows](#reads-ork-already-knows) (the installed `ork`'s
+reads and the filters listed there) without a rule, when each path is inside the
+node's worktree and the line has no `cd` and no expanded word such as `$VAR`,
+`~` or a glob; a `deny` rule, an `only` list and a read-only node's `extract`
+refusal still win ([drivers](./drivers.md#permissions-denied-unless-allowed)).
+OpenCode gets none of this, and its reads need an `allow` rule. When one of
+these drivers or OpenCode refuses the same tool three times in one node, Ork
+files a [feedback](./feedback/reading.md#where-it-comes-from) item,
+`tool.refused`, that names the tool.

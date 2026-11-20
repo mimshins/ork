@@ -189,7 +189,7 @@ export const HOOK_DID_NOT_RUN =
  * the line asks the runner to kill the leg (`kill`), so Codex runs no further
  * unguarded; nothing is decoded after it. A call the hook refused leaves no
  * line (RFC-024 spike), so each refusal in the calls file becomes a refused
- * tool call at the next line or the leg's exit.
+ * tool call at the next line or the leg's exit, marked `fault: "refused"`.
  */
 const guarded = (spec: SessionSpec): LegDecoder => {
   const hook = HOOKS.get(spec.tools);
@@ -210,7 +210,7 @@ const guarded = (spec: SessionSpec): LegDecoder => {
           name: CODEX_TOOLS[tool] ?? tool,
           input: {},
         },
-        { type: "tool.result", id, isError: true },
+        { type: "tool.result", id, isError: true, fault: "refused" },
       ];
     });
   };

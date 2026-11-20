@@ -70,11 +70,11 @@ const bash = (rules: Rules | undefined, command: string) =>
   ask(rules, { command });
 
 const EVIDENCE = [
-  "pnpm -s ork logs 92029b1e --json | jq '.[] | select(.type == \"node.ended\") | .node'",
+  "ork logs 92029b1e --json | jq '.[] | select(.type == \"node.ended\") | .node'",
   "for r in 88c3f7b5 92029b1e; do ork logs $r --json | jq -r '.[].type' | sort | uniq -c; done",
-  "( pnpm -s ork logs 92029b1e | head -40 ); ls ~/.ork/projects",
-  "timeout 60 pnpm -s ork logs 92029b1e --json | jq length",
-  'for r in a b; do echo "== $r"; pnpm -s ork tree $r 2>/dev/null | head -20; done',
+  "( ork logs 92029b1e | head -40 ); ls ~/.ork/projects",
+  "timeout 60 ork logs 92029b1e --json | jq length",
+  'for r in a b; do echo "== $r"; ork tree $r 2>/dev/null | head -20; done',
   "ork ps --limit 5 && ork usage --since 7d",
   "ork feedback list --json | jq '.[0]'; ork follow-ups show f1",
 ];
@@ -115,6 +115,24 @@ describe("the permission tool's verdict", () => {
     expect(said.message).toContain("`pnpm test` is not one of them");
     expect(said.message).toContain("`Bash(git status)`, `Bash(git status *)`");
     expect(said.message).toContain(SHIPPED_READS);
+    expect(said.message).toContain("a `pnpm` script is not a shipped read");
+  });
+
+  it.each(["date -f /etc/hosts", "date --file=/etc/hosts"])(
+    "refuses %s on a read-only node, since date prints the file's lines",
+    async line => {
+      expect(await bash(READ_ONLY, line)).toMatchObject({
+        behavior: "deny",
+        asked: 0,
+      });
+    },
+  );
+
+  it("refuses an Ork read through pnpm on a read-only node, since pnpm runs the project's script", async () => {
+    expect(await bash(READ_ONLY, "pnpm -s ork logs r1")).toMatchObject({
+      behavior: "deny",
+      asked: 0,
+    });
   });
 
   it("refuses a shell read on a read-only node with the extract call to make", async () => {
@@ -263,7 +281,7 @@ describe("the rules a prompt offers", () => {
     expect(
       await offered(
         { allow: [], deny: [] },
-        "git -C x log | head -3 && pnpm -s ork logs r1 --json && git diff HEAD",
+        "git -C x log | head -3 && ork logs r1 --json && git diff HEAD",
       ),
     ).toEqual(["Bash(git log *)", "Bash(git diff *)"]);
   });

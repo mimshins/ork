@@ -187,8 +187,8 @@ pnpm build          # bundles the CLI into packages/cli/dist/bin.mjs
 alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
 ```
 
-Run `pnpm build` again after you pull. Inside the clone, `pnpm ork <command>`
-runs the CLI from its TypeScript sources, with no build.
+Run `pnpm build` again after you pull. `pnpm ork <command>` runs the CLI from
+its sources, but a node's reads need the installed `ork` on its `PATH`.
 
 ## Removing Ork
 

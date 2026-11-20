@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L527, and the next chore is
+closes it. Ids are never reused: the next limit is L534, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
 adds that a fetched ref already has before the change is rebased). At a review,
@@ -364,8 +364,10 @@ Found removing the Agent SDK driver
   link made at run time is not checked against the node's driver, and a worker's
   own `ask_user` is not either, only a leader that delegates. Permissions
   without asking (the verdict, its refusal, the scopes, "always" and the
-  suggestions) are `claude-code`'s only; the other drivers' guards share the
-  shell reader, not the shipped reads ([L506](./gaps/permissions-limits.md)).
+  suggestions) are `claude-code`'s only; the Codex, Command Code and omp guards
+  share the shell reader and the shipped reads, OpenCode's neither, and their
+  refusals count toward a `tool.refused` item
+  ([L506](./gaps/permissions-limits.md)).
 
 - **L235 · Command Code runs one session per checkout.** Its MCP entry is per
   folder, so a second session in a checkout waits for the first, logged as a

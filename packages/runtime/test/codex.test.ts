@@ -861,6 +861,12 @@ describe("a codex session on the fake codex", () => {
     expect(outcomeOf(events).text).toBe("patch ran, shell refused");
     expect(resultsOf(events, "Edit")).toEqual([false]);
     expect(resultsOf(events, "Bash")).toEqual([true]);
+    expect(events).toContainEqual({
+      type: "tool.result",
+      id: "hook-refused-1",
+      isError: true,
+      fault: "refused",
+    });
     expect(existsSync(path.join(cwd, "b.txt"))).toBe(true);
   });
 

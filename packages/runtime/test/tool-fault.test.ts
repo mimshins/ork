@@ -4,7 +4,9 @@
  *   OpenCode and Command Code decoders set the `tool.result`'s `fault` from it,
  *   and only from it. They also keep the `message` of an Ork-marked refusal or
  *   failure (`orkMessage`: first line, clipped), and none of another tool's
- *   error or Claude Code's own validation text.
+ *   error or Claude Code's own validation text. A call a driver's own guard
+ *   refused is marked `fault: "refused"` by the Command Code and `omp`
+ *   decoders, and an ordinary failure is not.
  */
 
 import type { HumanChannel } from "@krapht/ork-core";
@@ -12,6 +14,8 @@ import { describe, expect, it } from "vitest";
 
 import { normalize } from "../src/adapters/claude-code-events.ts";
 import { commandCodeDecoder } from "../src/adapters/command-code-events.ts";
+import { ompDecoder } from "../src/adapters/omp-events.ts";
+import { OMP_PAUSED } from "../src/adapters/omp-guard.ts";
 import { decodeOpenCodeLine } from "../src/adapters/open-code-events.ts";
 import { orkTools } from "../src/index.ts";
 import { BAD_ARGUMENTS, ORK_FAILED, orkMessage } from "../src/tools/tool.ts";
@@ -52,6 +56,32 @@ const openCodeResult = (state: Record<string, unknown>) =>
       part: { id: "t", tool: "ork_extract", state: { input: {}, ...state } },
     }),
   ).events.at(-1);
+
+/** A Command Code frame for a shell call, as the decoder gives it. */
+const shellFrame = (event: Record<string, unknown>) =>
+  commandCodeDecoder().decode(
+    JSON.stringify({
+      type: "event",
+      event: { toolCallId: "t", toolName: "shell", ...event },
+    }),
+  ).events;
+
+/** An `omp` bash call that ended with `text`, as the decoder gives it. */
+const ompEnd = (isError: boolean, text: string) =>
+  ompDecoder({ cwd: "/w", model: "m" })
+    .decode(
+      JSON.stringify({
+        type: "tool_execution_end",
+        toolCallId: "t",
+        toolName: "bash",
+        result: { content: [{ type: "text", text }] },
+        isError,
+      }),
+    )
+    .events.at(-1);
+
+const NOT_ALLOWED = "Ork: shell is not allowed for this node. Do not retry it.";
+const SHELL_READ = "Ork refuses `cat` here: use the extract tool instead.";
 
 const REFUSED = `${BAD_ARGUMENTS}\nsteps: Required\nmore`;
 const FAILED = `${ORK_FAILED}\nnot a git repository`;
@@ -197,6 +227,50 @@ describe("arguments an Ork tool refuses", () => {
     ]);
     expect(frame("tool_denied", FAILED)).toEqual([
       { type: "tool.result", id: "t", isError: true },
+    ]);
+  });
+});
+
+describe("a call a driver's own guard refused", () => {
+  it("is marked refused on Command Code when the session mod blocked it", () => {
+    expect([
+      ...shellFrame({ type: "tool_hook_blocked", hookOutput: NOT_ALLOWED }),
+      ...shellFrame({ type: "tool_hook_blocked", hookOutput: SHELL_READ }),
+    ]).toEqual([
+      { type: "tool.result", id: "t", isError: true, fault: "refused" },
+      { type: "tool.result", id: "t", isError: true, fault: "refused" },
+    ]);
+  });
+
+  it("is not marked on Command Code for a failed command or another hook's block", () => {
+    expect([
+      ...shellFrame({ type: "tool_errored", error: NOT_ALLOWED }),
+      ...shellFrame({
+        type: "tool_hook_blocked",
+        hookOutput: "Blocked by a pre-tool hook.",
+      }),
+    ]).toEqual([
+      { type: "tool.result", id: "t", isError: true },
+      { type: "tool.result", id: "t", isError: true },
+    ]);
+  });
+
+  it("is marked refused on omp when the guard blocked it", () => {
+    expect([ompEnd(true, NOT_ALLOWED), ompEnd(true, SHELL_READ)]).toEqual([
+      { type: "tool.result", id: "t", isError: true, fault: "refused" },
+      { type: "tool.result", id: "t", isError: true, fault: "refused" },
+    ]);
+  });
+
+  it("is not marked on omp for a failed command, a pause, or output that only reads like a refusal", () => {
+    expect([
+      ompEnd(true, "Error: exit 1"),
+      ompEnd(true, OMP_PAUSED),
+      ompEnd(false, NOT_ALLOWED),
+    ]).toEqual([
+      { type: "tool.result", id: "t", isError: true },
+      { type: "tool.result", id: "t", isError: true },
+      { type: "tool.result", id: "t", isError: false },
     ]);
   });
 });

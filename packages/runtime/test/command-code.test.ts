@@ -197,7 +197,7 @@ describe("the command-code decoder", () => {
 describe("the command-code session mod", () => {
   it("refuses everything to a node that allowed nothing, but Ork's own tools", async () => {
     const decide = await decideOf({ allow: [], deny: [] });
-    expect(decide("shell", { command: "ls" })).toBeDefined();
+    expect(decide("shell", { command: "git status" })).toBeDefined();
     expect(decide("edit_file", {})).toBeDefined();
     expect(decide("mcp__github__issue", {})).toBeDefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
@@ -385,7 +385,10 @@ describe("a command-code session", () => {
 
   it("runs a shell call the node allowed", async () => {
     const at = place();
-    const spec = specOf(tmp("checkout"), { allow: ["Bash(ls)"], deny: [] });
+    const spec = specOf(tmp("checkout"), {
+      allow: ["Bash(git status)"],
+      deny: [],
+    });
     const events = await collect(startIn(at, spec, "try-denied"));
     expect(shellResults(events)).toEqual([false]);
   });

@@ -169,7 +169,9 @@ const NOT_ALLOWED = "Ork: bash is not allowed for this node. Do not retry it.";
 describe("the omp guard's rules", () => {
   it("refuses a bash command the node did not allow, naming the tool", async () => {
     const guard = await loadGuard({});
-    expect(await outcome(guard, "bash", { command: "ls" })).toBe(NOT_ALLOWED);
+    expect(await outcome(guard, "bash", { command: "git status" })).toBe(
+      NOT_ALLOWED,
+    );
   });
 
   it("allows a command a Bash(<prefix>) rule covers, and checks a compound line command by command", async () => {
@@ -406,7 +408,9 @@ describe("the omp guard's hold", () => {
   it("refuses a call the rules refuse at once, without asking", async () => {
     const endpoint = await standIn();
     const guard = await loadGuard({}, endpoint.hold);
-    expect(await outcome(guard, "bash", { command: "ls" })).toBe(NOT_ALLOWED);
+    expect(await outcome(guard, "bash", { command: "git status" })).toBe(
+      NOT_ALLOWED,
+    );
     expect(await outcome(guard, "eval", {})).toMatch(/not a tool Ork knows/u);
     expect(endpoint.seen).toEqual([]);
     await endpoint.close();
