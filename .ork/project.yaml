@@ -26,7 +26,15 @@ context:
   - .ork/context/sessions.md
 git:
   commit: never
-  base: main
+  # Runs start from the newest main on GitHub, not this clone's main: parallel
+  # runs push there, and a stale start meant extra rebase conflicts.
+  base: origin/main
+  fetch: auto
+  # readonly stays `checkout`: start and plan read the local, gitignored
+  # .ai/plans/, which a fresh worktree of the base doesn't have.
+# A node never starts the agent of another node of its workflow (a build node
+# never runs the reviewer or engine agent itself).
+agents: isolate
 permissions:
   allow:
     - Bash(pnpm check)
