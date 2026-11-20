@@ -1,8 +1,9 @@
 /**
  * @file The free steps of `ork onboard` that come before any question: the
- *   refusals, the driver, `ork init`'s file steps when `.ork/` is missing, the
- *   uncommitted files the writer's worktree will lack, and the overview
- *   (specs/cli/onboard-flow.md). Nothing here starts a session or spends.
+ *   refusals, the driver, `ork init`'s file steps when `.ork/` is missing (not
+ *   for an attached project), the uncommitted files the writer's worktree will
+ *   lack, and the overview (specs/cli/onboard-flow.md). Nothing here starts a
+ *   session or spends.
  */
 
 import {
@@ -110,7 +111,7 @@ export const withUncommitted = (
 /** Everything up to the questions, or why to stop. */
 export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
   const { out, store } = o;
-  const refused = await refusal({ ...o, registered: store.projects() });
+  const refused = await refusal(o);
   if (refused !== null) return { kind: "stop", lines: refused, code: 1 };
 
   // The driver first: with none ready, nothing is written.
@@ -122,6 +123,18 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
   let gitignored = false;
   let fromInit: string[] = [];
   let place = placeFor(o.cwd, store.projects());
+  // An attached project's files are in Ork's folder, and the writer's seeded
+  // worktree holds them: no `ork init` step, nothing in the repository to miss.
+  if (place.mode === "attached") {
+    return {
+      kind: "ready",
+      place,
+      driver: picked.driver,
+      gitignored: false,
+      fromInit: [],
+      ...(await overview(store, place.root, o, out)),
+    };
+  }
   // Set up at the project's root, which is not `cwd` in a subfolder.
   if (!existsSync(place.dir)) {
     const made = initRecorded(store, place.root, { link: false });

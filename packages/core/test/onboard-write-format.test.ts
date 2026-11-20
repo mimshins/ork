@@ -2,10 +2,12 @@
  * @file Tests for the writer's format reference of `ork:onboard-write`
  *   (`workflows/onboard-write/context/format.md`): its example workflow parses
  *   and checks with no error, it names every node type of the schema and the
- *   graph diagnostic about a missing entry, and the writer reads it as
- *   context.
+ *   graph diagnostic about a missing entry, and the writer reads it as context;
+ *   and the `finish` node's script, which passes `--base` only when the
+ *   writer's worktree was seeded.
  */
 
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -30,6 +32,14 @@ const example = (): string => {
   const match = /```yaml\n([\s\S]*?)```/u.exec(FORMAT);
   if (match?.[1] === undefined) throw new Error("No yaml example.");
   return match[1];
+};
+
+/** The bundled `finish` node's script and env. */
+const finishNode = (): { script: string; env: Record<string, string> } => {
+  const parsed = parseWorkflow(BUILTIN_WORKFLOWS["onboard-write"] ?? "");
+  const node = parsed.ok ? parsed.workflow.nodes["finish"] : undefined;
+  if (node?.type !== "tool.shell") throw new Error("No finish node.");
+  return { script: node.script ?? "", env: node.env ?? {} };
 };
 
 describe("the writer's format reference", () => {
@@ -61,6 +71,20 @@ describe("the writer's format reference", () => {
       expect(FORMAT).toContain(word);
     },
   );
+
+  it("passes `--base` to finish only for a seeded run", () => {
+    const { script, env } = finishNode();
+    const echoed = (SEED: string): string =>
+      execFileSync("sh", ["-c", script], {
+        encoding: "utf8",
+        env: { ORK_BIN: "/bin/echo", WORKTREE: "/w t", BRANCH: "b", SEED },
+      }).trim();
+    expect(echoed("")).toBe("__onboard finish --worktree /w t --branch b");
+    expect(echoed("abc123")).toBe(
+      "__onboard finish --worktree /w t --branch b --base abc123",
+    );
+    expect(env["SEED"]).toBe("{{nodes.write.output.seed}}");
+  });
 
   it("is in the bundle, and the writer names it in its context", () => {
     expect(

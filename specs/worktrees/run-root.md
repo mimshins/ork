@@ -9,12 +9,19 @@ Status: **Built** ([run-root.ts](../../packages/core/src/worktree/run-root.ts),
 [ADR-100](../../decisions/ADR-100-audit-in-attached-projects.md).
 
 A run can work in a worktree of its own instead of the project checkout. Only a
-built-in with companion files, `ork:security-audit`, run in a project attached
-with `ork register`, does so: the bundle must sit inside the folder a read-only
-agent reads, and Ork never writes it into the user's repository
+built-in with companion files (`ork:security-audit`, `ork:onboard-propose` and
+`ork:onboard-write`), run in a project attached with `ork register`, does so:
+the bundle must sit inside the folder a read-only agent reads, and Ork never
+writes it into the user's repository
 ([built-in workflows](../cli/built-in-workflows.md#bundles)). An in-repo project
 (`ork init`) and a built-in without companion files (`ork:feedback-apply`) have
-no run root and work as before.
+no run root and work as before. The root is not only the audit's: its id and
+folder are still named `audit-root` ([L545](../gaps/onboard-limits.md)), and a
+worktree node of the run, such as `ork:onboard-write`'s writer, is cut from it
+(its folder is `ork-<run>-audit-root-worktrees/`, left empty after a discard:
+[L546](../gaps/onboard-limits.md)). A **seeded** run
+([seeding](../worktrees.md#seeding-a-worktree), `ork onboard` in an attached
+project) opens its root detached too (`commit: never`), so no branch appears.
 
 - **Opened before the first node.** After the preflight, `ork run` makes a
   worktree from the base ref the caller gave, else the run's recorded commit on
@@ -28,6 +35,14 @@ no run root and work as before.
   any bundle; its placeholder already names that folder relative to a root. A
   failure, such as no git repository, a failed `git worktree add` or a refused
   path, stops `ork run` with exit 1 before any node, naming the cause.
+- **From the repository's top.** A project in a repository subfolder (`<root>`
+  is `<top>/sub`) opens its run root from the repository's top, not from its own
+  folder: the root passed to `openRunRoot` is `place.root` joined with `..` for
+  each segment of the prefix (`git rev-parse --show-prefix`), so the root and
+  the run's worktrees are named beside the clone and never land inside its
+  working tree. At the top the prefix is empty and nothing changes. The recorded
+  base is `place.root`'s, as before. `finish` reads this top as the tool nodes'
+  folder ([L547](../gaps/onboard-limits.md)).
 - **No fetch, no readonly worktree.** The root is handed its base, so
   `git.fetch` does not run, and `git.readonly: base` opens nothing: the root is
   already a worktree at the base.

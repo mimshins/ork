@@ -54,9 +54,13 @@ Both folders hold the same things:
   ([cli](./cli.md)).
 - **`ork onboard`** ([onboard](./cli/onboard-flow.md#setting-up)) runs
   `ork init`'s file steps itself when `.ork/` is missing (records the project
-  in-repo, writes the starter and the `.gitignore` entry, asks nothing else),
-  and refuses an attached project, naming `ork migrate`. `ork init`'s closing
-  line points at it.
+  in-repo, writes the starter and the `.gitignore` entry, asks nothing else). In
+  an attached project it does none of that: the writer's worktree is seeded with
+  the attached folder's workflows and rules, and keep applies its files to
+  `~/.ork/projects/<id>/`, never the repository
+  ([an attached project](./cli/onboard-attached.md),
+  [ADR-114](../decisions/ADR-114-onboard-in-attached-projects.md)). `ork init`'s
+  closing line points at it.
 - **`ork projects [--json]`** lists registered projects: id, mode, root (marked
   missing when it is gone), and Ork's folder. **`ork projects forget <id>`**
   drops the record; the files and runs stay. **`ork projects move <id> <path>`**
@@ -107,7 +111,8 @@ current folder's project's `workflows/`.
 - **Agents** from the attached folder's `agents/` take the place of
   `.ork/agents`; the tools' folders in the repository are still read.
 - **Not available:** `ork link` (nothing is linked into the repository) and its
-  doctor checks.
+  doctor checks. `ork onboard` works here (above); it is the one command that
+  writes workflows into the attached folder.
 
 ## Migrating
 

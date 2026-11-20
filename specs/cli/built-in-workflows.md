@@ -55,9 +55,12 @@ a read-only rule and the `tools/audit` scripts.
   removed when the run ends ([a run's own root](../worktrees/run-root.md),
   [ADR-100](../../decisions/ADR-100-audit-in-attached-projects.md)). An in-repo
   project has no such worktree. The audit then sees `HEAD`, not uncommitted
-  changes ([audit limits](../gaps/audit-limits.md)). The other built-ins with
-  companion files, `ork:onboard-*`, stay refused in an attached project
-  ([ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md)).
+  changes ([audit limits](../gaps/audit-limits.md)). `ork:onboard-propose` and
+  `ork:onboard-write` are supported in an attached project the same way
+  ([ADR-114](../../decisions/ADR-114-onboard-in-attached-projects.md), which
+  supersedes ADR-099's refusal); the write run's worktrees are also seeded with
+  the project's files from Ork's folder and make no commit
+  ([an attached project](./onboard-attached.md)).
 - **`ORK_SOURCE_ROOT`.** Tool nodes of such a run get the user's checkout in
   this variable, only when the run's root is a worktree of its own. `scan` reads
   it and adds the notes `audited commit <sha> (a per-run copy of HEAD)` and,

@@ -31,9 +31,10 @@ import {
 } from "./manager.ts";
 import { type NameInputs, namesFor } from "./names.ts";
 import { applyChanges, changesSince, snapshot, syncFrom } from "./patch.ts";
+import type { WorktreeSeed } from "./seed.ts";
 
-/** A worktree, and the tree its own work is measured from (for patches). */
-export type Tracked = Worktree & { snapshot?: string };
+/** A worktree, the tree its work is measured from, and a seeded one's commit. */
+export type Tracked = Worktree & { snapshot?: string; seed?: string };
 
 export type WorktreeEvent = Extract<RunEvent, { type: "worktree" }>;
 
@@ -60,13 +61,16 @@ export const worktreeEvent = (
   worktree.snapshot !== undefined
     ? { snapshot: worktree.snapshot }
     : {}),
+  ...(action === "created" && worktree.seed !== undefined
+    ? { seed: worktree.seed }
+    : {}),
   ...(detail === undefined ? {} : { detail }),
 });
 
 /**
  * Opens a node's worktree: named by the rules, from `head` or its owner's work.
  * Under `commit: never` it is detached and takes the owner's uncommitted
- * changes too.
+ * changes too. A `seed` detaches it and commits the seed's files first.
  */
 export const openWorktree = async (options: {
   rules: ResolvedGitRules;
@@ -79,6 +83,7 @@ export const openWorktree = async (options: {
   host?: Tracked;
   /** Branches this run created, which it may check out again. */
   known: ReadonlySet<string>;
+  seed?: WorktreeSeed;
 }): Promise<{ worktree: Tracked; copied: string[] }> => {
   const { rules, root, host } = options;
   const never = rules.commit === "never";
@@ -99,6 +104,7 @@ export const openWorktree = async (options: {
     ...(names.branch === undefined ? {} : { branch: names.branch }),
     base,
     known: names.branch !== undefined && options.known.has(names.branch),
+    ...(options.seed === undefined ? {} : { seed: options.seed }),
   });
   if (created.reused && host?.branch !== undefined) {
     await fastForward(created.path, host.branch);
@@ -116,6 +122,7 @@ export const openWorktree = async (options: {
       path: created.path,
       ...(created.branch === undefined ? {} : { branch: created.branch }),
       snapshot: measuredFrom,
+      ...(created.seed === undefined ? {} : { seed: created.seed }),
     },
     copied: created.copied,
   };
@@ -256,13 +263,14 @@ export const oneAtATime = () => {
   };
 };
 
-/** A node's result, with where it worked: the worktree, and its branch. */
+/** A node's result, with where it worked: worktree, branch, seed commit. */
 export const placed = (result: NodeResult, worktree: Tracked): NodeResult => ({
   ...result,
   output: {
     ...result.output,
     ...(worktree.branch === undefined ? {} : { branch: worktree.branch }),
     worktree: worktree.path,
+    ...(worktree.seed === undefined ? {} : { seed: worktree.seed }),
   },
 });
 

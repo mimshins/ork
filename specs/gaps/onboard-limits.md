@@ -8,12 +8,6 @@ Found planning and building [`ork onboard`](../cli/onboard.md)
 ([RFC-018](../../rfcs/archived/RFC-018-onboard.md)). What was left simpler, or
 could not be checked:
 
-- **L390 · An attached project is refused.** `ork onboard` stops in a project
-  `ork register` attached and names `ork migrate`, since its writer works on a
-  branch of the repository and attached workflows live outside it. Kept by
-  [ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md): if
-  attached users ask, the writer gets a worktree seeded with the attached files
-  and Ork copies the result back on keep (RFC-022's option D).
 - **L391 · A crash inside the survey or the three questions starts over.** A
   proposal left at the pick, and a propose run that failed, stopped or crashed,
   are found again in the store
@@ -155,3 +149,43 @@ could not be checked:
   onboarding a subfolder project fails the check until the writer is told the
   folder (the prompt, or a `--root`-style input). Not built here; `ork onboard`
   from the repository's own root is not affected.
+- **L541 · The seed commit stays in the repository's `.git` until gc.** In an
+  attached project
+  ([ADR-114](../../decisions/ADR-114-onboard-in-attached-projects.md)) the
+  writer's worktree starts with one local commit holding the project's
+  `workflows/*.ork.yaml` and `project.yaml`. After the worktree is removed the
+  commit is a dangling object in the repository's own `.git` until `git gc`. The
+  rules may name `env` keys, never values. Nothing is pushed, and the
+  repository's working tree and refs are untouched. Pruning it on removal would
+  close it.
+- **L542 · A folder that changed since the seed is found only at keep.** Nothing
+  records the attached folder when the writer starts, so an edit made meanwhile
+  shows when keep's patch fails: nothing changes, the worktree stays, and the
+  person runs `ork onboard` again. A recorded hash would refuse earlier but
+  needs state RFC-022 ruled out.
+- **L543 · There is no `ork keep` command.** `keepRun` serves `ork onboard` and
+  `ork feedback apply`; a seeded run is kept only through `ork onboard` (it
+  reads `settings.seed` from the run's events, so a command would behave the
+  same).
+- **L544 · The seed commit still triggers the `reference-transaction` hook.** It
+  runs no commit hook (plumbing: `git add -f`, `commit-tree --no-gpg-sign`,
+  `update-ref`), but a repository's `reference-transaction` hook sees the
+  `update-ref`. The worktree's checkout also runs `post-checkout`, as every
+  worktree node's does.
+- **L545 · The run root is still named `audit-root`.** `RUN_ROOT_ID` is
+  `"audit-root"` (`packages/core/src/worktree/run-root.ts`), so an onboard run's
+  root is `ork-<run>-audit-root` and its branch or event id says audit. Renaming
+  it changes event ids stored runs hold.
+- **L546 · A discarded onboard run leaves an empty folder.** The writer's
+  worktree is cut from the run root, so it lives in
+  `ork-<run>-audit-root-worktrees/`; removing the worktree leaves that empty
+  folder beside the clone.
+- **L547 · `finish` flags a subfolder project's own files as outside the allowed
+  paths.** In a project in a repository subfolder, `finish` runs in the run
+  root's top (a tool node's folder), and the writer's session starts at the top
+  too, so a file at `<prefix>.ork/…` reads as outside `.ork/workflows` and
+  `.ork/project.yaml` (the same as L434 and L437 in a repository). It holds for
+  an attached project: its keep works under the prefix (tested), but a prefixed
+  attached project exists only when recorded another way, since `ork register`
+  records the repository's top. Fixing it needs a change to the core workspace
+  (where tool nodes and sessions start), so it is left.

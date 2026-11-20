@@ -6,15 +6,23 @@
  *   folder and the user's checkout is never written to. A resume re-opens it at
  *   the recorded commit, with the bundle the run started with (an upgraded
  *   Ork's has another hash); every end of the run closes it. In-repo projects
- *   and built-ins without companion files have none.
+ *   and built-ins without companion files have none. A seeded run (RFC-022
+ *   option D, ADR-114: `ork onboard` in an attached project) also seeds its
+ *   worktrees with the project's workflows and rules from Ork's folder for it,
+ *   and makes no commit on any branch (`commit: never` for its run root and
+ *   node worktrees, whatever the rules say), so no `ork/…` branch appears in
+ *   the repository; the folder is recorded in the run's settings, so a resume
+ *   seeds and detaches the same way.
  */
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
   applyProject,
   BUILTIN_PREFIX,
+  type CompiledGraph,
   gitRulesOf,
   loadProject,
   openRunRoot,
@@ -27,10 +35,90 @@ import {
   type RunRoot,
   runRootEvent,
   startedBundleUnder,
+  type WorktreeSeed,
 } from "@krapht/ork-core";
-import { parseWorkflow, type ResolvedGitRules } from "@krapht/ork-schema";
+import {
+  parseWorkflow,
+  type ResolvedGitRules,
+  type Workflow,
+} from "@krapht/ork-schema";
 
 import type { RunWorkflowOptions } from "./workflow-options.ts";
+
+const RULES = "project.yaml";
+const WORKFLOWS = "workflows";
+const WORKFLOW_SUFFIX = ".ork.yaml";
+
+/** The folder the run seeds from: given, or recorded when it started. */
+export const seedOf = (
+  options: Pick<RunWorkflowOptions, "seed" | "resume">,
+): string | undefined => options.seed ?? options.resume?.settings.seed;
+
+/** `workflow` under `commit: never`: `merge: auto` needs commits, so `patch`. */
+export const withoutCommits = (workflow: Workflow): Workflow => {
+  const git = workflow.rules?.git ?? {};
+  return {
+    ...workflow,
+    rules: {
+      ...workflow.rules,
+      git: {
+        ...git,
+        commit: "never",
+        merge: git.merge === "never" ? "never" : "patch",
+      },
+    },
+  };
+};
+
+/** The compiled graph of a run seeded from `folder` (as it is without one). */
+export const seededGraph = (
+  graph: CompiledGraph | null,
+  folder: string | undefined,
+): CompiledGraph | null =>
+  graph === null || folder === undefined
+    ? graph
+    : { ...graph, workflow: withoutCommits(graph.workflow) };
+
+/** The project's folder within its repository: `""` or `sub/`. */
+export const prefixOf = (projectRoot: string): string =>
+  execFileSync("git", ["rev-parse", "--show-prefix"], {
+    cwd: projectRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+
+/** What of `folder` is seeded: its `workflows/*.ork.yaml` and `project.yaml`. */
+const seedPaths = (folder: string): string[] => {
+  const workflows = path.join(folder, WORKFLOWS);
+  const files = existsSync(workflows)
+    ? readdirSync(workflows, { withFileTypes: true })
+        // Links are passed on: the seed itself skips them.
+        .filter(entry => !entry.isDirectory())
+        .map(entry => entry.name)
+        .filter(name => name.endsWith(WORKFLOW_SUFFIX))
+        .toSorted()
+        .map(name => `${WORKFLOWS}/${name}`)
+    : [];
+  return [...files, ...(existsSync(path.join(folder, RULES)) ? [RULES] : [])];
+};
+
+/**
+ * The seed of a run's worktrees from `folder`, into `<prefix>.ork` of the
+ * project at `projectRoot`; none when the run seeds nothing.
+ */
+export const seedFor = (
+  folder: string | undefined,
+  projectRoot: string,
+): { seed?: WorktreeSeed } =>
+  folder === undefined
+    ? {}
+    : {
+        seed: {
+          from: folder,
+          to: `${prefixOf(projectRoot)}.ork`,
+          paths: seedPaths(folder),
+        },
+      };
 
 /** The built-in a workflow file is, when it needs a run root. */
 type Trigger = {
@@ -69,10 +157,13 @@ const triggerOf = (options: RunWorkflowOptions): Trigger | undefined => {
   // An unparseable file has no root: its check says why, as for any workflow.
   if (!parsed.ok) return undefined;
   const { project } = loadProject(place.root, placeFiles(place).rules);
-  const effective = applyProject(
+  const applied = applyProject(
     parsed.workflow,
     project === undefined ? {} : { project },
   );
+  // A seeded run's root is detached too: no `ork/…` branch, even for a while.
+  const effective =
+    seedOf(options) === undefined ? applied : withoutCommits(applied);
   const arg = `${BUILTIN_PREFIX}${path.basename(absolute, ".ork.yaml")}`;
   return { place, arg, rules: gitRulesOf(effective), folder };
 };
@@ -92,7 +183,9 @@ const openFor = async (
     );
   }
   const root = await openRunRoot({
-    root: place.root,
+    // The repository's top, so a project in a subfolder gets its run root (and
+    // the run's worktrees) beside the clone, not inside its working tree.
+    root: path.join(place.root, path.relative(prefixOf(place.root), ".")),
     runId,
     rules,
     // shortcut: `git.base` and the names see no inputs; render them once a

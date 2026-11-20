@@ -89,6 +89,8 @@ const runBuiltin = async (
   inputs: readonly string[],
   untrusted: string[],
   resumed?: Resumed,
+  /** Seeds the run's worktrees from the attached folder (ADR-114). */
+  seed?: string,
 ): Promise<Ran> => {
   const { place } = options;
   const problem = builtinProblem(place, name);
@@ -105,6 +107,7 @@ const runBuiltin = async (
     inPlace: false,
     json: false,
     driver: options.driver,
+    ...(seed === undefined ? {} : { seed }),
     ...resumed,
   });
   return result === null
@@ -153,6 +156,9 @@ export const runWrite = (
       `answers=${input.answers}`,
     ],
     ["picks", "survey", "answers"],
+    undefined,
+    // An attached project's files are in Ork's folder: seed the writer from it.
+    options.place.mode === "attached" ? options.place.dir : undefined,
   );
 
 const text = (value: unknown): string =>
@@ -204,10 +210,12 @@ export const settleWrite = async (
         };
       }
       if (kept.kept === "refused") {
+        const folder = kept.into !== undefined;
+        const where = kept.into ?? "this checkout";
         return {
           lines: [
-            `the workflows don't apply over this checkout's own changes (${kept.conflicts.join(", ") || kept.error})`,
-            `Nothing changed here; they stay uncommitted in ${kept.worktree}.`,
+            `the workflows don't apply over ${where}${folder ? ", which changed since the writer started" : "'s own changes"} (${kept.conflicts.join(", ") || kept.error})`,
+            `Nothing changed ${folder ? "there" : "here"}; they stay uncommitted in ${kept.worktree}.`,
           ],
           code: 1,
         };
@@ -219,11 +227,17 @@ export const settleWrite = async (
                 `kept the workflows on ${outcome.branch}`,
                 "Review and merge it like any other change; Ork never merges it.",
               ]
-            : [
-                `kept the workflows in this checkout, uncommitted: ${kept.files.join(", ")}`,
-                "Review and commit them like any other change.",
-                ...kept.removed,
-              ]),
+            : kept.into === undefined
+              ? [
+                  `kept the workflows in this checkout, uncommitted: ${kept.files.join(", ")}`,
+                  "Review and commit them like any other change.",
+                  ...kept.removed,
+                ]
+              : [
+                  `kept the workflows in ${kept.into}: ${kept.files.join(", ")}`,
+                  "Nothing is in the repository: Ork keeps them in its own folder for this project.",
+                  ...kept.removed,
+                ]),
           ...(cited.length === 0
             ? []
             : [

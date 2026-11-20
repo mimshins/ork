@@ -1,5 +1,6 @@
 /**
- * @file `ork __onboard finish --worktree <path> --branch <branch>`: checks what
+ * @file `ork __onboard finish --worktree <path> --branch <branch> [--base
+ *   <commit>]` (the base: `HEAD`, or a seeded run's seed commit): checks what
  *   the onboarding writer left in its worktree, in the project root. Scope
  *   (only `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`), caps, no new
  *   `driver`, `model` or agent beyond Ork's (one the file had at `HEAD`
@@ -50,6 +51,8 @@ export type FinishOptions = {
   root: string;
   worktree: string;
   branch: string;
+  /** The commit the writer's files are compared with: `HEAD`, or the seed. */
+  base?: string | undefined;
   /** The run, named in the canonical commit. */
   run?: string | undefined;
   /** The drivers' checks; tests pass their own. */
@@ -70,7 +73,8 @@ const scopeOf = (
 ): { workflows: string[]; project: boolean } => {
   let changes: Change[];
   try {
-    changes = changesOf(options.root, options.worktree, options.branch);
+    const { root, worktree, branch, base } = options;
+    changes = changesOf(root, worktree, branch, base);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     problems.push(
@@ -98,9 +102,13 @@ const scopeOf = (
 
 type Read = { file: string; workflow: Workflow };
 
-/** The workflow at `HEAD` in `root`, or null when it was not there or broken. */
-const atHead = (root: string, file: string): Workflow | null => {
-  const old = textAtHead(root, file);
+/** The workflow at the base in `root`, or null when it was not there or broken. */
+const atHead = (
+  root: string,
+  file: string,
+  base: string | undefined,
+): Workflow | null => {
+  const old = textAtHead(root, file, base);
   const parsed = old === null ? null : parseWorkflow(old);
   return parsed?.ok === true ? parsed.workflow : null;
 };
@@ -140,7 +148,7 @@ const readWorkflows = (
     }
     for (const message of newProblems(
       workflowProblems(parsed.workflow),
-      atHead(options.root, file),
+      atHead(options.root, file, options.base),
     )) {
       problems.push(`${file}: ${message}`);
     }
@@ -227,7 +235,7 @@ const eyeList = (
   project: boolean,
 ): string[] => {
   const items = reads.flatMap(({ file, workflow }) => {
-    const old = textAtHead(options.root, file);
+    const old = textAtHead(options.root, file, options.base);
     const parsed = old === null ? null : parseWorkflow(old);
     const before = parsed?.ok === true ? eyeOfWorkflow(parsed.workflow) : [];
     const now = eyeOfWorkflow(workflow);
@@ -243,7 +251,7 @@ const eyeList = (
   const read = readInWorktree(options, PROJECT_FILE);
   const now = "text" in read ? parseProject(read.text) : null;
   if (now?.ok !== true) return items;
-  const old = textAtHead(options.root, PROJECT_FILE);
+  const old = textAtHead(options.root, PROJECT_FILE, options.base);
   const parsed = old === null ? null : parseProject(old);
   const before = parsed?.ok === true ? eyeOfProject(parsed.project) : [];
   const eye = eyeOfProject(now.project);

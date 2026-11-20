@@ -89,6 +89,14 @@ What lands on `main` is listed here until it ships.
   model name that `omp` resolves fuzzily but `omp models` does not list exactly
   (`omp.openai/gpt5`) is now refused; write the exact form `omp models` shows.
 
+- **`ork onboard` works in projects attached with `ork register`.** It no longer
+  stops and sends you to `ork migrate`. The writer starts with your current
+  workflows and rules from `~/.ork/projects/<id>/`, and **keep** copies its
+  files back there: nothing is written into your repository (no `.ork/`, no
+  branch, no `.gitignore` edit). If you changed one of those files while the
+  writer worked, keep copies nothing and names it
+  ([Onboarding](../guides/onboarding.md#in-a-project-attached-with-ork-register)).
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

@@ -17,6 +17,8 @@ export type AdoptedWorktree = {
   path: string;
   branch?: string;
   snapshot?: string;
+  /** The seed commit, when it was seeded. */
+  seed?: string;
   merged: boolean;
 };
 

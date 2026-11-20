@@ -88,6 +88,12 @@ export type RunWorkflowOptions = {
   baseRef?: string;
   /** The folders of the checkout the run's sessions may edit under. */
   writeOnly?: string[];
+  /**
+   * Ork's folder for an attached project, seeded into the run's worktrees as
+   * `<prefix>.ork` (`workflows/*.ork.yaml`, `project.yaml`); the run then makes
+   * no commit (`commit: never`) and a resume reads it from the settings.
+   */
+  seed?: string;
   /** The run's id; `ork run --detach` picks it before the run starts. */
   runId?: string;
   /** `~`, for the run's socket; tests pass a folder. */

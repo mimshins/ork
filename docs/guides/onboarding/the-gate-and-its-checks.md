@@ -28,8 +28,16 @@ one line, `node <id> removed`, in place of a line per field.
   its change is uncommitted in its worktree, and **keep** copies it into your
   checkout as uncommitted files for you to commit. If those files clash with
   changes you have there, nothing is copied and the worktree's path is printed.
+- In a project attached with `ork register`, the writer has no branch either,
+  and **keep** puts the files in Ork's own folder for the project
+  (`~/.ork/projects/<id>/workflows/`), never in your repository. It prints
+  `kept the workflows in <folder>: <files>` and that nothing is in the
+  repository. If a file it would write changed in that folder since the writer
+  started, nothing is written, the worktree's path is printed and the command
+  exits 1: run `ork onboard` again.
 - **discard** removes the run's worktree and branch. A branch with no commits,
-  or a worktree with no change, is treated as nothing to keep.
+  or a worktree with no change, is treated as nothing to keep. In an attached
+  project Ork's folder is untouched.
 
 Nothing in your working tree's `.ork/` changes before you keep: the writer works
 only in its worktree.
@@ -85,7 +93,10 @@ whether `gh` is usable. Each driver uses its own login.
 
 ## Limits
 
-- An attached project is refused.
+- In an attached project the writer sees your last commit, not uncommitted
+  files, and it is given your current workflows and rules from Ork's folder. A
+  copy of those rules sits as a stray commit object in your repository's `.git`
+  until `git gc`; nothing is pushed.
 - A crash inside the survey or the three questions starts over. A proposal you
   left at the pick, and a proposing run that failed, stopped or crashed, are not
   lost: the next `ork onboard` offers them.

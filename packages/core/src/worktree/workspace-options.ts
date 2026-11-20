@@ -8,6 +8,7 @@ import type { CompiledGraph } from "../graph/types.ts";
 import type { NodeOutput, RunEvent } from "../run/types.ts";
 import type { NameInputs } from "./names.ts";
 import type { AdoptedWorktree } from "./resumed.ts";
+import type { WorktreeSeed } from "./seed.ts";
 
 export type WorkspaceOptions = {
   graph: CompiledGraph;
@@ -31,4 +32,10 @@ export type WorkspaceOptions = {
    * readonly nodes read it, and `git.readonly: base` opens no other.
    */
   runRoot?: boolean;
+  /**
+   * Files committed into each worktree a node opens from `head` (one with no
+   * owner's worktree), which is then detached (RFC-022 option D). A worktree
+   * already there (a later round, a resumed run's) is never seeded again.
+   */
+  seed?: WorktreeSeed;
 };

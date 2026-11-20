@@ -8,6 +8,7 @@
 import { execFileSync } from "node:child_process";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -78,7 +79,7 @@ export const git = (cwd: string, ...args: string[]): string =>
   execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 
 /** A repository with one commit and no `.ork/`, in its own folder. */
-const repository = (): string => {
+export const repository =(): string => {
   const dir = path.join(
     realpathSync(mkdtempSync(path.join(tmpdir(), "ork-onboard-e2e-"))),
     "app",
@@ -184,6 +185,8 @@ const runVerb = async (
     root: cwd,
     worktree: env["WORKTREE"] ?? "",
     branch: env["BRANCH"] ?? "",
+    // `--base "$SEED"`, which the script passes only when it is set.
+    base: env["SEED"] === "" ? undefined : env["SEED"],
     run: env["ORK_RUN"],
     checks,
   });
@@ -214,10 +217,14 @@ const toolsOf = (c: Case): typeof spawnTool => {
   };
 };
 
-/** Every file of `.ork/` except the runs', by path, with its text. */
+/**
+ * Every file of `.ork/` except the runs', by path, with its text; none when
+ * there is no `.ork/` (an attached project's files are in Ork's folder).
+ */
 export const orkFiles = (root: string, dir = ".ork"): Record<string, string> => {
   const found: Record<string, string> = {};
   const here = path.join(root, dir);
+  if (!existsSync(here)) return found;
   for (const entry of readdirSync(here, { withFileTypes: true })) {
     const relative = path.join(dir, entry.name);
     if (entry.name === "runs") continue;

@@ -12,17 +12,19 @@ is missing.
 
 ## Refusals
 
-Each is one stderr line and exit 1, before anything is written or spent:
+Each is one stderr line and exit 1, before anything is written or spent. An
+attached project (`ork register`) is not refused
+([ADR-114](../../decisions/ADR-114-onboard-in-attached-projects.md), which
+supersedes
+[ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md)): see
+[an attached project](./onboard-attached.md).
 
 - **No terminal** (stdin or stderr is not a TTY):
   `ork onboard asks questions: run it in a terminal.` It has no flags for
   answers or picks.
-- **An attached project** (`ork register`): it says to run `ork migrate`, which
-  moves Ork's files into the repository's `.ork/`, then `ork onboard`
-  ([ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md);
-  attached projects are a [gap](../gaps/onboard-limits.md)).
 - **No commit**: `headWarning`'s text, as `ork init` prints it; no run starts,
-  since `ork:onboard-write` needs a worktree.
+  since `ork:onboard-write` needs a worktree. This holds for an attached project
+  too: it needs a git repository with a commit.
 - **`--review` with `--fresh`**: `--review and --fresh can't be used together.`
 - Then [doctor](./worktrees-agents-context-and-doctor.md#doctor)'s required
   checks (Node, git): a failed one stops with its detail and hint.
@@ -51,7 +53,10 @@ subfolder targets the git root, and `prepare` reads the place again afterwards):
 the starter workflow and the `.gitignore` entry, asking nothing else
 (`--no-skills`, `--no-issues`, `--no-link`). The `.gitignore` edit stays in the
 working tree, uncommitted; the closing text says to commit it with the branch.
-With an `.ork/`, nothing is changed before the gate's keep.
+With an `.ork/`, nothing is changed before the gate's keep. An attached project
+is neither of these: `prepare` never calls `initRecorded` or `uncommittedFiles`,
+makes no `created` line and no `.gitignore` edit, and `fromInit` is empty, so
+the writer's "not in your worktree" note is empty.
 
 The files that step writes are uncommitted, so on a first visit each of the two
 runs prints
@@ -230,6 +235,7 @@ written, no run in the store.
      same cited items. When it does not apply over the checkout's own changes,
      nothing changes, the worktree stays, its path is printed, and the command
      exits 1.
+   - **keep** in an attached project: see below.
    - **discard**: the run's worktree and branch are removed.
    - A branch with no commits ahead, or a worktree with no change, is nothing to
      keep: removed, and said.
@@ -237,11 +243,14 @@ written, no run in the store.
 The working tree's `.ork/` is never changed by the paid part: the writer works
 only in its worktree.
 
+In an attached project the writer is seeded and keep applies to Ork's folder,
+not the repository: [an attached project](./onboard-attached.md).
+
 ## Errors
 
-One line each: no terminal, attached, no commit, no ready driver (with the login
-hint), an unknown `--driver`, `--review` with `--fresh`, a failed run (its run
-id, so `ork resume <run>` resumes that run; after a failed propose run the next
+One line each: no terminal, no commit, no ready driver (with the login hint), an
+unknown `--driver`, `--review` with `--fresh`, a failed run (its run id, so
+`ork resume <run>` resumes that run; after a failed propose run the next
 `ork onboard` offers to resume it,
 [an unfinished proposal](./onboard-saved.md#an-unfinished-proposal)), out of
 rounds (the problems `finish` last printed).

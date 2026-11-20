@@ -128,6 +128,10 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       head,
       ...(hosted === undefined ? {} : { host: hosted }),
       known,
+      // A node in its owner's tree takes the owner's work, seed and all.
+      ...(hosted !== undefined || options.seed === undefined
+        ? {}
+        : { seed: options.seed }),
     });
     worktrees.set(id, worktree);
     if (worktree.branch !== undefined) known.add(worktree.branch);

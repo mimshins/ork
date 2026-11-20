@@ -10,6 +10,7 @@ import { parseArgs } from "node:util";
 
 import { defineCommand } from "citty";
 
+import { commitOf } from "../onboard/finish-git.ts";
 import { canonFiles } from "../onboard/verbs-canon.ts";
 import { finish, finishText } from "../onboard/verbs-finish.ts";
 import { formatBrief } from "../onboard/verbs-format.ts";
@@ -25,16 +26,15 @@ const usage = (message: string): void => {
 const options = {
   worktree: { type: "string" },
   branch: { type: "string" },
+  base: { type: "string" },
 } as const;
+
+type Values = { worktree?: string; branch?: string; base?: string };
 
 /** The verb and its words, or null after a usage error. */
 const parsed = (
   args: readonly string[],
-): {
-  verb: string;
-  words: string[];
-  values: { worktree?: string; branch?: string };
-} | null => {
+): { verb: string; words: string[]; values: Values } | null => {
   const [verb = "", ...rest] = args;
   if (!VERBS.includes(verb)) {
     usage(`unknown verb \`${verb}\` (${VERBS.join(", ")})`);
@@ -67,18 +67,25 @@ const runCanon = (files: readonly string[]): void => {
   }
 };
 
-const runFinish = async (
-  worktree: string | undefined,
-  branch: string | undefined,
-): Promise<void> => {
+const runFinish = async (values: Values): Promise<void> => {
+  const { worktree, branch } = values;
   if (worktree === undefined || branch === undefined) {
     usage("finish needs --worktree and --branch");
+    return;
+  }
+  const base =
+    values.base === undefined
+      ? undefined
+      : commitOf(process.cwd(), values.base);
+  if (base === null) {
+    usage("--base is not a commit of this repository");
     return;
   }
   const report = await finish({
     root: process.cwd(),
     worktree,
     branch,
+    base,
     run: process.env["ORK_RUN"],
   });
   process.stdout.write(finishText(report));
@@ -100,6 +107,6 @@ export const onboardVerbs = defineCommand({
       if (brief.ok) process.stdout.write(brief.text);
       else usage(brief.error);
     } else if (verb === "canon") runCanon(words);
-    else await runFinish(values.worktree, values.branch);
+    else await runFinish(values);
   },
 });

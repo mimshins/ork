@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L541, and the next chore is
+closes it. Ids are never reused: the next limit is L548, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
 adds that a fetched ref already has before the change is rebased). At a review,

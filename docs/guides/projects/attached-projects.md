@@ -78,6 +78,10 @@ ork projects forget app     # forget it; its files and runs are kept
 ork projects move app ~/src/app  # you moved or renamed the clone
 ```
 
+`ork onboard` works in an attached project: it reads your repository, and what
+you keep goes into `~/.ork/projects/<id>/workflows/`, never into the repository
+([Onboarding](../onboarding.md#in-a-project-attached-with-ork-register)).
+
 `ork init` records an in-repo project, and refuses one that is registered from
 outside, so it never writes into it. On a terminal it also offers Ork's skills
 for Claude Code, so it writes workflows Ork accepts

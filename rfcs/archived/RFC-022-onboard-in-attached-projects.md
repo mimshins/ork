@@ -127,6 +127,13 @@ of the three building options that gives the writer the repository to read with
 no new read or write grant outside the checkout. A needs the grant and a
 baseline; B loses the writer's reads or needs the same grant.
 
+**Option D was built later**, once attached users asked for onboarding, decided
+by the maintainer on 2026-11-21
+([ADR-114](../../decisions/ADR-114-onboard-in-attached-projects.md), which
+supersedes ADR-099). A folder that changed meanwhile (open question 2) is found
+when keep's patch fails; a detached worktree under `commit: never` (open
+question 3) needed no change to `finish`'s branch handling beyond a `--base`.
+
 What each option lets an agent reach outside the checkout:
 
 | Option | An agent can read outside the checkout             | An agent or Ork writes outside the checkout                                                                                        |

@@ -50,10 +50,11 @@ under the same run id, with a `Replay` built from the run's events:
 - `run.started` records `budgetUsd`, the tighter of the workflow's budget and
   what a caller left it, for showing a run's spend against.
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`,
-  and `writeOnly`, the
-  [write limit](../runtime/write-limit.md#what-carries-it)), which the resumed
-  run starts with; the CLI records `run.resumed` with the nodes that keep
-  results first.
+  `writeOnly`, the [write limit](../runtime/write-limit.md#what-carries-it), and
+  `seed`, the attached folder a seeded run's worktrees were seeded from, so a
+  resume detaches and seeds the same way:
+  [seeding](../worktrees.md#seeding-a-worktree)), which the resumed run starts
+  with; the CLI records `run.resumed` with the nodes that keep results first.
 - `run.started` and `run.resumed` carry `ork`, the version of Ork that started
   or resumed the run, so a benchmark knows what it measured.
 - Decision ids go on from the highest the run stored. A decision the last
@@ -84,7 +85,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `watch.started`     | a [`watch:`](./watching.md) begins: until, every, timeout                                                                                                                                                                               |
 | `watch.changed`     | a look said something the last one didn't: looks so far, ok, what it said                                                                                                                                                               |
 | `watch.ended`       | how the wait ended, and how many looks it took                                                                                                                                                                                          |
-| `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                                                                                                                                      |
+| `worktree`          | a worktree is created (with its `seed` commit when seeded), committed to, merged, conflicts, or removed                                                                                                                                 |
 | `message.sent`      | a node wrote to another on the message bus: number, recipient, body; `via: rule` for a `notify:`                                                                                                                                        |
 | `message.read`      | a node read its inbox: the message numbers                                                                                                                                                                                              |
 | `owner.asked`       | the run asked a live owner about a loop of a node it owns                                                                                                                                                                               |

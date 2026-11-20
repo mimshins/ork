@@ -141,24 +141,30 @@ export const changesOf = (
   root: string,
   worktree: string,
   branch: string,
+  base = "HEAD",
 ): Change[] => {
   const prefix = projectPrefix(root);
   const inProject = (file: string): string => path.posix.relative(prefix, file);
   const here = path.join(worktree, prefix);
   return [
     ...fromDiff(
-      git(root, [
-        // A user's `diff.relative` would turn the repository's paths into the
-        // project's, which `inProject` below then strips a second time. The
-        // config form works on any git; `--no-relative` needs 2.28.
-        "-c",
-        "diff.relative=false",
-        "diff",
-        "--name-status",
-        "-z",
-        "--no-renames",
-        `HEAD...${branch}`,
-      ]),
+      // No branch (detached or `commit: never`): nothing was committed on it.
+      // `${base}...` would compare `base` with the root's own `HEAD`.
+      branch === ""
+        ? ""
+        : git(root, [
+            // A user's `diff.relative` would turn the repository's paths into
+            // the project's, which `inProject` below then strips a second
+            // time. The config form works on any git; `--no-relative` needs
+            // 2.28.
+            "-c",
+            "diff.relative=false",
+            "diff",
+            "--name-status",
+            "-z",
+            "--no-renames",
+            `${base}...${branch}`,
+          ]),
     ),
     ...fromStatus(
       git(worktree, [
@@ -180,11 +186,36 @@ export const changesOf = (
   ].map(({ path: file, kind }) => ({ path: inProject(file), kind }));
 };
 
-/** `file` (relative to `root`) as of `HEAD`, or null when it was not there. */
-export const textAtHead = (root: string, file: string): string | null => {
+/**
+ * `file` (relative to `root`) as of `base` (`HEAD`, or a seeded run's seed
+ * commit), or null when it was not there.
+ */
+export const textAtHead = (
+  root: string,
+  file: string,
+  base = "HEAD",
+): string | null => {
   try {
     // `./` makes git read the path from `root`, not from the repository.
-    return git(root, ["show", `HEAD:./${file}`]);
+    return git(root, ["show", `${base}:./${file}`]);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The full commit hash `value` names in `root`, or null: a value starting with
+ * `-` (an option), one that is not a commit, or one git cannot resolve.
+ */
+export const commitOf = (root: string, value: string): string | null => {
+  if (value === "" || value.startsWith("-")) return null;
+  try {
+    return git(root, [
+      "rev-parse",
+      "--verify",
+      "--end-of-options",
+      `${value}^{commit}`,
+    ]).trim();
   } catch {
     return null;
   }

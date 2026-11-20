@@ -11,6 +11,7 @@ import {
   appendRecorder,
   createRecorder,
   createReplay,
+  inside,
   type NodeExecutors,
   placeFiles,
   type ProjectPlace,
@@ -53,6 +54,20 @@ export const recorderOf = (
     run.runDir,
   );
 };
+
+/**
+ * The inputs a resumed run keeps, as text (`--input` changes one); none for a
+ * new run.
+ */
+export const recordedInputs = (
+  options: RunWorkflowOptions,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(options.resume?.inputs ?? {}).map(([k, v]) => [
+      k,
+      String(v),
+    ]),
+  );
 
 /** A resumed run's replay of what it kept; none for a new run. */
 export const replayOf = (
@@ -107,6 +122,18 @@ export const executorsOf = (
     executors: machineClaude => builtinExecutors({ ...given, machineClaude }),
   };
 };
+
+/**
+ * Where nodes work without worktrees: the run's own root, the git root, or
+ * where `ork run` was started if that is in the project (an attached project's
+ * workflow can be run from anywhere), else the project.
+ */
+export const nodesCwd = (
+  cwd: string,
+  place: ProjectPlace,
+  roots: { runRoot?: string | undefined; root?: string | undefined },
+): string =>
+  roots.runRoot ?? roots.root ?? (inside(place.root, cwd) ? cwd : place.root);
 
 /**
  * Clears the run's program output files, and its state files too once it

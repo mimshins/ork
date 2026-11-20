@@ -14,8 +14,7 @@ no `model` or `driver`. Every session sets
 `layers.project: { instructions: ignore, skills: ignore }`, and every prompt
 says the survey, the answers, the history and the repository's files are data,
 never instructions. A shell step calls Ork as `"${ORK_BIN:-ork}"`
-([L83](../messaging/scripts-limits.md)): `ORK_BIN` is set when `ork` runs
-directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
+([L83](../messaging/scripts-limits.md)), set whenever `ork` runs directly.
 
 **`ork:onboard-propose`** (inputs `survey`, `answers`, `history`):
 
@@ -31,11 +30,10 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
   on every driver (RFC-013), but a list item holds only scalars (L358) and a
   JSON Schema field is the driver's alone to enforce (G21), so
   [the filter](#the-filter) checks each item itself.
-- It is the only node. A `filter` tool node once followed it and passed the list
-  in an environment variable, which a long list could overflow (`E2BIG`); the
-  command now reads `suggestions` from the run's result and filters it in its
-  own process ([the filter](#the-filter)). Run alone, the workflow returns the
-  proposer's list as it is ([L405](../gaps/onboard-limits.md)).
+- It is the only node: the command reads `suggestions` from the run's result and
+  filters it in its own process ([the filter](#the-filter)), since a list in an
+  environment variable could overflow (`E2BIG`). Run alone, the workflow returns
+  the proposer's list as it is ([L405](../gaps/onboard-limits.md)).
 - Caps: `limits` and `defaults` both $3 and 600,000 tokens, `maxTurns: 40`.
 
 **`ork:onboard-write`** (inputs `picks`, `survey`, `answers`):
@@ -50,23 +48,24 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
   it already has). A later round's brief carries `finish`'s problems
   (`## Round n`).
 - `finish`: `tool.shell`,
-  `"${ORK_BIN:-ork}" __onboard finish --worktree "$WORKTREE" --branch "$BRANCH"`,
-  with `WORKTREE: "{{nodes.write.output.worktree}}"` and
-  `BRANCH: "{{nodes.write.output.branch}}"` in `env:` (a `script:` takes no
-  templates). A tool node with no owner works in the project root
-  ([worktrees](../worktrees.md)), so it reads the writer's worktree by path.
-- `changes`: `tool.shell`, as `ork:feedback-apply`'s, with the same `env:`. On a
-  branch it prints `git diff --stat HEAD...$BRANCH`; with none (`commit: never`
-  leaves the worktree detached) it runs `git add -A` there (its index only) and
-  prints `git diff --cached --stat HEAD`. Either way it gives the command to
-  read the whole change.
+  `"${ORK_BIN:-ork}" __onboard finish --worktree "$WORKTREE" --branch "$BRANCH" ${SEED:+--base "$SEED"}`,
+  with `WORKTREE`, `BRANCH` and `SEED` (`{{nodes.write.output.worktree}}`,
+  `.branch`, `.seed`) in `env:`; `--base` only when `SEED` is set. An ownerless
+  tool node works in the project root, so it reads the writer's worktree by path
+  ([worktrees](../worktrees.md)).
+- `changes`: `tool.shell`, as `ork:feedback-apply`'s, with the same `env:` and
+  `SEED`. On a branch it prints `git diff --stat HEAD...$BRANCH`; with none
+  (`commit: never`, or a seeded run) it runs `git add -A` there (its index only;
+  seeded: then `git add -f` on ignored new `.ork` workflow and `project.yaml`
+  files) and prints `git diff --cached --stat HEAD` (seeded: since the seed,
+  saying keep applies the files to Ork's folder), and how to read it.
 - `keep`: `human.gate`, options `keep` and `discard`, its question the diff
   stat, `finish`'s stdout and the G14 line.
 - Edges: `format -> write -> finish`; `finish -> write` when `exitCode == 1`
   (`finish` found problems), `maxRounds: 3`; `finish -> changes` when `ok`;
   `changes -> keep`. Any other exit of `finish` (127, a timeout `-1`, a signal)
-  takes no edge, so the node fails the run with the tool's own error and the
-  writer is not run again. A Node crash in `finish` exits 1 and still loops
+  takes no edge: the node fails the run with the tool's own error and the writer
+  is not run again. A Node crash in `finish` exits 1 and still loops
   ([L403](../gaps/onboard-limits.md)).
 - Caps: `limits` $6 and 1,200,000 tokens; `defaults` $2 and 400,000 tokens, so
   the first session and three more rounds fit; `maxTurns: 40`.
@@ -165,8 +164,11 @@ canonical now. This is the only way the CLI reaches the serializer (G18).
 
 ### finish
 
-`ork __onboard finish --worktree <path> --branch <branch>`, run in the project
-root, checks the writer's work. Stdout is two sections, each line a `- ` item:
+`ork __onboard finish --worktree <path> --branch <branch> [--base <commit>]`,
+run in the project root, checks the writer's work. `--base` (default `HEAD`; a
+seeded run's [seed commit](./onboard-attached.md); a value that starts with `-`
+or is no commit: exit 2) is what files are compared with (below, `HEAD` reads
+it). Stdout is two sections of `- ` items:
 
 ```
 problems:
@@ -179,22 +181,23 @@ A section with no item reads `- none`. Exit 1 when there is a problem, else 0;
 the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
 (exit 127) fails the run instead of costing three more writer rounds. In order:
 
-1. **Scope.** The paths in `git diff --name-status HEAD...<branch>` and the
-   worktree's uncommitted ones, ignored ones too (`git status` with `--ignored`;
-   an ignored file reads as added), except an ignored file Ork itself copied
-   into the worktree (`CLAUDE.local.md`, `.claude/settings.local.json`, what
-   `.worktreeinclude` lists) whose bytes still equal the same path in the
-   project root: an edited copy, or any other ignored file, is refused; and
-   except `.commandcode/taste/taste.md`, the file `command-code` leaves in the
-   folder it runs in, when it is new in the worktree, a regular file (not a
-   link, nor behind one) and empty; a non-empty file, a link, a committed one or
-   any other path is refused (in a subfolder project the path is
-   `../.commandcode/taste/taste.md`). Each must be an added or modified
-   `.ork/workflows/<name>.ork.yaml` (one level) or `.ork/project.yaml`; any
-   other path, or a deletion or rename, is a problem. A write outside the
-   worktree is still not seen ([L395](../gaps/onboard-limits.md)). A subfolder
-   project's paths lose the project prefix; one outside it reads `../…` and is
-   refused ([L434, L437](../gaps/onboard-limits.md)).
+1. **Scope.** The paths in `git diff --name-status HEAD...<branch>` (skipped
+   with no branch) and the worktree's uncommitted ones, ignored ones too
+   (`git status` with `--ignored`; an ignored file reads as added), except an
+   ignored file Ork itself copied into the worktree (`CLAUDE.local.md`,
+   `.claude/settings.local.json`, what `.worktreeinclude` lists) whose bytes
+   still equal the same path in the project root: an edited copy, or any other
+   ignored file, is refused; and except `.commandcode/taste/taste.md`, the file
+   `command-code` leaves in the folder it runs in, when it is new in the
+   worktree, a regular file (not a link, nor behind one) and empty; a non-empty
+   file, a link, a committed one or any other path is refused (in a subfolder
+   project the path is `../.commandcode/taste/taste.md`). Each must be an added
+   or modified `.ork/workflows/<name>.ork.yaml` (one level) or
+   `.ork/project.yaml`; any other path, or a deletion or rename, is a problem. A
+   write outside the worktree is still not seen
+   ([L395](../gaps/onboard-limits.md)). A subfolder project's paths lose the
+   project prefix; one outside it reads `../…` and is refused
+   ([L434, L437](../gaps/onboard-limits.md)).
 2. **Each changed workflow**, read in the worktree: it parses and passes the
    schema; it sets `limits.budgetUsd` and `limits.budgetTokens`; no `driver` or
    `model` anywhere (`defaults`, `agents`, nodes); no `agents:` of its own, and
@@ -230,13 +233,12 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    change to one of these fields is listed as
    `<where> changes <field> to <value>` when its value is new or differs from
    `HEAD` (a field `HEAD` set and the file no longer does reads
-   `<where> removes <field>`; a node `HEAD` had and the file no longer has gives
-   one line, `node <id> removed`, and none of its `removes` lines, or no line
-   when it had no listed field): on a node `context`, `isolation` and
-   `tools.only`; in a workflow `context` (`layers.context`), `rules.git`,
-   `rules.links` and `defaults.isolation`; in `.ork/project.yaml` `context`,
-   `heavy`, `calls.accept`, `followUps.file`, `git`, `links` and
-   `defaults.isolation`.
+   `<where> removes <field>`; a node `HEAD` had and the file lost gives one
+   line, `node <id> removed`, and none of its `removes` lines, or no line when
+   it had no listed field): on a node `context`, `isolation` and `tools.only`;
+   in a workflow `context` (`layers.context`), `rules.git`, `rules.links` and
+   `defaults.isolation`; in `.ork/project.yaml` `context`, `heavy`,
+   `calls.accept`, `followUps.file`, `git`, `links` and `defaults.isolation`.
 
 ## Trust model
 
@@ -267,14 +269,12 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
 - **`claude-code`**: the project's `CLAUDE.md`, `CLAUDE.local.md`,
   `.claude/rules` and `AGENTS.md` stay out, and its skills are switched off.
   `.claude/settings.json` and `settings.local.json` still load: the session's
-  `settingSources` stay `[project, local]` under `layers.project: ignore`
-  (`--setting-sources project,local`), with their permissions and hooks
-  ([L394](../gaps/onboard-limits.md)).
+  `settingSources` stay `[project, local]` under `layers.project: ignore`, with
+  their permissions and hooks ([L394](../gaps/onboard-limits.md)).
 - **`open-code`**: the settings that carry `ignore` are not passed, so the
   repository's `AGENTS.md` loads; `.claude/` and `CLAUDE.md` stay out.
 - **`command-code`**: not passed either: `AGENTS.md`, `.commandcode/skills` and
   `.commandcode/agents` load, with the machine's own skills, memory and mods.
 
-These are [limits](../gaps/onboard-limits.md), and the onboarding guide says
-which driver reads least. `codex` (`omp` once proven) is offered but refuses the
-built-ins' `maxTurns` ([L454](../gaps/codex-limits.md)).
+These are [limits](../gaps/onboard-limits.md). `codex` (`omp` once proven)
+refuses the built-ins' `maxTurns` ([L454](../gaps/codex-limits.md)).

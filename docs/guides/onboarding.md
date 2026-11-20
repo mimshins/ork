@@ -1,9 +1,10 @@
 # Onboarding: `ork onboard`
 
 `ork onboard` reads your project, asks what slows you down, proposes workflows
-that fit, writes the ones you pick on a branch, and stops at a gate that shows
-the diff. Ork never merges. Run it again in a project that already has workflows
-and runs, and it reviews what those runs showed and may change one.
+that fit, writes the ones you pick on a branch (in Ork's own folder, for a
+project attached with `ork register`), and stops at a gate that shows the diff.
+Ork never merges. Run it again in a project that already has workflows and runs,
+and it reviews what those runs showed and may change one.
 
 `ork init` gives every project the same starter. This is for the next step: the
 workflows that fit your project.
@@ -24,6 +25,7 @@ line ([the terminal](./terminal.md)).
 ## Contents
 
 - [What it does, in order](#what-it-does-in-order)
+- [In a project attached with `ork register`](#in-a-project-attached-with-ork-register)
 - [First visit and review](#first-visit-and-review)
 - [The three questions](#the-three-questions)
 - [What it costs](#what-it-costs)
@@ -35,10 +37,9 @@ line ([the terminal](./terminal.md)).
 
 ## What it does, in order
 
-1. **Checks.** No terminal, an attached project (`ork register`) or no commit
-   each print one line and stop, with nothing written and nothing spent. An
-   attached project is not supported: run `ork migrate` to move Ork's files into
-   the repository's `.ork/`, then `ork onboard`.
+1. **Checks.** No terminal or no commit each print one line and stop, with
+   nothing written and nothing spent. A project attached with `ork register`
+   works too ([below](#in-a-project-attached-with-ork-register)).
 2. **Picks the driver.** `--driver <id>` skips the question; one ready driver is
    used; several show a list; none prints how to log in and stops, before
    anything is written: your project folder is as it was. Don't pick `codex` or
@@ -77,6 +78,23 @@ looks like a secret (tokens and keys in common formats) before they leave, but a
 secret in a commit subject that matches no pattern would still go, so look at
 the survey it prints. A repository with no commits says `no commits`; if `git`
 cannot read the history, the line says `unavailable`.
+
+## In a project attached with `ork register`
+
+`ork onboard` works in an attached project ([Projects](./projects.md)). Ork's
+files for it live in `~/.ork/projects/<id>/`, and onboarding writes the
+workflows you pick and the rules there, never into your repository: no `.ork/`,
+no branch, no `.gitignore` edit. It still needs git with a commit, since the
+writer works in a worktree of it.
+
+- The writer starts with your current workflows and `project.yaml` from Ork's
+  folder, so it edits what you have instead of writing blind, and the checks
+  treat what they already name (a driver, a model, an agent) as yours.
+- **keep** copies the writer's files into `~/.ork/projects/<id>/`; **discard**
+  leaves that folder as it was. If you changed one of those files while the
+  writer worked, keep copies nothing and says which; run `ork onboard` again.
+- Like in a repository, the writer sees your last commit: uncommitted files are
+  not in its worktree.
 
 ## First visit and review
 

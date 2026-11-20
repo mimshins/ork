@@ -9,7 +9,6 @@ import {
   createWorkspace,
   endHeartbeat,
   endLinksOf,
-  inside,
   loadProject,
   machineRulesOf,
   machineLockLedgers,
@@ -48,10 +47,18 @@ import {
 } from "./live-handlers.ts";
 import { alwaysOptions, ORK_RUN_VERSION, signalsOf } from "./origin.ts";
 import { preflight } from "./preflight.ts";
-import { closeRunRoot, openRunRootFor } from "./run-root.ts";
+import {
+  closeRunRoot,
+  openRunRootFor,
+  seededGraph,
+  seedFor,
+  seedOf,
+} from "./run-root.ts";
 import {
   clearRunFiles,
   executorsOf,
+  nodesCwd,
+  recordedInputs,
   recorderOf,
   replayOf,
 } from "./run-setup.ts";
@@ -104,7 +111,9 @@ const runIn = async (
     options.store.projects(),
     runRoot?.path,
   );
-  const { workflow, graph, place, workflowDir, textHash } = loaded;
+  const { workflow, place, workflowDir, textHash } = loaded;
+  const seed = seedOf(options);
+  const graph = seededGraph(loaded.graph, seed);
   if (
     options.expectWorkflow !== undefined &&
     options.expectWorkflow !== textHash
@@ -125,13 +134,7 @@ const runIn = async (
 
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);
-  // A resumed run keeps its inputs; `--input` changes one.
-  const recorded = Object.fromEntries(
-    Object.entries(options.resume?.inputs ?? {}).map(([k, v]) => [
-      k,
-      String(v),
-    ]),
-  );
+  const recorded = recordedInputs(options);
   const inputs = resolveInputs(workflow, { ...recorded, ...pairs.raw });
   if (!inputs.ok) return failed(inputs.errors);
 
@@ -146,12 +149,7 @@ const runIn = async (
   });
   if (!ready.ok) return failed(ready.lines);
   const { root, base } = ready;
-  // Without worktrees nodes work where `ork run` was started, if that is in
-  // the project (an attached project's workflow can be run from anywhere).
-  const cwd =
-    runRoot?.path ??
-    root ??
-    (inside(place.root, options.cwd) ? options.cwd : place.root);
+  const cwd = nodesCwd(options.cwd, place, { runRoot: runRoot?.path, root });
 
   const runDir = runDirOf(place, runId);
   const record = recorderOf(options, {
@@ -217,6 +215,7 @@ const runIn = async (
           onEvent,
           runRoot: runRoot !== undefined,
           ...resumedOptions(options.resume),
+          ...seedFor(seed, place.root),
         });
   const { maskedNames, executors } = executorsOf(options, {
     workflow,
@@ -266,6 +265,7 @@ const runIn = async (
       ...ports.settings,
       ...(head === "" ? {} : { baseRef: head }),
       ...(writeOnly === undefined ? {} : { writeOnly }),
+      ...(seed === undefined ? {} : { seed }),
     },
     followUps: ports.followUps,
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),

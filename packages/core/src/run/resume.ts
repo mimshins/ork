@@ -25,6 +25,8 @@ export type RecordedWorktree = {
   branch?: string;
   /** The tree its own work is measured from (`merge: patch`). */
   snapshot?: string;
+  /** The seed commit, when it was seeded (RFC-022 option D). */
+  seed?: string;
   /** Merged into its owner, with nothing after. */
   merged: boolean;
 };
@@ -221,6 +223,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       if (entry === undefined) continue;
       if (event.branch !== undefined) branches.add(event.branch);
       if (event.snapshot !== undefined) entry.snapshot = event.snapshot;
+      if (event.seed !== undefined) entry.seed = event.seed;
       if (event.action === "merged") entry.merged = true;
       if (event.action === "committed" || event.action === "conflict") {
         entry.merged = false;

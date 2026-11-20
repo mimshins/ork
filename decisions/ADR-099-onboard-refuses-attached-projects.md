@@ -1,6 +1,6 @@
 # ADR-099 — `ork onboard` keeps refusing attached projects, and names `ork migrate`
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-114](./ADR-114-onboard-in-attached-projects.md)
 - **Date:** 2026-11-17
 - **Topic:** `ork onboard`, projects
 - **RFC:** [RFC-022](../rfcs/archived/RFC-022-onboard-in-attached-projects.md)

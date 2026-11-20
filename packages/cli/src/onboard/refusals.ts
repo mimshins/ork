@@ -1,11 +1,10 @@
 /**
  * @file What stops `ork onboard` before it writes or spends anything: a flag
- *   pair, no terminal, an attached project, a repository with no commit, and
- *   `ork doctor`'s required checks for Node and git
+ *   pair, no terminal, a repository with no commit, and `ork doctor`'s required
+ *   checks for Node and git (an attached project is not refused: ADR-114)
  *   (specs/cli/onboard-flow.md#refusals). Each is lines to print and exit 1.
  */
 
-import { placeFor, type ProjectPlace } from "@krapht/ork-core";
 import type { Exec } from "@krapht/ork-integrations";
 
 import { checkGit, checkNode, headWarning } from "../doctor/checks.ts";
@@ -18,7 +17,6 @@ export type RefusalInput = {
   fresh: boolean;
   exec: Exec;
   nodeVersion: string;
-  registered: readonly ProjectPlace[];
 };
 
 /** Why `ork onboard` stops here, as lines; `null` when it can go on. */
@@ -28,12 +26,6 @@ export const refusal = async (o: RefusalInput): Promise<string[] | null> => {
   }
   if (!o.interactive) {
     return ["ork onboard asks questions: run it in a terminal."];
-  }
-  const place = placeFor(o.cwd, o.registered);
-  if (place.mode === "attached") {
-    return [
-      `${place.root} is attached, and ork onboard writes into a repository: run \`ork migrate\` to move Ork's files into its .ork/, then \`ork onboard\`.`,
-    ];
   }
   const noCommit = await headWarning(o.exec);
   if (noCommit !== null) return [`git: ${noCommit}`];

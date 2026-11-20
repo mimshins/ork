@@ -247,6 +247,10 @@ export const CLI = {
     "decisions/ADR-097-onboarding-workflows.md",
     "ADR-097: the onboarding built-ins and the hidden verbs",
   ),
+  onboardAttachedAdr: d(
+    "decisions/ADR-114-onboard-in-attached-projects.md",
+    "ADR-114: `ork onboard` in attached projects (a seeded worktree)",
+  ),
   experiments: d(
     "packages/core/src/experiments.ts",
     "Code: the experiments registry and opt-in",

@@ -229,7 +229,60 @@ worktree of the project's `HEAD` that holds its bundle, instead of the user's
 checkout, so no repository file is written and read-only agents read the bundle
 inside their own folder. Ork removes it when the run ends and re-creates it at
 the recorded commit on a resume ([details](./worktrees/run-root.md),
-[ADR-100](../decisions/ADR-100-audit-in-attached-projects.md)).
+[ADR-100](../decisions/ADR-100-audit-in-attached-projects.md)). So does
+`ork:onboard-write` in such a project, with a seeded writer worktree
+([below](#seeding-a-worktree)).
+
+## Seeding a worktree
+
+Status: **Built** ([seed.ts](../packages/core/src/worktree/seed.ts),
+[patch.ts](../packages/core/src/worktree/patch.ts),
+[ADR-114](../decisions/ADR-114-onboard-in-attached-projects.md)).
+`createWorktree` and `openWorktree` take an optional
+`seed: { from, to, paths }`: Ork copies the files `paths` names (exact paths
+relative to `from`; `ork onboard` passes `workflows/*.ork.yaml` and
+`project.yaml` of the attached folder) to `to` (relative to the worktree, `.ork`
+or `app/.ork` for a subfolder project), then makes one commit, the **seed
+commit**, and leaves the worktree detached.
+
+- **Plain files only.** A link, or a path that would leave `from` or `to`, is
+  skipped without a word; a bad `to` throws. Nothing is copied but the listed
+  paths (no `runs/`, `skills/` or `context/`).
+- **No hook.** The commit is made with plumbing (`git add -f`,
+  `git commit-tree --no-gpg-sign`, `git update-ref`), so no commit hook runs,
+  and `-f` takes a file the repository ignores. The `reference-transaction` hook
+  may still run on `update-ref` ([L544](./gaps/onboard-limits.md)). The author
+  is the repository's identity, else `Ork <ork@localhost>`. With nothing to seed
+  there is no commit and `seed` is the unchanged `HEAD`.
+- **Once, from the run's head.** A seed applies only to a worktree opened from
+  the run's head (not to one that starts from an owner's), and never again when
+  the worktree exists, so a resume does not seed over the work.
+- **Recorded.** The `write` node's output carries `seed` (the commit), the
+  `worktree` `created` event has an optional `seed`, and `run.started`'s
+  `settings.seed` holds the folder, so `ork resume` seeds the same way
+  ([events](./scheduler/resuming-and-events.md)).
+- **`RunWorkflowOptions.seed`** (the CLI's) is the folder. It forces
+  `commit: never` for the node worktrees and the run root (`merge: auto` becomes
+  `patch`), so no `ork/<run>/…` branch is made.
+- **A committed `.ork/` stays in the seed.** The worktree is cut from `HEAD`, so
+  if the repository commits its own `.ork/`, files there that the attached
+  folder lacks stay in the seed. Keep is still right: its patch is measured from
+  the seed commit, not from `HEAD`.
+- **`project-state.ts`** holds `inspectProject`, moved from `manager.ts` with no
+  change in behavior.
+- **The spike test** (`onboard-attached-spike.test.ts`) pins internal paths of
+  the run root and worktrees; expect it to change when that layout does.
+- **Applying back.** `changesSince(worktree, tree, relativeTo?)` takes the
+  change as a patch whose paths are relative to `relativeTo` (a folder of the
+  worktree, such as `app/.ork/`), and `applyChanges(into, patch)` applies it
+  with `git apply --binary`, all or nothing, in `into`. By default git finds the
+  repository `into` is in, so a patch with paths from the repository's top
+  applies from a subfolder. With `{ plainFolder: true }` (only the seeded keep
+  passes it) `into` need not be a repository: it sets `GIT_CEILING_DIRECTORIES`
+  to the folder's parent so a folder inside another repository is applied to as
+  it is, not relative to that repository's root (git would skip the files with
+  no error). `git apply` refuses a path outside the folder and a write through a
+  link.
 
 ## ork worktrees
 

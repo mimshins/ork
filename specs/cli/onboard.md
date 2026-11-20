@@ -9,9 +9,10 @@ drivers is a follow-up.
 
 `ork onboard` is a forward-deployed engineer built into Ork. It reads the
 project, asks what hurts, proposes workflows that fit, writes the ones the user
-picks on a branch, and ends at a gate that shows the diff. Run again in a
-project that has workflows and runs, it reviews what the runs showed and may
-change an existing workflow.
+picks on a branch (in a project attached with `ork register`, in Ork's own
+folder for it, never the repository), and ends at a gate that shows the diff.
+Run again in a project that has workflows and runs, it reviews what the runs
+showed and may change an existing workflow.
 
 The command does the free steps itself (preconditions, the driver, `ork init`'s
 file steps, a survey of the repository, the questions, a digest of past runs,
@@ -54,6 +55,11 @@ the picks.
   - [Proposing and picking](./onboard-flow.md#proposing-and-picking)
   - [Writing and the gate](./onboard-flow.md#writing-and-the-gate)
   - [Errors](./onboard-flow.md#errors)
+- [An attached project](./onboard-attached.md)
+  - [Setting up and the run](./onboard-attached.md#setting-up-and-the-run)
+  - [The writer and `finish`](./onboard-attached.md#the-writer-and-finish)
+  - [The gate and keep](./onboard-attached.md#the-gate-and-keep)
+  - [A folder that changed](./onboard-attached.md#a-folder-that-changed)
 - [A saved proposal](./onboard-saved.md)
   - [An unfinished proposal](./onboard-saved.md#an-unfinished-proposal)
 - [Built-ins, verbs and trust](./onboard-verbs.md)

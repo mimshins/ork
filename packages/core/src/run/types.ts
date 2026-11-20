@@ -225,6 +225,8 @@ export type RunSettings = {
   untrusted?: string[];
   /** The folders its sessions may edit under, which a resume keeps. */
   writeOnly?: string[];
+  /** The folder its worktrees were seeded from, under `commit: never` (ADR-114). */
+  seed?: string;
 };
 
 export type RunEvent =
@@ -267,6 +269,8 @@ export type RunEvent =
       branch?: string;
       /** The tree its own work is measured from, for patches (created, synced). */
       snapshot?: string;
+      /** The commit a seeded worktree was given (created; RFC-022 option D). */
+      seed?: string;
       detail?: string;
     }
   | DecisionEvent

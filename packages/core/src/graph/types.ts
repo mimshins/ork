@@ -61,6 +61,7 @@ export const OUTPUT_FIELDS: Record<
     "artifacts",
     "branch",
     "worktree",
+    "seed",
     "usage",
   ],
   "agent.worker": [
@@ -69,6 +70,7 @@ export const OUTPUT_FIELDS: Record<
     "artifacts",
     "branch",
     "worktree",
+    "seed",
     "usage",
   ],
   "agent.subagent": ["status", "summary", "artifacts"],

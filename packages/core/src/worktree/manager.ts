@@ -6,16 +6,11 @@
  *   never pushes.
  */
 
-import {
-  cpSync,
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readlinkSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { git, gitOk, lines } from "./git.ts";
+import { seedWorktree, type WorktreeSeed } from "./seed.ts";
 
 export const BRANCH_PREFIX = "ork/";
 
@@ -27,14 +22,6 @@ export const LOCAL_AGENT_FILES = [
   "CLAUDE.local.md",
   ".claude/settings.local.json",
 ] as const;
-
-/** Where the project's instructions, skills and agents live. */
-const AGENT_PATHSPECS = [
-  ":(glob)**/CLAUDE.md",
-  ":(glob)**/AGENTS.md",
-  ".claude",
-  ".agents",
-];
 
 /** The default branch name, `ork/<run>/<node>`. */
 export const branchName = (runId: string, nodeId: string): string =>
@@ -50,71 +37,6 @@ export const worktreePath = (
   runId: string,
   nodeId: string,
 ): string => path.join(worktreeHome(root), `ork-${runId}-${nodeId}`);
-
-export type ProjectState = {
-  root: string;
-  /** The commit root nodes branch from. */
-  head: string;
-  /** Uncommitted instructions, skills or agents (worktrees lack them). */
-  dirtyAgentFiles: string[];
-  /** How many other paths have uncommitted changes. */
-  dirtyOther: number;
-};
-
-/** Symlinked agent folders (e.g. `.claude/skills -> ../.ai/skills`), as targets. */
-const symlinkTargets = (root: string): string[] => {
-  const targets: string[] = [];
-  for (const dir of [".claude", ".agents"]) {
-    const base = path.join(root, dir);
-    if (!existsSync(base) || !lstatSync(base).isDirectory()) continue;
-    for (const name of ["skills", "agents", "commands", "rules"]) {
-      const link = path.join(base, name);
-      if (!existsSync(link) || !lstatSync(link).isSymbolicLink()) continue;
-      const target = path.resolve(base, readlinkSync(link));
-      const relative = path.relative(root, target);
-      if (!relative.startsWith("..") && !path.isAbsolute(relative)) {
-        targets.push(relative);
-      }
-    }
-  }
-  return [...new Set(targets)];
-};
-
-const statusPaths = async (
-  root: string,
-  pathspecs: readonly string[],
-): Promise<string[]> => {
-  const out = await gitOk(root, [
-    "status",
-    "--porcelain=v1",
-    "--untracked-files=all",
-    "--",
-    ...pathspecs,
-  ]);
-  return lines(out).map(line => line.slice(3));
-};
-
-/** The project's git root, head, and what a worktree would be missing. */
-export const inspectProject = async (
-  cwd: string,
-): Promise<ProjectState | null> => {
-  const top = await git(cwd, ["rev-parse", "--show-toplevel"]);
-  if (top.code !== 0) return null;
-  const root = top.stdout.trim();
-  const head = await git(root, ["rev-parse", "HEAD"]);
-  if (head.code !== 0) return null;
-  const agent = await statusPaths(root, [
-    ...AGENT_PATHSPECS,
-    ...symlinkTargets(root),
-  ]);
-  const all = await statusPaths(root, ["."]);
-  return {
-    root,
-    head: head.stdout.trim(),
-    dirtyAgentFiles: agent,
-    dirtyOther: all.length - agent.length,
-  };
-};
 
 /**
  * The gitignored files to copy into a new worktree: every local agent file, and
@@ -155,7 +77,9 @@ const copyInto = (from: string, to: string, files: readonly string[]) => {
  * branch is checked out again only when this run created it (`known`): a
  * resumed run's branch outlives its removed worktree. Any other existing branch
  * stops it: Ork never takes over a branch it did not create. `copyLocal: false`
- * copies none of the local files (a run's own root holds only the commit).
+ * copies none of the local files (a run's own root holds only the commit). A
+ * `seed` makes it detached whatever `branch` says, and commits the seed's files
+ * in it once (`seed` in the result is the commit it is on after that).
  */
 export const createWorktree = async (options: {
   root: string;
@@ -164,8 +88,12 @@ export const createWorktree = async (options: {
   base: string;
   known?: boolean;
   copyLocal?: boolean;
-}): Promise<Worktree & { copied: string[]; reused: boolean }> => {
-  const { root, branch, base } = options;
+  seed?: WorktreeSeed;
+}): Promise<
+  Worktree & { copied: string[]; reused: boolean; seed?: string }
+> => {
+  const { root, base, seed } = options;
+  const branch = seed === undefined ? options.branch : undefined;
   const target = options.path;
   const copyLocal = async (): Promise<string[]> =>
     options.copyLocal === false
@@ -174,7 +102,16 @@ export const createWorktree = async (options: {
   mkdirSync(path.dirname(target), { recursive: true });
   if (branch === undefined) {
     await gitOk(root, ["worktree", "add", "--detach", target, base]);
-    return { path: target, copied: await copyLocal(), reused: false };
+    const copied = await copyLocal();
+    if (seed === undefined) return { path: target, copied, reused: false };
+    try {
+      const commit = await seedWorktree(target, seed);
+      return { path: target, copied, reused: false, seed: commit };
+    } catch (error) {
+      // Not recorded yet, so nothing else would find it to remove.
+      await git(root, ["worktree", "remove", "--force", target]);
+      throw error;
+    }
   }
   const ref = `refs/heads/${branch}`;
   const exists =

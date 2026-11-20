@@ -19,10 +19,16 @@ export const snapshot = async (worktree: string): Promise<string> => {
   return (await gitOk(worktree, ["write-tree"])).trim();
 };
 
-/** The worktree's changes since `tree` (new files included), as a patch. */
+/**
+ * The worktree's changes since `tree` (new files included), as a patch. With
+ * `relativeTo` (a folder of the worktree, such as `app/.ork/`), only changes
+ * under it, and paths relative to it, so the patch applies to a copy of that
+ * folder anywhere.
+ */
 export const changesSince = async (
   worktree: string,
   tree: string,
+  relativeTo?: string,
 ): Promise<string> => {
   await gitOk(worktree, ["add", "-A"]);
   return gitOk(worktree, [
@@ -31,6 +37,7 @@ export const changesSince = async (
     "-p",
     "--binary",
     "--no-color",
+    ...(relativeTo === undefined ? [] : [`--relative=${relativeTo}`]),
     tree,
   ]);
 };
@@ -51,18 +58,32 @@ const refused = (stderr: string): string[] => [
 
 /**
  * Applies a patch to the worktree at `into`, uncommitted. All or nothing: when
- * any part does not apply, nothing changes and the files are named.
+ * any part does not apply, nothing changes and the files are named. With
+ * `plainFolder`, `into` is a folder that is not the patch's repository (Ork's
+ * attached folder): paths apply relative to it even when it sits inside another
+ * repository. Without it, git finds the repository `into` is in, so a patch
+ * with paths from the repository's top applies from a subfolder too.
  */
 export const applyChanges = async (
   into: string,
   patch: string,
+  options: { plainFolder?: boolean } = {},
 ): Promise<MergeResult> => {
   if (patch.trim() === "") return { ok: true };
   const dir = mkdtempSync(path.join(tmpdir(), "ork-patch-"));
   const file = path.join(dir, "changes.patch");
   try {
     writeFileSync(file, patch);
-    const applied = await git(into, ["apply", "--binary", file]);
+    // Ceiling: a folder inside another repository would otherwise be applied
+    // relative to that repository's root, and git skips the files outside it
+    // without an error. A plain folder is then applied to as is.
+    const applied = await git(
+      into,
+      ["apply", "--binary", file],
+      options.plainFolder === true
+        ? { GIT_CEILING_DIRECTORIES: path.dirname(path.resolve(into)) }
+        : {},
+    );
     if (applied.code === 0) return { ok: true };
     const reason = applied.stderr.trim().split("\n").at(-1);
     return {

@@ -1,13 +1,12 @@
 /**
  * @file Tests for what stops `ork onboard` before it spends, and the driver it
- *   takes: each refusal (flags, no terminal, attached, no commit, git or Node),
+ *   takes: each refusal (flags, no terminal, no commit, git or Node),
  *   `--driver` as given or refused, the only ready driver with no question, and
  *   a choice among several.
  */
 
 import { PassThrough } from "node:stream";
 
-import type { ProjectPlace } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
 import { type Picked, pickDriver } from "../src/onboard/driver.ts";
@@ -20,7 +19,6 @@ const input = (over: Partial<RefusalInput> = {}): RefusalInput => ({
   review: false,
   fresh: false,
   nodeVersion: "24.20.0",
-  registered: [],
   exec: () => Promise.resolve({ ok: true, stdout: "git version 2.40" }),
   ...over,
 });
@@ -40,18 +38,6 @@ describe("refusal", () => {
     expect(await refusal(input({ interactive: false }))).toEqual([
       "ork onboard asks questions: run it in a terminal.",
     ]);
-  });
-
-  it("refuses an attached project, naming ork migrate", async () => {
-    const attached: ProjectPlace = {
-      root: "/nowhere",
-      mode: "attached",
-      dir: "/nowhere/.ork-attached",
-    };
-    const lines = await refusal(input({ registered: [attached] }));
-    expect(lines).toHaveLength(1);
-    expect(lines?.[0]).toContain("is attached");
-    expect(lines?.[0]).toContain("ork migrate");
   });
 
   it("stops with headWarning's text when there is no commit", async () => {

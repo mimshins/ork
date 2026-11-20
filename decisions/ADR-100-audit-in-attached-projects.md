@@ -1,6 +1,6 @@
 # ADR-100 — A run's own working root: `ork:security-audit` in attached projects
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by ADR-114
 - **Date:** 2026-11-17
 - **Topic:** worktrees, built-in bundles, `ork run`, `tools/audit`
 - **RFC:** [RFC-021](../rfcs/archived/RFC-021-audit-in-attached-projects.md)
@@ -53,8 +53,10 @@ exited 1 before any agent started.
    `HEAD` diff.
 5. **ADR-096 item 6 is amended:** attached projects are supported; the audit's
    refusal (`OUTSIDE_ROOT_MESSAGE`, the `bundleDir` option) is gone. Other
-   built-ins with companion files stay refused in attached projects
-   ([ADR-099](./ADR-099-onboard-refuses-attached-projects.md)).
+   built-ins with companion files stayed refused in attached projects
+   ([ADR-099](./ADR-099-onboard-refuses-attached-projects.md)); amended by
+   [ADR-114](./ADR-114-onboard-in-attached-projects.md): `ork:onboard-*` run in
+   an attached project on this root too.
 6. **Ork writes only beside the clone and under `~/.ork`.** It never writes into
    the repository or `.git/info/exclude`, and the bundle's link guard applies
    inside the worktree. A `post-checkout` hook of the user's repository runs
