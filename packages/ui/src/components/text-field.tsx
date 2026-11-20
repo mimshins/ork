@@ -27,6 +27,13 @@ export type TextFieldProps = {
   required?: boolean;
   /** Numbers get the numeric keyboard and the browser's check. */
   type?: "text" | "number";
+  /**
+   * The id of what says more, such as a problem, read out after the
+   * description.
+   */
+  describedBy?: string | undefined;
+  /** The value is refused: it says so with `aria-invalid` and its border. */
+  invalid?: boolean | undefined;
 };
 
 export const TextField = ({
@@ -40,6 +47,8 @@ export const TextField = ({
   description,
   required = false,
   type = "text",
+  describedBy,
+  invalid = false,
 }: TextFieldProps) => {
   const id = useId();
   const descriptionId = `${id}-description`;
@@ -53,11 +62,17 @@ export const TextField = ({
         {unseen === undefined ? null : <Unseen>{unseen}</Unseen>}
         {required ? " (required)" : ""}
       </label>
-      <div className={styles["group"]}>
+      <div
+        className={styles["group"]}
+        data-invalid={invalid ? "" : undefined}
+      >
         <Input
           aria-describedby={
-            description === undefined ? undefined : descriptionId
+            [description === undefined ? undefined : descriptionId, describedBy]
+              .filter(Boolean)
+              .join(" ") || undefined
           }
+          aria-invalid={invalid ? true : undefined}
           className={styles["input"]}
           id={id}
           onBlur={onCommit}

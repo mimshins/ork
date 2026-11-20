@@ -6,7 +6,7 @@
  *   never a typed path.
  */
 
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { Select } from "../components/select.tsx";
@@ -28,6 +28,7 @@ import {
   Group,
   isRecord,
   Problems,
+  problemProps,
   setField,
 } from "./form-parts.tsx";
 import { Field } from "./schema-form.tsx";
@@ -59,27 +60,34 @@ const CountField = ({
   required: boolean;
   bad: boolean;
   onBad: (bad: boolean) => void;
-}) => (
-  <div className={styles["field"]}>
-    <CommitText
-      commit={typed => {
-        const count = wholeNumber(typed);
-        const empty = typed.trim() === "" && !required;
-        onBad(count === undefined && !empty);
-        if (count !== undefined || empty) setField(field, count);
-      }}
-      description={description}
-      label={label}
-      number
-      required={required}
-      shown={typeof field.value === "number" ? String(field.value) : ""}
-    />
-    {/* Always drawn, so a screen reader announces the line when it appears. */}
-    <div role="alert">
-      <Problems lines={bad ? [`${label} needs a whole number above 0.`] : []} />
+}) => {
+  const problemId = useId();
+  return (
+    <div className={styles["field"]}>
+      <CommitText
+        commit={typed => {
+          const count = wholeNumber(typed);
+          const empty = typed.trim() === "" && !required;
+          onBad(count === undefined && !empty);
+          if (count !== undefined || empty) setField(field, count);
+        }}
+        description={description}
+        label={label}
+        number
+        required={required}
+        shown={typeof field.value === "number" ? String(field.value) : ""}
+        {...problemProps({ problemId: bad ? problemId : undefined })}
+      />
+      {/* Always drawn, so a screen reader announces the line when it appears. */}
+      <div role="alert">
+        <Problems
+          id={problemId}
+          lines={bad ? [`${label} needs a whole number above 0.`] : []}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /** The For each group at `nodes.<id>.forEach`. */
 export const ForEachControl = ({
@@ -95,6 +103,7 @@ export const ForEachControl = ({
   const box = useRef<HTMLDivElement>(null);
   const [badMost, setBadMost] = useState(false);
   const [badAtOnce, setBadAtOnce] = useState(false);
+  const fromProblemId = useId();
   const kind = eachKindOf(field.value);
   // Once open it stays, so choosing Once doesn't close it under the select.
   const [opened, setOpened] = useState(kind !== "once");
@@ -106,6 +115,7 @@ export const ForEachControl = ({
   const choices = listsBefore(graph, id);
   const chosen = choices.find(({ template }) => template === from);
   const holders = holdersOf(graph, builder.schema, id);
+  const fromProblems = context.problems([...path, "from"]);
   const declare = async (
     node: string,
     name: string,
@@ -186,8 +196,14 @@ export const ForEachControl = ({
                 })),
               ]}
               value={from === "" ? NOT_CHOSEN : from}
+              {...problemProps({
+                problemId: fromProblems.length > 0 ? fromProblemId : undefined,
+              })}
             />
-            <Problems lines={context.problems([...path, "from"])} />
+            <Problems
+              id={fromProblemId}
+              lines={fromProblems}
+            />
             {chosen === undefined ? null : (
               <>
                 <p className={styles["hint"]}>

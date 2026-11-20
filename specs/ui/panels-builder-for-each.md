@@ -20,7 +20,6 @@ twin is the text editor and `ork validate`; the Builder saves nothing new.
 - [Reading an item](#reading-an-item)
 - [Conditions and lists](#conditions-and-lists)
 - [What the checks say, and where](#what-the-checks-say-and-where)
-- [Keys, names and tokens](#keys-names-and-tokens)
 
 ## What it adds
 
@@ -145,12 +144,14 @@ hints, only on a fanned node.
 - **`model` and `effort`** on any agent node may be a template
   ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort),
   [RFC-029](../../rfcs/archived/RFC-029-model-from-an-earlier-output.md)), so
-  their hint names the reads on every agent node, fanned or not, and never
-  `{{index}}`. It adds a sentence: "Reads `{{inputs.<name>}}` and
+  the hint of `model` names the reads on every agent node, fanned or not, and
+  never `{{index}}`. It adds a sentence: "Reads `{{inputs.<name>}}` and
   `{{nodes.<id>.output.<field>}}` of a node that runs first." On a fanned node
   it ends "…, and `{{item.<field>}}`.", with the list's shared field names in
-  place of `<field>` when known. Not on `defaults.model` or `defaults.effort`:
-  their hint says nothing of it.
+  place of `<field>` when known. The hint of `effort` does not repeat it: it
+  says only "Takes the same `{{…}}` templates as Model.", so a screen reader
+  reading both fields hears the list once. Not on `defaults.model` or
+  `defaults.effort`: their hint says nothing of it.
 - **A templated value** (any `{{`) adds a last sentence, "Read when the node
   starts.", and no "Runs on" line: the driver is known only then. A literal
   prefix such as `claude-code.{{inputs.tier}}` is left alone the same way.
@@ -174,54 +175,5 @@ condition, a router's, a `watch:`'s `until`, a gate's. This closes
 
 ## What the checks say, and where
 
-The checks are the compiler's ([for each](../scheduler/for-each.md)). The
-Builder adds no checks of its own; it shows each where its path points, as it
-does now (`context.problems`), and counts it on the card ("1 error", "1
-warning").
-
-| Code                  | Shown under                       | Is                                                                        |
-| --------------------- | --------------------------------- | ------------------------------------------------------------------------- |
-| `forEach.from-path`   | List from                         | error                                                                     |
-| `forEach.order`       | List from                         | error                                                                     |
-| `forEach.not-list`    | List from                         | error                                                                     |
-| `forEach.undeclared`  | List from                         | warning                                                                   |
-| `item.outside`        | the field that reads it           | error                                                                     |
-| `item.field`          | the field that reads it           | error                                                                     |
-| `model.template`      | Model                             | error                                                                     |
-| `effort.template`     | Effort                            | error                                                                     |
-| `ref.*`, `template.*` | Model or Effort, if it reads them | error (`template.not-upstream` and `ref.field` on an agent node: warning) |
-| `model.item`          | the node's card only              | error                                                                     |
-| `effort.item`         | the node's card only              | error                                                                     |
-| `forEach.continue`    | Isolation                         | error                                                                     |
-| `forEach.unreached`   | Owner                             | error                                                                     |
-| `forEach.owner-order` | Owner                             | error                                                                     |
-| `forEach.notify`      | the rule's To, on the notifier    | error                                                                     |
-| `forEach.channel`     | Messages, with the workflow's own | error                                                                     |
-
-`model.template` and `effort.template` now mean `item` or `index` read off a
-fanned node, or a template in `defaults`. An unknown input, node or field
-(`ref.input`, `ref.node`, `ref.field`) or a node that does not run first
-(`template.not-upstream`) shows under the field at `nodes.<id>.model` or
-`.effort`, as it does under a prompt.
-
-`forEach.channel` has the channel's path, not the node's, so no card counts it.
-`model.item` and `effort.item` have the item's path
-(`nodes.<id>.forEach.items.<n>`), so no field shows them: only the node's card
-counts them. Each problem keeps its icon and words; color is not the signal.
-With the Builder's choices, `forEach.order`, `forEach.not-list` and
-`forEach.undeclared` can occur only for a path written outside the Builder; an
-empty `from` shows `forEach.from-path` until a list is chosen.
-
-## Keys, names and tokens
-
-- **Keys:** nothing custom. Every control is a select, text field or button from
-  the [component set](./design-components-and-copy.md), so Tab, arrows,
-  type-ahead, `Enter`, `Space` and `Escape` are theirs; Tab follows page order.
-- **Accessible names:** the group is "For each"; controls are "Run this node",
-  "Items", "List from", "Most items" (required), "Most at once", "When an item
-  fails", "Add a list, for build", "On node", "New list", "Item fields", "Add
-  tasks", "Cancel". A problem is tied to its control by description, and the
-  select's "(not offered)" is part of its option name.
-- **Tokens:** none new. The group, hints, problems and form reuse the Builder's
-  existing classes and components, so no pairing is added to
-  [pairings.ts](../../packages/ui/test/pairings.ts).
+The checks it shows, and its keys, names and tokens, are in
+[what the checks say for each, and its names](./panels-builder-for-each-checks.md).

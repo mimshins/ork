@@ -107,9 +107,11 @@ describe("a node's model field", () => {
 
   it("names what a template may read, and adds no driver, on a node that is not fanned", async () => {
     await openAgent('    model: "{{inputs.tier}}"\n');
+    // The Reads list is on Model only; Effort points at it.
     expect(
       (await screen.findAllByText(/of a node that runs first/u)).length,
-    ).toBe(2);
+    ).toBe(1);
+    expect(screen.getAllByText(/templates as Model\./u)).toHaveLength(1);
     // Only the templated Model says it is read at start; Effort has no value.
     expect(screen.getAllByText(/Read when the node starts\./u)).toHaveLength(1);
     expect(screen.queryByText(/Runs on/u)).toBeNull();

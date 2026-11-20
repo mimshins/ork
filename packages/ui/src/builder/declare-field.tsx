@@ -4,7 +4,7 @@
  *   declaring a list from the node that fans out over it (RFC-013).
  */
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "../components/button.tsx";
 import { Select } from "../components/select.tsx";
@@ -15,7 +15,7 @@ import {
   isFieldName,
   readItemFields,
 } from "./for-each-model.ts";
-import { Problems } from "./form-parts.tsx";
+import { Problems, problemProps } from "./form-parts.tsx";
 
 import styles from "./builder.module.css";
 
@@ -113,6 +113,8 @@ export const DeclareList = ({
   onDeclare: (node: string, name: string, shape: ItemShape) => void;
 }) => {
   const box = useRef<HTMLDivElement>(null);
+  const nameProblemId = useId();
+  const itemsProblemId = useId();
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -184,15 +186,27 @@ export const DeclareList = ({
         label="New list"
         onChange={setName}
         value={name}
+        {...problemProps({
+          problemId: nameProblem.length > 0 ? nameProblemId : undefined,
+        })}
       />
-      <Problems lines={nameProblem} />
+      <Problems
+        id={nameProblemId}
+        lines={nameProblem}
+      />
       <TextField
         description="Separated by commas: a name, or name:type. Types: string, number, integer, boolean. Empty for items with no fields."
         label="Item fields"
         onChange={setTyped}
         value={typed}
+        {...problemProps({
+          problemId: items.problems.length > 0 ? itemsProblemId : undefined,
+        })}
       />
-      <Problems lines={items.problems} />
+      <Problems
+        id={itemsProblemId}
+        lines={items.problems}
+      />
       <Button
         disabled={!isFieldName(name) || taken || items.problems.length > 0}
         onClick={() => {

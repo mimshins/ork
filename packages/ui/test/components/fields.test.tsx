@@ -84,6 +84,36 @@ describe("the combobox", () => {
     expect(onChange).toHaveBeenCalledWith("sdk");
   });
 
+  it("is tied to its problem, and invalid only when told", () => {
+    const { container } = render(
+      <>
+        <Combobox
+          describedBy="problem-3"
+          empty="No driver matches."
+          invalid
+          label="Refused"
+          onChange={() => {}}
+          options={OPTIONS}
+          value={null}
+        />
+        <Combobox
+          empty="No driver matches."
+          label="Fine"
+          onChange={() => {}}
+          options={OPTIONS}
+          value={null}
+        />
+      </>,
+    );
+    const refused = screen.getByRole("combobox", { name: "Refused" });
+    expect(refused.getAttribute("aria-describedby")).toBe("problem-3");
+    expect(refused.getAttribute("aria-invalid")).toBe("true");
+    expect(container.querySelectorAll("[data-invalid]")).toHaveLength(1);
+    const fine = screen.getByRole("combobox", { name: "Fine" });
+    expect(fine.getAttribute("aria-describedby")).toBeNull();
+    expect(fine.getAttribute("aria-invalid")).toBeNull();
+  });
+
   it("says so when nothing matches", async () => {
     const { input } = renderCombobox();
     await userEvent.click(input);
@@ -157,6 +187,54 @@ describe("the text field", () => {
     expect(input.getAttribute("aria-describedby")).toBe(
       screen.getByText("What to build.").id,
     );
+  });
+
+  it("lists its description then describedBy, and is invalid only when told", () => {
+    const { container } = render(
+      <main>
+        <TextField
+          describedBy="problem-1"
+          description="What to build."
+          invalid
+          label="feature"
+          onChange={() => {}}
+          value=""
+        />
+        <p id="problem-1">It is empty.</p>
+      </main>,
+    );
+    const input = screen.getByRole("textbox", { name: "feature" });
+    const hint = screen.getByText("What to build.").id;
+    expect(input.getAttribute("aria-describedby")).toBe(`${hint} problem-1`);
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(container.querySelector("[data-invalid]")).not.toBeNull();
+  });
+
+  it("has neither attribute with no problem, and reads describedBy alone", () => {
+    render(
+      <>
+        <TextField
+          label="plain"
+          onChange={() => {}}
+          value=""
+        />
+        <TextField
+          describedBy="problem-2"
+          label="alone"
+          onChange={() => {}}
+          value=""
+        />
+      </>,
+    );
+    const plain = screen.getByRole("textbox", { name: "plain" });
+    expect(plain.getAttribute("aria-describedby")).toBeNull();
+    expect(plain.getAttribute("aria-invalid")).toBeNull();
+    expect(
+      screen
+        .getByRole("textbox", { name: "alone" })
+        .getAttribute("aria-describedby"),
+    ).toBe("problem-2");
+    expect(document.querySelector("[data-invalid]")).toBeNull();
   });
 
   it("reports what is typed, and has no accessibility violations", async () => {

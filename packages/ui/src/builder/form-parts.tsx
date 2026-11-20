@@ -45,6 +45,12 @@ export type FieldProps = {
   value: unknown;
   required: boolean;
   context: FormContext;
+  /**
+   * The id of this field's `Problems` lines, set by `Field` only while it has
+   * problems. A control draws it as `aria-describedby` and, being set, as
+   * `aria-invalid` and `invalid`.
+   */
+  problemId?: string | undefined;
 };
 
 /** Sets this field to `value`, whatever it was. */
@@ -52,24 +58,46 @@ export const setField = (field: FieldProps, value: unknown): void => {
   field.context.change(field.path, () => value);
 };
 
+/** What a control the builder draws itself needs to be tied to its problem. */
+export const problemProps = (
+  field: Pick<FieldProps, "problemId">,
+): { describedBy: string | undefined; invalid: boolean } => ({
+  describedBy: field.problemId,
+  invalid: field.problemId !== undefined,
+});
+
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** What the checks say of a field, each with its icon and its words. */
-export const Problems = ({ lines }: { lines: readonly string[] }) =>
-  lines.map(line => (
-    <p
-      className={styles["problem"]}
-      key={line}
+export const Problems = ({
+  lines,
+  id,
+}: {
+  lines: readonly string[];
+  /** What a control's `aria-describedby` points at to read the lines. */
+  id?: string | undefined;
+}) =>
+  lines.length === 0 ? null : (
+    <div
+      className={styles["problemLines"]}
+      id={id}
     >
-      <span className={styles["problemIcon"]}>
-        <GlyphFailed />
-      </span>
-      <span className={styles["problemWords"]}>
-        <CodeText text={line} />
-      </span>
-    </p>
-  ));
+      {lines.map(line => (
+        <p
+          className={styles["problem"]}
+          key={line}
+        >
+          <span className={styles["problemIcon"]}>
+            <GlyphFailed />
+          </span>
+          <span className={styles["problemWords"]}>
+            <CodeText text={line} />
+          </span>
+        </p>
+      ))}
+    </div>
+  );
 
 /** A text box that holds what's typed until it's left. */
 export const CommitText = ({
@@ -81,6 +109,8 @@ export const CommitText = ({
   required = false,
   multiline = false,
   number = false,
+  describedBy,
+  invalid,
 }: {
   label: string;
   unseen?: string | undefined;
@@ -90,6 +120,8 @@ export const CommitText = ({
   required?: boolean;
   multiline?: boolean;
   number?: boolean;
+  describedBy?: string | undefined;
+  invalid?: boolean | undefined;
 }) => {
   const [typed, setTyped] = useState(shown);
   const [seen, setSeen] = useState(shown);
@@ -103,7 +135,9 @@ export const CommitText = ({
   }
   return (
     <TextField
+      describedBy={describedBy}
       description={description}
+      invalid={invalid}
       label={label}
       unseen={unseen}
       multiline={multiline}
@@ -127,7 +161,7 @@ export const ChoiceField = ({
   options,
   ...field
 }: FieldProps & { options: readonly Choice[] }) => {
-  const { name, schema, value, required } = field;
+  const { name, schema, value, required, problemId } = field;
   const items = [
     // A required choice still has to be made: showing the first as chosen
     // would say the file has it, and choosing it would do nothing.
@@ -144,7 +178,12 @@ export const ChoiceField = ({
   return (
     <div className={styles["choice"]}>
       <Select
-        describedBy={description === undefined ? undefined : hintId}
+        describedBy={
+          [description === undefined ? undefined : hintId, problemId]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
+        invalid={problemId !== undefined}
         label={labelOf(name)}
         onChange={next => {
           setField(

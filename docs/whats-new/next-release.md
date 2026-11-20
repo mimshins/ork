@@ -12,6 +12,15 @@ What lands on `main` is listed here until it ships.
   left from the day before no longer shows
   ([Across runs and time](../guides/models-and-budgets/across-runs-and-time.md)).
 
+- **A field's problem is read with its control, and Effort no longer repeats
+  Model's hint.** In the Builder, a field the checks refuse is now marked
+  invalid and described by its problem, so a screen reader says why when you
+  focus it. A problem on a whole list, record or group is still plain text, and
+  none is announced as it appears. A node's Effort hint now points to Model's
+  instead of repeating its list of `{{…}}` templates
+  ([Keys and accessibility](../guides/browser-view/keys-and-accessibility.md)).
+  Upgrade: none required.
+
 - **The npm page and docs name all five drivers.** The `@krapht/ork` page on npm
   now names Codex and `omp` beside Claude Code, OpenCode and Command Code, lists
   `ork onboard`, and says `omp` is built but not yet proven, so a run refuses

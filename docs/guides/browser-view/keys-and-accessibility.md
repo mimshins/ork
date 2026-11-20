@@ -32,6 +32,13 @@ follows your system's reduced-motion, more-contrast and forced-colors settings,
 and **Motion: Reduce** in the command palette stops what blinks or moves
 whatever the system says. Changes are announced through one polite live region.
 
+In the Builder, a field the checks refuse is read with its control: when you
+focus it, a screen reader says it is invalid, then its hint and the problem in
+words. The problem is not announced as it appears, so after you leave a field
+with a bad value, go back to it to hear why. A problem on a whole list, record
+or group of fields is shown as text only, not tied to a control. The Model hint
+lists what a template may read once; Effort only points to it.
+
 It has been audited with axe and by keyboard in Chrome, but not yet with a real
 screen reader or by touch. If something does not work for you, please
 [open an issue](https://github.com/mimshins/ork/issues).

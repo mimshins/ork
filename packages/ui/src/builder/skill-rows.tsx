@@ -10,7 +10,7 @@ import { type ReactNode, useState } from "react";
 import { Button } from "../components/button.tsx";
 import { Combobox } from "../components/combobox.tsx";
 import { TextField } from "../components/text-field.tsx";
-import type { FieldProps } from "./form-parts.tsx";
+import { type FieldProps, problemProps } from "./form-parts.tsx";
 import { kindOf } from "./schema-model.ts";
 import type { Builder } from "./use-builder.ts";
 
@@ -81,6 +81,7 @@ export const SkillRows = ({
           offered.length === 0 ? "No skills found" : "Type to find a skill"
         }
         value={null}
+        {...problemProps(field)}
       />
       <TextField
         description="Or a path to one, such as ./skills/checklist."

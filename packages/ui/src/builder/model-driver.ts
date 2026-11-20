@@ -37,10 +37,13 @@ export const isSettingPath = (path: readonly (string | number)[]): boolean =>
   path.length === 3 &&
   (path[2] === "model" || path[2] === "effort");
 
+const EFFORT_POINTER = "Takes the same `{{…}}` templates as Model.";
+
 /**
- * A node's `model` or `effort` hint with what a template may read added, on any
- * agent node: inputs and an earlier node's output, and the item on a fanned
- * node (never `{{index}}`). A templated value adds that it is read at start.
+ * A node's `model` hint with what a template may read added, on any agent node:
+ * inputs and an earlier node's output, and the item on a fanned node (never
+ * `{{index}}`). Its `effort` hint only points at Model. A templated value adds
+ * that it is read at start.
  */
 export const settingHint = (
   graph: WorkflowGraph,
@@ -56,9 +59,13 @@ export const settingHint = (
     fields.length === 0
       ? "`{{item.<field>}}`"
       : fields.map(name => `\`{{item.${name}}}\``).join(", ");
-  const reads = `Reads \`{{inputs.<name>}}\` and \`{{nodes.<id>.output.<field>}}\` of a node that runs first${
-    fanned ? `, and ${item}` : ""
-  }.`;
+  // Effort only points at Model, so a screen reader hears the list once.
+  const reads =
+    field === "effort"
+      ? EFFORT_POINTER
+      : `Reads \`{{inputs.<name>}}\` and \`{{nodes.<id>.output.<field>}}\` of a node that runs first${
+          fanned ? `, and ${item}` : ""
+        }.`;
   const starts =
     typeof value === "string" && value.includes("{{")
       ? "Read when the node starts."

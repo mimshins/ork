@@ -28,6 +28,10 @@ export type ComboboxProps = {
   empty: string;
   /** Nothing to choose from yet; the placeholder should say why. */
   disabled?: boolean;
+  /** The id of what says more about the choice, read out with it. */
+  describedBy?: string | undefined;
+  /** The choice is refused: it says so with `aria-invalid` and its border. */
+  invalid?: boolean | undefined;
 };
 
 const labelOf = (option: Option): string => option.label;
@@ -41,6 +45,8 @@ export const Combobox = ({
   placeholder = "",
   empty,
   disabled = false,
+  describedBy,
+  invalid = false,
 }: ComboboxProps) => {
   const inputId = useId();
   const [typed, setTyped] = useState("");
@@ -67,8 +73,13 @@ export const Combobox = ({
         >
           {label}
         </label>
-        <BaseCombobox.InputGroup className={fields["group"]}>
+        <BaseCombobox.InputGroup
+          className={fields["group"]}
+          data-invalid={invalid ? "" : undefined}
+        >
           <BaseCombobox.Input
+            aria-describedby={describedBy}
+            aria-invalid={invalid ? true : undefined}
             aria-label={label}
             className={fields["input"]}
             id={inputId}

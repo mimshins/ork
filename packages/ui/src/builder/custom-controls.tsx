@@ -10,7 +10,12 @@ import { Combobox } from "../components/combobox.tsx";
 import { Select } from "../components/select.tsx";
 import { messageTargets } from "./builder-model.ts";
 import { saysOf } from "./condition-model.ts";
-import { type FieldProps, isRecord, setField } from "./form-parts.tsx";
+import {
+  type FieldProps,
+  isRecord,
+  problemProps,
+  setField,
+} from "./form-parts.tsx";
 import { controlOf } from "./schema-form.tsx";
 import { skillsControl } from "./skill-rows.tsx";
 import { UntilControl } from "./until-picker.tsx";
@@ -59,6 +64,7 @@ export const customControl = (
           ...others.map(value => ({ value, label: value })),
         ]}
         value={text ?? NONE}
+        {...problemProps(field)}
       />
     );
   }
@@ -78,6 +84,7 @@ export const customControl = (
         }}
         options={counts.map(value => ({ value, label: value }))}
         value={String(current)}
+        {...problemProps(field)}
       />
     );
   }
@@ -105,6 +112,7 @@ export const customControl = (
             })),
           ]}
           value={text ?? NONE}
+          {...problemProps(field)}
         />
       );
     }
@@ -127,6 +135,7 @@ export const customControl = (
         }}
         options={messageTargets(graph).map(value => ({ value, label: value }))}
         value={text ?? ""}
+        {...problemProps(field)}
       />
     );
   }
@@ -144,6 +153,7 @@ export const customControl = (
         }))}
         placeholder="Type to find an agent"
         value={text ?? null}
+        {...problemProps(field)}
       />
     );
   }

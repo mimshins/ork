@@ -14,7 +14,12 @@ import { Select } from "../components/select.tsx";
 import { firstRow, saysOf, shownCondition } from "./condition-model.ts";
 import { TestRows } from "./condition-picker.tsx";
 import { DeclareField } from "./declare-field.tsx";
-import { CommitText, type FieldProps, setField } from "./form-parts.tsx";
+import {
+  CommitText,
+  type FieldProps,
+  problemProps,
+  setField,
+} from "./form-parts.tsx";
 import type { Builder } from "./use-builder.ts";
 
 import styles from "./builder.module.css";
@@ -27,10 +32,13 @@ export const UntilPicker = ({
   until,
   onChange,
   onDeclare,
+  problemId,
 }: {
   says: NodeSays;
   condition: Condition | undefined;
   until: string | undefined;
+  /** The id of this value's problem lines, if it has any. */
+  problemId?: string | undefined;
   onChange: (until?: string) => void;
   onDeclare: (
     name: string,
@@ -63,6 +71,7 @@ export const UntilPicker = ({
           { value: "hand", label: "Written by hand" },
         ]}
         value={mode}
+        {...problemProps({ problemId })}
       />
       {testing ? (
         <TestRows
@@ -83,6 +92,7 @@ export const UntilPicker = ({
           label="Condition"
           shown={until ?? ""}
           unseen={`, to ${NAME}`}
+          {...problemProps({ problemId })}
         />
       ) : null}
       {says.canDeclare ? (
@@ -128,6 +138,7 @@ export const UntilControl = ({
           },
         );
       }}
+      problemId={field.problemId}
       says={saysOf(graph, id)}
       until={typeof field.value === "string" ? field.value : undefined}
     />

@@ -324,10 +324,13 @@ describe("{{item}}", () => {
     expect(screen.queryByText("{{index}}")).toBeNull();
   });
 
-  it("is read out with the Effort choice on an agent node", async () => {
+  it("is read out once: Reads on Model, a pointer to it on Effort", async () => {
     await open("build");
-    const trigger = await screen.findByRole("combobox", { name: "Effort" });
-    expect(describedBy(trigger)).toMatch(/Reads/u);
+    const effort = await screen.findByRole("combobox", { name: "Effort" });
+    const model = await screen.findByRole("textbox", { name: "Model" });
+    expect(describedBy(model).match(/Reads/gu)).toHaveLength(1);
+    expect(describedBy(effort)).toContain("Model");
+    expect(describedBy(effort)).not.toMatch(/Reads|\{\{inputs\.|\{\{nodes\./u);
   });
 
   it("stays open when the user chooses Once from inside it", async () => {

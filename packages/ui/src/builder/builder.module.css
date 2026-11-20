@@ -357,6 +357,16 @@
   flex: var(--builder-field-flex, revert);
 }
 
+/* The lines of one field's problems, in one element the control points at. */
+.problemLines {
+  --builder-problem-lines-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--builder-problem-lines-gap);
+  min-width: 0;
+}
+
 /* A problem is a line of words with the failed glyph beside its first line. */
 .problem {
   --builder-problem-text: var(--color-danger-text);

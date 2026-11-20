@@ -6,7 +6,7 @@
  *   number.
  */
 
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 
 import {
   ChoiceField,
@@ -66,9 +66,10 @@ const ObjectFields = ({
 
 /** The generated control for this field. */
 export const controlOf = (props: FieldProps): ReactNode => {
-  const { name, path, schema, value, required, context } = props;
+  const { name, path, schema, value, required, context, problemId } = props;
   const kind = kindOf(schema);
   const description = descriptionOf(schema);
+  const tied = { describedBy: problemId, invalid: problemId !== undefined };
   switch (kind.kind) {
     case "text":
       return (
@@ -81,6 +82,7 @@ export const controlOf = (props: FieldProps): ReactNode => {
           multiline={isMultiline(name, value)}
           required={required}
           shown={typeof value === "string" ? value : ""}
+          {...tied}
         />
       );
     case "number":
@@ -94,6 +96,7 @@ export const controlOf = (props: FieldProps): ReactNode => {
           number
           required={required}
           shown={typeof value === "number" ? String(value) : ""}
+          {...tied}
         />
       );
     case "choice":
@@ -159,6 +162,7 @@ export const controlOf = (props: FieldProps): ReactNode => {
           label={labelOf(name)}
           multiline={typeof value === "string" && value.includes("\n")}
           shown={showFree(value)}
+          {...tied}
         />
       );
     default:
@@ -169,21 +173,30 @@ export const controlOf = (props: FieldProps): ReactNode => {
 /** One value of any shape, with what the checks say of it. */
 export const Field = (props: FieldProps) => {
   const { path, context, schema } = props;
+  const problemsId = useId();
   const problems = context.problems(path);
+  // Always set, so a parent's id never leaks into a nested field of its path.
+  const tied = {
+    ...props,
+    problemId: problems.length > 0 ? problemsId : undefined,
+  };
   // Only a node's own fields take a hint, not each row of a list in one.
   const hint =
     path.length === 3 ? context.hint?.(path, descriptionOf(schema)) : undefined;
   const shown =
     hint === undefined
-      ? props
-      : { ...props, schema: { ...schema, description: hint } };
+      ? tied
+      : { ...tied, schema: { ...schema, description: hint } };
   return (
     <div
       className={styles["field"]}
       data-problem={problems.length > 0 ? "" : undefined}
     >
-      {context.custom?.(props) ?? controlOf(shown)}
-      <Problems lines={problems} />
+      {context.custom?.(tied) ?? controlOf(shown)}
+      <Problems
+        id={tied.problemId}
+        lines={problems}
+      />
     </div>
   );
 };
