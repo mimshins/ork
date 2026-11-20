@@ -119,11 +119,9 @@ _Part of [Workflow file format](../workflow-format.md)._
 Agent nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full
 model id) and an `effort` (`low`, `medium`, `high`, `xhigh`, `max`); a node's
 own value wins, then `defaults`, then Claude Code's default for the model. A
-spawned worker takes its template's. On a node with `forEach`, either may be a
-template reading the item, such as `model: "{{item.model}}"`, so each item runs
-on its own model; elsewhere, and in `defaults`, a template is refused
-([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
-No `schemaVersion` changed.
+spawned worker takes its template's. On any agent node, either may be a template
+([below](#a-model-or-effort-from-a-template)); in `defaults` a template is
+refused. No `schemaVersion` changed.
 
 A `model` may name its driver: `<driver>.<model>` (`claude-code.opus`,
 `open-code.anthropic/claude-sonnet-5-5`,
@@ -133,6 +131,46 @@ written; any other value is a plain model for the run's driver
 (`deepseek/deepseek-v4.1-flash`). A prefixed node needs no `driver`, and
 `ork run --driver` does not override it
 ([the model prefix](../runtime/which-driver.md#the-model-prefix)).
+
+## A model or effort from a template
+
+A node's `model` or `effort` may be a template reading `inputs.*` and the output
+of a node that runs before it (`model: "{{nodes.pick.output.model}}"`), and on a
+`forEach` node its item
+([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
+A node picks its model from an earlier one's output, such as a `pick` script
+that maps an issue's labels to a model name. Built
+([RFC-029](../../rfcs/archived/RFC-029-model-from-an-earlier-output.md);
+[item-settings.ts](../../packages/core/src/graph/item-settings.ts),
+[brief.ts](../../packages/core/src/run/brief.ts)).
+
+- **Checked when validated** as a prompt's reads are: an unknown input, node or
+  field gives `ref.input`, `ref.node`, `ref.field`, and a node that does not run
+  first gives `template.not-upstream`, at `nodes.<id>.model` or `.effort`.
+  `model.template` and `effort.template` stay for `item` or `index` read off a
+  fanned node and for a template in `defaults`, which no node owns.
+- **Rendered when the node's session is planned**, with the run's inputs and
+  outputs, before the driver fit check and the budget check, so those see the
+  rendered model. A template pins no driver when validated; a literal prefix
+  (`claude-code.{{inputs.tier}}`) does
+  ([which driver](../runtime/which-driver.md#the-model-prefix)). A node
+  `driver:` that disagrees with the rendered prefix fails the node.
+- **Shape, not a list:** a rendered model is one word, with no space, brace or
+  quote, no leading `-` (it would read as a flag) and no trailing `.` (a prefix
+  with no model); an `effort` is a level. Anything else fails the node, naming
+  the value ([L262](../gaps/for-each-limits.md)).
+- **An empty render.** A `nodes.*` read that renders empty, with outputs
+  present, fails the node with
+  "`model: {{nodes.pick.output.model}} gave nothing: node pick has no output or an empty one`".
+  An `inputs.*` or `item` template that renders empty falls back to the node's
+  default, then `defaults`, then Claude Code's.
+- **A plan with no outputs** (`ork run --node`, `ork chat`, an owner's fork)
+  takes the default and warns that the read is empty when the node runs alone.
+- **A sub-agent's `model`** is rendered when its owner's session is planned: an
+  empty render keeps the owner's model, and an invalid one fails the owner's
+  plan, naming the sub-agent.
+- **A changed driver** starts a resumed session fresh
+  ([fresh sessions](../scheduler/fresh-sessions.md#a-changed-driver)).
 
 Agent nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
 `driver`: `claude-code`, `open-code`, `command-code`, `codex` or `omp` (`omp` is

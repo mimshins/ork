@@ -18,8 +18,10 @@ nodes ([graph](../ui/graph.md), [Monitor](../ui/panels-runs-and-monitor.md),
 [Builder](../ui/panels-builder-for-each.md)). Each item's own `model` and
 `effort` from `{{item}}` are built
 ([item-settings.ts](../../packages/core/src/graph/item-settings.ts),
-[tests](../../packages/nodes/test/item-models.test.ts)). Contract:
-[RFC-013](../../rfcs/archived/RFC-013-for-each.md).
+[tests](../../packages/nodes/test/item-models.test.ts)), on the general rule for
+a node's model as a template
+([RFC-029](../../rfcs/archived/RFC-029-model-from-an-earlier-output.md)).
+Contract: [RFC-013](../../rfcs/archived/RFC-013-for-each.md).
 
 A node with `forEach` runs once per item of a list, with no model turn spent on
 fanning out or gathering.
@@ -44,21 +46,31 @@ fanning out or gathering.
 
 ## An item's own model and effort
 
-An agent node's `model` and `effort` may be a template reading `item`
-(`{{item.model}}`), so one fanned node runs its items on different models, as
-`build`'s `review` runs one Opus reviewer and two Sonnet ones. The plan renders
-them per item, before the budget check and the driver fit check, so those see
-the item's real model; the session and `ork usage` show it too.
+A `model` or `effort` template on a fanned node may read `item`
+(`{{item.model}}`), so one node runs its items on different models, as `build`'s
+`review` runs one Opus reviewer and two Sonnet ones. The plan renders them per
+item, before the budget check and the driver fit check, so those see the item's
+real model; the session and `ork usage` show it too. The rules every agent node
+shares (reading `inputs` and an earlier node's output, the shape check, an empty
+read, a changed driver) are in
+[a node's model and effort as a template](../workflow-format/node-types.md#a-model-or-effort-from-a-template).
 
-- **Only a `forEach` node, reading only `item`.** `ork validate` refuses a
-  template on a node without `forEach`, one reading `index`, `inputs` or
-  `nodes`, and one in `defaults.model` or `defaults.effort`.
+- **`item` and `index` only on a `forEach` node.** `ork validate` refuses one
+  read off a fanned node with `model.template` or `effort.template`. On a fanned
+  node `index` is its place in the list. A template may also read `inputs.*` and
+  an earlier node's output; those reads are checked as in a prompt.
 - **A written item is checked when validated:** its model is a non-empty name
-  with no space, brace or quote, and its effort is a level. An item from `from:`
-  is checked when it runs, and one with a bad value fails that item with the
-  message, not the node's other items.
-- **An empty render** (a missing or empty field) falls back to the node's
+  with no space, brace or quote, no leading `-` and no trailing `.`, and its
+  effort is a level. Only when the template reads nothing but `item` and
+  `index`; with an `inputs` or `nodes` read the value is known only when the
+  node runs. An item from `from:` is checked when it runs, and one with a bad
+  value fails that item with the message, not the node's other items.
+- **An empty item value** (a missing or empty field) falls back to the node's
   default, then `defaults`, then Claude Code's.
+- **A model's driver prefix in a loop round** (`claude-code.opus` on an item)
+  changes the item's driver like any rendered prefix: an item set to
+  `session: resume` whose round-one session started on another driver starts
+  fresh ([a changed driver](./fresh-sessions.md#a-changed-driver)).
 - **Not from an item:** `driver`, `budgetUsd`, `maxTurns` and every other field
   ([L262](../gaps/for-each-limits.md)).
 

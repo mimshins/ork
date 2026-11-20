@@ -22,7 +22,7 @@ import {
   scrubbedEnd,
   stoppedEnd,
 } from "./ended.ts";
-import { createSessions, type FreshStart } from "./fresh-session.ts";
+import { createSessions, type StartDecision } from "./fresh-session.ts";
 import type { Activation, Replay, RunOptions } from "./handle.ts";
 import { limitOf, spendOf } from "./spending.ts";
 import type {
@@ -73,7 +73,7 @@ export const startedEvent = (
   nodeType: NodeType,
   round: number,
   agent?: AgentRef,
-  fresh?: FreshStart,
+  start?: StartDecision,
 ): RunEvent => {
   const event: RunEvent = {
     type: "node.started",
@@ -81,7 +81,10 @@ export const startedEvent = (
     nodeType,
     round,
   };
-  if (fresh !== undefined) event.fresh = fresh;
+  if (start?.fresh !== undefined) event.fresh = start.fresh;
+  if (start?.driverChanged !== undefined) {
+    event.driverChanged = start.driverChanged;
+  }
   if (activation.brief !== undefined) event.owner = activation.brief.from;
   if (activation.description !== undefined) {
     event.description = activation.description;

@@ -1,8 +1,10 @@
 /**
- * @file A fanned node's `model` and `effort` from its item (`{{item.model}}`):
- *   the compiler's checks (only on a `forEach` node, reading only `item`, and
- *   every written item's value), and the rendering each item's session plan
- *   uses, which checks an item from `from:` when it runs.
+ * @file A node's `model` and `effort` as a template: read from the run's
+ *   `inputs`, an upstream node's output (`{{nodes.pick.output.model}}`) or a
+ *   fanned node's item (`{{item.model}}`). The compiler's checks (each read as
+ *   in a prompt, `item` only on a `forEach` node, every written item's value
+ *   when only the item is read), and the rendering each session plan uses,
+ *   which checks the value when the node runs.
  */
 
 import {
@@ -21,9 +23,9 @@ import {
 } from "../expr/evaluate.ts";
 import { collectPaths } from "../expr/parse.ts";
 import { error } from "./diagnostics.ts";
-import { checkItemRead, itemFieldsOf } from "./for-each.ts";
-import { describePath } from "./ref-paths.ts";
-import { nodeSays } from "./says.ts";
+import { isItemRoot, itemScopes } from "./for-each.ts";
+import { type Context, describePath } from "./ref-paths.ts";
+import { checkTemplate } from "./templates.ts";
 import { type CompiledEdge, forEachOf } from "./types.ts";
 
 export type ItemSettingField = "model" | "effort";
@@ -61,8 +63,13 @@ const checkRendered = (
 ): ItemSetting<string> => {
   const text = rendered.trim();
   if (text === "") return { ok: true, value: undefined };
-  // A model id has no spaces, braces or quotes; an object or list does.
-  const fits = field === "effort" ? isEffort(text) : /^[^\s{}"]+$/u.test(text);
+  // A model id has no spaces, braces or quotes; an object or list does. A
+  // leading `-` would read as a flag of the agent CLI, and a trailing `.` is a
+  // driver prefix with no model (`claude-code.`).
+  const fits =
+    field === "effort"
+      ? isEffort(text)
+      : /^[^\s{}"-]([^\s{}"]*[^\s{}".])?$/u.test(text);
   return fits
     ? { ok: true, value: text }
     : {
@@ -72,8 +79,9 @@ const checkRendered = (
 };
 
 /**
- * A node's `model` or `effort` for one item: a plain value as written, a
- * template rendered with the item. Without an item, a template renders empty.
+ * A node's `model` or `effort` for one session: a plain value as written, a
+ * template rendered with `scope` (inputs, outputs, the item). What `scope`
+ * lacks renders empty.
  */
 export const itemSetting = (
   field: ItemSettingField,
@@ -99,14 +107,36 @@ export const itemEffort = (
     : { ok: false, error: `\`effort\` is \`${given.value}\`` };
 };
 
+/** Every path a template's parts read. */
+const readsOf = (parts: readonly TemplatePart[]) =>
+  parts.flatMap(part =>
+    typeof part === "string" ? [] : collectPaths(part.expr),
+  );
+
+const isNodeRead = ([root, name]: readonly (string | number)[]): boolean =>
+  root === "nodes" && name !== undefined;
+
+/**
+ * The first node whose output a template reads (`{{nodes.pick.output.model}}`
+ * gives `pick`), or `undefined` when it reads none.
+ */
+export const nodeReadOf = (text: string): string | undefined => {
+  const parts = templateOf(text);
+  const read =
+    parts === null
+      ? undefined
+      : readsOf(parts).find(segments => isNodeRead(segments));
+  return read === undefined ? undefined : String(read[1]);
+};
+
 /** A `model` or `effort` template's problems on one node. */
 const checkNodeField = (
-  workflow: Workflow,
-  says: ReturnType<typeof nodeSays>,
+  context: Context,
+  itemOf: ReturnType<typeof itemScopes>,
   id: string,
   field: ItemSettingField,
 ): Diagnostic[] => {
-  const node = workflow.nodes[id];
+  const node = context.workflow.nodes[id];
   const value: unknown =
     node === undefined ? undefined : Reflect.get(node, field);
   if (node === undefined || typeof value !== "string") return [];
@@ -123,33 +153,35 @@ const checkNodeField = (
   }
   if (parsed.parts.every(part => typeof part === "string")) return [];
   const each = forEachOf(node);
-  if (each === undefined) {
-    return [
-      error(
-        `${field}.template`,
-        `\`${field}\` may be a template only on a node with \`forEach\`, reading its item, e.g. \`{{item.${field}}}\``,
-        path,
-      ),
-    ];
+  const reads = readsOf(parsed.parts);
+  // `item` and `index` off a fanned node: said once, as this field's fault.
+  const misplaced =
+    each === undefined
+      ? reads
+          .filter(([root]) => isItemRoot(root))
+          .map(segments =>
+            error(
+              `${field}.template`,
+              `\`${describePath(segments)}\`: \`item\` and \`index\` are read only on a node with \`forEach\`; here a \`${field}\` template reads \`inputs.*\` or \`nodes.<id>.output.*\``,
+              path,
+            ),
+          )
+      : [];
+  const found = [
+    ...misplaced,
+    ...checkTemplate(id, field, value, context, itemOf(id)).filter(
+      d => d.code !== "item.outside",
+    ),
+  ];
+  const itemOnly = reads.every(([root]) => isItemRoot(root));
+  if (
+    found.some(d => d.severity === "error") ||
+    each === undefined ||
+    !("items" in each) ||
+    !itemOnly
+  ) {
+    return found;
   }
-  const reads = parsed.parts.flatMap(part =>
-    typeof part === "string" ? [] : collectPaths(part.expr),
-  );
-  const outside = reads.filter(([root]) => root !== "item");
-  if (outside.length > 0) {
-    return outside.map(segments =>
-      error(
-        `${field}.template`,
-        `\`${describePath(segments)}\`: a \`${field}\` template reads only the item, e.g. \`{{item.${field}}}\``,
-        path,
-      ),
-    );
-  }
-  const scope = { fields: itemFieldsOf(node, says) };
-  const fields = reads.flatMap(segments =>
-    checkItemRead(segments, scope, path),
-  );
-  if (fields.length > 0 || !("items" in each)) return fields;
   return each.items.flatMap((item, index) => {
     const given = checkRendered(
       field,
@@ -171,22 +203,24 @@ const checkNodeField = (
 };
 
 /**
- * `model` and `effort` templates: only on a `forEach` node, reading only
- * `item`, and every written item's value a model name or an effort level.
+ * `model` and `effort` templates: their reads checked as a prompt's (`inputs`,
+ * an upstream node's output, a fanned node's `item`), and every written item's
+ * value a model name or an effort level when the template reads only the item.
  * `defaults:` belong to no node, so they take no template.
  */
 export const checkItemSettings = (
   workflow: Workflow,
   edges: readonly CompiledEdge[],
 ): Diagnostic[] => {
-  const says = nodeSays(workflow.nodes, edges);
+  const context: Context = { workflow, edges };
+  const itemOf = itemScopes(workflow, edges);
   const defaults = FIELDS.flatMap(field => {
     const value = workflow.defaults?.[field];
     return value !== undefined && templateOf(value) !== null
       ? [
           error(
             `${field}.template`,
-            `\`defaults.${field}\` applies to every node, so it can't read an item; set the template on the \`forEach\` node`,
+            `\`defaults.${field}\` applies to every node, so it can't be a template; set the template on the node, where it may read \`inputs.*\`, \`nodes.<id>.output.*\` or a \`forEach\` node's \`item\``,
             ["defaults", field],
           ),
         ]
@@ -194,7 +228,7 @@ export const checkItemSettings = (
   });
   const nodes = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     isClaudeNode(node)
-      ? FIELDS.flatMap(field => checkNodeField(workflow, says, id, field))
+      ? FIELDS.flatMap(field => checkNodeField(context, itemOf, id, field))
       : [],
   );
   return [...defaults, ...nodes];

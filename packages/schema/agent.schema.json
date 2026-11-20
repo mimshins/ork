@@ -24,7 +24,7 @@
           "pattern": "\\{\\{.*\\}\\}"
         }
       ],
-      "description": "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
+      "description": "Reasoning effort, or a template reading inputs.*, the output of a node that runs before ({{nodes.<id>.output.<field>}}), or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
     },
     "driver": {
       "type": "string",

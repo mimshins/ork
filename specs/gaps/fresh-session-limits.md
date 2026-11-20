@@ -34,6 +34,11 @@ checked:
 - **L460 · The browser view does not show the fresh start.** Only `ork logs` and
   `--json` carry it (`fresh` on `node.started`); the log panel ignores the
   field.
+- **L515 · A fresh start from a changed driver shows only in the event.** The
+  `driverChanged` field of `node.started` (and `--json`) records it, but
+  `ork logs` prints no line for it and the browser view ignores it, so a user
+  sees a new session id and nothing says why
+  ([a changed driver](../scheduler/fresh-sessions.md#a-changed-driver)).
 - **L461 · The quality effect is unmeasured.** The estimate that found the
   saving (about 7% of builder cost) could not see what a fresh builder loses of
   its earlier tasks. The same-task A/B of both settings is pending, so the rule

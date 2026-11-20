@@ -184,7 +184,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     runDir,
     human,
     outputs,
-    sessions: createSessions(graph.workflow, nodeOf),
+    sessions: createSessions(graph.workflow, nodeOf, { options, outputs }),
     running,
     holds,
     stops,
@@ -217,8 +217,8 @@ export const startRun = (options: RunOptions): RunHandle => {
     const type = nodeOf(activation)?.type ?? "control.split";
     if (recorded === null) {
       const agent = graph.agents.get(activation.template ?? id);
-      const fresh = contextDeps.sessions.decide(activation);
-      onEvent(startedEvent(activation, type, round, agent, fresh));
+      const start = contextDeps.sessions.decide(activation);
+      onEvent(startedEvent(activation, type, round, agent, start));
     }
     const gathered = gather(
       activation,

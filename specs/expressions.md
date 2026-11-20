@@ -50,9 +50,12 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
   node's `env:` also reads `env.*`, and nothing else may
   ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
 - `item` and `index` are roots only while an item runs, in that node's own
-  `prompt`, `command`, `arguments`, `inputs`, `env`, `cwd` and `ref`, and, on a
-  agent node, `model` and `effort`, reading only `item`
+  `prompt`, `command`, `arguments`, `inputs`, `env`, `cwd` and `ref`, and, on an
+  agent node, `model` and `effort`
   ([an item's own model and effort](./scheduler/for-each.md#an-items-own-model-and-effort)).
+  Those two also read `inputs.*` and an earlier node's output on any agent node,
+  fanned or not
+  ([a model or effort from a template](./workflow-format/node-types.md#a-model-or-effort-from-a-template)).
   Everywhere else, as in an edge's `when:`, a bare `item` or `index` stays a
   field of `output`, so existing conditions read what they read before.
 - A `forEach.from` is a template that is exactly one path, and evaluates to the

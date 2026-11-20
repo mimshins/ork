@@ -142,12 +142,20 @@ hints, only on a fanned node.
 - **Not offered** in `instructions`, `context` or `skills`: their hint says
   nothing of it. Typed there it is `item.outside`.
 - **Not fanned:** no hint mentions `item` or `index`, anywhere.
-- **`model` and `effort`** on an agent node may read `{{item.<field>}}` only,
-  not `{{index}}`
-  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
-  Their hint does not mention it.
-- **A templated `effort`** (`{{item.effort}}`) shows as a text field, kept as
-  typed; a level shows as a choice.
+- **`model` and `effort`** on any agent node may be a template
+  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort),
+  [RFC-029](../../rfcs/archived/RFC-029-model-from-an-earlier-output.md)), so
+  their hint names the reads on every agent node, fanned or not, and never
+  `{{index}}`. It adds a sentence: "Reads `{{inputs.<name>}}` and
+  `{{nodes.<id>.output.<field>}}` of a node that runs first." On a fanned node
+  it ends "…, and `{{item.<field>}}`.", with the list's shared field names in
+  place of `<field>` when known. Not on `defaults.model` or `defaults.effort`:
+  their hint says nothing of it.
+- **A templated value** (any `{{`) adds a last sentence, "Read when the node
+  starts.", and no "Runs on" line: the driver is known only then. A literal
+  prefix such as `claude-code.{{inputs.tier}}` is left alone the same way.
+- **A templated `effort`** (`{{inputs.level}}`, `{{item.effort}}`) shows as a
+  text field, kept as typed; a level shows as a choice.
 - **In the group,** under the kind select, one line: "Items are `<id>.0` to
   `<id>.n`. Their results gather into `results`, `statuses` and `count`."
 
@@ -171,23 +179,30 @@ Builder adds no checks of its own; it shows each where its path points, as it
 does now (`context.problems`), and counts it on the card ("1 error", "1
 warning").
 
-| Code                  | Shown under                       | Is      |
-| --------------------- | --------------------------------- | ------- |
-| `forEach.from-path`   | List from                         | error   |
-| `forEach.order`       | List from                         | error   |
-| `forEach.not-list`    | List from                         | error   |
-| `forEach.undeclared`  | List from                         | warning |
-| `item.outside`        | the field that reads it           | error   |
-| `item.field`          | the field that reads it           | error   |
-| `model.template`      | Model                             | error   |
-| `effort.template`     | Effort                            | error   |
-| `model.item`          | the node's card only              | error   |
-| `effort.item`         | the node's card only              | error   |
-| `forEach.continue`    | Isolation                         | error   |
-| `forEach.unreached`   | Owner                             | error   |
-| `forEach.owner-order` | Owner                             | error   |
-| `forEach.notify`      | the rule's To, on the notifier    | error   |
-| `forEach.channel`     | Messages, with the workflow's own | error   |
+| Code                  | Shown under                       | Is                                                                        |
+| --------------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| `forEach.from-path`   | List from                         | error                                                                     |
+| `forEach.order`       | List from                         | error                                                                     |
+| `forEach.not-list`    | List from                         | error                                                                     |
+| `forEach.undeclared`  | List from                         | warning                                                                   |
+| `item.outside`        | the field that reads it           | error                                                                     |
+| `item.field`          | the field that reads it           | error                                                                     |
+| `model.template`      | Model                             | error                                                                     |
+| `effort.template`     | Effort                            | error                                                                     |
+| `ref.*`, `template.*` | Model or Effort, if it reads them | error (`template.not-upstream` and `ref.field` on an agent node: warning) |
+| `model.item`          | the node's card only              | error                                                                     |
+| `effort.item`         | the node's card only              | error                                                                     |
+| `forEach.continue`    | Isolation                         | error                                                                     |
+| `forEach.unreached`   | Owner                             | error                                                                     |
+| `forEach.owner-order` | Owner                             | error                                                                     |
+| `forEach.notify`      | the rule's To, on the notifier    | error                                                                     |
+| `forEach.channel`     | Messages, with the workflow's own | error                                                                     |
+
+`model.template` and `effort.template` now mean `item` or `index` read off a
+fanned node, or a template in `defaults`. An unknown input, node or field
+(`ref.input`, `ref.node`, `ref.field`) or a node that does not run first
+(`template.not-upstream`) shows under the field at `nodes.<id>.model` or
+`.effort`, as it does under a prompt.
 
 `forEach.channel` has the channel's path, not the node's, so no card counts it.
 `model.item` and `effort.item` have the item's path

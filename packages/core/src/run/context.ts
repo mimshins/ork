@@ -6,7 +6,7 @@
  *   leader, its ownership of its children.
  */
 
-import { isClaudeNode, type Node } from "@krapht/ork-schema";
+import { type Driver, isClaudeNode, type Node } from "@krapht/ork-schema";
 
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import type { Activation, RunOptions } from "./handle.ts";
@@ -24,11 +24,15 @@ export type ContextDeps = {
   runId: string;
   runDir: string;
   outputs: Record<string, NodeOutput>;
-  /** Each node's session in this process, and whether it starts fresh now. */
+  /**
+   * Each node's session in this process, the one it resumes now, if any, and
+   * the driver a session started on.
+   */
   sessions: {
     ids: Map<string, string>;
-    isFresh: (id: string) => boolean;
+    resume: (id: string) => string | undefined;
     handover: (id: string) => string | undefined;
+    started: (sessionId: string, driver: Driver) => void;
   };
   running: Set<string>;
   /** What the run has spent, and what is left of its budget and any quota. */
@@ -95,7 +99,12 @@ export const nodeContext = (
     ...(options.calls === undefined ? {} : { calls: options.calls }),
     emit: event => {
       deps.ports.owners.seen(id, event, cwd);
-      if (event.type === "session.started") deps.spend.started(event.driver);
+      if (event.type === "session.started") {
+        deps.spend.started(event.driver);
+        if (event.driver !== undefined && event.fork !== true) {
+          deps.sessions.started(event.sessionId, event.driver);
+        }
+      }
       if (event.type === "session.finished" && event.fork !== true) {
         const { sessionId, usage } = event.outcome;
         deps.spend.reported(id, sessionId, usage);
@@ -115,16 +124,8 @@ export const nodeContext = (
   if (machine !== undefined) context.machine = machine;
   if (activation.brief !== undefined) context.brief = activation.brief;
   if (activation.item !== undefined) context.item = activation.item;
-  // A delegated worker over `sessions.freshOver` starts its task fresh.
-  const resume =
-    options.replay?.cutOff?.(activation) ??
-    (deps.sessions.isFresh(id)
-      ? undefined
-      : resumeOf(
-          deps.nodeOf(activation),
-          deps.sessions.ids.get(id) ??
-            options.replay?.previousSession?.(activation),
-        ));
+  // Decided before it started: `freshOver` or a changed driver start fresh.
+  const resume = deps.sessions.resume(id);
   if (resume !== undefined) context.resume = resume;
   const handover =
     resume === undefined ? deps.sessions.handover(id) : undefined;

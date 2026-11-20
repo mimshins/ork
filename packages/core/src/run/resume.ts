@@ -14,6 +14,7 @@
 
 import { type EarlierSpend, earlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
+import { sessionDrivers } from "./fresh-session.ts";
 import { mailOf } from "./mail.ts";
 import type { Inputs, NodeResult, RunEvent, RunSettings } from "./types.ts";
 
@@ -63,6 +64,8 @@ export type ResumeState = {
   earlier: EarlierSpend;
   /** Where each node's last session worked, for the resumed workspace. */
   places: Map<string, string>;
+  /** The driver each session started on: another one starts it fresh. */
+  drivers: ReturnType<typeof sessionDrivers>;
 };
 
 /** How a run ended that cut its working nodes off, rather than failing them. */
@@ -289,5 +292,6 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     mail: mailOf(events),
     earlier: earlierSpend(events),
     places,
+    drivers: sessionDrivers(events),
   };
 };

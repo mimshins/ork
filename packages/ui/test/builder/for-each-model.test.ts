@@ -24,6 +24,7 @@ import {
   wholeNumber,
   withEachKind,
 } from "../../src/builder/for-each-model.ts";
+import { isSettingPath, settingHint } from "../../src/builder/model-driver.ts";
 import type { JsonSchema } from "../../src/builder/schema-model.ts";
 
 const graphOf = (edges: string) =>
@@ -154,6 +155,55 @@ describe("itemHint", () => {
     expect(
       itemHint(graph, ["nodes", "build", "instructions"], from, "Be."),
     ).toBe("Be.");
+  });
+});
+
+describe("settingHint", () => {
+  const graph = graphOf(EDGES);
+  const from = { from: "{{nodes.plan.output.tasks}}", maxItems: 5 };
+  const READS =
+    "Reads `{{inputs.<name>}}` and `{{nodes.<id>.output.<field>}}` of a node that runs first";
+
+  it("names inputs and an earlier output on a node that is not fanned", () => {
+    expect(settingHint(graph, { model: "sonnet" }, "model", "Model.")).toBe(
+      `Model. ${READS}.`,
+    );
+  });
+
+  it("keeps the form of a model when the schema gives no hint", () => {
+    expect(settingHint(graph, {}, "model")).toContain("<driver>.<model>");
+    expect(settingHint(graph, {}, "effort")).toBe(`${READS}.`);
+  });
+
+  it("adds the item fields on a fanned node, and never index", () => {
+    const hint = settingHint(graph, { forEach: from }, "effort");
+    expect(hint).toBe(`${READS}, and \`{{item.title}}\`, \`{{item.files}}\`.`);
+    expect(hint).not.toContain("index");
+  });
+
+  it("names a general item field when nothing says what an item has", () => {
+    expect(
+      settingHint(graph, { forEach: { from: "", maxItems: 1 } }, "effort"),
+    ).toBe(`${READS}, and \`{{item.<field>}}\`.`);
+  });
+
+  it("says a template is read when the node starts", () => {
+    expect(settingHint(graph, { effort: "{{inputs.level}}" }, "effort")).toBe(
+      `${READS}. Read when the node starts.`,
+    );
+    expect(
+      settingHint(graph, { model: "claude-code.{{inputs.tier}}" }, "model"),
+    ).toContain("Read when the node starts.");
+    expect(
+      settingHint(graph, { model: "claude-code.opus" }, "model"),
+    ).not.toContain("Read when");
+  });
+
+  it("is for a node's model and effort only", () => {
+    expect(isSettingPath(["nodes", "n", "model"])).toBe(true);
+    expect(isSettingPath(["nodes", "n", "effort"])).toBe(true);
+    expect(isSettingPath(["defaults", "model"])).toBe(false);
+    expect(isSettingPath(["nodes", "n", "prompt"])).toBe(false);
   });
 });
 

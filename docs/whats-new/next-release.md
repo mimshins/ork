@@ -64,3 +64,17 @@ What lands on `main` is listed here until it ships. Permissions are described in
 - **Rules Ork suggests.** A rule you allow again and again, 3 times across 2
   runs, becomes a `permission.suggest` feedback item naming the rule and the
   file to add it to; Ork writes nothing.
+
+- **A node's model from an input or an earlier node.** On any agent node,
+  `model` and `effort` can be a template that reads `inputs.*` and the output of
+  a node that runs before it, such as
+  `model: "{{nodes.pick.output.json.model}}"`, where `pick` is a script that
+  maps labels to a model name. `ork validate` accepts it and checks the reads
+  like a prompt's; the value is read when the node's session starts. A value
+  that is not one word, starts with `-` or ends with `.` fails the node, and so
+  does a read of an earlier node's output that comes out empty; an empty input
+  or item value uses the default as before. A rendered `claude-code.opus` picks
+  the driver, and a session that resumes on another driver starts fresh.
+  `defaults.model` still takes no template. See
+  [choosing a model](../guides/writing-workflows/choosing-a-model.md) and
+  [examples/pick-a-model.ork.yaml](../../examples/pick-a-model.ork.yaml).

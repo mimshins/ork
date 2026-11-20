@@ -66,6 +66,7 @@ export const replayOf = (
         options.resume.mail,
         options.resume.earlier,
         options.resume.fanOuts,
+        options.resume.drivers,
       );
 
 /**

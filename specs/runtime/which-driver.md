@@ -38,10 +38,21 @@ other text before a dot is part of a plain model, so
 driver.
 
 - **Where it works:** `defaults.model`, a node's `model`, an agent file's
-  `model`, and `{{item.model}}`, which is rendered for each item and then
-  parsed. The driver fit check runs on the rendered value, so an item that
+  `model`, and a template (`{{item.model}}`, `{{nodes.pick.output.model}}`,
+  `{{inputs.model}}`), which is rendered when the node's session is planned and
+  then parsed. The driver fit check runs on the rendered value, so an item that
   renders `command-code.deepseek/…` starts on Command Code
-  ([for-each](../scheduler/for-each.md#an-items-own-model-and-effort)).
+  ([for-each](../scheduler/for-each.md#an-items-own-model-and-effort),
+  [a model from a template](../workflow-format/node-types.md#a-model-or-effort-from-a-template)).
+- **A template pins nothing when validated.** `ork validate` reads the text as
+  written: `{{nodes.pick.output.model}}` names no driver, so the driver fit
+  check can't run before the run; the run checks the rendered one. A literal
+  prefix (`claude-code.{{inputs.tier}}`) pins its driver at validate. A node
+  `driver:` that disagrees with the rendered prefix fails the node when it runs.
+- **A changed driver starts a resumed session fresh.** A session belongs to the
+  driver it started on, so a node set to resume whose rendered model now names
+  another driver starts a new session
+  ([a changed driver](../scheduler/fresh-sessions.md#a-changed-driver)).
 - **A prefixed node needs no `driver`.** Giving both is allowed when they agree;
   when they don't, the compiler reports an error, `model.driver`: "model
   `claude-code.opus` names driver `claude-code`, but the node sets
@@ -63,7 +74,10 @@ driver to run subagents: the `subagents` capability of the
 refuse the leader's node, naming the sub-agent and the driver: "sub-agent
 `helper` runs in `lead`'s session on driver `open-code`, which does not run
 subagents". A sub-agent whose model names another driver than its leader's is
-refused too.
+refused too, when the model is written so. A sub-agent's templated model is
+rendered when its leader's session is planned; a rendered prefix naming another
+driver is stripped and the model passed to the leader's driver, not refused
+([L514](../gaps/for-each-limits.md)).
 
 ## The ready driver
 

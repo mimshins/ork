@@ -1427,6 +1427,21 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "model-from-output",
+        title: "A node's model from an earlier output or an input",
+        status: "active",
+        detail:
+          "Built, and waiting to merge (flip to done with its commit). RFC-029, Implemented (option A, ADR-107). A node's `model` and `effort` may be a template reading `inputs.*` and the output of a node that runs before it (`model: \"{{nodes.pick.output.model}}\"`), on any agent node, not only a `forEach` one. `ork validate` checks the reads like a prompt's (`ref.*`, `template.not-upstream`); the value is rendered when the session is planned, and a rendered `claude-code.opus` picks the driver and goes through the contradiction, fit and budget checks. A model that is not one word, starts with `-` or ends with `.` fails; a `nodes.*` read that renders empty fails the node, and a plan with no outputs takes the default with a warning. A resumed session whose driver changed starts fresh, and its `node.started` carries `driverChanged`. `defaults.model` and `defaults.effort` stay refused. Left: a conditional in expressions (option B) and a node that extends another (option C), each its own RFC; a wrong model name still fails at the session (L262).",
+        docs: [
+          "decisions/ADR-107-model-from-an-earlier-output-or-an-input.md",
+          "specs/scheduler/for-each.md",
+          "specs/scheduler/fresh-sessions.md",
+          "specs/runtime/which-driver.md",
+          "docs/guides/writing-workflows/choosing-a-model.md",
+          "rfcs/archived/RFC-029-model-from-an-earlier-output.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

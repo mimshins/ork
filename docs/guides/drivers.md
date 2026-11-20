@@ -55,10 +55,13 @@ rest goes to that tool as written. Anything else is a plain model for the run's
 driver, so `deepseek/deepseek-v4.1-flash` still works. A prefixed node needs no
 `driver`, and `ork run --driver` does not change it. `driver: open-code` with
 `model: claude-code.opus` fails `ork validate`. It works in `defaults.model`, in
-an agent file and in `model: "{{item.model}}"`, where each item's value is read
-as it renders. Which driver a session uses, in order: the model's prefix,
-`--driver`, the node's `driver`, `defaults.driver`, the driver ready on your
-machine.
+an agent file and in a template such as `model: "{{item.model}}"` or
+`model: "{{nodes.pick.output.json.model}}"`, which is read when the node's
+session starts ([choosing a model](./writing-workflows/choosing-a-model.md)).
+`ork validate` can't see a template's driver, so a `driver:` that disagrees with
+it fails when the node runs, and a session that resumes on another driver starts
+fresh. Which driver a session uses, in order: the model's prefix, `--driver`,
+the node's `driver`, `defaults.driver`, the driver ready on your machine.
 
 ## What each driver does
 

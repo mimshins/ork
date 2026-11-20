@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: pick-a-model
+description: Work a task on the model its labels call for. A script reads the labels and reports a model, claude-code.opus for a security or money task and claude-code.sonnet for the rest; the worker's model is read from that report when its session starts. A model name that is empty, has a space, or starts with a dash fails the node before it runs.
+inputs:
+  task:
+    type: string
+    required: true
+    description: What to do.
+  labels:
+    type: string
+    default: ""
+    description: The task's labels, comma separated, e.g. security,bug.
+defaults:
+  budgetUsd: 2
+limits:
+  budgetUsd: 4
+nodes:
+  pick:
+    type: tool.shell
+    script: |-
+      case ",$LABELS," in
+        *,security,* | *,money,*) model=claude-code.opus ;;
+        *) model=claude-code.sonnet ;;
+      esac
+      printf '{"model":"%s"}\n' "$model"
+    allow:
+      - sh
+    env:
+      LABELS: "{{inputs.labels}}"
+    output:
+      format: json
+      schema:
+        model: string
+  work:
+    type: agent.worker
+    prompt: "Do this task and report what you changed: {{inputs.task}}"
+    model: "{{nodes.pick.output.json.model}}"
+    isolation: worktree
+edges:
+  - pick -> work

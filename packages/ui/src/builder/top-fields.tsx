@@ -10,7 +10,13 @@ import { customControl } from "./custom-controls.tsx";
 import { forEachControl } from "./for-each-control.tsx";
 import { itemHint } from "./for-each-model.ts";
 import { type FormContext, type FormPath, isRecord } from "./form-parts.tsx";
-import { isModelPath, modelClash, modelHint } from "./model-driver.ts";
+import {
+  isModelPath,
+  isSettingPath,
+  modelClash,
+  modelHint,
+  settingHint,
+} from "./model-driver.ts";
 import { Field } from "./schema-form.tsx";
 import { type JsonSchema, kindOf } from "./schema-model.ts";
 import type { Builder } from "./use-builder.ts";
@@ -27,10 +33,18 @@ export const contextFor = (
     const document = builder.view?.document;
     const nodes = isRecord(document) ? document["nodes"] : undefined;
     const node = isRecord(nodes) ? nodes[String(path[1])] : undefined;
+    const field = path.at(-1);
     const hint =
       graph === undefined || !isRecord(node)
         ? description
-        : itemHint(graph, path, node["forEach"], description);
+        : isSettingPath(path)
+          ? settingHint(
+              graph,
+              node,
+              field === "effort" ? "effort" : "model",
+              description,
+            )
+          : itemHint(graph, path, node["forEach"], description);
     return isModelPath(path) && isRecord(node)
       ? modelHint(node["model"], hint)
       : hint;

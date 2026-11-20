@@ -108,13 +108,16 @@ nodes:
         - { concern: tests, model: claude-code.sonnet }
 ```
 
-Only `{{item.…}}` works there, and only on a node with `forEach`; `ork validate`
-refuses `model: "{{index}}"`, a template on a node without `forEach`, and one in
-`defaults:`. It checks each written item: a model is one word, an `effort` is
+`{{item.…}}` works there only on a node with `forEach`; `ork validate` refuses
+it on a node without one, and any template in `defaults:`. The template may read
+`inputs.*` and an earlier node's output too
+([choosing a model](./choosing-a-model.md)). `ork validate` checks each written
+item when the template reads only the item: a model is one word, an `effort` is
 `low`, `medium`, `high`, `xhigh` or `max`. An item from `from:` is checked when
 it runs, and one with a bad value fails on its own. An empty value uses the
-default. `ork usage` shows each item's real model. `driver`, `budgetUsd`,
-`budgetTokens` and `maxTurns` can't come from an item.
+default. `ork usage` shows each item's real model. An item whose model names
+another driver than its last session's starts fresh when it resumes. `driver`,
+`budgetUsd`, `budgetTokens` and `maxTurns` can't come from an item.
 
 ## Pace and failure
 

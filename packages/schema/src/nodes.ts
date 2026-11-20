@@ -41,12 +41,13 @@ const NotListSchema = z
   );
 
 const NODE_EFFORT_HINT =
-  "expected low, medium, high, xhigh or max, or {{item.<field>}}";
+  "expected low, medium, high, xhigh or max, or a {{...}} template";
 
 /**
- * A Claude node's effort: a level, or on a `forEach` node a template reading
- * its item (`{{item.effort}}`), which the compiler checks and each item
- * renders.
+ * A Claude node's effort: a level, or a template reading `inputs.*`, the output
+ * of a node that runs before (`nodes.<id>.output.*`), or on a `forEach` node
+ * its item (`{{item.effort}}`), which the compiler checks and renders when the
+ * node's session is planned.
  */
 const NodeEffortSchema = z
   .union(
@@ -57,7 +58,7 @@ const NodeEffortSchema = z
     { error: NODE_EFFORT_HINT },
   )
   .describe(
-    "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model.",
+    "Reasoning effort, or a template reading inputs.*, the output of a node that runs before ({{nodes.<id>.output.<field>}}), or {{item.<field>}} on a forEach node. Default: Claude Code's for the model.",
   );
 
 /**

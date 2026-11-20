@@ -162,7 +162,7 @@ export const planNodeSession = (
   const model =
     models.model === undefined ? undefined : modelDriver(models.model);
 
-  const warnings: string[] = [];
+  const warnings: string[] = [...models.warnings];
   const brief = renderBrief(
     node.prompt,
     options.inputs,
@@ -227,8 +227,9 @@ export const planNodeSession = (
     options.inputs,
     options.outputs,
   );
-  if (agents !== undefined) {
-    spec.agents = agents;
+  if (!agents.ok) return { ok: false, error: agents.error };
+  if (agents.agents !== undefined) {
+    spec.agents = agents.agents;
     // A session restricted to some tools still needs the one subagents use.
     spec.tools.only?.push(AGENT_TOOL);
   }

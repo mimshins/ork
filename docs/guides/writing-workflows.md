@@ -19,6 +19,8 @@ parts.
   tells you
 - [Running a node once per item](./writing-workflows/running-per-item.md):
   lists, `{{item}}`, pace, results and resuming
+- [Choosing a model while the run goes](./writing-workflows/choosing-a-model.md):
+  a `model` or `effort` from an input or an earlier node's output
 
 ## The shape of a file
 
@@ -251,6 +253,8 @@ whole workflow.
 - `{{inputs.feature}}`: a run input.
 - `{{nodes.spec.output.artifacts.spec}}`: a field of another node's report.
 - `{{run.id}}`: run metadata.
+- An agent node's `model` and `effort` read `inputs.*` and an earlier node's
+  output too ([choosing a model](./writing-workflows/choosing-a-model.md)).
 - `{{item}}` and `{{index}}`: the entry and its place, in a node with
   [`forEach`](./writing-workflows/running-per-item.md#reading-the-item).
 

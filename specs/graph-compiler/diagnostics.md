@@ -78,9 +78,9 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `forEach.owner-order`    | error    | a child with `forEach` merges into an owner that starts only after it            |
 | `item.outside`           | error    | `{{item}}` or `{{index}}` outside the templates of a node with `forEach`         |
 | `item.field`             | error    | `{{item.<field>}}` names a field the item shape or static entries lack           |
-| `model.template`         | error    | `model` is a template off a fanned node, or reads more than `item`               |
-| `effort.template`        | error    | `effort` is a template off a fanned node, or reads more than `item`              |
-| `model.item`             | error    | a written item's `model` is empty or has a space, brace or quote                 |
+| `model.template`         | error    | `model` reads `item`/`index` off a fanned node, or is a template in `defaults`   |
+| `effort.template`        | error    | `effort` reads `item`/`index` off a fanned node, or is a template in `defaults`  |
+| `model.item`             | error    | a written item's `model` is empty or not one word (space, brace, quote)          |
 | `model.driver`           | error    | `model` names a driver (`claude-code.opus`) other than the node's own `driver`   |
 | `effort.item`            | error    | a written item's `effort` is not `low`, `medium`, `high`, `xhigh` or `max`       |
 | `ref.undeclared`         | warning  | a field of a tool's or MCP call's JSON that no `output.schema` declares          |
@@ -99,6 +99,16 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `template.scope`         | error    | a template reads outside `inputs`, `nodes` and `run`                             |
 | `template.not-upstream`  | warning  | a template reads a node that does not run first                                  |
 | `lock.scope`             | error    | a node's `lock` name reads a node's output or `run`, not only `inputs`           |
+
+A `model` or `effort` template takes the same `ref.*` and `template.*` checks as
+a prompt, at `nodes.<id>.model` or `.effort`
+([a model or effort from a template](../workflow-format/node-types.md#a-model-or-effort-from-a-template)).
+`model.template` and `effort.template` are only for `item` or `index` read off a
+fanned node, and a template in `defaults`; the message names what to change.
+`model.item` and `effort.item` check a written item only when the template reads
+nothing but `item` and `index`. A template pins no driver, so `model.driver` and
+the driver fit check read only a literal prefix; the run checks the rendered
+one.
 
 ## Driver fit
 

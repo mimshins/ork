@@ -1,6 +1,6 @@
 # RFC-029 — A node's model from an earlier output or an input
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-20
 - **Decided:** by the maintainer on 2026-11-20 (option A)
 - **Supersedes:** —

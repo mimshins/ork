@@ -97,4 +97,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [026](./archived/RFC-026-omp-driver.md)                        | The omp driver: oh-my-pi's `omp` CLI as the fifth driver           | Implemented |
 | [027](./active/RFC-027-long-lived-protocol-drivers.md)         | A two-way client for `omp --mode rpc` and `codex app-server`       | Accepted    |
 | [028](./archived/RFC-028-permissions-without-asking.md)        | Permissions without asking: parse, refuse, remember, suggest       | Implemented |
-| [029](./active/RFC-029-model-from-an-earlier-output.md)        | A node's model from an earlier output or an input                  | Accepted    |
+| [029](./archived/RFC-029-model-from-an-earlier-output.md)      | A node's model from an earlier output or an input                  | Implemented |

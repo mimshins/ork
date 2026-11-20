@@ -4,7 +4,7 @@
  *   choice, and a group that opens while it holds something.
  */
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { Select } from "../components/select.tsx";
@@ -140,9 +140,11 @@ export const ChoiceField = ({
     })),
   ];
   const description = descriptionOf(schema);
+  const hintId = useId();
   return (
     <div className={styles["choice"]}>
       <Select
+        describedBy={description === undefined ? undefined : hintId}
         label={labelOf(name)}
         onChange={next => {
           setField(
@@ -156,7 +158,10 @@ export const ChoiceField = ({
         value={value === undefined ? (items[0]?.value ?? "") : choiceKey(value)}
       />
       {description === undefined ? null : (
-        <p className={styles["hint"]}>
+        <p
+          className={styles["hint"]}
+          id={hintId}
+        >
           <CodeText text={description} />
         </p>
       )}

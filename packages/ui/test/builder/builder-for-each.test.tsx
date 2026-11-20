@@ -300,19 +300,33 @@ describe("accessibility", () => {
   });
 });
 
+/** The words of the element an `aria-describedby` points at ("" when none). */
+const describedBy = (element: HTMLElement): string =>
+  document.querySelector(
+    `[id="${element.getAttribute("aria-describedby") ?? ""}"]`,
+  )?.textContent ?? "";
+
 describe("{{item}}", () => {
   it("is offered on a fanned node's prompt, with the item's fields", async () => {
     await open("build", FANNED);
     expect(
-      await screen.findByText(/Reads/u, { selector: "p *, p" }),
-    ).toBeTruthy();
+      (await screen.findAllByText(/Reads/u, { selector: "p *, p" })).length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText("{{item.title}}").length).toBeGreaterThan(0);
   });
 
   it("is never mentioned on a node that isn't fanned", async () => {
     await open("build");
+    // The model and effort hints still name inputs and outputs, not the item.
+    await screen.findAllByText(/of a node that runs first/u);
     expect(screen.queryByText("{{item}}")).toBeNull();
-    expect(screen.queryByText(/Reads/u)).toBeNull();
+    expect(screen.queryByText("{{index}}")).toBeNull();
+  });
+
+  it("is read out with the Effort choice on an agent node", async () => {
+    await open("build");
+    const trigger = await screen.findByRole("combobox", { name: "Effort" });
+    expect(describedBy(trigger)).toMatch(/Reads/u);
   });
 
   it("stays open when the user chooses Once from inside it", async () => {

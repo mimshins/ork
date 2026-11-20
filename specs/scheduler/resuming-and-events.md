@@ -116,6 +116,10 @@ pass and who ran it ([check once](../check-once.md#in-a-workflow)).
 A `node.started` also carries `fresh` (`contextTokens`, `over`) when the
 `sessions.freshOver` rule started a delegated task in a
 [fresh session](./fresh-sessions.md) instead of resuming; it is absent
+otherwise, and on runs from before. It carries `driverChanged` (`from`, `to`)
+when a node set to resume started fresh because its driver is no longer the one
+its session started on
+([a changed driver](./fresh-sessions.md#a-changed-driver)); it is absent
 otherwise, and on runs from before.
 
 The run result lists each node (runs, ok, last output, cost), the total cost,

@@ -5,7 +5,7 @@
  *   waits for a slot or a lock.
  */
 
-import type { NodeType } from "@krapht/ork-schema";
+import type { Driver, NodeType } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
 import type {
@@ -35,6 +35,12 @@ export type NodeEvent =
        * when it resumed, started fresh anyway, or on runs from before.
        */
       fresh?: { contextTokens: number; over: number };
+      /**
+       * A resumed session started fresh because the node's driver changed: the
+       * driver its session started on, and the one it runs on now. Absent
+       * otherwise, and on runs from before.
+       */
+      driverChanged?: { from: Driver; to: Driver };
     }
   | { type: "node.event"; id: string; event: RuntimeEvent }
   | {

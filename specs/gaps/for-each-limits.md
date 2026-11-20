@@ -64,19 +64,32 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   reruns every item, so `build`'s three reviewers dropped the
   `coverage: partial` round. What a reviewer didn't read is in its `unchecked`,
   at the `ratify` and `decide` gates, and doesn't hold the run back.
-- **L262 · An item's own model is checked by shape, and only `model` and
-  `effort` come from it.** Ork keeps no list of model names, so a written or
-  `from:` item's `model` is checked only to be one word with no space, brace or
-  quote; a name Claude Code doesn't know fails that item when its session
-  starts. `item` is the only thing a `model` or `effort` template reads (not
-  `index`, `inputs` or `nodes`), and `driver`, `budgetUsd`, `maxTurns` and the
-  other fields can't come from an item. Some session plans have no item to
-  render with, so a template there falls back to the defaults: `ork chat` on an
-  item resumes it on the model its session started on (the event records it),
-  but at the default effort, which no event records; `ork run --node` on a
-  fanned node, and an owner's fork that answers a question from an item, plan
-  without the item and take the default model and effort.
-  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort))
+- **L262 · A model from a template is checked by shape, and only `model` and
+  `effort` come from one.** Ork keeps no list of model names, so a written,
+  `from:`, input or output value is checked only to be one word with no space,
+  brace, quote or leading `-`, and no trailing `.`; a name Claude Code doesn't
+  know fails that node or item when its session starts, not in `ork validate`.
+  `driver`, `budgetUsd`, `maxTurns` and the other fields can't come from a
+  template. Some session plans have no item or outputs to render with, so a
+  template there falls back to the defaults: `ork chat` on an item resumes it on
+  the model its session started on (the event records it), but at the default
+  effort, which no event records; `ork run --node`, `ork chat` and an owner's
+  fork that answers a question plan without outputs, so a `nodes.*` read takes
+  the default model and effort (with a warning) instead of failing;
+  `ork run --node` on a fanned node and an owner's fork from an item plan
+  without the item too.
+  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort),
+  [a model from a template](../workflow-format/node-types.md#a-model-or-effort-from-a-template))
+- **L513 · A called workflow's model input isn't checked as a model name at the
+  call site.** A `workflow.call` that passes
+  `model: "{{nodes.pick.output.model}}"` as an input of the callee fails there,
+  when its node reads the input, not in the caller's `ork validate`. Ork can't
+  tell an input is a model without a type for it.
+- **L514 · A sub-agent's rendered model with another driver's prefix is
+  stripped, not refused.** A written prefix other than its leader's driver is
+  refused by `ork validate` and `ork run`; a templated one is rendered when the
+  leader's session is planned, and its prefix is dropped, so the model name goes
+  to the leader's driver.
 - **L315 · `--in-place` runs parallel `worktree` items in one checkout.** The
   flag makes every `worktree` node work in the project checkout
   ([worktrees](../worktrees.md)), so the items of a fanned `isolation: worktree`

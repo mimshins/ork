@@ -19,7 +19,11 @@ import { describe, expect, it } from "vitest";
 import { runWorkflowFile } from "../src/index.ts";
 import { formatRunResult } from "../src/run/format-result.ts";
 import type { Term } from "../src/term/mode.ts";
-import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
+import {
+  openCodeReady,
+  readyOnly,
+  standInDrivers,
+} from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -166,7 +170,9 @@ const stoppedByCap = async () => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin, env })),
-      driverChecks: openCodeReady,
+      // Its sessions are claude-code's: another ready driver would start the
+      // cut-off session fresh on resume, as a changed driver does.
+      driverChecks: readyOnly("claude-code"),
       drivers: standInDrivers,
       store,
       home,

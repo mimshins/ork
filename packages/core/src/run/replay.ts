@@ -3,8 +3,10 @@
  *   order until it runs anew, a cut-off node's session once, loop answers in
  *   order, and for a fanned node (RFC-013) its recorded list and each item's
  *   results by item id and round, so items finishing in any order get their own
- *   back.
+ *   back; and the driver each recorded session started on.
  */
+
+import type { Driver } from "@krapht/ork-schema";
 
 import type { HumanChannel } from "../runtime/types.ts";
 import type { EarlierSpend } from "../usage/spend.ts";
@@ -39,6 +41,7 @@ export const createReplay = (
   mail?: Mail,
   earlier?: EarlierSpend,
   fanOuts: RecordedFanOuts = NO_FAN_OUTS,
+  drivers: ReadonlyMap<string, Driver> = new Map(),
 ): Replay & { kept: () => string[] } => {
   const sessions = new Map(cutOff);
   const used = new Map<string, number>();
@@ -105,6 +108,7 @@ export const createReplay = (
         : [...(fanOuts.items.get(id) ?? [])].findLast(
             ([before]) => before < round,
           )?.[1].sessionId,
+    sessionDriver: sessionId => drivers.get(sessionId),
     lastOutput: id => history.get(id)?.at(-1)?.output,
     kept: () => [...history.keys(), ...fanOuts.items.keys()],
     ...(mail === undefined ? {} : { mail }),
