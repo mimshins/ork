@@ -110,6 +110,7 @@ describe("an omp leg fails closed", () => {
     expect(typesOf(events)).toEqual(["session.finished"]);
     const outcome = outcomeOf(events);
     expect(outcome.subtype).not.toBe("success");
+    expect(outcome.end?.kind).toBe("driver_crashed");
     expect(said(outcome)).toContain(words);
     expect(calls("asked")).toEqual([]);
   });
@@ -123,6 +124,7 @@ describe("an omp leg fails closed", () => {
     });
     const events = await collect(session);
     expect(typesOf(events)).toEqual(["session.finished"]);
+    expect(outcomeOf(events).end?.kind).toBe("driver_crashed");
     expect(said(outcomeOf(events))).toContain(
       "Trusted extension failed to load",
     );

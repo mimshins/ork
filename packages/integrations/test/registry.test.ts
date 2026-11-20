@@ -299,6 +299,13 @@ const answer = (stdout: string | null) =>
     stdout === null ? { ok: false, stdout: "" } : { ok: true, stdout },
   );
 
+/** The `omp` driver, found by id so a reorder of the list cannot swap it. */
+const listedOmp = (): AgentDriver => {
+  const found = AGENT_DRIVERS.find(each => each.id === "omp");
+  if (found === undefined) throw new Error("no omp driver in AGENT_DRIVERS");
+  return found;
+};
+
 /**
  * `omp`'s check with an `omp` whose `--version` and `models --json` answer as
  * given (`null`: the command fails), on `driver` (the real one by default).
@@ -307,7 +314,7 @@ const answer = (stdout: string | null) =>
 const ompCheck = async (
   version: string | null,
   models: string | null,
-  driver: AgentDriver = AGENT_DRIVERS[4],
+  driver: AgentDriver = listedOmp(),
 ) => {
   const calls: string[] = [];
   const exec: Exec = (program, args) => {
@@ -324,7 +331,7 @@ const OMP_MODELS = JSON.stringify({
 
 describe("the omp driver", () => {
   it("is the fifth, not yet proven, and declares what it does itself", () => {
-    const omp = AGENT_DRIVERS[4];
+    const omp = listedOmp();
     expect(omp.id).toBe("omp");
     expect([omp.proven, omp.onePerCheckout]).toEqual([false, false]);
     expect(omp.capabilities).toEqual({

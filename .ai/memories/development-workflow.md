@@ -80,3 +80,11 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
 - The stop-end fix lives in `executePlaced`, which holds the node's own signal.
   `stops.signalFor` registers a fresh AbortController per call, so calling it
   from `executeOne`'s catch would leave stale entries in the stop table.
+- omp hold tests (`packages/runtime/test/omp-hold.test.ts`): the heavy test
+  pauses the node from the `slot.taken` event callback (`portOf` `onTaken`).
+  That works only while `slot.taken` is emitted before `heavy.before` returns
+  "go"; reorder them and the test holds the heavy call itself and fails on
+  `ran`. After a stop, `holdAtTool` answers "go" because the signal is aborted,
+  so the `existsSync(STOPPED)` check in `omp-guard.ts` is the only guard against
+  a held call running. `FAKE_OMP_IGNORE_SIGINT=1` keeps the fake alive past
+  SIGINT to test it.

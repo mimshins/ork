@@ -5,8 +5,10 @@
  *   rules refuse never reaches the hold endpoint; a pause past the window
  *   refuses the call with a request to make it again, which waits again, in one
  *   leg; a hold that cannot be asked refuses the call; a stop while a call is
- *   held ends the session with the call not run; a `heavy` command waits for
- *   its slot and frees it; and a session with no hold port asks nothing.
+ *   held ends the session with the call not run, even when `omp` plays on past
+ *   the SIGINT; a `heavy` command waits for its slot and frees it once it has
+ *   run, while the session goes on; and a session with no hold port asks
+ *   nothing.
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -159,14 +161,19 @@ describe("an omp session's paused node", () => {
 
   it("does not run a held call once the session is stopped, and ends interrupted", async () => {
     const { recorded, hold } = holdsOf(true);
-    const { session, calls } = played({ ports: { hold } });
+    // A fake that plays on past the SIGINT: only the stopped marker keeps the
+    // held call from running.
+    const { session, calls } = played({
+      ports: { hold },
+      env: { FAKE_OMP_IGNORE_SIGINT: "1" },
+    });
     const { all } = await whileHeld(session.events, recorded, () =>
       session.interrupt(),
     );
-    // The fake may make its next call before the SIGINT lands; the guard
-    // refuses that one too, so no call runs whatever the timing.
-    expect(calls("asked").length).toBeGreaterThan(0);
     expect(calls("ran")).toEqual([]);
+    expect(calls("refused").map(call => call.reason)).toContainEqual(
+      expect.stringContaining("Ork stopped this node"),
+    );
     expect(outcomeOf(all).end?.kind).toBe("interrupted");
   });
 });
@@ -234,12 +241,18 @@ const ledgerOf = (): SlotLedger =>
     pollMs: 10,
   });
 
-const portOf = (ledger: SlotLedger, recorded: RunEvent[]): MachinePort => {
+/** The node's machine port; `onTaken` runs as its slot is taken. */
+const portOf = (
+  ledger: SlotLedger,
+  recorded: RunEvent[],
+  onTaken = quiet,
+): MachinePort => {
   const port = machinePort(
     {
       machine: { rules: { heavy: ["echo heavy"], priority: "normal" }, ledger },
       onEvent: event => {
         recorded.push(event);
+        if (event.type === "slot.taken") onTaken();
       },
     },
     "r1",
@@ -251,17 +264,27 @@ const portOf = (ledger: SlotLedger, recorded: RunEvent[]): MachinePort => {
 };
 
 describe("an omp session's heavy call", () => {
-  it("waits for its slot, runs once it is taken, and frees it", async () => {
+  it("waits for its slot, runs once it is taken, and frees it after the call, while the session goes on", async () => {
     const ledger = ledgerOf();
     const other = await ledger.take(
       { run: "r0", node: "check", pid: process.pid },
       { signal: new AbortController().signal },
     );
     const recorded: RunEvent[] = [];
+    // Paused as the slot is taken: the heavy call goes on, the next is held.
+    const held = holdsOf(false);
     const { session, calls } = played({
-      ports: { hold: holdsOf(false).hold, machine: portOf(ledger, recorded) },
+      ports: {
+        hold: held.hold,
+        machine: portOf(ledger, recorded, () => {
+          held.holds.pause();
+        }),
+      },
       over: SHELL,
-      script: shell("echo heavy"),
+      script: [
+        { calls: [{ tool: "bash", input: { command: "echo heavy" } }] },
+        { calls: [{ tool: "bash", input: { command: "ls" } }] },
+      ],
     });
     const freeLater = (async () => {
       await until(recorded, "slot.waiting");
@@ -269,13 +292,21 @@ describe("an omp session's heavy call", () => {
       expect(calls("ran")).toEqual([]);
       other?.();
     })();
-    await collect(session);
+    let holders: unknown = "not seen";
+    let ran: unknown = "not seen";
+    await whileHeld(session.events, held.recorded, () => {
+      holders = ledger.holders();
+      ran = calls("ran").map(call => call.input);
+      held.holds.proceed();
+    });
     await freeLater;
+    expect(ran).toEqual([{ command: "echo heavy" }]);
+    expect(holders).toEqual([]);
     expect(recorded).toEqual([
       { type: "slot.waiting", id: NODE, holders: ["r0/check"] },
       { type: "slot.taken", id: NODE },
     ]);
-    expect(calls("ran")).toHaveLength(1);
+    expect(calls("ran")).toHaveLength(2);
     expect(ledger.holders()).toEqual([]);
   });
 });

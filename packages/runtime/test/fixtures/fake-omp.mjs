@@ -24,9 +24,10 @@
  *   with `isError: true` and the reason, and no `tool_result` event; a call
  *   that ran gets one. A call refused with "Make the same call again" is made
  *   again in the next request. SIGINT exits 130 at once (mid-turn after an
- *   aborted assistant message and `turn_end`), so a held call never runs.
- *   `--max-cost` counts the whole session (its spend is kept in the session's
- *   file): over it before a request, it prints a `cost-gate` `notice` and
+ *   aborted assistant message and `turn_end`), so a held call never runs;
+ *   with `FAKE_OMP_IGNORE_SIGINT=1` it is ignored, and the fake plays on until
+ *   its scenario or script ends and exits. `--max-cost` counts the whole
+ *   session (its spend is kept in the session's file): over it before a request, it prints a `cost-gate` `notice` and
  *   `agent_end` and exits 3; a resumed leg already over it prints `session`,
  *   `advisor_cost_changed` and the notice only. Each request uses 100 input,
  *   20 output, 80 cache-read and 5 cache-write tokens, and `FAKE_OMP_COST`
@@ -316,6 +317,7 @@ const show = message => {
 const agentEnd = () => out({ type: "agent_end", messages, isTerminal: true, yielded: false });
 
 process.on("SIGINT", () => {
+  if (env.FAKE_OMP_IGNORE_SIGINT === "1") return;
   if (inTurn) {
     const aborted = assistant([], ZERO, "aborted");
     out({ type: "message_start", message: aborted });

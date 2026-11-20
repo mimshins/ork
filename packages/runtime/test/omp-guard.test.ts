@@ -2,9 +2,10 @@
  * @file Tests for the `omp` guard (RFC-026): the generated module is written to
  *   a private folder, imported, and its `tool_call` and `tool_result` handlers
  *   are called as `omp` calls them, against a stand-in for Ork's hold endpoint.
- *   They cover the node's rules, the fence on file tools (the worktree, Ork's
- *   private folder, addresses with a scheme), holding a paused node's call, the
- *   `stopped` marker, freeing a `heavy` slot after a call, and failing closed.
+ *   They cover the node's rules, extract-only reads, the fence on file tools
+ *   (the worktree, Ork's private folder, addresses with a scheme), holding a
+ *   paused node's call, the `stopped` marker, freeing a `heavy` slot after a
+ *   call, and failing closed.
  */
 
 import {
@@ -358,6 +359,13 @@ describe("the omp guard's rules", () => {
     expect(
       await outcome(guard, "bash", { command: "pnpm test | tail -5" }),
     ).toBe("runs");
+  });
+
+  it("refuses a read of a text file under reading: extract-only, and lets a PDF or an image through", async () => {
+    const guard = await loadGuard({ refuseTextReads: true });
+    expect(await outcome(guard, "read", { path: "a.ts" })).toMatch(/extract/u);
+    expect(await outcome(guard, "read", { path: "spec.pdf" })).toBe("runs");
+    expect(await outcome(guard, "read", { path: "shot.PNG" })).toBe("runs");
   });
 });
 
