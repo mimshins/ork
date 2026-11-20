@@ -632,6 +632,7 @@ export const NODES = [
       "Gives each node with `isolation: worktree` its own git worktree and branch, beside the clone, based on its owner's branch; commits its leftovers and merges a passing child into its owner, as the project's git rules say.",
     facts: [
       "Project rules (`.ork/project.yaml`, a workflow's `rules:`) name branches and worktrees, set the base, and can say `commit: never` (detached worktrees, work handed over as patches) or `merge: never`.",
+      "A remote base such as `origin/main` is fetched before a run starts (`git.fetch: auto`, a failed fetch stops the run); with `git.readonly: base`, readonly nodes with no owner and no upstream worktree read one shared detached worktree at the base, not the checkout (ADR-107).",
       "Never pushes, never takes over a branch its run did not create, and records every branch and worktree it makes.",
       "`shared` works in the owner's worktree (or the project root); `readonly` shares it with write tools denied, and with no owner follows its input's worktree.",
       "Copies `CLAUDE.local.md`, `.claude/settings.local.json` and what `.worktreeinclude` lists; carries upstream artifacts in.",

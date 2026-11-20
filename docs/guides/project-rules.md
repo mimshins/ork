@@ -121,7 +121,7 @@ it. If a run can make more than one worktree, the names need `{node}`;
 `ork validate` tells you. Without `{run}`, a second run stops while the first
 one's branch exists: Ork never takes over a branch it did not create.
 
-`base` must be a commit you have: Ork never fetches, so run `git fetch` first.
+A remote `base` is fetched first: [a fresh base](./worktrees/fresh-base.md).
 
 ## A workflow's own rules
 

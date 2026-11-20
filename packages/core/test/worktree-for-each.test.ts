@@ -446,6 +446,8 @@ describe("a worktree that runs again under merge: patch", () => {
     commit: "auto",
     merge: "patch",
     base: "HEAD",
+    fetch: "auto",
+    readonly: "checkout",
     branch: "b",
     worktrees: "w",
   };

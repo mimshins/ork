@@ -174,3 +174,4 @@ export * from "./worktree/run-root.ts";
 export * from "./worktree/upstream.ts";
 export * from "./worktree/words.ts";
 export * from "./worktree/workspace.ts";
+export * from "./worktree/workspace-options.ts";

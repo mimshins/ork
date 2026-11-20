@@ -48,6 +48,8 @@ export const preflight = async (
     place: ProjectPlace;
     projects: readonly ProjectRecord[];
     inputs: Inputs;
+    /** The run has its own root (a worktree at its base). */
+    runRoot?: boolean;
   },
 ): Promise<Ready> => {
   const { workflow, place, projects } = given;
@@ -88,7 +90,16 @@ export const preflight = async (
   for (const line of noteLines(budget)) options.err(line);
   const checkout = await prepareCheckout(
     workflow,
-    { ...options, cwd: place.root },
+    {
+      ...options,
+      cwd: place.root,
+      // A resume, a handed-over base or a run root already has its commit.
+      fetch:
+        options.resume === undefined &&
+        options.baseRef === undefined &&
+        given.runRoot !== true,
+      runRoot: given.runRoot === true,
+    },
     given.inputs,
   );
   if (!checkout.ok) return { ok: false, lines: checkout.lines };
@@ -101,6 +112,8 @@ export const preflight = async (
   for (const line of noteLines(local)) options.err(line);
   return {
     ...checkout,
+    // A handed-over or recorded base wins over `git.base` resolved again.
+    base: options.baseRef ?? options.resume?.settings.baseRef ?? checkout.base,
     limits: limits.now,
     ...(driver.driver === undefined ? {} : { readyDriver: driver.driver }),
   };

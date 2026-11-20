@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { parseWorkflow, type Project } from "@krapht/ork-schema";
+import { parseWorkflow, type Project, ProjectSchema } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -44,6 +44,9 @@ const specOf = (plan: PlanResult) => {
   if (!plan.ok) throw new Error(plan.error);
   return plan.spec;
 };
+
+const parse = (git: object) =>
+  ProjectSchema.safeParse({ schemaVersion: 1, git }).success;
 
 const messages = (lines: string[]) =>
   checkRules(workflowOf(lines)).map(d => `${d.severity}: ${d.message}`);
@@ -120,6 +123,35 @@ describe("project rules under a workflow", () => {
       effective(["rules: { sessions: { freshOver: never } }"], project),
     ).toEqual({ freshOver: "never" });
     expect(effective([], { schemaVersion: 1 })).toBeUndefined();
+  });
+
+  it("fetch a remote base and read the checkout by default, and take the project's fetch and readonly", () => {
+    const nodes = ["nodes:", "  a: { type: agent.worker, prompt: go }"];
+    expect(gitRulesOf(workflowOf(nodes))).toMatchObject({
+      fetch: "auto",
+      readonly: "checkout",
+    });
+    const project: Project = {
+      schemaVersion: 1,
+      git: { fetch: "never", readonly: "base" },
+    };
+    expect(
+      gitRulesOf(applyProject(workflowOf(nodes), { project })),
+    ).toMatchObject({ fetch: "never", readonly: "base" });
+    expect(
+      gitRulesOf(
+        applyProject(
+          workflowOf(["rules: { git: { fetch: auto } }", ...nodes]),
+          { project },
+        ),
+      ),
+    ).toMatchObject({ fetch: "auto", readonly: "base" });
+  });
+
+  it("reject an unknown git.fetch or git.readonly value", () => {
+    expect(parse({ fetch: "never", readonly: "base" })).toBe(true);
+    expect(parse({ fetch: "always" })).toBe(false);
+    expect(parse({ readonly: "head" })).toBe(false);
   });
 
   it("deny the heavy commands to a node with verify:, and only to it", () => {

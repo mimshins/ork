@@ -1398,6 +1398,18 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "fresh-base",
+        title: "Fetch the base, read it readonly",
+        status: "active",
+        detail:
+          "A remote `git.base` such as `origin/main` is fetched before a new run (`git.fetch: auto | never`, a failed fetch stops the run), and `git.readonly: base` gives readonly nodes with no owner one shared detached worktree at the base instead of the checkout. Built, not yet on `main`.",
+        docs: [
+          "specs/project-rules/fetch.md",
+          "decisions/ADR-107-fetch-the-base-and-read-it-readonly.md",
+          "docs/guides/worktrees/fresh-base.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

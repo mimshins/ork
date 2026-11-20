@@ -20,6 +20,8 @@ const NEVER: ResolvedGitRules = {
   commit: "never",
   merge: "patch",
   base: "main",
+  fetch: "auto",
+  readonly: "checkout",
   branch: "",
   worktrees: "",
 };

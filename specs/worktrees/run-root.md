@@ -28,6 +28,9 @@ no run root and work as before.
   any bundle; its placeholder already names that folder relative to a root. A
   failure, such as no git repository, a failed `git worktree add` or a refused
   path, stops `ork run` with exit 1 before any node, naming the cause.
+- **No fetch, no readonly worktree.** The root is handed its base, so
+  `git.fetch` does not run, and `git.readonly: base` opens nothing: the root is
+  already a worktree at the base.
 - **No ignored local files.** `createWorktree` takes `copyLocal` (default true);
   only the run root passes false, so files `.worktreeinclude` names (for example
   `.env`) never reach it. A test needs a `.worktreeinclude` to prove it.

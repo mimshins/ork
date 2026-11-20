@@ -13,6 +13,7 @@ import type { ResolvedGitRules } from "@krapht/ork-schema";
 
 import { inside } from "../context/files.ts";
 import { renderGitTemplate } from "../project/templates.ts";
+import { fetchBase } from "./fetch.ts";
 import { git } from "./git.ts";
 
 export type NodeNames = {
@@ -60,11 +61,16 @@ export const namesFor = async (options: {
   return { path: target, branch };
 };
 
-/** The commit worktrees without an owner start from (`git.base`). */
+/**
+ * The commit worktrees without an owner start from (`git.base`), fetched first
+ * when it is a remote-tracking ref under `git.fetch: auto`, unless
+ * `options.fetch` is false (a resume or a handed-over base).
+ */
 export const resolveBase = async (
   root: string,
   rules: ResolvedGitRules,
   inputs: NameInputs,
+  options: { fetch?: boolean } = {},
 ): Promise<string> => {
   const ref = renderGitTemplate(rules.base, {
     run: "",
@@ -72,13 +78,14 @@ export const resolveBase = async (
     clone: path.basename(root),
     inputs,
   });
+  if (rules.fetch === "auto" && options.fetch !== false) {
+    await fetchBase(root, ref);
+  }
   const resolved = ref.startsWith("-")
     ? { code: 1, stdout: "" }
     : await git(root, ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`]);
   if (resolved.code !== 0) {
-    throw new Error(
-      `git.base is ${ref}, which is not a commit here (Ork never fetches; fetch it yourself first)`,
-    );
+    throw new Error(`git.base is ${ref}, which is not a commit here`);
   }
   return resolved.stdout.trim();
 };

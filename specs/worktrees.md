@@ -38,13 +38,13 @@ reaches Ork's git either.
 
 ## Where each node works
 
-| Node                                     | Works in                                           |
-| ---------------------------------------- | -------------------------------------------------- |
-| an agent node with `isolation: worktree` | its own worktree (kept across loop rounds)         |
-| `shared` or `readonly`                   | its nearest owner's worktree, or the project root  |
-| `readonly` with no owner                 | the worktree its input came from, or the root      |
-| `continue` (no owner, no children)       | the worktree its input came from, or its own       |
-| tool and gate nodes                      | the same as `shared`, or the worktree of its `cwd` |
+| Node                                     | Works in                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------- |
+| an agent node with `isolation: worktree` | its own worktree (kept across loop rounds)                                    |
+| `shared` or `readonly`                   | its nearest owner's worktree, or the project root                             |
+| `readonly` with no owner                 | its input's worktree, or the root or [the base](#a-readonly-node-at-the-base) |
+| `continue` (no owner, no children)       | the worktree its input came from, or its own                                  |
+| tool and gate nodes                      | the same as `shared`, or the worktree of its `cwd`                            |
 
 - **A readonly node with no owner follows its input**
   ([upstream.ts](../packages/core/src/worktree/upstream.ts),
@@ -56,7 +56,9 @@ reaches Ork's git either.
   as where its items worked, and a tool node whose rendered `cwd` is inside one
   of the run's worktrees counts as working in that worktree (a resumed run
   renders a replayed tool node's `cwd` from the replayed outputs). Upstream
-  nodes in different worktrees, or none, leave it in the project root.
+  nodes in different worktrees, or none, leave it in the project root, or in the
+  [shared base worktree](#a-readonly-node-at-the-base) under
+  `git.readonly: base`.
 
 - **A `continue` node writes where its input was**
   ([ADR-037](../decisions/ADR-037-isolation-continue.md)): found as for a
@@ -71,13 +73,44 @@ reaches Ork's git either.
   inside the clone would load the main checkout's instructions on top of the
   branch's; beside the clone, each session loads one set, from its own branch.
 - It branches from its nearest owner's branch, or, for a node without one, from
-  the project's `HEAD` when the run starts (`git.base`).
+  the project's `HEAD` when the run starts (`git.base`). A remote `git.base`
+  such as `origin/main` is fetched first (`git.fetch`,
+  [fetching the base](./project-rules/fetch.md)).
 - The session is told it is already in its own worktree on that branch, and must
   not create another worktree, switch branches, or push. Repositories whose own
   instructions tell agents to make a worktree first (such as a "one task, one
   worktree" rule) are satisfied by Ork's.
 - `{{nodes.<id>.output.branch}}` is the node's Ork branch, and
   `{{nodes.<id>.output.worktree}}` its worktree's path.
+
+## A readonly node at the base
+
+With `git.readonly: base`
+([rules](./project-rules/fetch.md#reading-at-the-base),
+[readonly-base.ts](../packages/core/src/worktree/readonly-base.ts),
+[tests](../packages/core/test/worktree-readonly-base.test.ts)), a `readonly`
+node with no owner and no upstream worktree reads a worktree at the resolved
+base commit, not the checkout, which may be on another branch or hold
+uncommitted files.
+
+- **One per run, shared.** Two such nodes use the same worktree, beside the
+  clone under the reserved id `_readonly` (never a node's id). It is detached,
+  has no branch, and gets no `.worktreeinclude` or other ignored local files, so
+  a session sees only committed files.
+- **Never written back.** It is not merged, committed or settled. A `continue`
+  node after a readonly one gets a worktree of its own, not this one.
+- **Recorded and removed.** `worktree` events `created` and `removed` record it,
+  so `ork worktrees clean` finds one a crash left. It is removed, forced (an
+  agent may have left a file), when the run finishes, fails or is stopped.
+- **Not opened when it would not matter:** a readonly node with an owner or an
+  upstream worktree works there; `--in-place` and a run with a
+  [run root](./worktrees/run-root.md) open none, and `git.fetch: auto` is
+  skipped there too. A resumed run uses the recorded base commit.
+- **Id and upstream.** `_readonly` cannot be a node id (ids do not start with an
+  underscore). Places in it are dropped before upstream resolution. A crashed
+  run's `_readonly` worktree is adopted on resume.
+- A workflow whose only isolated need is such a node still gets the repository
+  check below, and a non-git project stops with the same message.
 
 ## What a worktree gets
 
@@ -95,7 +128,8 @@ reaches Ork's git either.
 
 ## Before the run
 
-`ork run` checks the project when the workflow has `worktree` nodes:
+`ork run` checks the project when the workflow has `worktree` nodes, or, under
+`git.readonly: base`, a `readonly` agent node:
 
 - It must be a git repository with a commit, or the run does not start. Outside
   git the project root is the workflow file's folder, so the message strips a
@@ -107,6 +141,9 @@ reaches Ork's git either.
   committed files, so the run would use other instructions than the user sees.
   `--allow-dirty` runs with the committed versions.
 - Other uncommitted changes print a warning: they are not in the worktrees.
+- A remote `git.base` is fetched before it is resolved, except on a resume or
+  with a `baseRef`; a failed fetch stops the run
+  ([fetching the base](./project-rules/fetch.md#fetching)).
 
 ## After a node
 

@@ -358,9 +358,25 @@
               ]
             },
             "base": {
-              "description": "The commit worktrees without an owner start from, e.g. origin/main. Default: HEAD. Ork never fetches.",
+              "description": "The commit worktrees without an owner start from, e.g. origin/main. Default: HEAD. A remote-tracking ref is fetched first unless fetch is never.",
               "type": "string",
               "minLength": 1
+            },
+            "fetch": {
+              "description": "Default: auto, Ork fetches base from its remote before the run when base names a remote-tracking ref (e.g. origin/main); a failed fetch fails the run. never: use the last-fetched commit.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "never"
+              ]
+            },
+            "readonly": {
+              "description": "Where a readonly node with no owner and no upstream worktree reads. Default: checkout, the project's checkout as it is. base: one shared, detached worktree at base for the run.",
+              "type": "string",
+              "enum": [
+                "checkout",
+                "base"
+              ]
             },
             "branch": {
               "description": "Branch name template over {run}, {node}, {clone} and {inputs.<name>}. Default: ork/{run}/{node}.",

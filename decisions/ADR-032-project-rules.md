@@ -1,6 +1,7 @@
 # ADR-032 — Project rules: what Ork does on its own is the project's choice
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-107](./ADR-107-fetch-the-base-and-read-it-readonly.md)
 - **Date:** 2026-10-31
 - **Topic:** projects / git, permissions
 - **RFC:** waived — the author decided each choice directly; the options are

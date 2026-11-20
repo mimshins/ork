@@ -209,6 +209,8 @@ export const gitRulesOf = (workflow: Workflow): ResolvedGitRules => {
     commit,
     merge: git.merge ?? (commit === "never" ? "patch" : "auto"),
     base: git.base ?? "HEAD",
+    fetch: git.fetch ?? "auto",
+    readonly: git.readonly ?? "checkout",
     branch: git.branch ?? DEFAULT_BRANCH_TEMPLATE,
     worktrees: git.worktrees ?? DEFAULT_WORKTREES_TEMPLATE,
   };

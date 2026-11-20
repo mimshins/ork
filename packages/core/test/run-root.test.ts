@@ -41,6 +41,8 @@ const rules = (commit: "auto" | "never" = "auto"): ResolvedGitRules => ({
   commit,
   merge: commit === "never" ? "patch" : "auto",
   base: "HEAD",
+  fetch: "auto",
+  readonly: "checkout",
   branch: DEFAULT_BRANCH_TEMPLATE,
   worktrees: DEFAULT_WORKTREES_TEMPLATE,
 });

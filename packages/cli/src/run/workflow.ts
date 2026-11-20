@@ -142,6 +142,7 @@ const runIn = async (
     place,
     projects,
     inputs: inputs.inputs,
+    runRoot: runRoot !== undefined,
   });
   if (!ready.ok) return failed(ready.lines);
   const { root, base } = ready;
@@ -201,6 +202,8 @@ const runIn = async (
       }
     }
   };
+  // What this run's worktrees start from; recorded, so a resume reuses it.
+  const head = runRoot?.base ?? base;
   const workspace: Workspace | undefined =
     root === undefined
       ? undefined
@@ -208,13 +211,10 @@ const runIn = async (
           graph,
           runId,
           root: runRoot?.path ?? root,
-          head:
-            runRoot?.base ??
-            options.baseRef ??
-            options.resume?.settings.baseRef ??
-            base,
+          head,
           inputs: inputs.inputs,
           onEvent,
+          runRoot: runRoot !== undefined,
           ...resumedOptions(options.resume),
         });
   const { maskedNames, executors } = executorsOf(options, {
@@ -262,8 +262,7 @@ const runIn = async (
         ? {}
         : { readyDriver: ready.readyDriver }),
       ...ports.settings,
-      // The commit the run root was made from, which a resume reuses.
-      ...(runRoot === undefined ? {} : { baseRef: runRoot.base }),
+      ...(head === "" ? {} : { baseRef: head }),
     },
     followUps: ports.followUps,
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),

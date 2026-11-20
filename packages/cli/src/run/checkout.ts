@@ -1,8 +1,10 @@
 /**
- * @file Before a run with worktree nodes: the project must be a git repository
- *   with a commit, its instructions, skills and agents must be committed
- *   (worktrees get only committed files, unless `--allow-dirty`), and the
- *   project's `git.base` must name a commit, which root worktrees start from.
+ * @file Before a run with worktree nodes (or readonly ones under `git.readonly:
+ *   base`): the project must be a git repository with a commit, its
+ *   instructions, skills and agents must be committed (worktrees get only
+ *   committed files, unless `--allow-dirty`), and the project's `git.base`,
+ *   fetched first when it is a remote ref, must name a commit, which root
+ *   worktrees start from.
  */
 
 import path from "node:path";
@@ -26,17 +28,21 @@ export const dirtyAgentMessage = (files: readonly string[]): string[] => [
   "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
 ];
 
-/** Claude nodes that get their own worktree. */
-export const worktreeNodes = (workflow: Workflow): string[] =>
+/** Claude nodes (not subagents) with this isolation. */
+const isolatedAs = (workflow: Workflow, isolation: string): string[] =>
   Object.entries(workflow.nodes)
     .filter(
       ([, node]) =>
         isClaudeNode(node) &&
         node.type !== "agent.subagent" &&
         (node.isolation ?? workflow.defaults?.isolation ?? "worktree") ===
-          "worktree",
+          isolation,
     )
     .map(([id]) => id);
+
+/** Claude nodes that get their own worktree. */
+export const worktreeNodes = (workflow: Workflow): string[] =>
+  isolatedAs(workflow, "worktree");
 
 /**
  * The project's folder for a message. Outside git, the place's root is the
@@ -66,10 +72,21 @@ export const prepareCheckout = async (
     inPlace: boolean;
     allowDirty?: boolean;
     err: (line: string) => void;
+    /** Fetch a remote `git.base`; off when the run already has its base. */
+    fetch?: boolean;
+    /** The run has its own root at the base: `git.readonly: base` adds nothing. */
+    runRoot?: boolean;
   },
   inputs: NameInputs,
 ): Promise<PreparedCheckout> => {
-  const isolated = worktreeNodes(workflow);
+  const rules = gitRulesOf(workflow);
+  // Under `git.readonly: base`, readonly nodes read a worktree at the base too.
+  const reads =
+    rules.readonly === "base" && options.runRoot !== true
+      ? isolatedAs(workflow, "readonly")
+      : [];
+  const own = worktreeNodes(workflow);
+  const isolated = own.length > 0 ? own : reads;
   if (isolated.length === 0 || options.inPlace) return { ok: true, base: "" };
   const project = await inspectProject(options.cwd);
   if (project === null) {
@@ -89,7 +106,9 @@ export const prepareCheckout = async (
     );
   }
   try {
-    const base = await resolveBase(project.root, gitRulesOf(workflow), inputs);
+    const base = await resolveBase(project.root, rules, inputs, {
+      fetch: options.fetch !== false,
+    });
     return { ok: true, root: project.root, base };
   } catch (error) {
     return {

@@ -26,9 +26,6 @@ the [register](../gaps.md#limits).
   whose changes do not apply cleanly is kept with the conflicting files named;
   there is no three-way apply with conflict markers.
   ([ADR-032](../../decisions/ADR-032-project-rules.md))
-- **L16 · `git.base` is not fetched.** A base such as `origin/main` is whatever
-  the clone last fetched; Ork never fetches.
-  ([project rules](../project-rules.md))
 - **L17 · A `tool.git` commit under `commit: never` is on no branch.** The
   worktree is detached, so the workflow makes its own branch (`switch -c`,
   allowed on the node) or the commit stays on none; `ork worktrees clean` keeps

@@ -26,6 +26,8 @@ git:
   commit: auto # auto | never
   merge: auto # auto | patch | never (default patch under commit: never)
   base: HEAD # the commit worktrees without an owner start from
+  fetch: auto # auto | never: fetch a remote base such as origin/main first
+  readonly: checkout # checkout | base: where an ownerless readonly node reads
   branch: "ork/{run}/{node}"
   worktrees: "../{clone}-worktrees/ork-{run}-{node}"
 permissions: # tool rules every agent node gets
@@ -81,7 +83,11 @@ unknown experiment it names: `ork validate` prints `.ork/project.yaml:3:11 …`.
 | `merge: auto`         | A passing child's branch is merged into its owner's worktree with `--no-ff`. Needs `commit: auto`.                                                                                                                    |
 | `merge: patch`        | A passing child's changes (new files too) are applied to its owner's worktree, uncommitted, all or nothing; a part that does not apply is reported as a conflict, and the child's worktree is kept.                   |
 | `merge: never`        | Nothing is handed over; each child's worktree is kept, for its owner or the user.                                                                                                                                     |
-| `base`                | A ref (`origin/main`) or template; it must name a commit when the run starts. Ork never fetches.                                                                                                                      |
+| `base`                | A ref (`origin/main`) or template; it must name a commit when the run starts, after the fetch below.                                                                                                                  |
+| `fetch: auto`         | The default. When `base` names a remote-tracking ref, `git fetch --no-tags <remote> +refs/heads/<b>:refs/remotes/<remote>/<b>` runs before it is resolved ([fetching](./project-rules/fetch.md#fetching)).            |
+| `fetch: never`        | Ork fetches nothing; `base` is whatever the clone last fetched.                                                                                                                                                       |
+| `readonly: checkout`  | The default. A `readonly` node with no owner and no upstream worktree reads the project checkout.                                                                                                                     |
+| `readonly: base`      | Such a node reads one detached worktree at the base commit, shared by the run's readonly nodes ([worktrees](./worktrees.md#a-readonly-node-at-the-base)).                                                             |
 | `branch`, `worktrees` | Templates over `{run}`, `{node}` (an item of a `forEach` node is `build.2`), `{clone}` (the clone's folder name) and `{inputs.<name>}`. `worktrees` is relative to the clone.                                         |
 
 Under `commit: never`, a child that ran and was handed over is brought up to its
@@ -99,6 +105,8 @@ without `{run}` a warning says a second run stops while the first one's branch
 or worktree exists; `worktrees` is relative; `merge: auto` with `commit: never`
 is an error. When a node's worktree is made: the folder must be beside the clone
 (inside its parent, outside the clone), and the branch a name git accepts.
+
+`fetch` and `readonly` are in [fetching the base](./project-rules/fetch.md).
 
 ## Links and reading
 
@@ -173,4 +181,5 @@ Whatever the rules say, Ork never pushes, and:
 ## Contents
 
 - [Experiments](./project-rules/experiments.md)
+- [Fetching the base](./project-rules/fetch.md)
 - [Sessions rule](./project-rules/sessions.md)

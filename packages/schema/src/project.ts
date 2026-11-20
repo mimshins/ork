@@ -69,7 +69,19 @@ export const GitRulesSchema = z.strictObject({
     .min(1)
     .optional()
     .describe(
-      "The commit worktrees without an owner start from, e.g. origin/main. Default: HEAD. Ork never fetches.",
+      "The commit worktrees without an owner start from, e.g. origin/main. Default: HEAD. A remote-tracking ref is fetched first unless fetch is never.",
+    ),
+  fetch: z
+    .enum(["auto", "never"])
+    .optional()
+    .describe(
+      "Default: auto, Ork fetches base from its remote before the run when base names a remote-tracking ref (e.g. origin/main); a failed fetch fails the run. never: use the last-fetched commit.",
+    ),
+  readonly: z
+    .enum(["checkout", "base"])
+    .optional()
+    .describe(
+      "Where a readonly node with no owner and no upstream worktree reads. Default: checkout, the project's checkout as it is. base: one shared, detached worktree at base for the run.",
     ),
   branch: z
     .string()
@@ -93,6 +105,8 @@ export type ResolvedGitRules = {
   commit: "auto" | "never";
   merge: "auto" | "patch" | "never";
   base: string;
+  fetch: "auto" | "never";
+  readonly: "checkout" | "base";
   branch: string;
   worktrees: string;
 };

@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 
 import type { NodeOutput, NodeResult } from "../run/types.ts";
 import type { Tracked } from "./handoff.ts";
+import { READONLY_ID } from "./readonly-base.ts";
 
 /** A worktree a resumed run left. */
 export type AdoptedWorktree = {
@@ -35,7 +36,8 @@ export const seedResumed = (
   },
 ): void => {
   for (const left of adopt) {
-    if (!existsSync(left.path)) continue;
+    // The read-only worktree is no node's: `readonlyBase` adopts it.
+    if (!existsSync(left.path) || left.id === READONLY_ID) continue;
     const { id, merged: wasMerged, ...worktree } = left;
     into.worktrees.set(id, worktree);
     into.placeOf.set(id, worktree.path);

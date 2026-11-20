@@ -8,3 +8,17 @@ _Part of [What's new](../whats-new.md)._
   Ork now takes the window's own status, and warns only when the window itself
   does
   ([across runs and time](../guides/models-and-budgets/across-runs-and-time.md)).
+
+- **A remote `git.base` is fetched, and a readonly node can read a fresh base.**
+  A run whose `git.base` is a remote branch such as `origin/main` now fetches
+  that one branch before it starts, so its worktrees begin from the remote's
+  newest commit instead of whatever your clone last fetched. A fetch that fails
+  stops the run before any node and names git's reason. The new rule
+  `git.readonly: base` gives a `readonly` node with no owner and no input's
+  worktree one shared worktree at the base commit, not your checkout, so
+  reviewers and auditors stop reading the wrong branch; it is off by default,
+  and the refresh step and stub worktree node that attached projects used as a
+  workaround can go ([a fresh base](../guides/worktrees/fresh-base.md)).
+  Upgrade: a run with a remote `git.base` now fetches it; if you work offline or
+  have no access to the remote, set `git.fetch: never` in `.ork/project.yaml` to
+  keep the old behavior.

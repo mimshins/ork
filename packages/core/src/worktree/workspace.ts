@@ -3,23 +3,19 @@
  *   (ADR-032). A `worktree` node gets its own worktree beside the clone, named
  *   by the rules; `shared` and `readonly` nodes, and tool and gate nodes, work
  *   in their owner's worktree or the project root, and a `readonly` node with
- *   no owner in the worktree its input came from. A `continue` node works in
- *   that worktree too, and writes there (ADR-037). After a node, Ork commits
- *   its leftovers (unless `commit: never`) and brings a passing child's work to
- *   its owner: a merge, a patch, or not at all. A spawned worker works like the
+ *   no owner in the worktree its input came from; with none, under
+ *   `git.readonly: base`, in one detached worktree at the base the run shares
+ *   and always removes (never anyone's input). A `continue` node works in that
+ *   worktree too, and writes there (ADR-037). After a node, Ork commits its
+ *   leftovers (unless `commit: never`) and brings a passing child's work to its
+ *   owner: a merge, a patch, or not at all. A spawned worker works like the
  *   declared child it is an instance of.
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
-import type { CompiledGraph } from "../graph/types.ts";
 import { gitRulesOf } from "../project/rules.ts";
-import type {
-  NodeOutput,
-  NodeResult,
-  RunEvent,
-  Workspace,
-} from "../run/types.ts";
+import type { NodeOutput, NodeResult, Workspace } from "../run/types.ts";
 import { closeWorktrees } from "./close.ts";
 import { withConflict } from "./conflict.ts";
 import {
@@ -37,28 +33,14 @@ import {
   worktreeEvent,
   type WorktreeEvent,
 } from "./handoff.ts";
-import type { NameInputs } from "./names.ts";
-import { type AdoptedWorktree, seedResumed } from "./resumed.ts";
-import { placeTool, seedToolPlaces, upstreamPlace } from "./upstream.ts";
-
-export type WorkspaceOptions = {
-  graph: CompiledGraph;
-  runId: string;
-  /** The project's git root and the commit root nodes branch from. */
-  root: string;
-  head: string;
-  /** The run's inputs, for `{inputs.<name>}` in the git rules' templates. */
-  inputs?: NameInputs;
-  onEvent: (event: RunEvent) => void;
-  /** Worktrees a resumed run left whose folders are still there. */
-  adopt?: readonly AdoptedWorktree[];
-  /** Where a resumed run's nodes last worked (their sessions' folders). */
-  places?: ReadonlyMap<string, string>;
-  /** Branches this run created before (a resumed run), which it may reuse. */
-  known?: readonly string[];
-  /** A resumed run's replayed outputs, for where its tool nodes worked. */
-  replayed?: ReadonlyMap<string, NodeOutput>;
-};
+import { seedResumed } from "./resumed.ts";
+import {
+  placeTool,
+  readonlyBase,
+  seedToolPlaces,
+  upstreamPlace,
+} from "./upstream.ts";
+import type { WorkspaceOptions } from "./workspace-options.ts";
 
 type Isolation = "worktree" | "continue" | "shared" | "readonly";
 
@@ -83,6 +65,7 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     placeOf,
     merged,
   });
+  const read = readonlyBase({ ...options, rules });
   const tracked = () => [...worktrees.values()].map(w => w.path);
   seedToolPlaces(graph, options, tracked(), placeOf);
   const nodeOf = (id: string) =>
@@ -163,16 +146,17 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   };
 
   /** The node whose worktree `id`'s input came from, if there is one. */
-  const upstreamOf = (id: string): string | undefined => {
+  const upstreamOf = async (id: string): Promise<string | undefined> => {
     const declared = templateOf.get(id) ?? id;
-    const place = upstreamPlace(graph, declared, placeOf, root);
+    const places = await read.inputPlaces(placeOf);
+    const place = upstreamPlace(graph, declared, places, root);
     return [...worktrees].find(([, w]) => w.path === place)?.[0];
   };
 
   const prepare: Workspace["prepare"] = async (id, template) => {
     if (template !== undefined) templateOf.set(id, template);
     const isolation = isolationOf(id);
-    const from = isolation === "continue" ? upstreamOf(id) : undefined;
+    const from = isolation === "continue" ? await upstreamOf(id) : undefined;
     const input = from === undefined ? undefined : worktrees.get(from);
     continued.delete(id);
     if (from !== undefined && from !== id && input !== undefined) {
@@ -191,11 +175,16 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       };
     }
     const host =
-      hostOf(id) ?? (isolation === "readonly" ? upstreamOf(id) : undefined);
+      hostOf(id) ??
+      (isolation === "readonly" ? await upstreamOf(id) : undefined);
     const hosted = host === undefined ? undefined : worktrees.get(host);
     if (host === undefined || hosted === undefined) {
-      placeOf.set(id, root);
-      return { cwd: root };
+      // With no owner and no input's worktree: the base, not the checkout.
+      const atBase =
+        read.on && isolation === "readonly" && ownerOf(id) === undefined;
+      const cwd = atBase ? await read.open() : root;
+      placeOf.set(id, cwd);
+      return { cwd };
     }
     placeOf.set(id, hosted.path);
     const checkout = checkoutFor(rules, hosted, false, host);
@@ -279,8 +268,9 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     return withConflict(next, outcome.conflicts, nameOf(ownerTree));
   };
 
-  const close: Workspace["close"] = () =>
-    closeWorktrees({
+  /** Removes the read-only worktree whatever the run's end; kept if it can't be. */
+  const close: Workspace["close"] = async () => [
+    ...(await closeWorktrees({
       root,
       never,
       worktrees,
@@ -290,7 +280,9 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       onRemoved: (id, worktree) => {
         event(id, "removed", worktree);
       },
-    });
+    })),
+    ...(await read.close()),
+  ];
 
   const placeAt = (id: string, cwd: string): void => {
     placeTool(id, cwd, tracked(), placeOf);

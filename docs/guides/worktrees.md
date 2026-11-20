@@ -57,6 +57,9 @@ A node branches from its owner's branch, or from your `HEAD` when the run
 started. The session is told it already has a worktree, so it will not make
 another, switch branches, or push.
 
+A remote `base` is fetched first, and readonly nodes can read a fresh base
+worktree: [starting from a fresh base](./worktrees/fresh-base.md).
+
 ## What a worktree contains
 
 - Everything committed at its base, including your instructions and skills.
@@ -188,3 +191,7 @@ hook's repository. An outer `git -c key=value` doesn't reach Ork's git either;
 put such settings in the repository's config instead.
 
 For the full rules: [worktrees](../../specs/worktrees.md).
+
+## Contents
+
+- [Starting from a fresh base](./worktrees/fresh-base.md)

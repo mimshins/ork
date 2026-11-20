@@ -33,6 +33,7 @@ const runGit = (
   cwd: string,
   args: readonly string[],
   env: NodeJS.ProcessEnv,
+  timeoutMs: number,
 ): Promise<GitResult> =>
   new Promise(resolve => {
     execFile(
@@ -43,17 +44,22 @@ const runGit = (
         env: { ...withoutGitLocalEnv(process.env), ...env },
         maxBuffer: 32 * 1024 * 1024,
         encoding: "utf8",
+        timeout: timeoutMs,
       },
       (error, stdout, stderr) => {
         const code =
           error === null ? 0 : typeof error.code === "number" ? error.code : -1;
         const missing = error !== null && !existsSync(cwd);
+        const timedOut =
+          error !== null && timeoutMs > 0 && error.killed === true;
         resolve({
           code,
           stdout,
           stderr: missing
             ? `the folder ${cwd} doesn't exist`
-            : stderr || (error?.message ?? ""),
+            : timedOut
+              ? `timed out after ${timeoutMs / 1000} s`
+              : stderr || (error?.message ?? ""),
         });
       },
     );
@@ -61,13 +67,15 @@ const runGit = (
 
 /**
  * Runs `git` with arguments (no shell) in `cwd`. Never throws. `env` adds
- * variables, such as a temporary `GIT_INDEX_FILE`.
+ * variables, such as a temporary `GIT_INDEX_FILE`; `timeoutMs` (0: none) kills
+ * a command that runs longer.
  */
 export const git = (
   cwd: string,
   args: readonly string[],
   env: NodeJS.ProcessEnv = {},
-): Promise<GitResult> => inTurn(cwd, () => runGit(cwd, args, env));
+  timeoutMs = 0,
+): Promise<GitResult> => inTurn(cwd, () => runGit(cwd, args, env, timeoutMs));
 
 /** Like `git`, but rejects with git's message when the command fails. */
 export const gitOk = async (
