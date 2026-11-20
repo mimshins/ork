@@ -5,10 +5,12 @@ _Part of [Known gaps and limits](../gaps.md)._
 Status: **Open**: to decide at the next review, as the register's other entries.
 
 Found building this repository's own tooling: the `rfc` workflow re-checks its
-RFC number at publish ([RFCs](../../rfcs/README.md)), and the `build` workflow's
-final check takes a machine slot, retries a timed-out test file once alone and
-re-runs after a flake ([check once](../check-once.md#in-this-repository),
-[slots](../machine.md)). What was left simpler:
+RFC number at publish ([RFCs](../../rfcs/README.md)), a change's ADRs and gap
+ids are renumbered the same way ([ADRs](../../decisions/README.md)), and the
+`build` workflow's final check takes a machine slot, retries a timed-out test
+file once alone and re-runs after a flake
+([check once](../check-once.md#in-this-repository), [slots](../machine.md)).
+What was left simpler:
 
 - **L490 · The retry reads a vitest JSON report and only retries a bare
   `pnpm test`.** `tools/check/run-tests.ts` asks vitest for its JSON reporter,
@@ -40,6 +42,14 @@ re-runs after a flake ([check once](../check-once.md#in-this-repository),
   pushed.** `amend` exits 0 on a flake, so the `amend -> check` edge spends its
   `maxRounds: 2`, and a flake in the last round ends the run as any exhausted
   loop does, with the change committed in the worktree.
+- **L524 · ADR and gap-id renumbering leaves the shared lines to the resolver.**
+  `tools/decisions/renumber.ts` renames an added ADR that clashes and rewrites
+  its ids, but the index rows two changes append and the "next id" line both
+  raise still conflict on the rebase, for the resolver. It rewrites only the
+  lines the change adds, and a bare `ADR-NNN`, `by NNN` or `L…` only when
+  nothing else in the change or its base has that number; a link to the moved
+  file is always rewritten. Several commits are renumbered by amending the last
+  one. `build`'s publish step runs it before its rebase, as `rfc` runs its own.
 - **L493 · `pnpm run check` in the `rfc` publish takes no slot.** It is run
   through `-C "$WORKTREE"`, so the script's heavy-command match does not see it
   ([L363](./machine-limits.md)). It runs the static checks only (`--on` leaves

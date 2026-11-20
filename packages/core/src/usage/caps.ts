@@ -7,7 +7,8 @@
 import { diagnosticText } from "@krapht/ork-schema";
 
 import { placeFiles, type ProjectPlace } from "../project/place.ts";
-import { loadProject, loadUserSettings } from "../project/rules.ts";
+import { loadProject } from "../project/rules.ts";
+import { loadUserSettings } from "../project/user-settings.ts";
 import { type AnyCap, capsOf } from "./quota.ts";
 
 /** The caps that apply in `place`, or only the user's without one. */

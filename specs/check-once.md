@@ -156,16 +156,18 @@ before. Old files mean the same; `schemaVersion` does not change.
   the canary release runs `pnpm run check:all`.
 - `build` runs the full suite once, in its publish `check`, on the rebased tree
   that lands. Its leader and `polish` verify with `pnpm check:changed` (the
-  tests the change reaches), as the builders do, and its docs node with
-  `pnpm check:static` (`check:fast` plus the map and benchmarks checks, no
-  tests). Before, the leader each round and `polish` ran the full check too:
-  four full suites in a row near a build's end, 150 to 250 seconds each (six
-  builds on 2026-11-12 and 13), because each step had changed a file or two
-  since the last pass. A failure only the full suite finds now shows at publish,
-  where `repair` takes it. That `check` script runs `pnpm run check` on a line
-  of its own, so `heavy` (`pnpm run check *`) matches it and it waits for a
-  check slot inside its `branch:main` lock. When `repair` finds the failure is a
-  flake (a timeout under load, a test unrelated to the change that passes
+  tests the change reaches); its builders verify with `pnpm check:fast` and run
+  the test files they touch, since a heavy check on each builder queued them for
+  the machine's slots (78 checks through 2 slots on 2026-11-20); and its docs
+  node with `pnpm check:static` (`check:fast` plus the map and benchmarks
+  checks, no tests). Before, the leader each round and `polish` ran the full
+  check too: four full suites in a row near a build's end, 150 to 250 seconds
+  each (six builds on 2026-11-12 and 13), because each step had changed a file
+  or two since the last pass. A failure only the full suite finds now shows at
+  publish, where `repair` takes it. That `check` script runs `pnpm run check` on
+  a line of its own, so `heavy` (`pnpm run check *`) matches it and it waits for
+  a check slot inside its `branch:main` lock. When `repair` finds the failure is
+  a flake (a timeout under load, a test unrelated to the change that passes
   alone), it changes nothing and reports `flake: true`; `amend` then exits 0 and
   the `amend -> check` edge runs the check again, bounded by its `maxRounds: 2`.
   Without a flake, a `repair` that changes nothing still fails the run, and the

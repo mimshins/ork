@@ -52,7 +52,7 @@ export const compileWorkflow = (
     ...checkFlow(workflow, edges, rules.rules),
     ...rules.diagnostics,
     ...channels.diagnostics,
-    ...checkRules(workflow),
+    ...checkRules(workflow, options.project),
     ...checkMcpServers(workflow, options),
     ...checkReach(workflow, edges, entries),
   ];

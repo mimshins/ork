@@ -11,6 +11,7 @@ on checks ([numbers](../benchmarks/method.md#a-build-measured-again)). Code:
 [tool CPU](../packages/core/src/store/tool-cpu.ts)
 ([tests](../packages/core/test/slot-ledger.test.ts),
 [heavy commands](../packages/nodes/test/heavy-slots.test.ts),
+[the `verify.heavy` warning](../packages/core/test/heavy-verify.test.ts),
 [CPU](../packages/core/test/tool-cpu.test.ts)). Why:
 [ADR-080](../decisions/ADR-080-machine-slots-and-lower-priority.md).
 
@@ -60,7 +61,17 @@ heavy:
   or `else`. It is a heuristic that only decides whether to wait: it cannot see
   `eval`, a command in a variable, a heredoc or a called script, and a script
   with another interpreter takes no slot ([L363](./gaps/machine-limits.md)).
-- With no `heavy`, nothing is denied and no slot is taken.
+- **Warned on a node of many copies.** The compiler (`checkHeavyVerify`, from
+  `checkRules` with the project) warns with `verify.heavy` at
+  `nodes.<id>.verify.command` (or `.script`, matched through `scriptCommands`)
+  when a `verify:` runs a heavy command on a node that runs as many copies: one
+  with `forEach`, or an `agent.worker` whose `parent` is an `agent.leader` with
+  `maxWorkers` above 0. Each copy's check queues for a machine-wide slot, so the
+  copies wait on each other's checks; the message suggests a light check there
+  and the full one on the owner or at the end. A warning, not an error: the
+  project may want it. A worker a leader without `maxWorkers` delegates to runs
+  once at a time and is not warned.
+- With no `heavy`, nothing is denied, no slot is taken and nothing is warned.
 
 ## Slots
 
@@ -145,10 +156,12 @@ already stored) keeps one row per command beside the
 
 Quick changes that go with these, in this repository's own process:
 
-- `pnpm check:changed` runs the static checks and `vitest run --changed`; the
-  `implement`, `engine` and `docs` nodes of `build` verify with it, and the
-  leader and the publish keep `pnpm check`. Both skip when they already passed
-  on the same files ([check once](./check-once.md)).
+- `pnpm check:changed` runs the static checks and `vitest run --changed`;
+  `build`'s leader and `polish` verify with it (its `implement` and `engine`
+  nodes verify with `pnpm check:fast`, which takes no slot, and its `docs` node
+  with `pnpm check:static`), and the leader and the publish keep `pnpm check`.
+  Both skip when they already passed on the same files
+  ([check once](./check-once.md)).
 - `vitest.config.ts` caps `maxWorkers` at a third of the cores, in a run or not:
   more workers used more CPU for the same tests
   ([check once](./check-once.md#a-cheaper-suite)).

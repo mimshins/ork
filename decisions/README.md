@@ -7,7 +7,10 @@ made. They are project knowledge and stand on their own without any AI tooling.
 
 - **Location:** `decisions/`
 - **Naming:** `ADR-NNN-<kebab-case-title>.md`; the next free number, never
-  reused.
+  reused. Two changes made at once can take the same number: before rebasing,
+  `node tools/decisions/renumber.ts <worktree> <ref>…` moves the ADRs a change
+  adds whose number a fetched ref already has to the next free ones, with their
+  title, index row and links.
 - **Sections:** Context, Decision, Options considered, Rationale, Consequences.
   Metadata: Status, Date, Topic, RFC (or "waived" with the reason).
 - **Self-contained:** a reader with only the ADR understands the decision and

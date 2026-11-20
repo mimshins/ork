@@ -14,11 +14,13 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L524, and the next chore is
+closes it. Ids are never reused: the next limit is L525, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
-can each take the next one). At a review, each open entry is closed (built or
-fixed, then removed), kept (moved into its area's spec, then removed here), or
-carried to a roadmap item, or to none yet (unplanned).
+can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
+adds that a fetched ref already has before the change is rebased). At a review,
+each open entry is closed (built or fixed, then removed), kept (moved into its
+area's spec, then removed here), or carried to a roadmap item, or to none yet
+(unplanned).
 
 **Kept limits live with their area's spec,** each in a "Limits" chunk under its
 id: [running, resuming and stopping](./scheduler/limits.md),

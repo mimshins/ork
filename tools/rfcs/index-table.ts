@@ -24,7 +24,7 @@ const cellsOf = (line: string): string[] =>
     .map(cell => cell.trim());
 
 /** The table around line `at`, every column padded to its widest cell. */
-const padTable = (lines: string[], at: number): void => {
+export const padTable = (lines: string[], at: number): void => {
   let first = at;
   let last = at;
   while ((lines[first - 1] ?? "").startsWith("|")) {

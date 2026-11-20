@@ -47,6 +47,13 @@ next one waiting takes it over, and the killed run's command is ended within
 about 2 seconds, so for that moment the two may overlap. With no `heavy` in the
 project, nothing waits.
 
+Watch for a heavy `verify:` on a node that runs as many copies: a worker its
+leader can spawn (`maxWorkers`) or a `forEach` node. Each copy's check queues
+for one of the same few slots, so six runs of eight workers each, with a
+four-minute check apiece, spend hours waiting. `ork validate` warns about it
+(`verify.heavy`). Give such a node a light check (format, lint, typecheck) and
+run the full check once, on the owner or at the end.
+
 ## What waits
 
 - A tool node's `command`, and a node's `verify:` and `before:` steps, when they
@@ -108,14 +115,17 @@ and a failed `verify:` comes back to it with the output. It can still run
 targeted tests such as `vitest run packages/cli/test/usage.test.ts`. Nodes
 without `verify:` are not limited.
 
-In this repository, builders and the docs node verify with `pnpm check:changed`
-(formatting, lint, types, docs and `vitest run --changed`), and the leader and
-the publish step run the full `pnpm check`. Both go through `ork once` (below),
-so a check that already passed on the same files doesn't run again; the test
-step is keyed only by the files tests read, so an edit to a spec or to most
-guides reruns the static checks but not the tests. Between edits, builders run
-`pnpm check:quick` (format and lint on the changed files, then types). Vitest
-uses at most a third of your cores, in a run or not.
+In this repository, builders verify with `pnpm check:fast` (formatting, lint,
+types and docs; no slot) and run the test files they touch themselves; the
+leader and `polish` verify with `pnpm check:changed` (the same plus
+`vitest run --changed`), and the publish step runs the full `pnpm check`. A
+heavy check on every builder made each one queue for a slot: six builds on
+2026-11-20 ran 78 of them through 2 slots and took up to 3 hours. Both go
+through `ork once` (below), so a check that already passed on the same files
+doesn't run again; the test step is keyed only by the files tests read, so an
+edit to a spec or to most guides reruns the static checks but not the tests.
+Between edits, builders run `pnpm check:quick` (format and lint on the changed
+files, then types). Vitest uses at most a third of your cores, in a run or not.
 
 Two more things keep a busy machine from failing a check in this repository. The
 `build` workflow's final check takes a check slot like any heavy command, so

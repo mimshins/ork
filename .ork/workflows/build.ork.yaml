@@ -28,14 +28,16 @@ agents:
       You resolve the conflicts of a git rebase that has stopped, in the checkout you are in.
       - Edit only the files you are told are conflicted. Do not touch any other file, create files, run git, or finish the rebase: Ork stages your files and finishes it.
       - Never drop one side silently. Keep what each side meant to do; when you drop part of one, say which part and why. If the change you are replaying is already in the upstream, say so.
-      - Remove every conflict marker (`<<<<<<<`, `=======`, `>>>>>>>`).
+      - Remove every conflict marker (`<<<<<<<`, `=======`, `>>>>>>>`). Before you report, Grep each conflicted file for lines starting with one of them and fix any you find: an Edit that failed leaves its marker behind, and Ork sends you back when one is left.
+      - A file with many conflicts: resolve it a section at a time, each with one Edit over the whole section, rather than marker by marker.
+      - Never rename a file; an ADR or gap id this change took that the upstream also took is renumbered by a script before the rebase. If one still clashes, say so in `kept` rather than renumbering it.
       - Report `behaviour: changed` when the result does something other than what the change you are replaying did, or other than what upstream did: the same logic was edited on both sides and you chose, merged or rewrote it. Report `unchanged` when you only kept both sides' separate additions, or took one side's edit of what the other side left alone.
       - In `kept`, say for each file what you kept from the upstream and from the change.
     model: claude-code.sonnet
     effort: medium
     isolation: shared
-    budgetUsd: 2
-    maxTurns: 30
+    budgetUsd: 3
+    maxTurns: 60
     tools:
       allow:
         - Edit
@@ -64,7 +66,7 @@ nodes:
 
       Build in waves, following each task's dependencies and files in the plan. Shared contracts (schema, types) go first, as their own wave. Then send each wave as exactly one tool call, so its tasks run at once: your calls run one after another, so a `delegate` and a `spawn_worker` sent together do not overlap. Use `delegate` when each builder in the wave has one task, and otherwise one `spawn_worker` call for the whole wave, naming each task's builder as its template, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and its own check, so split only substantial work. But size each brief to fit one session, about 40 turns of work: a builder ends at its turn limit (80), and each time it is sent back it re-reads its whole session, so a brief too large costs more than two smaller ones. Split a task that touches many files or several packages into briefs of a few files each, in order. A merge conflict in a child's report is yours to resolve.
 
-      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check:changed (the tests your change reaches) on your checkout before your report counts; the full suite runs once, before the push. When you run again, your input is either the independent reviews (`results` holds each concern's blocking `findings`, which are yours to fix, and its `notes`, which never block: leave them unless a fix is trivial, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
+      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Your children's checks are static only (format, lint, typecheck, docs) plus the test files each chose to run; Ork runs pnpm check:changed (the tests the whole change reaches) on your checkout before your report counts, so when it fails, delegate the fix to the child whose work it is. The full suite runs once, before the push. When you run again, your input is either the independent reviews (`results` holds each concern's blocking `findings`, which are yours to fix, and its `notes`, which never block: leave them unless a fix is trivial, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
 
       {{inputs.plan}}
     model: claude-code.sonnet
@@ -118,7 +120,7 @@ nodes:
     verify:
       command: pnpm check:changed
       timeout: 20m
-      attempts: 1
+      attempts: 2
     maxWorkers: 8
     questions: owner
   design:
@@ -198,7 +200,7 @@ nodes:
     parent: build
     agent: implementer
     prompt: |-
-      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:changed` (the static checks and the tests your change reaches) before your report counts.
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:fast` (format, lint, typecheck, docs) on your checkout before your report counts; it runs no tests, so run `pnpm exec vitest run <the test files your change touches or reaches>` yourself before you report, and say which in your summary. Your owner runs the tests the whole change reaches after merging your work, and the full suite runs once before the push.
 
       {{inputs.plan}}
     effort: high
@@ -247,15 +249,15 @@ nodes:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
     verify:
-      command: pnpm check:changed
-      timeout: 20m
+      command: pnpm check:fast
+      timeout: 10m
       attempts: 2
   engine:
     type: agent.worker
     parent: build
     agent: engine
     prompt: |-
-      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:changed` (the static checks and the tests your change reaches) before your report counts.
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:fast` (format, lint, typecheck, docs) on your checkout before your report counts; it runs no tests, so run `pnpm exec vitest run <the test files your change touches or reaches>` yourself before you report, and say which in your summary. Your owner runs the tests the whole change reaches after merging your work, and the full suite runs once before the push.
 
       {{inputs.plan}}
     model: claude-code.opus
@@ -305,8 +307,8 @@ nodes:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
     verify:
-      command: pnpm check:changed
-      timeout: 20m
+      command: pnpm check:fast
+      timeout: 10m
       attempts: 2
   stat:
     type: tool.shell
@@ -751,7 +753,16 @@ nodes:
       if git -C "$WORKTREE" ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
         base="$branch"
       fi
+      # An ADR or gap id this change added that main took meanwhile moves to the
+      # next free one (file, title, index row, links) before the rebase.
+      if [ "$base" != main ]; then
+        git -C "$WORKTREE" fetch origin main
+      fi
       git -C "$WORKTREE" fetch origin "$base"
+      if ! node tools/decisions/renumber.ts "$WORKTREE" origin/main FETCH_HEAD; then
+        echo "Renumbering this change's ADRs or gap ids failed. The change is committed in $WORKTREE; renumber it there and resume." >&2
+        exit 1
+      fi
       # Left open on a conflict: the resolver below continues it.
       if git -C "$WORKTREE" rebase FETCH_HEAD > /dev/null 2>&1; then
         outcome=clean
@@ -845,6 +856,8 @@ nodes:
       The change also touched:
       {{nodes.inspect.output.json.others}}
 
+      When you run again, Ork found conflict markers still in a file you resolved (an Edit that failed). Grep every conflicted file for lines starting with `<<<<<<<`, `=======` or `>>>>>>>`, finish those, and report again.
+
       What each side did to them. The upstream is what the rebase is going onto; the change is the commit being replayed. When it is long it is cut below: read the whole of it in {{nodes.inspect.output.json.sidesFile}} before you resolve anything.
       {{nodes.inspect.output.json.sides}}
     isolation: continue
@@ -855,12 +868,18 @@ nodes:
       tmp=$(mktemp -d)
       trap 'rm -rf "$tmp"' EXIT
       printf '%s\n' "$FILES" | sed '/^$/d' > "$tmp/files"
+      # A marker left (an Edit that failed) goes back to the resolver, not to a failed run.
+      : > "$tmp/marked"
       while IFS= read -r f; do
-        if [ -f "$f" ] && grep -Eq '^(<<<<<<<|>>>>>>>) ' "$f"; then
-          echo "$f still has conflict markers." >&2
-          exit 1
+        if [ -f "$f" ] && grep -Eq '^(<<<<<<<|>>>>>>>)( |$)' "$f"; then
+          echo "$f" >> "$tmp/marked"
         fi
       done < "$tmp/files"
+      if [ -s "$tmp/marked" ]; then
+        echo "Conflict markers are left in: $(tr '\n' ' ' < "$tmp/marked")" >&2
+        printf '{"behaviour":"markers","result":"%s","resultFile":""}\n' "$(tr '\n' ' ' < "$tmp/marked")"
+        exit 0
+      fi
       printf '%s\n' "$OTHERS" | sed '/^$/d' > "$tmp/others"
       # The resolver may not create files: a new one is set aside, out of the commit, rather than failing the run.
       aside="$(git rev-parse --absolute-git-dir)/ork-strays"
@@ -913,6 +932,7 @@ nodes:
         behaviour:
           - unchanged
           - changed
+          - markers
         result: string
         resultFile: string
     lock: branch:main
@@ -1189,6 +1209,10 @@ edges:
     to: resolve
     when: ok && !ok
   - resolve -> settle
+  - from: settle
+    to: resolve
+    when: json.behaviour == 'markers'
+    maxRounds: 2
   - from: settle
     to: ask
     when: json.behaviour == 'changed'

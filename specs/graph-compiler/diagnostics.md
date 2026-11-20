@@ -46,6 +46,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `script.template`        | error    | a `{{` in a `script:`, whose values come through `env:`                          |
 | `script.interpreter`     | error    | an `interpreter:` with no `script:`, or a template in one                        |
 | `verify.field`           | error    | an `output.schema` field called `verify` on a node with a `verify:`              |
+| `verify.heavy`           | warning  | a `verify:` runs a project `heavy` command on a spawnable worker or `forEach`    |
 | `ref.before`             | error    | a `{{before.*}}` field its step does not report                                  |
 | `before.field`           | warning  | an `output.schema` field called `before`, which a bare `before` won't read       |
 | `notify.target`          | error    | a `notify:` to anything but a leader or worker                                   |

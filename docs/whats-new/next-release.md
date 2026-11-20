@@ -5,6 +5,15 @@ _Part of [What's new](../whats-new.md)._
 What lands on `main` is listed here until it ships. Permissions are described in
 [permissions without asking](../guides/permissions.md).
 
+- **A warning for a heavy check on many copies of a node.** `ork validate` (and
+  `ork run` and the builder) now warn with `verify.heavy` when a worker its
+  leader can spawn (`maxWorkers`) or a `forEach` node has a `verify:` that runs
+  one of the project's `heavy` commands. Each copy's check queues for one of the
+  machine's few heavy slots, so parallel runs of many workers spent hours
+  waiting. Give such a node a light check (format, lint, typecheck) and run the
+  full check on the owner or at the end
+  ([slots for heavy commands](../guides/running-workflows/several-runs.md#slots-for-heavy-commands)).
+
 - **No false "limit is close" warning.** Claude Code 2.1.329 marks its limit
   event as a warning while the window it names says `allowed` (seen at 31% of
   the seven-day window), so every run showed `! plan: seven day limit is close`.

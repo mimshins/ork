@@ -71,6 +71,7 @@ export * from "./project/move.ts";
 export * from "./project/mcp-file.ts";
 export * from "./project/place.ts";
 export * from "./project/rules.ts";
+export * from "./project/user-settings.ts";
 export * from "./project/allow-rules.ts";
 export * from "./project/heavy.ts";
 export * from "./machine/slot-ledger.ts";

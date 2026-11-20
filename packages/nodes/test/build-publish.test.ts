@@ -10,6 +10,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
+  copyFileSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -99,7 +100,24 @@ const world = (): World => {
     git(project, "config", key, value);
   }
   writeFileSync(path.join(project, "app.txt"), "base\n");
-  git(project, "add", "app.txt");
+  // The publish step renumbers ADRs and gap ids with the repository's tool.
+  const root = fileURLToPath(new URL("../../..", import.meta.url));
+  for (const dir of ["decisions", "rfcs"]) {
+    mkdirSync(path.join(project, "tools", dir), { recursive: true });
+  }
+  for (const file of [
+    "decisions/renumber.ts",
+    "decisions/change.ts",
+    "decisions/adrs.ts",
+    "decisions/gap-ids.ts",
+    "rfcs/index-table.ts",
+  ]) {
+    copyFileSync(
+      path.join(root, "tools", file),
+      path.join(project, "tools", file),
+    );
+  }
+  git(project, "add", "-A");
   git(project, "commit", "-q", "-m", "base");
   git(project, "remote", "add", "origin", remote);
   git(project, "push", "-q", "-u", "origin", "main");
@@ -140,6 +158,8 @@ type Script = {
   upstream?: string;
   /** What the resolver leaves in `app.txt`, and what it says of it. */
   resolution?: { text: string; behaviour: string };
+  /** What the resolver leaves on its first round, before `resolution`. */
+  firstResolution?: string;
   /** The choice at the `decide` gate, and the note that names the branch. */
   choice: string;
   note?: string;
@@ -295,7 +315,8 @@ const run = async (w: World, script: Script) => {
         text: "base\n",
         behaviour: "unchanged",
       };
-      writeFileSync(path.join(docsDir, "app.txt"), text);
+      const first = context.round === 1 ? script.firstResolution : undefined;
+      writeFileSync(path.join(docsDir, "app.txt"), first ?? text);
       return report({ status: "pass", summary: "x", kept: "both", behaviour });
     }
     throw new Error(`Unexpected agent ${id} of ${runId}`);
@@ -427,6 +448,21 @@ describe("build's publish steps", () => {
     expect(events.filter(event => event.type === "lock.released")).toHaveLength(
       1,
     );
+  });
+
+  it("sends a resolution that left a conflict marker back to the resolver once", async () => {
+    const w = world();
+    const { result, ran } = await run(w, {
+      change: "base\nchange\n",
+      upstream: "base\nupstream\n",
+      firstResolution: "base\n<<<<<<< HEAD\nupstream\nchange\n",
+      resolution: { text: "base\nupstream\nchange\n", behaviour: "unchanged" },
+      choice: "branch",
+      note: "feature",
+    });
+    expect(result.status).toBe("succeeded");
+    expect(ran.filter(id => id === "resolve")).toHaveLength(2);
+    expect(remoteFile(w, "feature")).toBe("base\nupstream\nchange\n");
   });
 
   it("asks when the resolution changes behaviour, and pushes nothing at `stop`", async () => {
