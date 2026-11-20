@@ -12,7 +12,7 @@
 import { execFile } from "node:child_process";
 
 import { type Denied, readable, Refused } from "./contain.ts";
-import { badStep, REV_PATH, StepError } from "./extract-error.ts";
+import { badStep, gitError, REV_PATH, StepError } from "./extract-error.ts";
 
 export type SearchStep = {
   step: "search";
@@ -50,6 +50,8 @@ export const linesOf = (value: string): string[] =>
 
 const gitEnv = (): NodeJS.ProcessEnv => ({
   ...process.env,
+  // extract-error.ts matches git's English `fatal:` text.
+  LC_ALL: "C",
   GIT_TERMINAL_PROMPT: "0",
   GIT_LITERAL_PATHSPECS: "1",
   // A diff refreshes the index; a session's own git calls must not meet a lock.
@@ -91,8 +93,7 @@ const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
         } else if (/not a git repository/u.test(stderr)) {
           reject(new StepError("not a git repository"));
         } else {
-          const first = stderr.trim().split("\n")[0] ?? "";
-          reject(new StepError(`git failed: ${first || "no message"}`));
+          reject(gitError(error.code, stderr));
         }
       },
     );

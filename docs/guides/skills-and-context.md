@@ -9,12 +9,12 @@ how to check what a node gets.
 
 From lowest to highest precedence:
 
-| Layer        | Where it comes from                                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **You**      | skills in `~/.ork/skills/`, notes (`.md` files) in `~/.ork/context/`                                                                 |
-| **Project**  | your repository's `CLAUDE.md` or `AGENTS.md`, `.claude/skills`, `.claude/agents`                                                     |
-| **Workflow** | the workflow's `layers.skills` and `layers.context`, and its [lessons](./feedback.md#turning-one-into-a-lesson) (up to 1,500 tokens) |
-| **Node**     | the node's own `skills`, `context` and `instructions`                                                                                |
+| Layer        | Where it comes from                                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **You**      | skills in `~/.ork/skills/`, notes (`.md` files) in `~/.ork/context/`                                                                                 |
+| **Project**  | your repository's `CLAUDE.md` or `AGENTS.md`, `.claude/skills`, `.claude/agents`                                                                     |
+| **Workflow** | the workflow's `layers.skills` and `layers.context`, and its [lessons](./feedback/acting-on-items.md#turning-one-into-a-lesson) (up to 1,500 tokens) |
+| **Node**     | the node's own `skills`, `context` and `instructions`                                                                                                |
 
 When two layers have a skill with the same name, only the higher one loads. A
 node's own skill beats the workflow's, the workflow's beats the project's, and

@@ -106,7 +106,7 @@ describe("read", () => {
       "error: no such file: nope.ts",
     );
     expect(await said(cwd, [{ step: "read", path: "link.txt" }])).toBe(
-      "error: refused: link.txt (outside the folder)",
+      "error: refused: link.txt (outside the folder): extract reads only inside your folder; give a path relative to it",
     );
     expect(await said(cwd, [{ step: "read", path: "sub" }])).toBe(
       "error: not a file: sub",
@@ -438,7 +438,7 @@ describe("the regex and count cuts (RFC-025)", () => {
     const read: ProducerStep = { step: "read", path: "a.ts" };
     expect(
       await said(cwd, [read, { step: "match", text: "(", regex: true }]),
-    ).toMatch(/^error: git failed/u);
+    ).toMatch(/^error: invalid regular expression: \( \(/u);
     expect(await said(cwd, [read, { step: "count" }])).toBe("5 lines");
   });
 });

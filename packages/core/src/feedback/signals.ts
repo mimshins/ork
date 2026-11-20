@@ -12,6 +12,7 @@
 import type { RunEvent } from "../run/types.ts";
 import { endOf } from "../runtime/ends-legacy.ts";
 import { END_KINDS } from "../runtime/ends.ts";
+import { maskSecrets } from "../store/mask.ts";
 import { endSignal, type Signal } from "./end-signals.ts";
 import { fingerprint } from "./fingerprint.ts";
 import type { FeedbackOrigin } from "./types.ts";
@@ -21,6 +22,11 @@ export type SignalOptions = {
   version?: string;
   /** The workflow file's content hash. */
   workflowHash?: string;
+  /**
+   * The run's env-value scrubber, applied to a tool's message after the
+   * masking.
+   */
+  scrub?: (text: string) => string;
 };
 
 type Asked = {
@@ -31,6 +37,9 @@ type Asked = {
 };
 
 const ORK_TOOL = "mcp__ork__";
+
+/** The most characters of a tool's message kept as evidence. */
+const MESSAGE_MAX = 300;
 
 /**
  * An observer for one run's events: give it each event, and record what it
@@ -46,6 +55,19 @@ export const createSignals = (
   const tools = new Map<string, string>();
   const asked = new Map<string, Asked>();
   const seen = new Set<string>();
+
+  /**
+   * A tool's message as evidence: its first line, masked, then clipped (so a
+   * cut never leaves half a secret).
+   */
+  const messageOf = (message: string | undefined): string[] => {
+    const line = message?.split("\n", 1)[0]?.trim();
+    if (line === undefined || line === "") return [];
+    const clean = (options.scrub ?? ((text: string) => text))(
+      maskSecrets(line),
+    );
+    return [clean.slice(0, MESSAGE_MAX)];
+  };
 
   const originOf = (node: string | undefined): FeedbackOrigin => {
     const origin: FeedbackOrigin = {};
@@ -180,7 +202,9 @@ export const createSignals = (
           },
         ];
       }
+      const evidence = [name, ...messageOf(event.event.message)];
       // Arguments the tool refused are the agent's mistake: Ork said what was wrong.
+      // The title names the tool, not the node, so every node shares one item.
       if (event.event.fault === "arguments") {
         return [
           event.id,
@@ -189,9 +213,9 @@ export const createSignals = (
             kind: "context-gap",
             target: "workflow",
             severity: "low",
-            title: `${event.id} called Ork's ${tool} tool with arguments it refused`,
+            title: `Ork's ${tool} tool refused a call's arguments`,
             body: `Nothing ran, and the tool said what was wrong. If it recurs, the node's prompt or context may need an example of a \`${tool}\` call.`,
-            evidence: [name],
+            evidence,
           },
         ];
       }
@@ -204,7 +228,7 @@ export const createSignals = (
           severity: "medium",
           title: `Ork's ${tool} tool returned an error`,
           body: `A call to \`${tool}\` failed; the node's events show the call.`,
-          evidence: [name],
+          evidence,
         },
       ];
     }

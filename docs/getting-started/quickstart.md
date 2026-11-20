@@ -149,8 +149,8 @@ say, each tool call, worktrees being created and merged, and each result. Then:
 `<run>` is the run's id, at the top and bottom of the transcript and in
 `ork ps`. Agents' questions appear the same way; `ork decide` answers them too.
 An answer other than the recommended one is kept as local feedback
-([feedback](../guides/feedback.md#what-stays-on-your-machine)). Ctrl-C stops the
-run, at a question too.
+([feedback](../guides/feedback/sharing-and-privacy.md#what-stays-on-your-machine)).
+Ctrl-C stops the run, at a question too.
 
 To watch the run in your browser as well, run `ork ui` in another terminal of
 your own; an agent's shell gets no sign-in link.

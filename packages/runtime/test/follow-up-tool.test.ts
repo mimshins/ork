@@ -14,6 +14,7 @@ import type {
 import { describe, expect, it } from "vitest";
 
 import { handleRpc, orkTools } from "../src/index.ts";
+import { orkMessage } from "../src/tools/tool.ts";
 
 const human: HumanChannel = {
   ask: () => Promise.resolve("none"),
@@ -70,6 +71,17 @@ const call = async (port: FollowUpPort, args: Record<string, unknown>) => {
   return JSON.stringify(reply);
 };
 
+/** The text the tool answers `args` with. */
+const said = async (port: FollowUpPort, args: Record<string, unknown>) => {
+  const tool = orkTools({
+    nodeId: "fix",
+    driver: "claude-code",
+    ports: { human, followUps: port },
+  }).find(t => t.name === "follow_up");
+  const result = await tool?.call(args);
+  return result?.content.map(part => part.text).join("") ?? "";
+};
+
 const ARGS = {
   title: "Update the API client",
   for: "project:api",
@@ -121,5 +133,16 @@ describe("the follow_up tool", () => {
   it("passes the port's refusal on", async () => {
     const { port } = portOf({ ok: false, error: "no such project" });
     expect(await call(port, ARGS)).toContain("Not kept: no such project.");
+  });
+
+  it("marks its refusals as Ork's, so a decoder keeps their message", async () => {
+    const { port } = portOf({ ok: false, error: "no such project" });
+    expect([
+      orkMessage(await said(port, ARGS)),
+      orkMessage(await said(port, {})),
+    ]).toEqual([
+      "Not kept: no such project.",
+      "title: Invalid input: expected string, received undefined",
+    ]);
   });
 });

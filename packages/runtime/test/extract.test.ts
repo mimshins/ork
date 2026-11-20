@@ -15,17 +15,19 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { HumanChannel } from "@krapht/ork-core";
-import type { Driver } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { orkTools, preapprovedTools } from "../src/index.ts";
 import { EXTRACT_CAP } from "../src/tools/extract.ts";
-import { BAD_ARGUMENTS } from "../src/tools/tool.ts";
+import { BAD_ARGUMENTS, ORK_FAILED, orkMessage } from "../src/tools/tool.ts";
 
 const human: HumanChannel = {
   ask: () => Promise.resolve(""),
   permit: () => Promise.resolve({ allow: true }),
 };
+
+type Driver = Parameters<typeof orkTools>[0]["driver"];
 
 const DRIVERS: readonly Driver[] = [
   "claude-code",
@@ -100,7 +102,9 @@ describe("extract refuses", () => {
     writeFileSync(path.join(outside, "x.txt"), "outside\n");
     symlinkSync(path.join(outside, "x.txt"), path.join(cwd, "link.txt"));
     expect(await call(cwd, { steps: [read("link.txt")] })).toEqual({
-      said: theirs("refused: link.txt (outside the folder)"),
+      said: theirs(
+        "refused: link.txt (outside the folder): extract reads only inside your folder; give a path relative to it",
+      ),
       isError: true,
     });
   });
@@ -145,7 +149,7 @@ describe("extract refuses", () => {
       theirs(
         "refused: ref HEAD:a.ts (a commit, not rev:path; extract cannot read a file as it was at a commit)",
       ),
-      "not a git repository",
+      `${ORK_FAILED}\nnot a git repository`,
     ]);
   });
 
@@ -184,10 +188,8 @@ describe("extract refuses", () => {
       ],
     });
     const unknown = await call(cwd, { steps: [{ step: "cat", path: "a.ts" }] });
-    expect(cutFirst.said).toContain(
-      "the first step must be read, files, search or git",
-    );
-    expect(twoProducers.said).toContain("only the first step");
+    expect(cutFirst.said).toContain("step 1 is `head`, a cut");
+    expect(twoProducers.said).toContain("step 2 is `read`, a producer");
     expect(seven.said).toBe(
       "Invalid arguments, nothing ran:\nsteps: Too big: expected array to have <=6 items",
     );
@@ -300,5 +302,164 @@ describe("extract runs several programs in one call (RFC-025)", () => {
         isError: true,
       },
     ]);
+  });
+
+  it("leads with the error that decided the fault when every program failed", async () => {
+    const cwd = repo();
+    const result = await call(cwd, {
+      programs: [[read("nope.ts")], [read("gone.ts")]],
+    });
+    expect(orkMessage(result.said)).toBe("no such file: nope.ts");
+  });
+});
+
+/** The advertised JSON Schema of `steps` and `programs`. */
+const advertised = () => {
+  const schema = z.toJSONSchema(
+    extractOf("claude-code", repo())?.schema ?? z.never(),
+  );
+  const shape = z.object({
+    steps: z.object({
+      type: z.string(),
+      items: z.object({ oneOf: z.array(z.unknown()) }),
+    }),
+    programs: z.object({
+      type: z.string(),
+      items: z.object({ type: z.string(), items: z.unknown() }),
+    }),
+  });
+  return shape.parse(schema.properties);
+};
+
+describe("extract says what to do instead", () => {
+  it("of an empty match text or search pattern", async () => {
+    const cwd = repo();
+    const match = await call(cwd, {
+      steps: [read("a.ts"), { step: "match", text: "" }],
+    });
+    const search = await call(cwd, {
+      steps: [{ step: "search", pattern: "" }],
+    });
+    expect(match.said).toContain("drop the match step to keep every line");
+    expect(search.said).toContain("give a pattern");
+  });
+
+  it("of a cut that starts a program, as its own program or first", async () => {
+    const cwd = repo();
+    const own = await call(cwd, {
+      programs: [[read("a.ts")], [{ step: "count" }]],
+    });
+    const first = await call(cwd, {
+      steps: [{ step: "count" }, read("a.ts")],
+    });
+    expect(own.said).toContain("programs[1][0].step: step 1 is `count`, a cut");
+    expect(own.said).toContain(
+      "cuts (head, tail, match, count) follow that producer in the same program",
+    );
+    expect(own.said).toContain("each item of programs is a separate program");
+    expect(first.said).toContain("step 2 is `read`, a producer");
+  });
+
+  it("of programs given as a flat array of steps", async () => {
+    const said = await call(repo(), { programs: [read("a.ts")] });
+    expect(said.said).toContain(
+      "programs[0]: each program is an array of steps; wrap a single step as [[{...}]]",
+    );
+  });
+
+  it("of an unknown field, listing the step's own fields", async () => {
+    const said = await call(repo(), {
+      steps: [{ step: "search", pattern: "x", regex: true }],
+    });
+    expect(said.said).toBe(
+      theirs(
+        "steps[0]: unknown field `regex`; search takes: step, pattern, path, ignoreCase, maxMatches",
+      ),
+    );
+  });
+
+  it("of a path outside the folder, without naming the folder", async () => {
+    const cwd = repo();
+    const outside = path.join(tmpdir(), "elsewhere.txt");
+    const result = await call(cwd, { steps: [read(outside)] });
+    expect(result.said).toBe(
+      theirs(
+        `refused: ${outside} (outside the folder): extract reads only inside your folder; give a path relative to it`,
+      ),
+    );
+    expect(result.said).not.toContain(cwd);
+  });
+
+  it("of a pattern git can't compile, as the call's mistake", async () => {
+    const cwd = repo();
+    const search = await call(cwd, {
+      steps: [{ step: "search", pattern: "it(|interrupt" }],
+    });
+    const match = await call(cwd, {
+      steps: [read("a.ts"), { step: "match", text: "[a", regex: true }],
+    });
+    // git's reason after the pattern differs by version and platform.
+    expect(search.said).toContain(
+      `${BAD_ARGUMENTS}\ninvalid regular expression: it(|interrupt (`,
+    );
+    expect(match.said).toContain(
+      `${BAD_ARGUMENTS}\ninvalid regular expression: [a (`,
+    );
+    expect([search.isError, match.isError]).toEqual([true, true]);
+  });
+});
+
+describe("extract takes steps and programs leniently", () => {
+  it("runs with the other one null", async () => {
+    const cwd = repo();
+    const steps = await call(cwd, {
+      steps: null,
+      programs: [[read("a.ts", 1, 1)]],
+    });
+    const programs = await call(cwd, {
+      steps: [read("a.ts", 1, 1)],
+      programs: null,
+    });
+    expect(steps.said).toContain("### 1. read a.ts:1-1\n1: one");
+    expect(programs.said).toContain("1: one");
+    expect([steps.isError, programs.isError]).toEqual([false, false]);
+  });
+
+  it("runs either given as a JSON string of the right shape", async () => {
+    const cwd = repo();
+    const steps = await call(cwd, {
+      steps: JSON.stringify([read("a.ts", 1, 1)]),
+    });
+    const programs = await call(cwd, {
+      programs: JSON.stringify([[read("a.ts", 1, 1)]]),
+    });
+    expect(steps.said).toContain("1: one");
+    expect(programs.said).toContain("### 1. read a.ts:1-1\n1: one");
+    expect([steps.isError, programs.isError]).toEqual([false, false]);
+  });
+
+  it("says a string that does not parse is not an array", async () => {
+    const cwd = repo();
+    const steps = await call(cwd, { steps: "read a.ts" });
+    const programs = await call(cwd, { programs: "[[{" });
+    expect(steps.said).toContain(
+      "steps must be an array of steps, not a string",
+    );
+    expect(programs.said).toContain(
+      "programs must be an array of programs, not a string",
+    );
+  });
+
+  it("advertises both as arrays, unchanged", () => {
+    const { steps, programs } = advertised();
+    expect([steps.type, programs.type, programs.items.type]).toEqual([
+      "array",
+      "array",
+      "array",
+    ]);
+    expect(programs.items.items).toEqual(steps.items);
+    // One strict object per step, as before the tolerance.
+    expect(steps.items.oneOf).toHaveLength(8);
+    expect(JSON.stringify(steps.items)).not.toContain('"null"');
   });
 });

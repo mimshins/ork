@@ -5,8 +5,10 @@ _Part of [Runtime: the agent drivers](../runtime.md)._
 Status: **Built**: the tool, its steps and programs, containment and refusals,
 the refusal of shell reads, and the withheld tools (RFC-025), served on
 `claude-code`, `open-code`, `command-code`, `codex` and `omp`
-([extract.ts](../../packages/runtime/src/tools/extract.ts),
+([extract.ts](../../packages/runtime/src/tools/extract.ts), `extract-schema.ts`
+(the arguments' schema),
 [extract-steps.ts](../../packages/runtime/src/tools/extract-steps.ts),
+[extract-error.ts](../../packages/runtime/src/tools/extract-error.ts),
 [extract-git.ts](../../packages/runtime/src/tools/extract-git.ts),
 [contain.ts](../../packages/runtime/src/tools/contain.ts); tests:
 [extract](../../packages/runtime/test/extract.test.ts),
@@ -62,6 +64,32 @@ else (a cut first, two producers, an unknown step or field, a value out of
 range) is a Zod error with Ork's readable issues. `programs` is 1 to 8 programs
 run in one call (at once), so several files or searches cost one turn: Code Mode
 without model-written code. A call gives exactly one of the two.
+
+**Arguments as clients send them.** `steps: null` or `programs: null` is taken
+as absent, and a JSON string of the right shape (`"[{\"step\":\"read\",…}]"`) as
+what it holds, since some clients send either for an array. A string that does
+not parse says `steps must be an array of steps, not a string` (`programs`:
+`… of programs`). The advertised JSON Schema of both fields stays an array
+(`z.preprocess` does not change it), and the tool's description is unchanged
+(`extract-schema.ts`, tests:
+[extract](../../packages/runtime/test/extract.test.ts)).
+
+**A refusal says what to send instead.** Each message names the cause and the
+shape that would have worked:
+
+- An empty `search` `pattern`:
+  `empty: give a pattern, or read the file to keep every line`. An empty `match`
+  `text`: `empty: drop the match step to keep every line`.
+- A step out of order names itself and its position (`step 1 is count, a cut`),
+  says a program starts with read, files, search or git and its cuts (head,
+  tail, match, count) follow that producer in the same program, and that each
+  item of `programs` is a separate program. A producer after step 1 says only
+  step 1 is a producer, and to give `programs` for several.
+- An item of `programs` that is not an array:
+  `each program is an array of steps; wrap a single step as [[{...}]]`.
+- An unknown field lists that step's own:
+  `search takes: step, pattern, path, ignoreCase, maxMatches`.
+- A path outside the folder: see [where it may read](#where-it-may-read).
 
 | Step     | Fields                                                                                                                             | Yields                                                                                                                                                                                                                                                |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -133,8 +161,9 @@ types allowed after it.
   its symlinks followed (a path that does not exist yet, by its nearest existing
   folder). It must stay inside the folder's real path and out of Ork's private
   session folder (`secretRoot()`, the bearer-token configs). A path that starts
-  with `:` (git's pathspec magic) is refused. The refusal names the path only:
-  `refused: <path> (outside the folder)`.
+  with `:` (git's pathspec magic) is refused. The refusal names the path, never
+  the folder, and says what to do:
+  `refused: <path> (outside the folder): extract reads only inside your folder; give a path relative to it`.
 - **The deny list.** A file is refused by `read`, `search` and `git` when the
   path as asked, or as resolved (a symlink to a denied file), matches:
   - the built-in names, at any depth: `.env*`, `*.pem`, `*.key`, `id_rsa*`,
@@ -206,10 +235,12 @@ characters. With `programs`, the output is each program's under a header
 (`### 2. search <pattern> in <path>`), `[nothing]` for an empty one and
 `[error: …]` for a failed one, joined and paged as one text; the footer's N is
 the sum of the producers' output. The call is an error only when every program
-failed. When it is cut, a line says where, and tells the session to add a
-`head`, `tail` or `match` step or call again with `from`: the steps rerun and
-nothing is stored. `from` counts UTF-16 units, so a page boundary can split a
-surrogate pair. A page after the first that reaches the end says so.
+failed, and then the answer leads with the deciding error (the first program
+that failed for a reason of Ork's own, else the first), then the headed results.
+When it is cut, a line says where, and tells the session to add a `head`, `tail`
+or `match` step or call again with `from`: the steps rerun and nothing is
+stored. `from` counts UTF-16 units, so a page boundary can split a surrogate
+pair. A page after the first that reaches the end says so.
 
 Every result that is not an error ends with the footer
 `[extract: read N characters, returned M]`: N is the producer's output, M the
@@ -225,11 +256,24 @@ decoder files it as the agent's context gap (`tool.arguments`), not as a bug in
 Ork. That covers a refusal (outside the folder, denied, a binary file, a file
 over 8 MiB, a revision that is not plain), a missing file or one that is not a
 file, a name that is not a commit, and both or neither of `steps` and
-`programs`; with `programs`, only when every program failed that way. A missing
-repository, a git failure, a timeout and a refusal of every path (the project's
-settings can't be read) keep no such line. A `rev:path` revision is refused with
-a line saying that `extract` cannot read a file as it was at a commit
+`programs`; with `programs`, only when every program failed that way. A pattern
+git cannot compile (`search`, or `match` with `regex: true`) is the call's too:
+`git grep` exits 128 with `fatal: -e option, '<pattern>': <why>` or
+`fatal: command line, …`, which becomes
+`invalid regular expression: <pattern> (<why>)` with that line, not `git failed`
+([L486](../gaps/tool-message-limits.md)). A missing repository, any other git
+failure, a timeout and a refusal of every path (the project's settings can't be
+read) keep no such line: they start with the marker `Ork tool failed:` instead,
+so the decoder keeps their message too. A `rev:path` revision is refused with a
+line saying that `extract` cannot read a file as it was at a commit
 ([L450](../gaps/extract-limits.md)).
+
+**The message feedback keeps.** Both markers (`Invalid arguments, nothing ran:`
+and `Ork tool failed:`) are followed by the message on the next line. A driver's
+decoder copies that first line, at most 300 characters, into the `tool.result`'s
+`message`, and only for a result that carries a marker, so a refusal or failure
+of `extract` is filed with what was wrong ([capture](../feedback/capture.md),
+[ADR-106](../../decisions/ADR-106-tool-result-carries-the-ork-message.md)).
 
 ## Limits
 

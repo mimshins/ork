@@ -25,7 +25,7 @@ import {
 
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
-import { isBadArguments } from "../tools/tool.ts";
+import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { ompToolName } from "./omp-names.ts";
 import { sumUsage } from "./open-code-events.ts";
 import { addUsage, promptOf } from "./session-usage.ts";
@@ -151,14 +151,18 @@ export const ompDecoder = (
   };
 
   const ended = (line: unknown, id: string): RuntimeEvent[] => {
-    const bad = isBadArguments(textOf(get(get(line, "result"), "content")));
+    const body = textOf(get(get(line, "result"), "content"));
+    const bad = isBadArguments(body);
+    const isError = get(line, "isError") === true || bad;
+    const message = isError ? orkMessage(body) : undefined;
     return [
       ...called(line, id),
       {
         type: "tool.result",
         id,
-        isError: get(line, "isError") === true || bad,
+        isError,
         ...(bad ? { fault: "arguments" as const } : {}),
+        ...(message === undefined ? {} : { message }),
       },
     ];
   };

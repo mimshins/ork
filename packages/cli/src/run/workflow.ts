@@ -46,7 +46,7 @@ import {
   liveHandlers,
   takeLastCommands,
 } from "./live-handlers.ts";
-import { ORK_RUN_VERSION } from "./origin.ts";
+import { ORK_RUN_VERSION, signalsOf } from "./origin.ts";
 import { preflight } from "./preflight.ts";
 import { closeRunRoot, openRunRootFor } from "./run-root.ts";
 import {
@@ -54,7 +54,6 @@ import {
   executorsOf,
   recorderOf,
   replayOf,
-  signalsOf,
 } from "./run-setup.ts";
 import type { RunWorkflowOptions } from "./workflow-options.ts";
 
@@ -183,7 +182,7 @@ const runIn = async (
       ? {}
       : { intervalMs: options.intervalMs }),
   });
-  const signals = signalsOf(options);
+  const signals = signalsOf(options, workflow, place);
   const onEvent = (raw: RunEvent): void => {
     for (const event of signals(raw)) {
       control.publish(record(event));

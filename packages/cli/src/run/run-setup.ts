@@ -1,9 +1,8 @@
 /**
  * @file The pieces `ork run` starts a workflow's run with, besides the run
  *   itself: its recorder (a new run's row, or a resumed run's appended to), the
- *   replay of a resumed run, the feedback signals derived from its events, the
- *   built-in executors and what they are told, and the per-run files cleared
- *   around it.
+ *   replay of a resumed run, the built-in executors and what they are told, and
+ *   the per-run files cleared around it.
  */
 
 import path from "node:path";
@@ -12,7 +11,6 @@ import {
   appendRecorder,
   createRecorder,
   createReplay,
-  createSignals,
   type NodeExecutors,
   placeFiles,
   type ProjectPlace,
@@ -28,7 +26,6 @@ import {
 } from "@krapht/ork-nodes";
 import type { Workflow } from "@krapht/ork-schema";
 
-import { feedbackOrigin } from "./origin.ts";
 import type { RunWorkflowOptions } from "./workflow-options.ts";
 
 type ExecutorOptions = Parameters<typeof builtinExecutors>[0];
@@ -70,12 +67,6 @@ export const replayOf = (
         options.resume.earlier,
         options.resume.fanOuts,
       );
-
-/** Feedback Ork derives from the run's events, recorded right after them. */
-export const signalsOf = (
-  options: RunWorkflowOptions,
-): ReturnType<typeof createSignals> =>
-  createSignals(feedbackOrigin(path.resolve(options.cwd, options.file)));
 
 /**
  * The variables the run masks, and its built-in executors once it is known

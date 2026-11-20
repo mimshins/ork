@@ -174,6 +174,8 @@ export type RuntimeEvent = (
       isError: boolean;
       /** `arguments`: an Ork tool refused its arguments (agent, not Ork). */
       fault?: "arguments";
+      /** Only an Ork tool's error: its first line, ≤300 chars (ADR-106). */
+      message?: string;
       /** For an Ork tool command: the CPU it used, its children's included. */
       cpu?: CpuTime;
     }

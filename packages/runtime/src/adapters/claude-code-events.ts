@@ -17,7 +17,7 @@ import {
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd, sessionEnd } from "../session-end.ts";
-import { isBadArguments } from "../tools/tool.ts";
+import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { addUsage, promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
@@ -33,14 +33,24 @@ const num = (value: unknown): number => (typeof value === "number" ? value : 0);
 const str = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
-/** A tool result block's text: a string, or its text parts joined. */
-const resultText = (block: Json): string => {
-  const content = block["content"];
-  return typeof content === "string"
-    ? content
-    : Array.isArray(content)
-      ? content.map(part => str(get(part, "text"))).join("")
-      : "";
+/**
+ * A tool result block. Its text (a string, or its text parts joined) is read
+ * only on an error, for an Ork tool's marker: `fault` and `message`.
+ */
+const toolResult = (block: Json): RuntimeEvent => {
+  const isError = block["is_error"] === true;
+  const content = isError ? block["content"] : "";
+  const body = Array.isArray(content)
+    ? content.map(part => str(get(part, "text"))).join("")
+    : str(content);
+  const said = orkMessage(body);
+  return {
+    type: "tool.result",
+    id: str(block["tool_use_id"]),
+    isError,
+    ...(isBadArguments(body) ? { fault: "arguments" as const } : {}),
+    ...(said === undefined ? {} : { message: said }),
+  };
 };
 
 const blocks = (message: unknown): Json[] => {
@@ -177,13 +187,7 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
     case "user": {
       return blocks(message)
         .filter(block => block["type"] === "tool_result")
-        .map((block): RuntimeEvent => {
-          const id = str(block["tool_use_id"]);
-          const isError = block["is_error"] === true;
-          return isError && isBadArguments(resultText(block))
-            ? { type: "tool.result", id, isError, fault: "arguments" }
-            : { type: "tool.result", id, isError };
-        });
+        .map(block => toolResult(block));
     }
     case "rate_limit_event": {
       return planLimitOf(message["rate_limit_info"]);

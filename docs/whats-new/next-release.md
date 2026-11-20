@@ -21,3 +21,16 @@ _Part of [What's new](../whats-new.md)._
   ([omp](../guides/drivers/omp.md), [Drivers](../guides/drivers.md)). The
   README, the docs overview, `ork --help` and the npm description now name Codex
   and `omp` beside Claude Code, OpenCode and Command Code.
+- **Feedback says why an Ork tool call failed, one item for each tool.** A
+  refused or failed call of an Ork tool (`extract`, `follow_up`, …) now records
+  the first line of the tool's own message, at most 300 characters, with secrets
+  and your `env:` values masked, and the item is titled by the tool
+  (`Ork's extract tool refused a call's arguments`), so every node that hits the
+  same refusal adds to one item. Nothing another tool printed is kept
+  ([feedback](../guides/feedback/reading.md#where-it-comes-from)). `extract` now
+  says what to send instead when it refuses a call, takes `null` and a JSON
+  string for `steps` and `programs`, and counts a regular expression git cannot
+  compile as the agent's mistake, not an Ork bug
+  ([the tool](../guides/skills-and-context.md)). Upgrade: items filed before
+  this, one for each node, stay separate and no longer grow; resolve or dismiss
+  them with `ork feedback resolve` or `dismiss`.

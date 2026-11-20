@@ -26,6 +26,7 @@ import {
   answers,
   collect,
   collectActing,
+  messagesOf,
   outcomeOf,
   resultsOf,
   start,
@@ -154,6 +155,8 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
     expect(resultsOf(events, "extract")).toEqual([true]);
     // The call asked for a denied file: the agent's mistake, not Ork's failure.
     expect(outcomeOf(events).text).toBe(`${BAD_ARGUMENTS}\nrefused: .endpoint`);
+    // The decoder keeps the marked answer's line for feedback (ADR-106).
+    expect(messagesOf(events, "extract")).toEqual(["refused: .endpoint"]);
   });
 
   it(`takes a message sent mid-session ${when(entry.capabilities)}`, async () => {

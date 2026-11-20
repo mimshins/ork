@@ -246,12 +246,44 @@ describe("the codex decoder", () => {
             status: "completed",
           },
         }),
+        line({
+          type: "item.completed",
+          item: {
+            id: "f",
+            type: "mcp_tool_call",
+            server: "ork",
+            tool: "extract",
+            arguments: {},
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: "Ork tool failed:\nnot a git repository",
+                },
+              ],
+            },
+            error: null,
+            status: "failed",
+          },
+        }),
       ],
       0,
     );
     expect(events.filter(event => event.type === "tool.result")).toEqual([
       { type: "tool.result", id: "c", isError: true },
-      { type: "tool.result", id: "m", isError: true, fault: "arguments" },
+      {
+        type: "tool.result",
+        id: "m",
+        isError: true,
+        fault: "arguments",
+        message: "summary",
+      },
+      {
+        type: "tool.result",
+        id: "f",
+        isError: true,
+        message: "not a git repository",
+      },
     ]);
   });
 

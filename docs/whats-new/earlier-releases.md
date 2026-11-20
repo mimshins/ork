@@ -83,18 +83,18 @@ now act on it.
 
 - **Lessons.** Turn a feedback item into one line every later session of its
   workflow reads: `ork feedback accept <item> --lesson`
-  ([lessons](../guides/feedback.md#turning-one-into-a-lesson)).
+  ([lessons](../guides/feedback/acting-on-items.md#turning-one-into-a-lesson)).
 - **Have Ork propose a fix.** `ork feedback apply <item>` runs Ork's own
   `ork:feedback-apply` workflow, which makes the change on a branch and asks
   whether to keep it
-  ([asking for a fix](../guides/feedback.md#asking-for-a-fix)).
+  ([asking for a fix](../guides/feedback/acting-on-items.md#asking-for-a-fix)).
 - **Merge the same problem.** `ork feedback triage` merges items about the same
   thing, after asking; `ork feedback split` takes a merge apart
-  ([merging](../guides/feedback.md#merging-the-same-problem)).
+  ([merging](../guides/feedback/reading.md#merging-the-same-problem)).
 - **Share feedback about Ork.** `ork feedback publish <item>` shows exactly what
   it would post to Ork's Discussions and sends nothing unless you say yes;
   `export` and `import` move feedback as JSON lines
-  ([sharing](../guides/feedback.md#sharing-feedback-about-ork)).
+  ([sharing](../guides/feedback/sharing-and-privacy.md#sharing-feedback-about-ork)).
 - **Note a node as you answer.** `ork decide … --note "…" --rating bad` notes
   how the node went
   ([answering questions](../guides/running-workflows/running-and-answering.md#answering-questions)).

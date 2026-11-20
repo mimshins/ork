@@ -1,17 +1,19 @@
 /**
  * @file Where a run's feedback comes from, beyond what its events say: Ork's
  *   version (bound from the CLI's `package.json`) and the workflow file's
- *   content hash; and the feedback and `follow_up` ports of the one node `ork
- *   run --node` runs.
+ *   content hash, the signals observer built from them; and the feedback and
+ *   `follow_up` ports of the one node `ork run --node` runs.
  */
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import {
   type CompiledGraph,
   createFeedback,
   createFollowUps,
+  createSignals,
   type EventStore,
   type FeedbackPort,
   type FollowUpPort,
@@ -42,6 +44,23 @@ export const feedbackOrigin = (workflowFile: string): SignalOptions => {
   }
   return origin;
 };
+
+/**
+ * Feedback Ork derives from the run's events, recorded right after them; a
+ * tool's message is masked with the values the run masks.
+ */
+export const signalsOf = (
+  options: { cwd: string; file: string; store: EventStore },
+  workflow: Workflow,
+  place: ProjectPlace,
+): ReturnType<typeof createSignals> =>
+  createSignals({
+    ...feedbackOrigin(path.resolve(options.cwd, options.file)),
+    scrub: runScrubber(
+      maskedNamesOfRun(workflow, place, options.store.projects()),
+      process.env,
+    ),
+  });
 
 /**
  * Node `id`'s feedback port (with a graph) and `follow_up` port, kept as the

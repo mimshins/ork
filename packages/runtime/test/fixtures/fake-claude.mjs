@@ -200,7 +200,8 @@ if (scenario.startsWith("end:")) {
   out({ type: "assistant", message: { id: "x1", content: [{ type: "tool_use", id: "x1", name: "mcp__ork__extract", input }] } });
   const reply = await rpc("tools/call", { name: "extract", arguments: input });
   const failing = reply.result?.isError === true || reply.error !== undefined;
-  out({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "x1", is_error: failing }] } });
+  // The tool's text rides in the result, as Claude Code passes it on.
+  out({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "x1", is_error: failing, content: reply.result?.content ?? reply.error.message }] } });
   finish(reply.result?.content[0].text ?? reply.error.message, PASS);
   process.exit(0);
 } else if (scenario === "wait-message") {

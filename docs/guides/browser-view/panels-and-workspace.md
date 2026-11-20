@@ -91,7 +91,7 @@ the bar (status, kind, severity, workflow, run) and by what it's about. Choose
 an item to read its records, newest first, then dismiss or restore it, accept
 it, make it a lesson for its workflow, have Ork propose a fix, or share one
 about Ork. Each action shows what it will do first
-([feedback in the browser](../feedback.md#in-the-browser)).
+([feedback in the browser](../feedback/sharing-and-privacy.md#in-the-browser)).
 
 **Worktrees** lists the worktrees and branches your runs left, for every project
 at once unless the bar's **Project** or **Run** narrows them. **Remove…** takes

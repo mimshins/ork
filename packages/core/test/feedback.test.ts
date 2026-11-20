@@ -275,31 +275,48 @@ const answering = (permission: string, question: string): RunEvent[] => [
   },
 ];
 
+/** Node `id` calling Ork's `tool` once, and the result it got back. */
+const toolCall = (
+  id: string,
+  tool: string,
+  result: { fault?: "arguments"; message?: string },
+): RunEvent[] => [
+  {
+    type: "node.event",
+    id,
+    event: {
+      type: "tool.called",
+      id: "t2",
+      name: `mcp__ork__${tool}`,
+      input: {},
+    },
+  },
+  {
+    type: "node.event",
+    id,
+    event: { type: "tool.result", id: "t2", isError: true, ...result },
+  },
+];
+
+/** The records of `events`, observed with the run's scrubber. */
+const scrubbed = (events: readonly RunEvent[]): FeedbackReport[] => {
+  const signals = createSignals({ scrub: SCRUB });
+  return reports(events.flatMap(event => signals(event)));
+};
+
 describe("system signals", () => {
   it("file arguments an Ork tool refused as the agent's context gap, not an Ork bug", () => {
     const recorded = reports(
       observe([
         ...RUN.slice(0, 3),
-        {
-          type: "node.event",
-          id: "fix",
-          event: {
-            type: "tool.called",
-            id: "t2",
-            name: "mcp__ork__extract",
-            input: {},
-          },
-        },
-        {
-          type: "node.event",
-          id: "fix",
-          event: {
-            type: "tool.result",
-            id: "t2",
-            isError: true,
-            fault: "arguments",
-          },
-        },
+        ...toolCall("fix", "extract", {
+          fault: "arguments",
+          message: "Invalid arguments, nothing ran: steps must be an array",
+        }),
+        ...toolCall("fix", "follow_up", {
+          fault: "arguments",
+          message: "Invalid arguments, nothing ran: title is required",
+        }),
       ]),
     );
     expect(recorded).toMatchObject([
@@ -307,9 +324,73 @@ describe("system signals", () => {
         code: "tool.arguments",
         kind: "context-gap",
         target: "workflow",
-        title: "fix called Ork's extract tool with arguments it refused",
+        title: "Ork's extract tool refused a call's arguments",
+        evidence: [
+          "mcp__ork__extract",
+          "Invalid arguments, nothing ran: steps must be an array",
+        ],
+      },
+      {
+        code: "tool.arguments",
+        title: "Ork's follow_up tool refused a call's arguments",
+        evidence: [
+          "mcp__ork__follow_up",
+          "Invalid arguments, nothing ran: title is required",
+        ],
       },
     ]);
+  });
+
+  it("give one record when two nodes are refused by the same tool", () => {
+    const refusal = { fault: "arguments", message: "nothing ran" } as const;
+    const recorded = reports(
+      observe([
+        ...toolCall("review", "extract", refusal),
+        ...toolCall("engine", "extract", refusal),
+      ]),
+    );
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]?.title).toBe(
+      "Ork's extract tool refused a call's arguments",
+    );
+  });
+
+  it("keep the message of an Ork tool's error, and leave it out when there is none", () => {
+    const [failed, bare] = [
+      reports(observe(toolCall("fix", "extract", { message: "git failed" }))),
+      reports(observe(toolCall("fix", "extract", {}))),
+    ];
+    expect(failed?.[0]).toMatchObject({
+      code: "tool.error",
+      title: "Ork's extract tool returned an error",
+      evidence: ["mcp__ork__extract", "git failed"],
+    });
+    expect(bare?.[0]?.evidence).toEqual(["mcp__ork__extract"]);
+  });
+
+  it("keep a message's first line only, at most 300 characters", () => {
+    const [long, lines] = [
+      reports(
+        observe(toolCall("fix", "extract", { message: "x".repeat(400) })),
+      ),
+      reports(observe(toolCall("fix", "extract", { message: "one\ntwo" }))),
+    ];
+    expect(long[0]?.evidence[1]).toHaveLength(300);
+    expect(lines[0]?.evidence[1]).toBe("one");
+  });
+
+  it("mask a token and an env value in the message", () => {
+    const token = `ghp_${"a1B2".repeat(9)}`;
+    const message = `bad path ${token} and hunter2-and-more`;
+    const recorded = [
+      ...scrubbed(toolCall("fix", "extract", { fault: "arguments", message })),
+      ...scrubbed(toolCall("fix", "extract", { message })),
+    ];
+    expect(recorded).toHaveLength(2);
+    for (const one of recorded) {
+      expect(JSON.stringify(one.evidence)).not.toContain(token);
+      expect(JSON.stringify(one.evidence)).not.toContain("hunter2");
+    }
   });
 
   it("come from the run's own events, once each, with their origin", () => {

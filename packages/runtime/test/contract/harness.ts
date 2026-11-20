@@ -143,14 +143,22 @@ export const outcomeOf = (events: readonly RuntimeEvent[]): SessionOutcome => {
 export const resultsOf = (
   events: readonly RuntimeEvent[],
   name: string,
-): boolean[] => {
+): boolean[] => toolResults(events, name).map(e => e.isError);
+
+/** The `message` of each result of a call to `name`, in order. */
+export const messagesOf = (
+  events: readonly RuntimeEvent[],
+  name: string,
+): (string | undefined)[] => toolResults(events, name).map(e => e.message);
+
+const toolResults = (events: readonly RuntimeEvent[], name: string) => {
   const ids = new Set(
     events.flatMap(e =>
       e.type === "tool.called" && e.name.endsWith(name) ? [e.id] : [],
     ),
   );
   return events.flatMap(e =>
-    e.type === "tool.result" && ids.has(e.id) ? [e.isError] : [],
+    e.type === "tool.result" && ids.has(e.id) ? [e] : [],
   );
 };
 

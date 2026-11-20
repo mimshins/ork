@@ -28,6 +28,32 @@ export const BAD_ARGUMENTS = "Invalid arguments, nothing ran:";
 export const isBadArguments = (body: string): boolean =>
   body.includes(BAD_ARGUMENTS);
 
+/**
+ * How an Ork tool's failure for a reason of its own starts, so a driver's
+ * decoder can tell it from another tool's error (`tool.result`'s `message`).
+ */
+export const ORK_FAILED = "Ork tool failed:";
+
+// Longer than signals.ts keeps, so masking sees a secret whole before its clip.
+const MESSAGE_MAX = 1000;
+
+// Both markers are plain text: no character in them is special in a pattern.
+// Anchored at the start, so another tool's error that quotes one is not kept.
+const MARKED = new RegExp(
+  `^\\s*(?:${BAD_ARGUMENTS}|${ORK_FAILED})\\s*([^\\n]*)`,
+  "u",
+);
+
+/**
+ * The message of an Ork tool's refusal or failure (`tool.result`'s `message`):
+ * the first line after its marker, clipped to 1000 characters. `undefined` for
+ * text that does not start with a marker, which is not Ork's to keep.
+ */
+export const orkMessage = (body: string): string | undefined => {
+  const line = MARKED.exec(body)?.[1]?.trim() ?? "";
+  return line === "" ? undefined : line.slice(0, MESSAGE_MAX);
+};
+
 export const text = (value: string): ToolText => ({
   content: [{ type: "text", text: value }],
 });
@@ -93,6 +119,10 @@ const expectedField = (issue: z.core.$ZodIssue): string =>
     issue.code === "invalid_value" ? `, one of: ${issue.values.join(", ")}` : ""
   }`;
 
+/** A schema's own message for a stray key (zod's own repeats the key). */
+const ownMessage = (stray: z.core.$ZodIssue): string =>
+  stray.message.startsWith("Unrecognized key") ? "" : `; ${stray.message}`;
+
 /**
  * A failed parse as text a model can act on. A stray key is reported with the
  * fields its object lacks, read from the schema's own issues: a wrong name is
@@ -111,7 +141,7 @@ export const readableIssues = (issues: readonly z.core.$ZodIssue[]): string => {
         `${issueAt(stray)}unknown field ${stray.keys.map(key => `\`${key}\``).join(", ")}${lacking
           .filter(issue => isFieldOf(issue, stray))
           .map(issue => expectedField(issue))
-          .join("")}`,
+          .join("")}${ownMessage(stray)}`,
     ),
     ...issues
       .filter(

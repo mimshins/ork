@@ -9,7 +9,6 @@ import path from "node:path";
 import {
   type AgentRuntime,
   createRecorder,
-  createSignals,
   type DriverNeeds,
   endHeartbeat,
   type EventStore,
@@ -44,7 +43,7 @@ import {
   oneNodeNotes,
   oneNodeResult,
 } from "./node-notes.ts";
-import { feedbackOrigin, nodeReports } from "./origin.ts";
+import { nodeReports, signalsOf } from "./origin.ts";
 import {
   checksHere,
   chooseReadyDriver,
@@ -212,9 +211,7 @@ export const runNode = async (
     ...(options.yolo === true ? { yolo: true } : {}),
     ...(options.home === undefined ? {} : { home: options.home }),
   });
-  const signals = createSignals(
-    feedbackOrigin(path.resolve(options.cwd, options.file)),
-  );
+  const signals = signalsOf(options, workflow, place);
   const view = createView();
   const record = (raw: RunEvent): void => {
     for (const event of signals(raw)) {

@@ -76,7 +76,11 @@ export const resolveInside = (cwd: string, requested: string): Inside => {
   const asked = within(path.resolve(cwd), lexical);
   const real = realOf(lexical);
   const rel = within(root, real);
-  if (asked === undefined || rel === undefined) refuse("outside the folder");
+  if (asked === undefined || rel === undefined) {
+    throw new Refused(
+      `refused: ${requested} (outside the folder): extract reads only inside your folder; give a path relative to it`,
+    );
+  }
   if (within(realOf(secretRoot()), real) !== undefined) {
     refuse("Ork's private session folder");
   }

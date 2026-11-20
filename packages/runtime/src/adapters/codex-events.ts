@@ -26,7 +26,7 @@ import {
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { classifyProviderError } from "../provider-errors.ts";
 import { errorEnd } from "../session-end.ts";
-import { isBadArguments } from "../tools/tool.ts";
+import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { addUsage } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
@@ -97,12 +97,16 @@ const mcpText = (item: unknown): string => {
 /** A finished tool item's result. */
 const itemResult = (item: unknown, id: string): RuntimeEvent => {
   const error = mcpError(item);
-  const bad = isBadArguments(`${error}${mcpText(item)}`);
+  const body = `${error}${mcpText(item)}`;
+  const bad = isBadArguments(body);
+  const isError = get(item, "status") === "failed" || error !== "" || bad;
+  const message = isError ? orkMessage(body) : undefined;
   return {
     type: "tool.result",
     id,
-    isError: get(item, "status") === "failed" || error !== "" || bad,
+    isError,
     ...(bad ? { fault: "arguments" as const } : {}),
+    ...(message === undefined ? {} : { message }),
   };
 };
 

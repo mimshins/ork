@@ -20,7 +20,7 @@ import {
 
 import type { LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
-import { isBadArguments } from "../tools/tool.ts";
+import { isBadArguments, orkMessage } from "../tools/tool.ts";
 import { addUsage, promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
@@ -162,14 +162,15 @@ export const commandCodeDecoder = (): LegDecoder => {
     }
     if (typeof type === "string" && REFUSED.has(type)) {
       // An Ork tool's answer to arguments it refused: the agent's mistake.
-      const theirs =
-        type === "tool_errored" && isBadArguments(str(event["error"]));
+      const body = type === "tool_errored" ? str(event["error"]) : "";
+      const message = orkMessage(body);
       return [
         {
           type: "tool.result",
           id,
           isError: true,
-          ...(theirs ? { fault: "arguments" as const } : {}),
+          ...(isBadArguments(body) ? { fault: "arguments" as const } : {}),
+          ...(message === undefined ? {} : { message }),
         },
       ];
     }

@@ -19,7 +19,7 @@ import {
   ompUsage,
 } from "../src/adapters/omp-events.ts";
 import { addSpend, sessionSpend } from "../src/adapters/omp-ledger.ts";
-import { BAD_ARGUMENTS } from "../src/tools/tool.ts";
+import { BAD_ARGUMENTS, ORK_FAILED } from "../src/tools/tool.ts";
 
 const spec = { cwd: "/w", model: "anthropic/claude-haiku-5-5" };
 
@@ -319,7 +319,31 @@ describe("ompDecoder's lines", () => {
       id: "c1",
       isError: true,
       fault: "arguments",
+      message: "status",
     });
+  });
+
+  it("keeps the message of an Ork tool's failure, and none of another tool's error", () => {
+    const events = decodeAll(ompDecoder(spec), [
+      start("c1", "mcp__ork_session_ork_extract", {}),
+      finish(
+        "c1",
+        "mcp__ork_session_ork_extract",
+        true,
+        `${ORK_FAILED}\nnot a git repository\nmore`,
+      ),
+      start("c2", "bash", {}),
+      finish("c2", "bash", true, "Error: exit 1"),
+    ]);
+    expect(ofType(events, "tool.result")).toEqual([
+      {
+        type: "tool.result",
+        id: "c1",
+        isError: true,
+        message: "not a git repository",
+      },
+      { type: "tool.result", id: "c2", isError: true },
+    ]);
   });
 
   it("emits each message and call once, though turn_end and agent_end repeat them", () => {

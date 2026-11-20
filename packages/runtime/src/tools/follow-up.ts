@@ -14,7 +14,7 @@ import {
 } from "@krapht/ork-core";
 import { z } from "zod";
 
-import { defineTool, text } from "./tool.ts";
+import { defineTool, ORK_FAILED, text } from "./tool.ts";
 
 const isFor = (value: string): value is FollowUpFor =>
   /^(?:agent|me|project:\S.*|person:\S.*)$/u.test(value);
@@ -113,7 +113,10 @@ export const followUpTool = defineTool({
     };
     const result = await port.add(input);
     if (!result.ok) {
-      return { ...text(`Not kept: ${result.error}.`), isError: true };
+      return {
+        ...text(`${ORK_FAILED}\nNot kept: ${result.error}.`),
+        isError: true,
+      };
     }
     const { followUp, merged, note } = result.added;
     return text(

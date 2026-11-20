@@ -97,7 +97,7 @@ reach what they reach. Ork itself sends only:
 - **Feedback you publish.** `ork feedback publish` posts one item to Ork's
   GitHub Discussions, with your own `gh`, only after showing you exactly what it
   would send and you say yes
-  ([sharing](./feedback.md#sharing-feedback-about-ork)).
+  ([sharing](./feedback/sharing-and-privacy.md#sharing-feedback-about-ork)).
 
 `ork upgrade`, when you run it, runs your package manager, which downloads the
 new version.

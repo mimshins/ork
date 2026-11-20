@@ -19,7 +19,12 @@ import {
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd } from "../session-end.ts";
-import { isBadArguments, ORK_SERVER, toolId } from "../tools/tool.ts";
+import {
+  isBadArguments,
+  ORK_SERVER,
+  orkMessage,
+  toolId,
+} from "../tools/tool.ts";
 import { promptOf, withContext } from "./session-usage.ts";
 
 type Json = Record<string, unknown>;
@@ -118,6 +123,11 @@ const toolEvents = (part: unknown): RuntimeEvent[] => {
   const id = str(get(part, "id")) || str(get(part, "partID"));
   const state = get(part, "state");
   const input = get(state, "input");
+  const isError = get(state, "status") === "error";
+  const body = isError
+    ? `${str(get(state, "error"))}${str(get(state, "output"))}`
+    : "";
+  const message = orkMessage(body);
   return [
     {
       type: "tool.called",
@@ -128,11 +138,9 @@ const toolEvents = (part: unknown): RuntimeEvent[] => {
     {
       type: "tool.result",
       id,
-      isError: get(state, "status") === "error",
-      ...(get(state, "status") === "error" &&
-      isBadArguments(`${str(get(state, "error"))}${str(get(state, "output"))}`)
-        ? { fault: "arguments" as const }
-        : {}),
+      isError,
+      ...(isBadArguments(body) ? { fault: "arguments" as const } : {}),
+      ...(message === undefined ? {} : { message }),
     },
   ];
 };

@@ -24,6 +24,30 @@ sees the tool's answer start with "Invalid arguments, nothing ran:" and sets the
 (`recommendation.overridden`). They are derived where a run's events are
 recorded, so the decision queue's events count too.
 
+**An Ork tool's refusal or failure says why**
+([ADR-106](../../decisions/ADR-106-tool-result-carries-the-ork-message.md)):
+
+- The decoder sets the `tool.result`'s `message` beside `fault`, from the same
+  text, only when it is Ork's own (it starts with "Invalid arguments, nothing
+  ran:" or with the marker Ork's tools put on a failure). A Bash result or
+  Claude Code's own validation text has no marker, so no `message`, on any
+  driver.
+- `tool.arguments` and `tool.error` records carry it as evidence after the tool
+  name: its first line, at most 300 characters, passed through `maskSecrets` and
+  then the run's env-value scrubber (`SignalOptions.scrub`).
+- Both are titled by tool, `Ork's <tool> tool refused a call's arguments` and
+  `Ork's <tool> tool returned an error`. The node is not in the title, so it is
+  not in the fingerprint: two nodes refused by the same tool give one item. The
+  record keeps its `node` and origin.
+- A run keeps one record per tool; a later message for the same tool is dropped
+  ([L484](../gaps/tool-message-limits.md)). Claude Code's own validation text
+  has no marker and files as `tool.error` without a message
+  ([L485](../gaps/tool-message-limits.md)). The marker is matched as a
+  substring, so the `mcp__ork__` tool-name filter in `signals.ts` is what keeps
+  other tools' text out ([L488](../gaps/tool-message-limits.md)); an error
+  thrown inside an Ork tool has no message
+  ([L489](../gaps/tool-message-limits.md)).
+
 A failed node's end files by who should act on it (the per-node `end.<kind>`
 signal, [end-signals.ts](../../packages/core/src/feedback/end-signals.ts)): an
 `ork` kind (`unknown`, `driver_crashed`) is a bug carrying the scrubbed detail,

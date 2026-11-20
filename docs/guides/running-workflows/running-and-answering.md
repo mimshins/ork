@@ -10,9 +10,10 @@ ork run path/to/review.ork.yaml --driver claude-code
 ```
 
 The workflow is a path, the name of a file in `.ork/workflows/`, or one of Ork's
-own, such as `ork:feedback-apply` ([feedback](../feedback.md#asking-for-a-fix)).
-Before anything starts, Ork checks the workflow, its inputs, and (when it has
-`worktree` nodes) your checkout. Any error stops it there.
+own, such as `ork:feedback-apply`
+([feedback](../feedback/acting-on-items.md#asking-for-a-fix)). Before anything
+starts, Ork checks the workflow, its inputs, and (when it has `worktree` nodes)
+your checkout. Any error stops it there.
 
 | Option             | What it does                                                    |
 | ------------------ | --------------------------------------------------------------- |
