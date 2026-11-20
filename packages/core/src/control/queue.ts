@@ -7,8 +7,9 @@
  *   closed unanswered. A child's question its leader answered first is recorded
  *   as answered by that owner, with its note (ADR-063). A yolo run (`ork run
  *   --yolo`) allows each permission prompt itself, recorded as answered by
- *   `yolo`, so nobody is asked. A resumed run's ids go on from the ones stored,
- *   and what its last process left open is withdrawn.
+ *   `yolo`. Rules allowed for a node or the run (RFC-028) allow later calls
+ *   they cover, unasked, also after a resume. A resumed run's ids go on from
+ *   the ones stored, and what its last process left open is withdrawn.
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -21,13 +22,19 @@ import type {
   NewDecision,
 } from "../store/types.ts";
 import {
+  type AlwaysOptions,
+  allowAnswer,
   allowedByYolo,
+  allows,
   DENIED,
   deniedMessage,
+  keepAlways,
   permissionDecision,
+  remembered,
+  scopeOf,
 } from "./permission-prompt.ts";
 
-export type DecisionQueueOptions = {
+export type DecisionQueueOptions = AlwaysOptions & {
   store: DecisionStore;
   runId: string;
   /** The run's own terminal; none for a detached run. */
@@ -244,10 +251,15 @@ export const createDecisionQueue = (
         );
         return { allow: true };
       }
+      const rules = request.rules ?? [];
+      if (remembered(store.decisions({ runId }), request.nodeId, rules)) {
+        return { allow: true };
+      }
       const { local } = options;
+      const open = permissionDecision(request, options.rulesFile);
       let localMessage = DENIED;
       const { answer, note } = await decide(
-        permissionDecision(request),
+        open,
         local === undefined
           ? undefined
           : signal => {
@@ -255,6 +267,7 @@ export const createDecisionQueue = (
               return local
                 .permit({
                   ...request,
+                  options: open.options,
                   signal,
                   onNote: given => {
                     said = given;
@@ -262,7 +275,9 @@ export const createDecisionQueue = (
                 })
                 .then(result => {
                   if (!result.allow) localMessage = result.message;
-                  const choice = result.allow ? "allow" : "deny";
+                  const choice = result.allow
+                    ? allowAnswer(result.scope, open.options)
+                    : "deny";
                   return said === undefined
                     ? { answer: choice }
                     : { answer: choice, note: said };
@@ -271,12 +286,15 @@ export const createDecisionQueue = (
         request.signal,
       );
       if (note !== undefined) request.onNote?.(note);
-      return answer === "allow"
-        ? { allow: true }
-        : {
-            allow: false,
-            message: note === undefined ? localMessage : deniedMessage(note),
-          };
+      if (!allows(answer)) {
+        return {
+          allow: false,
+          message: note === undefined ? localMessage : deniedMessage(note),
+        };
+      }
+      const scope = scopeOf(answer);
+      if (scope === "always") await keepAlways(rules, options);
+      return scope === undefined ? { allow: true } : { allow: true, scope };
     },
   };
 };

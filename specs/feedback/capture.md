@@ -20,9 +20,31 @@ an Ork tool's schema refused (`tool.arguments`, also the agent's: the decoder
 sees the tool's answer start with "Invalid arguments, nothing ran:" and sets the
 `tool.result`'s `fault`, on every driver: Command Code's decoder reads it from a
 `tool_errored` frame's `error`), a gate that timed out and took its default
-(`gate.timeout`), and an answer other than the recommended one
-(`recommendation.overridden`). They are derived where a run's events are
+(`gate.timeout`), an answer other than the recommended one
+(`recommendation.overridden`), and a shell rule people keep allowing
+(`permission.suggest`, below). They are derived where a run's events are
 recorded, so the decision queue's events count too.
+
+**A rule people keep allowing is proposed, not written** (`permission.suggest`,
+[RFC-028](../../rfcs/archived/RFC-028-permissions-without-asking.md) part 4):
+
+- On a permission decision answered `allow`, `allow-node` or `allow-run`, the
+  observer reads the project's answered permission decisions, every run's
+  (`DecisionStore.decisions({ project, status: "answered" })`, through
+  `SignalOptions.permissions`). Without that option no rule is proposed.
+- A decision's rules are the `ruleFor` rules of its context's commands that its
+  options' descriptions named, so a prompt that offered no rule (an unreadable
+  line, another tool, a yolo allow) counts for nothing.
+- A rule is proposed once it was allowed at least 3 times across at least 2
+  distinct runs (`suggest-thresholds.ts`), was never answered `allow-always` (it
+  is in the file already, or was meant to be), and the project's allow rules do
+  not cover it.
+- The record is a low `friction` item for the `project`, titled by its rule, so
+  it is fingerprinted per rule; its evidence is the rule line and the rules file
+  (`permissions.allow` in `.ork/project.yaml`, or the attached project's
+  `project.yaml`). A run records it once. Nothing is written to the file: the
+  person adds it. `permission.denied` reads only a `deny` answer, so the allow
+  ids never file one.
 
 **An Ork tool's refusal or failure says why**
 ([ADR-106](../../decisions/ADR-106-tool-result-carries-the-ork-message.md)):

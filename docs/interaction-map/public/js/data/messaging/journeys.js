@@ -181,7 +181,8 @@ export const JOURNEYS = [
         from: "permission",
         to: "decisions",
         title: "It becomes a decision",
-        detail: "Allow or deny, with the exact command as context.",
+        detail:
+          "Allow or deny, with the exact command as context; for a readable shell line, also allow for this node, this run or always, each naming its rule. A read Ork already knows never gets here, and a read-only node is refused what its rules do not allow.",
       },
       {
         from: "you",

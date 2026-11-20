@@ -1410,6 +1410,23 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "permissions-without-asking",
+        title: "Permissions without asking",
+        status: "active",
+        detail:
+          "Built, not yet released. RFC-028, now Implemented. On `claude-code`, the `permission` tool reads a shell line with one reader in core (loops, subshells, `if`, `while`, and the wrappers `timeout`, `env`, `cd`, `time`, `nice`) and allows it, with no question, when every command is covered by the node's allow rules or by a shipped read-only set (`ork logs`, `ps`, `tree`, `usage`, `feedback` and `follow-ups` reads, `jq`, `wc`, `cut`, `sort`, `uniq`, `head`, `tail`, `tr`, `ls`, `echo`, `printf`, `pwd`, `basename`, `dirname`, `date`, `cd`, `true`, `false`, each without its write or run flags). A read-only node is now refused, with a message, a command its rules do not allow (`unlisted: refuse | ask` on a node, a workflow or the project; node over workflow over project). A readable line's prompt offers once, node, run or always; \"always\" appends a prefix rule to `permissions.allow` and keeps the file's comments. A rule allowed 3 times across 2 runs becomes a `permission.suggest` feedback item. The Codex, Command Code and omp guards embed the same reader, without the shipped set. Left: refusal, remember and suggest on the other drivers, non-Bash tools still prompt, and the shipped list needs upkeep when a command gains a flag; a replay of a read-only `spec` node to count prompts and refusals. The limits are L503 to L512.",
+        docs: [
+          "docs/guides/permissions.md",
+          "specs/gaps/permissions-limits.md",
+          "rfcs/archived/RFC-028-permissions-without-asking.md",
+          "packages/core/src/run/shell-line.ts",
+          "packages/core/src/run/shell-safe.ts",
+          "packages/core/src/run/permission-verdict.ts",
+          "packages/core/src/project/allow-rules.ts",
+          "packages/core/src/feedback/permission-suggest.ts",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
@@ -1520,4 +1537,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-19";
+export const ROADMAP_UPDATED = "2026-11-20";

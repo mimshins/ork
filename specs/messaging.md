@@ -175,6 +175,19 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   context is the tool's `command`, `file_path`, `path`, `url` or `pattern`, the
   first one present, as written with its newlines; any other input is pretty
   JSON. Either way it stops at 4,000 characters, the last being `…`.
+- A shell line Ork read whose uncovered commands each have a prefix rule
+  ([permissions](./project-rules/permissions.md#scopes), `ruleFor`) gets the
+  options `allow` (this call), `allow-node`, `allow-run`, `allow-always` (only
+  when the run knows the project's rules file) and `deny`, each scope's
+  `description` naming the exact rules, and for `allow-always` the file. The
+  run's terminal gets the same options. A later call whose rules were all
+  allowed for its node, or for the run (`allow-run`, `allow-always`), is allowed
+  with no decision opened. Those rules are rebuilt from the run's answered
+  decisions (each context's commands through `ruleFor`, kept only where the
+  chosen option named them), so they hold after a resume too. `allow-always`
+  also hands the rules to the project's rules file; when that fails, the
+  terminal is told and the rules still hold for the run. A yolo run records
+  `allow` and `deny` only, and remembers nothing.
 - **A gate may give a document** beside its short question: what to read to
   answer ([ADR-068](../decisions/ADR-068-gate-document-and-readable-text.md)).
   It is masked and kept on the record (`document`; blank is none, and older

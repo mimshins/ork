@@ -35,7 +35,7 @@ import {
   runAnyLeg,
   wireSaying,
 } from "./session-leg-input.ts";
-import { readPatterns } from "./tools/contain.ts";
+import { sessionRules } from "./session-rules.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
 
@@ -106,7 +106,7 @@ export const createSessionRuntime = (
         driver: adapter.driver,
         ports,
         cwd: spec.cwd,
-        denyRead: readPatterns(spec.tools.deny),
+        ...sessionRules(spec),
         report: {
           schema: spec.reportSchema,
           submit: report => {

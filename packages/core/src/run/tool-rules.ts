@@ -15,9 +15,10 @@ export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit"] as const;
 
 /**
  * Commands a readonly node runs without asking: git that only reads. Any other
- * command asks, as for any node, so a reviewer can run the tests with leave.
- * Under `reading: extract` (the default) only `git status`: `extract` shows a
- * diff, a commit and the log (RFC-025).
+ * command its rules do not cover is refused (`unlisted: refuse`, its default;
+ * RFC-028), so a reviewer that runs the tests needs a rule for them. Under
+ * `reading: extract` (the default) only `git status`: `extract` shows a diff, a
+ * commit and the log (RFC-025).
  */
 export const readOnlyCommands = (reading: "extract" | "open"): string[] =>
   (reading === "open" ? ["diff", "log", "show", "status"] : ["status"]).flatMap(
@@ -59,6 +60,23 @@ export const readingOf = (
   return edits ? "extract" : "extract-only";
 };
 
+/**
+ * What happens to a shell command no rule covers (RFC-028): the node's
+ * `tools.unlisted`, else its workflow's (the project's under it), else `refuse`
+ * on a readonly node; unset asks.
+ */
+const unlistedOf = (
+  node: ClaudeNode,
+  readonly: boolean,
+  rules: Workflow["rules"],
+): Pick<ToolRules, "unlisted"> => {
+  const unlisted =
+    node.tools?.unlisted ??
+    rules?.permissions?.unlisted ??
+    (readonly ? "refuse" : undefined);
+  return unlisted === undefined ? {} : { unlisted };
+};
+
 /** The node's own tool rules, the project's and workflow's, and isolation's. */
 export const toolRules = (
   node: ClaudeNode,
@@ -88,4 +106,5 @@ export const toolRules = (
     ]),
   ],
   ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),
+  ...unlistedOf(node, readonly, rules),
 });

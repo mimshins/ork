@@ -166,6 +166,15 @@ fix the node in the workflow file; `ork validate` checks most of it.
 The driver's process ended in a way Ork can't read. **Who acts:** Ork. **What to
 do:** its last output is under Details. Ork files it as a bug.
 
+## A refused command is not a stop
+
+A read-only node on `claude-code` that runs a shell command its rules do not
+allow is not asked: the call is refused with a message, and the session goes on.
+It is not an end kind and files no feedback. If the node keeps retrying, it ends
+as **Turn limit** or **Budget limit** instead. To fix it, give the node an
+`allow` rule for the command, or set `unlisted: ask` to be asked again
+([permissions](./permissions.md#a-read-only-node-refuses)).
+
 ## Unknown
 
 Nothing Ork knows matched. **Who acts:** Ork. **What to do:** its details say

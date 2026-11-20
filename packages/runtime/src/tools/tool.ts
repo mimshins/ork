@@ -79,6 +79,18 @@ export type ToolContext = {
   cwd?: string;
   /** The `Read(...)` patterns of the session's `tools.deny`. */
   denyRead?: readonly string[];
+  /**
+   * The session's tool rules, for the `permission` tool's verdict on a shell
+   * line (RFC-028). Set by the session runner; tests of other tools leave it
+   * out, and the tool then asks about every call.
+   */
+  rules?: {
+    allow: readonly string[];
+    deny: readonly string[];
+    unlisted?: "refuse" | "ask";
+    yolo?: boolean | undefined;
+    reading?: "extract" | "extract-only" | "open" | undefined;
+  };
 };
 
 /** A tool ready for one session's MCP server. */

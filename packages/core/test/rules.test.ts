@@ -48,6 +48,20 @@ const specOf = (plan: PlanResult) => {
 const parse = (git: object) =>
   ProjectSchema.safeParse({ schemaVersion: 1, git }).success;
 
+/** `unlisted` of nodes r, w, n and m, with the project under the workflow. */
+const unlisted = (lines: string[], project?: Project) => {
+  const workflow = applyProject(
+    workflowOf(lines),
+    project === undefined ? {} : { project },
+  );
+  return ["r", "w", "n", "m"].map(
+    id =>
+      specOf(
+        planNodeSession(workflow, id, { cwd: "/p", inputs: {}, inPlace: true }),
+      ).tools.unlisted,
+  );
+};
+
 const messages = (lines: string[]) =>
   checkRules(workflowOf(lines)).map(d => `${d.severity}: ${d.message}`);
 
@@ -263,6 +277,53 @@ describe("project rules under a workflow", () => {
       "Bash(git -C * status *)",
     ]);
     expect(spec.reading).toBe("extract-only");
+  });
+
+  it("resolve unlisted: node over workflow over project, refuse by default on readonly", () => {
+    const nodes = [
+      "nodes:",
+      "  r: { type: agent.worker, prompt: go, isolation: readonly }",
+      "  w: { type: agent.worker, prompt: go }",
+      "  n: { type: agent.worker, prompt: go, isolation: readonly, tools: { unlisted: ask } }",
+      "  m: { type: agent.worker, prompt: go, tools: { unlisted: refuse } }",
+    ];
+    expect(unlisted(nodes)).toEqual(["refuse", undefined, "ask", "refuse"]);
+    const projectAsks: Project = {
+      schemaVersion: 1,
+      permissions: { unlisted: "ask" },
+    };
+    expect(unlisted(nodes, projectAsks)).toEqual([
+      "ask",
+      "ask",
+      "ask",
+      "refuse",
+    ]);
+    expect(
+      unlisted(
+        ["rules: { permissions: { unlisted: refuse } }", ...nodes],
+        projectAsks,
+      ),
+    ).toEqual(["refuse", "refuse", "ask", "refuse"]);
+  });
+
+  it("take unlisted as one value in the rules merge, not added up", () => {
+    const merged = applyProject(
+      workflowOf([
+        "rules: { permissions: { unlisted: refuse, allow: ['Bash(ls *)'] } }",
+        "nodes:",
+        "  a: { type: agent.worker, prompt: go }",
+      ]),
+      {
+        project: {
+          ...PROJECT,
+          permissions: { allow: ["Read"], unlisted: "ask" },
+        },
+      },
+    );
+    expect(merged.rules?.permissions).toEqual({
+      allow: ["Read", "Bash(ls *)"],
+      unlisted: "refuse",
+    });
   });
 
   it("withhold Grep and Glob, and refuse a non-editing node's text Reads (RFC-025)", () => {

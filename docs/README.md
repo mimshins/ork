@@ -79,6 +79,9 @@ runs and worktrees in plain words.
 - [Project rules](./guides/project-rules.md): `.ork/project.yaml`: never commit,
   merge or not, your own branch names, permissions and defaults for every
   workflow.
+- [Permissions without asking](./guides/permissions.md): the shell reads Ork
+  allows on its own, what a read-only node is refused, allow for a node, a run
+  or always, and the rules Ork suggests.
 - [A fresh session for a builder's next task](./guides/fresh-builder-sessions.md):
   start a long-running builder's next task clean, once its session is over a
   size you set.

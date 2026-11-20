@@ -4,16 +4,17 @@
  *   mod (`command-code-mod.ts`) and Codex's hook both embed it, each with its
  *   tool's names. The rules are the node's, in Claude Code's words
  *   (`Bash(git:*)`, `Read`, `mcp__github`); a specifier Ork does not read never
- *   allows a call and always denies one. A shell line is checked command by
- *   command: each must be allowed, and one with a substitution Ork can't read
- *   is allowed only by a plain `Bash` rule. Ork's own tools (`mcp__ork__*`)
- *   always go through, and the tool's read tools need no rule inside the
- *   worktree (by its real path, links followed), as with Claude Code. A yolo
- *   run (`ork run --yolo`) allows every call the node's `deny` and `only` don't
- *   refuse.
+ *   allows a call and always denies one. A shell line is read by core's shell
+ *   reader (`readShellLine`, embedded by its source) and checked command by
+ *   command, inside subshells, loops and `if` too: each must be allowed, and a
+ *   line the reader can't read (a substitution, `eval`, a heredoc) is allowed
+ *   only by a plain `Bash` rule. Ork's own tools (`mcp__ork__*`) always go
+ *   through, and the tool's read tools need no rule inside the worktree (by its
+ *   real path, links followed), as with Claude Code. A yolo run (`ork run
+ *   --yolo`) allows every call the node's `deny` and `only` don't refuse.
  */
 
-import type { SessionSpec } from "@krapht/ork-core";
+import { readShellLine, type SessionSpec } from "@krapht/ork-core";
 
 import { shellReadReason, textReadReason } from "./shell-reads.ts";
 
@@ -110,79 +111,18 @@ const split = rule => {
     ? { token: rule.trim() }
     : { token: rule.slice(0, at).trim(), spec: rule.slice(at + 1, -1) };
 };
-// The simple commands of a shell line, split at ; & | && || and line breaks
-// outside quotes. null when Ork can't read it: a command or process
-// substitution, an unclosed quote, or nothing at all.
-const TICK = String.fromCharCode(96);
-const BACKSLASH = String.fromCharCode(92);
-const shellParts = line => {
-  const parts = [];
-  let part = "";
-  let quote = null;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    const next = line[i + 1];
-    if (quote === "'") {
-      part += ch;
-      if (ch === "'") quote = null;
-      continue;
-    }
-    if (ch === BACKSLASH) {
-      part += ch + (next ?? "");
-      i += 1;
-      continue;
-    }
-    if (ch === TICK || (ch === "$" && next === "(")) return null;
-    if (quote === '"') {
-      part += ch;
-      if (ch === '"') quote = null;
-      continue;
-    }
-    if ((ch === "<" || ch === ">") && next === "(") return null;
-    if (ch === "'" || ch === '"') {
-      quote = ch;
-      part += ch;
-      continue;
-    }
-    // Writing a file is an edit, so output goes only to /dev/null or to
-    // another stream (2>&1); any other target makes the line one Ork can't read.
-    if (ch === ">") {
-      let j = i + 1;
-      if (line[j] === ">" || line[j] === "|") j += 1;
-      if (line[j] === "&") {
-        if (!/[0-9-]/.test(line[j + 1] ?? "")) return null;
-        part += line.slice(i, j + 2);
-        i = j + 1;
-        continue;
-      }
-      while (line[j] === " " || line[j] === "\\t") j += 1;
-      let k = j;
-      while (k < line.length && !" \\t;&|<>\\n\\r".includes(line[k])) k += 1;
-      if (line.slice(j, k) !== "/dev/null") return null;
-      part += line.slice(i, k);
-      i = k - 1;
-      continue;
-    }
-    // 2>&1 and &> are redirections, not a command's end.
-    const redirect = ch === "&" && (next === ">" || line[i - 1] === ">" || line[i - 1] === "<");
-    if (!redirect && (ch === ";" || ch === "&" || ch === "|" || ch === "\\n" || ch === "\\r")) {
-      parts.push(part);
-      part = "";
-      continue;
-    }
-    part += ch;
-  }
-  if (quote !== null) return null;
-  parts.push(part);
-  const commands = parts.map(norm).filter(each => each !== "");
-  return commands.length === 0 ? null : commands;
-};
+// The simple commands of a shell line, as core's reader takes it apart (lists,
+// pipes, subshells, loops, if); null when it can't read the line with
+// certainty: a substitution, eval, a heredoc, a write to a file, an unclosed
+// quote, or nothing at all.
+const readShellLine = ${readShellLine.toString()};
 // The calls a rule is checked against: a shell line's simple commands, each
-// alone; one Ork can't read has no command, so only a plain rule covers it.
+// alone as written; one Ork can't read has no command, so only a plain rule
+// covers it.
 const callsOf = (name, input) => {
   if ((TOOLS[name] ?? name) !== "Bash" || typeof input?.command !== "string") return [input];
-  const parts = shellParts(input.command);
-  return parts === null ? [{}] : parts.map(command => ({ ...input, command }));
+  const line = readShellLine(input.command);
+  return line === null ? [{}] : line.commands.map(each => ({ ...input, command: each.text }));
 };
 const shellMatches = (command, pattern) => {
   let p = norm(pattern);

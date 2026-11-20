@@ -28,9 +28,8 @@ import type {
 import type { SessionOutcome, SessionUsage } from "./outcome.ts";
 
 export type { InboxMessage, Mailbox, MessageVia, RelayPort, SendResult };
-export type { FollowUpPort, FollowUpSink };
+export type { FollowUpPort, FollowUpSink, SessionOutcome, SessionUsage };
 export type { SessionEnd } from "./ends.ts";
-export type { SessionOutcome, SessionUsage };
 export type {
   DecisionChoice,
   HumanChannel,
@@ -63,6 +62,7 @@ export type ToolRules = {
   deny: string[];
   only?: string[];
   strictMcp?: boolean;
+  unlisted?: "refuse" | "ask";
 };
 
 /** A Claude Code subagent the session can hand work to (`agent.subagent`). */

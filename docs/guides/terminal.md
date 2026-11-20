@@ -64,6 +64,14 @@ unless the question says otherwise), and `Esc` is No. It collapses to
 `✓ question · Yes` or `✗ question · No`. A note or message is a line you edit in
 place: arrows, `Home`, `End`, `Backspace`, `Delete`, `Ctrl-U`.
 
+A permission for a shell line Ork can read is a list instead, with up to five
+answers: `Allow` (this call), `Allow for this node`, `Allow for this run`,
+`Always allow` and `Deny`. Each description names the exact rule it adds, and
+`Always allow` the file it goes to (`permissions.allow` of the project's rules,
+[permissions](./permissions.md)). `ork decide` and the browser show the same
+answers and text; Ctrl-C still stops the run. Every other permission stays a yes
+or no.
+
 ## Colors and chips
 
 A chip is a short word on a colored background: `ASK`, `RUN`, `OK`, `FAIL`,

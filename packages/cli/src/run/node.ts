@@ -43,7 +43,7 @@ import {
   oneNodeNotes,
   oneNodeResult,
 } from "./node-notes.ts";
-import { nodeReports, signalsOf } from "./origin.ts";
+import { alwaysOptions, nodeReports, signalsOf } from "./origin.ts";
 import {
   checksHere,
   chooseReadyDriver,
@@ -210,6 +210,7 @@ export const runNode = async (
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.yolo === true ? { yolo: true } : {}),
     ...(options.home === undefined ? {} : { home: options.home }),
+    ...alwaysOptions(place, options.err),
   });
   const signals = signalsOf(options, workflow, place);
   const view = createView();

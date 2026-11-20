@@ -125,6 +125,14 @@
           "items": {
             "type": "string"
           }
+        },
+        "unlisted": {
+          "description": "A shell command no rule covers. Default: refuse if readonly.",
+          "type": "string",
+          "enum": [
+            "refuse",
+            "ask"
+          ]
         }
       },
       "additionalProperties": false

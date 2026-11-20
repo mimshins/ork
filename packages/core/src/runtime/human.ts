@@ -48,6 +48,12 @@ export type HumanQuestion = {
 };
 
 /**
+ * How far an allow reaches past this call (RFC-028): this node's later calls,
+ * the run's, or the project's rules file and the run.
+ */
+export type PermitScope = "node" | "run" | "always";
+
+/**
  * How a session reaches the human: a permission prompt or a question. In a run
  * it is the decision queue, which records each one and takes the first answer
  * from the terminal or `ork decide`.
@@ -57,10 +63,22 @@ export type HumanChannel = {
     nodeId: string;
     toolName: string;
     input: Record<string, unknown>;
+    /**
+     * The prefix rules that would allow the shell commands Ork asked about
+     * (`ruleFor`); absent or empty, the prompt offers only allow and deny.
+     */
+    rules?: readonly string[];
+    /**
+     * The choices the queue offers, with the rules in their descriptions, for
+     * the run's terminal to show; absent outside the queue.
+     */
+    options?: readonly DecisionChoice[];
     /** Withdraws the prompt, e.g. when another terminal answered it. */
     signal?: AbortSignal;
     onNote?: NoteTaker;
-  }) => Promise<{ allow: true } | { allow: false; message: string }>;
+  }) => Promise<
+    { allow: true; scope?: PermitScope } | { allow: false; message: string }
+  >;
   ask: (question: HumanQuestion) => Promise<string>;
   /**
    * Records a question its asker's owner answered, as a decision answered by

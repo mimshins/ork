@@ -1,6 +1,6 @@
 # RFC-028 — Permissions without asking: parse, refuse, remember, suggest
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-20
 - **Supersedes:** —
 - **Superseded by:** —

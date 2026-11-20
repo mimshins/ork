@@ -13,10 +13,13 @@ import type {
   EventStore,
   StoredEvent,
 } from "../store/types.ts";
-import { createDecisionQueue } from "./queue.ts";
+import { createDecisionQueue, type DecisionQueueOptions } from "./queue.ts";
 import { type RunSocket, serveRun, socketPath } from "./socket.ts";
 
-export type ControlOptions = {
+export type ControlOptions = Pick<
+  DecisionQueueOptions,
+  "rulesFile" | "rememberAlways" | "warn"
+> & {
   store: EventStore;
   runId: string;
   /** The run's own terminal; none for a detached run. */
@@ -137,6 +140,13 @@ export const startControl = async (
     },
     ...(options.local === undefined ? {} : { local: options.local }),
     ...(options.yolo === true ? { yolo: true } : {}),
+    ...(options.rulesFile === undefined
+      ? {}
+      : { rulesFile: options.rulesFile }),
+    ...(options.rememberAlways === undefined
+      ? {}
+      : { rememberAlways: options.rememberAlways }),
+    ...(options.warn === undefined ? {} : { warn: options.warn }),
   });
 
   return {

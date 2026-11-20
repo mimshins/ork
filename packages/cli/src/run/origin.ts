@@ -1,8 +1,9 @@
 /**
  * @file Where a run's feedback comes from, beyond what its events say: Ork's
  *   version (bound from the CLI's `package.json`) and the workflow file's
- *   content hash, the signals observer built from them; and the feedback and
- *   `follow_up` ports of the one node `ork run --node` runs.
+ *   content hash, the signals observer built from them; the feedback and
+ *   `follow_up` ports of the one node `ork run --node` runs; and where an
+ *   "always" permission answer goes (RFC-028).
  */
 
 import { createHash } from "node:crypto";
@@ -10,13 +11,17 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  addAllowRules,
   type CompiledGraph,
+  type ControlOptions,
   createFeedback,
   createFollowUps,
   createSignals,
   type EventStore,
   type FeedbackPort,
   type FollowUpPort,
+  loadProject,
+  placeFiles,
   type ProjectPlace,
   type RunEvent,
   runScrubber,
@@ -47,20 +52,50 @@ export const feedbackOrigin = (workflowFile: string): SignalOptions => {
 
 /**
  * Feedback Ork derives from the run's events, recorded right after them; a
- * tool's message is masked with the values the run masks.
+ * tool's message is masked with the values the run masks. A shell rule is
+ * proposed from the project's answered permissions across its runs, against the
+ * project file's own `permissions.allow`, for that file.
  */
 export const signalsOf = (
   options: { cwd: string; file: string; store: EventStore },
   workflow: Workflow,
   place: ProjectPlace,
-): ReturnType<typeof createSignals> =>
-  createSignals({
+): ReturnType<typeof createSignals> => {
+  const file = placeFiles(place).rules;
+  const { project } = loadProject(place.root, file);
+  return createSignals({
     ...feedbackOrigin(path.resolve(options.cwd, options.file)),
     scrub: runScrubber(
       maskedNamesOfRun(workflow, place, options.store.projects()),
       process.env,
     ),
+    permissions: {
+      decisions: () =>
+        options.store.decisions({ project: place.root, status: "answered" }),
+      allow: project?.permissions?.allow ?? [],
+      file,
+    },
   });
+};
+
+/**
+ * The run control's options for an "always" answer: the rules go to the
+ * project's own rules file, in the user's checkout (never a node's worktree),
+ * and a failed write is told on the run's terminal.
+ */
+export const alwaysOptions = (
+  place: ProjectPlace,
+  err: (line: string) => void,
+): Pick<ControlOptions, "rulesFile" | "rememberAlways" | "warn"> => {
+  const rulesFile = placeFiles(place).rules;
+  return {
+    rulesFile,
+    rememberAlways: rules => {
+      addAllowRules(rulesFile, rules);
+    },
+    warn: err,
+  };
+};
 
 /**
  * Node `id`'s feedback port (with a graph) and `follow_up` port, kept as the

@@ -46,7 +46,7 @@ import {
   liveHandlers,
   takeLastCommands,
 } from "./live-handlers.ts";
-import { ORK_RUN_VERSION, signalsOf } from "./origin.ts";
+import { alwaysOptions, ORK_RUN_VERSION, signalsOf } from "./origin.ts";
 import { preflight } from "./preflight.ts";
 import { closeRunRoot, openRunRootFor } from "./run-root.ts";
 import {
@@ -182,6 +182,7 @@ const runIn = async (
     ...(options.intervalMs === undefined
       ? {}
       : { intervalMs: options.intervalMs }),
+    ...alwaysOptions(place, options.err),
   });
   const signals = signalsOf(options, workflow, place);
   const onEvent = (raw: RunEvent): void => {

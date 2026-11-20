@@ -32,6 +32,41 @@ const humanOn = (term: FakeTerm) =>
     env: {},
   });
 
+const RULE = "Bash(pnpm -s ork logs *)";
+
+/** A permission's choices with scopes, as the decision queue offers them. */
+const SCOPED = [
+  { id: "allow", label: "Allow", description: "this call only" },
+  {
+    id: "allow-node",
+    label: "Allow for this node",
+    description: `for this node: ${RULE}`,
+  },
+  { id: "allow-run", label: "Allow for this run", description: `run: ${RULE}` },
+  {
+    id: "allow-always",
+    label: "Always allow",
+    description: `always: ${RULE} in .ork/project.yaml`,
+  },
+  { id: "deny", label: "Deny" },
+];
+
+/** The scoped permission's answer after `keys`, notes going to `notes`. */
+const scopedAnswer = async (keys: string[], notes: string[] = []) => {
+  const term = fakeTerm({ columns: 80, rows: 30 });
+  const permit = humanOn(term).permit({
+    nodeId: "worker",
+    toolName: "Bash",
+    input: { command: "pnpm -s ork logs r1" },
+    options: SCOPED,
+    onNote: n => {
+      notes.push(n);
+    },
+  });
+  await term.press(...keys);
+  return permit;
+};
+
 describe("the terminal channel's card", () => {
   it("draws the card, starts on the recommended option, and collapses to a line", async () => {
     const term = fakeTerm({ columns: 60 });
@@ -218,6 +253,90 @@ describe("the terminal channel's card", () => {
     abort.abort(new Error("stopped"));
     await expect(permit).rejects.toThrow("stopped");
     expect(notes).toEqual([]);
+  });
+
+  it("lists the scopes of a permission with their rules, and answers the chosen one's", async () => {
+    const term = fakeTerm({ columns: 80, rows: 30 });
+    const permit = humanOn(term).permit({
+      nodeId: "worker",
+      toolName: "Bash",
+      input: { command: "pnpm -s ork logs r1" },
+      rules: [RULE],
+      options: SCOPED,
+    });
+    await term.press();
+    const screen = term.screen().join("\n");
+    expect(screen).toContain("1. Allow (allow)");
+    expect(screen).toContain("4. Always allow (allow-always)");
+    expect(screen).toContain(`for this node: ${RULE}`);
+    expect(screen).toContain(`always: ${RULE} in .ork/project.yaml`);
+    await term.press("2", KEY.enter);
+    expect(await permit).toEqual({ allow: true, scope: "node" });
+    expect(term.screen().at(-1)).toBe(" ✓ worker · allow-node");
+  });
+
+  it("answers once with allow, and always with allow-always", async () => {
+    expect(await scopedAnswer([KEY.enter])).toEqual({ allow: true });
+    expect(await scopedAnswer(["4", KEY.enter])).toEqual({
+      allow: true,
+      scope: "always",
+    });
+  });
+
+  it("takes a note after a denial from the list, and stops on Ctrl-C", async () => {
+    const notes: string[] = [];
+    expect(
+      await scopedAnswer(["5", KEY.enter, "w", "h", "y", KEY.enter], notes),
+    ).toEqual({ allow: false, message: "The user did not allow this tool." });
+    expect(notes).toEqual(["why"]);
+    const term = fakeTerm({ columns: 80, rows: 30 });
+    let stops = 0;
+    const abort = new AbortController();
+    const permit = createTerminalHuman({
+      input: term.io.input,
+      output: term.io.output,
+      interactive: true,
+      env: {},
+      interrupt: () => {
+        stops += 1;
+      },
+    }).permit({
+      nodeId: "worker",
+      toolName: "Bash",
+      input: { command: "ls" },
+      options: SCOPED,
+      signal: abort.signal,
+    });
+    await term.press(KEY.ctrlC);
+    expect(stops).toBe(1);
+    abort.abort(new Error("stopped"));
+    await expect(permit).rejects.toThrow("stopped");
+  });
+
+  it("numbers a permission's scopes when plain", async () => {
+    const input = new PassThrough();
+    const output = new PassThrough();
+    let said = "";
+    output.setEncoding("utf8");
+    output.on("data", (chunk: string) => {
+      said += chunk;
+    });
+    const permit = createTerminalHuman({
+      input,
+      output,
+      interactive: true,
+      env: {},
+    }).permit({
+      nodeId: "worker",
+      toolName: "Bash",
+      input: { command: "pnpm -s ork logs r1" },
+      options: SCOPED,
+    });
+    await expect.poll(() => said).toContain("Choose: ");
+    input.write("allow-run\n");
+    expect(await permit).toEqual({ allow: true, scope: "run" });
+    expect(said).toContain("? worker wants to run Bash command:");
+    expect(said).toContain(`3) Allow for this run (allow-run) - run: ${RULE}`);
   });
 
   it("keeps the numbered prompts when plain", async () => {

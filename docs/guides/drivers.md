@@ -129,9 +129,10 @@ warning, and the run goes on:
 ## Permissions: denied unless allowed
 
 `claude-code` asks you when a tool isn't allowed, and the question shows up in
-`ork decide`; `omp` can ask too, for a tool its Ork-written settings do not list
-([omp](./drivers/omp.md)). `open-code`, `command-code` and `codex` have no way
-to ask in the middle of a session, so Ork **denies by default**: the node's
+`ork decide` ([permissions](./permissions.md) says what it allows or refuses
+without asking); `omp` can ask too, for a tool its Ork-written settings do not
+list ([omp](./drivers/omp.md)). `open-code`, `command-code` and `codex` have no
+way to ask in the middle of a session, so Ork **denies by default**: the node's
 `allow` and `deny` lists are written as that tool's own rules, and everything
 else is refused. A node that would have been asked about on `claude-code` is
 refused here, and the session sees the refusal and goes on without it. Give the

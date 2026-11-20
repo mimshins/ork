@@ -3,9 +3,11 @@
  *   permission prompts on the terminal, one at a time, and denies or defers
  *   when no one is there. It draws through the terminal kit (`term/`): a card
  *   with an ASK chip and a list moved with the arrow keys, a yes-or-no for a
- *   permission, and one optional line for a note after a choice. Plain (not a
- *   terminal, `NO_COLOR`, `--plain`) it keeps the numbered prompts. In a run it
- *   is the decision queue's local answerer, racing `ork decide`.
+ *   permission (a list when it offers to allow for the node, the run or always,
+ *   each with its rules), and one optional line for a note after a choice
+ *   (after a denial, for a permission). Plain (not a terminal, `NO_COLOR`,
+ *   `--plain`) it keeps the numbered prompts. In a run it is the decision
+ *   queue's local answerer, racing `ork decide`.
  */
 
 import { createInterface, type Interface } from "node:readline/promises";
@@ -24,11 +26,11 @@ import {
   doneLine,
   permitLine,
 } from "./human-card.ts";
+import { askPermit, selectOptions } from "./human-permit.ts";
 import { plain } from "./output.ts";
-import { confirmOrStop } from "./term/confirm.ts";
 import { withdrawn } from "./term/line.ts";
 import { plainEnv, type PromptIO, type Term, termOf } from "./term/mode.ts";
-import { plainOptions, select, type SelectOption } from "./term/select.ts";
+import { plainOptions, select } from "./term/select.ts";
 import { readText } from "./term/text.ts";
 import { paint } from "./term/theme.ts";
 
@@ -212,13 +214,7 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
           const shownDocument = t.rich || !printed ? undefined : document;
           const header = (tt: Term): string[] =>
             cardLines(tt, q, place, io.verbose === true, shownDocument).lines;
-          const options: SelectOption[] = q.options.map(o => ({
-            id: o.id,
-            ...(o.label === undefined ? {} : { label: plain(o.label) }),
-            ...(o.description === undefined
-              ? {}
-              : { description: plain(o.description) }),
-          }));
+          const options = selectOptions(q.options);
           // Plain prints a short document first and offers a long one; a card
           // offers any document, and the context its lines cut.
           const { moreContext } = cardLines(t, q, place, io.verbose === true);
@@ -263,7 +259,7 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         });
 
   return {
-    permit: ({ nodeId, toolName, input, signal, onNote }) =>
+    permit: ({ nodeId, toolName, input, options, signal, onNote }) =>
       oneAtATime(async () => {
         if (signal?.aborted === true) {
           throw new Error("the prompt was withdrawn");
@@ -275,13 +271,10 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
           say(paint(t, "muted", `  denied: ${NO_ONE_TO_PERMIT}`));
           return { allow: false, message: NO_ONE_TO_PERMIT };
         }
-        const allowed = await confirmOrStop(kit, {
-          question: "Allow?",
-          ...(signal === undefined ? {} : { signal }),
-        });
+        const answer = await askPermit(kit, nodeId, options, signal);
         // Ctrl-C stops the run: no note is asked for, and no answer comes.
-        if (allowed === null) return parked(signal);
-        if (allowed) return { allow: true };
+        if (answer === null) return parked(signal);
+        if (answer.allow) return answer;
         // A denial may say why; an allowal has nothing to tell the session.
         await takeNote(onNote, signal);
         return { allow: false, message: "The user did not allow this tool." };

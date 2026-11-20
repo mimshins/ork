@@ -3,16 +3,23 @@
  *   own events, with no model call. A loop out of rounds, a budget that ran
  *   out, a tool the user denied, an Ork tool that failed, a report the `report`
  *   tool refused, a gate that timed out, a node that ended in a way its actor
- *   should act on (specs/runtime/session-ends.md), and an answer that differs
- *   from the recommended one each become a `feedback.recorded` event. The same
- *   observer fills in every record's origin (workflow, node type, model,
- *   driver, Ork version) and drops a run's duplicates.
+ *   should act on (specs/runtime/session-ends.md), an answer that differs from
+ *   the recommended one, and a shell rule allowed often across the project's
+ *   runs each become a `feedback.recorded` event. The same observer fills in
+ *   every record's origin (workflow, node type, model, driver, Ork version) and
+ *   drops a run's duplicates.
  */
 
 import type { RunEvent } from "../run/types.ts";
 import { endOf } from "../runtime/ends-legacy.ts";
 import { END_KINDS } from "../runtime/ends.ts";
 import { maskSecrets } from "../store/mask.ts";
+import {
+  answeredSignal,
+  type Asked,
+  type PermissionHistory,
+  suggestionSignals,
+} from "./decision-signals.ts";
 import { endSignal, type Signal } from "./end-signals.ts";
 import { fingerprint } from "./fingerprint.ts";
 import type { FeedbackOrigin } from "./types.ts";
@@ -27,13 +34,8 @@ export type SignalOptions = {
    * masking.
    */
   scrub?: (text: string) => string;
-};
-
-type Asked = {
-  node: string;
-  kind: "question" | "permission";
-  question: string;
-  recommended?: string;
+  /** The project's permission history; without it no rule is proposed. */
+  permissions?: PermissionHistory;
 };
 
 const ORK_TOOL = "mcp__ork__";
@@ -108,44 +110,6 @@ export const createSignals = (
     ];
   };
 
-  const answered = (
-    question: Asked,
-    answer: string,
-  ): [string, Signal] | null => {
-    if (question.kind === "permission") {
-      if (answer !== "deny") return null;
-      const tool = question.question
-        .replace(/^Allow /u, "")
-        .replace(/\?$/u, "");
-      return [
-        question.node,
-        {
-          code: "permission.denied",
-          kind: "friction",
-          target: "workflow",
-          severity: "low",
-          title: `${question.node} was denied ${tool}`,
-          body: "Allow it in the node's `tools.allow` if it needs it, or tell it in its prompt not to use it.",
-          evidence: [tool],
-        },
-      ];
-    }
-    if (question.recommended === undefined || answer === question.recommended) {
-      return null;
-    }
-    return [
-      question.node,
-      {
-        code: "recommendation.overridden",
-        kind: "context-gap",
-        target: "workflow",
-        severity: "low",
-        title: `The answer to ${question.node}'s question was not the one it recommended`,
-        body: `Asked: ${question.question} Recommended: ${question.recommended}. Answered: ${answer}.`,
-      },
-    ];
-  };
-
   /** The feedback an event signals, if any, and the node it is about. */
   const signalOf = (event: RunEvent): [string | undefined, Signal] | null => {
     if (event.type === "loop.exhausted") {
@@ -179,7 +143,9 @@ export const createSignals = (
     }
     if (event.type === "decision.answered") {
       const question = asked.get(event.decision);
-      return question === undefined ? null : answered(question, event.answer);
+      return question === undefined
+        ? null
+        : answeredSignal(question, event.answer);
     }
     if (event.type === "node.event" && event.event.type === "tool.result") {
       const name = tools.get(`${event.id}\0${event.event.id}`);
@@ -256,6 +222,17 @@ export const createSignals = (
     return null;
   };
 
+  /** Rules an allowed permission tips over the project's thresholds. */
+  const suggestionsOf = (event: RunEvent): RunEvent[] =>
+    event.type === "decision.answered"
+      ? suggestionSignals(
+          options.permissions,
+          asked.get(event.decision),
+          event.decision,
+          event.answer,
+        ).flatMap(signal => record(event.node, signal))
+      : [];
+
   /** Keeps what later events and origins need. */
   const observe = (event: RunEvent): void => {
     if (event.type === "run.started") workflow = event.workflow;
@@ -294,6 +271,10 @@ export const createSignals = (
       return [{ ...event, feedback: { ...event.feedback, origin } }];
     }
     const signal = signalOf(event);
-    return signal === null ? [event] : [event, ...record(...signal)];
+    return [
+      event,
+      ...(signal === null ? [] : record(...signal)),
+      ...suggestionsOf(event),
+    ];
   };
 };

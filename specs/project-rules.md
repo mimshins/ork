@@ -6,9 +6,10 @@ in the workspace ([project.ts](../packages/schema/src/project.ts),
 [names.ts](../packages/core/src/worktree/names.ts),
 [patch.ts](../packages/core/src/worktree/patch.ts),
 [handoff.ts](../packages/core/src/worktree/handoff.ts),
-[tests](../packages/core/test/rules.test.ts)), and [experiments](#experiments).
-The rules reach the items of a `forEach` node too, with the item's id as
-`{node}`, including `commit: never` and the patch merge
+[tests](../packages/core/test/rules.test.ts)), [experiments](#experiments), and
+[permissions without asking](#permissions-without-asking). The rules reach the
+items of a `forEach` node too, with the item's id as `{node}`, including
+`commit: never` and the patch merge
 ([worktrees](./worktrees.md#a-node-run-once-per-item),
 [tests](../packages/core/test/worktree-for-each.test.ts)). A project registered
 from outside its repository keeps them in `~/.ork/projects/<id>/project.yaml`
@@ -64,7 +65,10 @@ rules:
   `defaults.mcp` names the MCP servers a node's sessions load
   ([workflow format](./workflow-format.md)).
 - `permissions`: added together, the project's, the workflow's and each node's
-  own `tools`; Claude Code lets `deny` win over `allow`.
+  own `tools`; Claude Code lets `deny` win over `allow`. `unlisted` (`refuse` or
+  `ask` a shell command no rule covers) is one value: the node's, else the
+  workflow's, else the project's, else `refuse` on a `readonly` node
+  ([permissions without asking](#permissions-without-asking)).
 - `context`: the project's files come before the workflow's `layers.context`,
   rebased onto the workflow's folder.
 
@@ -107,6 +111,18 @@ is an error. When a node's worktree is made: the folder must be beside the clone
 (inside its parent, outside the clone), and the branch a name git accepts.
 
 `fetch` and `readonly` are in [fetching the base](./project-rules/fetch.md).
+
+## Permissions without asking
+
+Status: **Built** on `claude-code`. A shell line a session asks about is read by
+Ork's own reader: what the node's allow rules and Ork's shipped reads cover runs
+without a prompt, a deny rule denies it, and a node with `unlisted: refuse` (a
+`readonly` node's default) refuses the rest with a message. A prompt for a line
+Ork read offers to allow its rules for the node, the run, or always, which
+appends them to `permissions.allow` here; a rule allowed often is proposed as a
+feedback item. The detail is in
+[permissions without asking](./project-rules/permissions.md). Why:
+[ADR-109](../decisions/ADR-109-permissions-without-asking.md).
 
 ## Links and reading
 
@@ -182,4 +198,5 @@ Whatever the rules say, Ork never pushes, and:
 
 - [Experiments](./project-rules/experiments.md)
 - [Fetching the base](./project-rules/fetch.md)
+- [Permissions without asking](./project-rules/permissions.md)
 - [Sessions rule](./project-rules/sessions.md)

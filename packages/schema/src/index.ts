@@ -14,6 +14,7 @@ export * from "./mcp-node.ts";
 export * from "./node-programs.ts";
 export * from "./nodes.ts";
 export * from "./project.ts";
+export * from "./project-edit.ts";
 export * from "./rename-types.ts";
 export * from "./retired-types.ts";
 export * from "./settings.ts";

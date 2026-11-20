@@ -515,7 +515,8 @@ export const NODES = [
     facts: [
       "`--permission-prompt-tool mcp__ork__permission`.",
       "The node's `tools.allow` and `tools.deny` decide first.",
-      "The prompt goes to the decision queue: allow or deny, from the terminal or `ork decide`; with no one at a terminal and not detached, it is denied.",
+      "A shell line is read by one reader in core: allowed with no question when every command is covered by the node's allow rules or Ork's shipped reads (`ork logs`, `jq`, `head`, …); a read-only node is refused, with a message, what its rules do not allow (`unlisted: refuse | ask`); a line the reader cannot take apart asks.",
+      'The prompt goes to the decision queue: allow or deny, from the terminal or `ork decide`; with no one at a terminal and not detached, it is denied. For a readable shell line it also offers allow for this node, this run or always, each showing its rule; "always" appends to `permissions.allow` of the project\'s rules file, and a rule allowed 3 times across 2 runs becomes a `permission.suggest` feedback item.',
       "In a run started with `ork run --yolo`, each prompt is still recorded as a decision, answered `allow` by `yolo` at once; the node's deny list and `only`, questions and gates hold (ADR-094).",
     ],
     docs: [

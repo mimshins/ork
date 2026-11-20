@@ -132,11 +132,13 @@ chosen: press Enter to take it, move with ↑/↓ (or `j`/`k`, `1`–`9`, `Home`
 `End`) and press Enter to take another, `n` to add a note, `d` to read the whole
 context. Once answered, the card collapses to one line. For a permission, the
 prompt shows the tool and a preview of its input; press `y` to allow it, `n` or
-Esc to deny it. The full key list is in [the terminal](../terminal.md). With
-`--plain` or `NO_COLOR` on a terminal, a question is numbered instead: Enter
-takes the recommended option, or type a number or an option's id, and a
-permission asks `Allow? [y/N]`. With no terminal at all, nothing is asked (see
-below).
+Esc to deny it. For a shell line Ork can read, it offers to allow for the node,
+the run or always instead ([permissions](../permissions.md)), and does not ask
+about reads it already knows. The full key list is in
+[the terminal](../terminal.md). With `--plain` or `NO_COLOR` on a terminal, a
+question is numbered instead: Enter takes the recommended option, or type a
+number or an option's id, and a permission asks `Allow? [y/N]`. With no terminal
+at all, nothing is asked (see below).
 
 You can add a **note**: one line that goes to the run with your answer, such as
 what to change when you answer `revise`. Press `n` before you choose (after,

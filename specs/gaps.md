@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L503, and the next chore is
+closes it. Ids are never reused: the next limit is L513, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -64,12 +64,14 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found fixing the detached start](./gaps/detach-limits.md)
 - [Limits found saying why an Ork tool call failed](./gaps/tool-message-limits.md)
 - [Limits found stopping RFC number clashes and flaky final checks](./gaps/check-flake-limits.md)
+- [Limits found building permissions without asking](./gaps/permissions-limits.md)
 
 ## Gaps
 
-G1–G7 were built on 2026-11-02, G8–G10 on 2026-11-07, and G19 on 2026-11-08.
-Found writing Ork's own workflows (`.ork/`, 2026-11-08), to decide at the next
-review:
+G1–G7 were built on 2026-11-02, G8–G10 on 2026-11-07, G19 on 2026-11-08, and G27
+and G29 on 2026-11-20
+([permissions without asking](./project-rules/permissions.md)). Found writing
+Ork's own workflows (`.ork/`, 2026-11-08), to decide at the next review:
 
 - **G11 · `ork validate` walks only the inputs' defaults.** It has no `--input`,
   and says nothing about the branches other values would take.
@@ -85,7 +87,10 @@ review:
   worktree, and a deny rule matches by prefix, so `HOME=… ork …` and
   `git -c … commit` get past it. The project denies the `git -c * commit *` and
   `git -C * commit *` forms since the QA kit change; other prefixes still get
-  past.
+  past. Ork's own verdict on a line Claude Code asks about checks deny rules
+  command by command, with and without wrappers
+  ([permissions](./project-rules/permissions.md#the-verdict)), but Claude Code's
+  own rule matching, which decides first, is unchanged.
 - **G15 · A session server's program isn't checked before the run.** A node gets
   a browser by naming it (`mcp:`,
   [ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md)), but the pre-flight
@@ -132,16 +137,7 @@ review:
   fork's tools and system prompt differ from the leader's, so each question
   reads the leader's session uncached; (4) that the structured report still
   comes back with `--tools Read,Grep,Glob`.
-- **G27 · A permission is answered one call at a time.** Each Bash command asks
-  again (six in run 0427fb01); nothing allows a tool for the rest of a node.
 - **G28 · An experiment has no way out.** Nothing promotes or removes one.
-- **G29 · A node can't refuse what its rules don't allow.** A tool call outside
-  a node's allow rules always stops the run to ask the maintainer, even on a
-  read-only node such as a reviewer, and Claude Code asks about some commands (a
-  heredoc script, a loop, `cd` then `git`) even when `Bash` is allowed. Run
-  `5546557f` (2026-11-12) waited five times, once for 58 minutes, on commands
-  its prompts had ruled out. A node setting that refuses such a call with a
-  message, so the session retries with an allowed command, would close it.
 - **G30 · A session at its turn limit hands in nothing.** A worker that reaches
   `maxTurns` ends `turn_limit` with no report, and its round fails, though its
   work is in its checkout. With `session: resume`, the owner sends it back and
@@ -362,7 +358,10 @@ Found removing the Agent SDK driver
   own rules, deny by default, so what `claude` would have asked about is refused
   instead. Driver fit also checks only what a workflow states: a message over a
   link made at run time is not checked against the node's driver, and a worker's
-  own `ask_user` is not either, only a leader that delegates.
+  own `ask_user` is not either, only a leader that delegates. Permissions
+  without asking (the verdict, its refusal, the scopes, "always" and the
+  suggestions) are `claude-code`'s only; the other drivers' guards share the
+  shell reader, not the shipped reads ([L506](./gaps/permissions-limits.md)).
 
 - **L235 · Command Code runs one session per checkout.** Its MCP entry is per
   folder, so a second session in a checkout waits for the first, logged as a

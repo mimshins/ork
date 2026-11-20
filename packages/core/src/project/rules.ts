@@ -151,8 +151,9 @@ const dropUndefined = <T extends object>(value: T): T =>
 /**
  * The workflow with its project's rules under it: git rules key by key and
  * defaults key by key, practices one by one (the workflow's win), permissions
- * added together, the project's context files before the workflow's, and its
- * heavy commands denied to nodes with `verify:`.
+ * added together (but `unlisted`, the workflow's wins), the project's context
+ * files before the workflow's, and its heavy commands denied to nodes with
+ * `verify:`.
  */
 export const applyProject = (
   workflow: Workflow,
@@ -165,6 +166,7 @@ export const applyProject = (
   const permissions = dropUndefined({
     allow: union(project.permissions?.allow, own?.allow),
     deny: union(project.permissions?.deny, own?.deny),
+    unlisted: own?.unlisted ?? project.permissions?.unlisted,
   });
   const rules = dropUndefined({
     links: workflow.rules?.links ?? project.links,
@@ -225,9 +227,8 @@ const manyWorktrees = (workflow: Workflow): boolean => {
     const isolation =
       node.isolation ?? workflow.defaults?.isolation ?? "worktree";
     // A fanned node has a worktree for each item (RFC-013).
-    const fanned = "forEach" in node && node.forEach !== undefined;
     if (node.type !== "agent.subagent" && isolation === "worktree") {
-      count += fanned ? 2 : 1;
+      count += "forEach" in node && node.forEach !== undefined ? 2 : 1;
     }
   }
   return count > 1;

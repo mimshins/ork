@@ -28,7 +28,8 @@ context: [docs/process.md]
 ```
 
 - **`permissions`** are tool rules every agent node gets, added to its own
-  `tools`.
+  `tools`. They also take `unlisted: refuse | ask`, and "always allow" adds to
+  `allow` ([permissions](./permissions.md)).
 - **`defaults`** apply to every workflow; a workflow's own `defaults` win.
 - **`context`** files, from the project root, are read by every node, before the
   workflow's own.
@@ -135,9 +136,9 @@ rules:
   sessions: { freshOver: 100000 } # never (the default) | tokens
 ```
 
-Its `git` keys, `reading` and `sessions` win; permissions add up.
-`reading: extract` refuses a shell line that starts by reading files, naming the
-`extract` call to make; `open` allows it
+Its `git` keys, `reading`, `sessions` and `permissions.unlisted` win; the rest
+of `permissions` adds up. `reading: extract` refuses a shell line that starts by
+reading files, naming the `extract` call to make; `open` allows it
 ([extract](./skills-and-context.md#reading-part-of-a-file-extract)).
 `sessions.freshOver` starts a worker's next delegated task in a fresh session
 once its context is over that many tokens; `never` is off, and `ork validate`
@@ -185,9 +186,8 @@ environment for you alone (`export ORK_EXPERIMENTAL=some-feature`, several
 separated by commas).
 
 `some-feature` stands for a real name: none has shipped yet. `ork doctor` lists
-what is on and who turned it on. A name Ork doesn't know is a mistake, not a
-no-op: `ork validate`, `ork run` and that `ork doctor` check fail, and say which
-names exist.
+what is on and who turned it on. A name Ork doesn't know fails `ork validate`,
+`ork run` and that `ork doctor` check, and they say which names exist.
 
 ## What never changes
 

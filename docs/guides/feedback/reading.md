@@ -6,7 +6,11 @@ _Part of [Feedback from your runs](../feedback.md)._
 
 - **Ork itself**, from the run's own events, with no model call: a loop out of
   rounds, a run out of budget, a tool you denied, an Ork tool that failed, a
-  gate that timed out, and an answer you gave that was not the one recommended.
+  gate that timed out, an answer you gave that was not the one recommended, and
+  a shell rule you keep allowing (`permission.suggest`: the same rule allowed 3
+  times across 2 runs and not yet in your `permissions.allow`; it names the rule
+  and the file to add it to, and Ork writes nothing
+  ([permissions](../permissions.md#rules-ork-suggests))).
 - **A node's end**, filed by who should act
   ([why a node stopped](../why-a-node-stopped.md)): `unknown` and
   `driver_crashed` are Ork bugs, a workflow kind a workflow note, an agent kind

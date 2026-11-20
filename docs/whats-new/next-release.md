@@ -2,6 +2,9 @@
 
 _Part of [What's new](../whats-new.md)._
 
+What lands on `main` is listed here until it ships. Permissions are described in
+[permissions without asking](../guides/permissions.md).
+
 - **No false "limit is close" warning.** Claude Code 2.1.329 marks its limit
   event as a warning while the window it names says `allowed` (seen at 31% of
   the seven-day window), so every run showed `! plan: seven day limit is close`.
@@ -36,3 +39,28 @@ _Part of [What's new](../whats-new.md)._
   model request each time. `omp` is still built and not yet proven, so
   `ork validate` and `ork run` still refuse it ([omp](../guides/drivers/omp.md),
   [Drivers](../guides/drivers.md)). Upgrade: none required.
+
+- **Reads Ork knows are allowed without a question.** On `claude-code`, a shell
+  line is read through loops, subshells and wrappers such as `timeout`, and
+  allowed when every command is covered by the node's rules or by Ork's own
+  reads: `ork logs`, `ps`, `tree`, `usage`, `feedback list|show`,
+  `follow-ups list|show`, `jq`, `wc`, `cut`, `sort`, `uniq`, `head`, `tail`,
+  `tr`, `ls`, `echo`, `printf`, `pwd`, `basename`, `dirname`, `date`, `cd`,
+  `true` and `false`, each without a flag that writes a file or runs a program.
+  A path outside the session's folder still asks. The Codex, Command Code and
+  omp guards read loops and subshells the same way, without the new list.
+- **A read-only node is refused, not asked.** A shell command its rules do not
+  allow comes back to the session as a message naming what it may run, so nobody
+  waits. Upgrade: a read-only node that relied on being asked about, say,
+  `pnpm test` is now refused until it has an `allow` rule for it or you set
+  `unlisted: ask` (a node's `tools.unlisted`, a workflow's
+  `rules.permissions.unlisted`, or the project's `permissions.unlisted`; the
+  node wins over the workflow, which wins over the project).
+- **Allow for this node, this run or always.** A permission for a shell line Ork
+  can read offers those answers beside Allow and Deny, in the terminal,
+  `ork decide`, the browser and Ork's MCP tools, each showing the rule it adds.
+  "Always" adds it to `permissions.allow` of `.ork/project.yaml` (or
+  `~/.ork/projects/<id>/project.yaml`) and keeps the file's comments.
+- **Rules Ork suggests.** A rule you allow again and again, 3 times across 2
+  runs, becomes a `permission.suggest` feedback item naming the rule and the
+  file to add it to; Ork writes nothing.

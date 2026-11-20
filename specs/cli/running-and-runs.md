@@ -191,8 +191,8 @@ first (then the prompt is withdrawn and the transcript shows
   recommended option, by choice.
 - A permission prompt shows the tool and a one-line preview of its input and
   asks `Allow?` as a yes-or-no (`y`, `n`, ←/→, Enter; plain, `Allow? [y/N]`);
-  anything but yes denies it, and a denial takes the same optional note line,
-  which the session reads with the denial.
+  anything but yes denies it with the optional note line the session reads; one
+  with [scopes](../project-rules/permissions.md#on-the-terminal) is a list.
 - Without a terminal (stdin is not a TTY), tools are denied and a question gets
   the recommended option, or tells the node to use its judgment and say so in
   its report.

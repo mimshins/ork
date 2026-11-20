@@ -246,6 +246,10 @@ export const ToolRulesSchema = z.strictObject({
     .array(z.string())
     .optional()
     .describe("The only built-in tools the session has; Ork's tools stay."),
+  unlisted: z
+    .enum(["refuse", "ask"])
+    .optional()
+    .describe("A shell command no rule covers. Default: refuse if readonly."),
 });
 
 /** Agent names: lowercase, like node ids. */
