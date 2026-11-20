@@ -20,6 +20,12 @@ export type BudgetHooks = {
   /** Waits until another node's reserve frees; `false` when none can. */
   budgetFreed?: (signal: AbortSignal) => Promise<boolean>;
   /**
+   * Whether another node, not a leader, holds a reserve a `budgetFreed` wait
+   * could free, asked before a node lets its own reserves go to wait. Absent:
+   * nothing to wait on.
+   */
+  budgetWaitable?: () => boolean;
+  /**
    * The run's budget in `unit` is spent, reserves not counted: only then may a
    * session cut off at its cap blame the run. Absent: blame by the cap alone.
    */

@@ -312,12 +312,16 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   a worker beside it to finish, never for a leader, and with no worker's reserve
   to wait on it starts with what is left
   ([ADR-077](../decisions/ADR-077-reserve-session-caps.md),
-  [ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). Two details keep
-  the wait honest: `startBudgets` marks its wrapped `budgetFreed` as waited only
-  when the wait freed something (else a short offer waits again for ever), and
-  the executor must call `runtimeFor` after `startBudgets` and before the
-  session sets its own cap, which the reserve-sampling test in
-  `budget-reserves.test.ts` relies on.
+  [ADR-104](../decisions/ADR-104-reserve-never-ends-a-run.md)). It lets go of
+  its own reserves only when a wait can really happen, that is when another node
+  holds a reserve to free (the context's `budgetWaitable`, true under the same
+  test `budgetFreed` uses); with none it neither releases nor waits, so its
+  dollars stay set aside and a node starting beside it cannot read them. Three
+  details keep the wait honest: `startBudgets` marks its wrapped `budgetFreed`
+  as waited only when the wait freed something (else a short offer waits again
+  for ever), a wait that is aborted sets nothing aside, and the executor must
+  call `runtimeFor` after `startBudgets` and before the session sets its own
+  cap, which the reserve-sampling test in `budget-reserves.test.ts` relies on.
 - `limits.budgetTokens` caps the run in counted tokens (input, output and cache
   write) on any driver, the same way and beside the dollars: reserves hold both,
   a session that doesn't fit is refused ("nothing is left to start with: the

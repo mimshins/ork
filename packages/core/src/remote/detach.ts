@@ -3,18 +3,38 @@
  *   terminal (`--detach`, and the local server's start and resume). Its output
  *   goes to the run's folder (`.ork/runs/<run>/`, or the attached project's) as
  *   `output.log`, and this returns once the run is running. Its questions wait
- *   for `ork decide` or the UI.
+ *   for `ork decide` or the UI. While the child starts it touches
+ *   `<runDir>/starting` (`heartbeat.ts`), and the wait lasts while that stays
+ *   fresh, up to a hard cap.
  */
 
 import { spawn } from "node:child_process";
-import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  statSync,
+} from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import type { EventStore } from "../store/types.ts";
+import { beginHeartbeat, HEARTBEAT_ENV } from "./heartbeat.ts";
 
 /** Set in a detached run's environment: no terminal answers its questions. */
 export const DETACHED_ENV = "ORK_DETACHED";
+
+/**
+ * In a detached child (`ORK_DETACHED=1` with a heartbeat file), begins the
+ * start's heartbeat; a foreground run writes none. The variable is dropped so
+ * the run's nodes don't inherit it.
+ */
+export const beginDetachedHeartbeat = (env = process.env): void => {
+  const file = env[HEARTBEAT_ENV];
+  delete env[HEARTBEAT_ENV];
+  if (env[DETACHED_ENV] === "1") beginHeartbeat(file);
+};
 
 export type DetachOptions = {
   store: EventStore;
@@ -31,8 +51,13 @@ export type DetachOptions = {
   runDir: string;
   /** The `ork` script to start (default: the running one). */
   script?: string;
-  /** How long to wait for the run to be recorded (default 15 s). */
+  /**
+   * How long the child may show no sign of life before it is killed (default 15
+   * s). A sign of life is its spawn or a fresh touch of its heartbeat file.
+   */
   timeoutMs?: number;
+  /** The hard cap on the whole wait, heartbeat or not (default 120 s). */
+  maxMs?: number;
   /** Set for the background process, over what it inherits. */
   env?: Readonly<Record<string, string>> | undefined;
 };
@@ -51,14 +76,25 @@ const killGroup = (pid: number | undefined): void => {
   }
 };
 
+/** When `file` was last touched, or 0 when it isn't there. */
+const touchedAt = (file: string): number => {
+  try {
+    return statSync(file).mtimeMs;
+  } catch {
+    return 0;
+  }
+};
+
 export const detachRun = async (options: DetachOptions): Promise<Detached> => {
   const { runId } = options;
   const dir = options.runDir;
   mkdirSync(dir, { recursive: true });
   const log = path.join(dir, "output.log");
+  const beat = path.join(dir, "starting");
   const fd = openSync(log, "a");
   let exited: number | null = null;
   const script = options.script ?? process.argv[1] ?? "";
+  const spawned = Date.now();
   const child = spawn(
     process.execPath,
     [...process.execArgv, script, ...options.args],
@@ -70,6 +106,7 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
         ...process.env,
         ...options.env,
         [DETACHED_ENV]: "1",
+        [HEARTBEAT_ENV]: beat,
         NO_COLOR: "1",
       },
     },
@@ -81,8 +118,12 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
   // The child has its own copy; a long-lived caller mustn't keep one per start.
   closeSync(fd);
 
-  const deadline = Date.now() + (options.timeoutMs ?? 15_000);
-  while (Date.now() < deadline) {
+  const quiet = options.timeoutMs ?? 15_000;
+  const cap = spawned + (options.maxMs ?? 120_000);
+  // A stale file from an earlier start counts from the spawn instead.
+  const deadline = (): number =>
+    Math.min(cap, Math.max(spawned, touchedAt(beat)) + quiet);
+  while (Date.now() < deadline()) {
     const started =
       options.started?.(child.pid) ?? options.store.lookup(runId).length > 0;
     if (started) return { ok: true, runId, log };

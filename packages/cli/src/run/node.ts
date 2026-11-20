@@ -11,6 +11,7 @@ import {
   createRecorder,
   createSignals,
   type DriverNeeds,
+  endHeartbeat,
   type EventStore,
   type HumanChannel,
   inside,
@@ -118,7 +119,6 @@ export const runNode = async (
   );
   if (workflow === null) return failed(formatReport(report));
   for (const line of warningLines(report)) options.err(line);
-
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);
   const inputs = resolveInputs(workflow, pairs.raw);
@@ -179,7 +179,6 @@ export const runNode = async (
   const budget = budgetWarningLines(workflow, options.drivers, only);
   const warnings = [...budget, ...notes.warnings, ...plan.warnings];
   for (const line of noteLines(warnings)) options.err(line);
-
   const id = options.nodeId;
   const recorder = createRecorder(
     options.store,
@@ -191,6 +190,7 @@ export const runNode = async (
     },
     runDir,
   );
+  endHeartbeat();
   const started = Promise.withResolvers<Session>();
   const control = await startControl({
     store: options.store,

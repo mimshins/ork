@@ -31,6 +31,7 @@ type StartContext = Pick<
   | "tokensLeftNow"
   | "quota"
   | "budgetFreed"
+  | "budgetWaitable"
   | "reserveBudget"
   | "reserveTokens"
   | "node"
@@ -52,11 +53,14 @@ const startWith = async (
   const now = left();
   const short = now !== undefined && own !== undefined && now < own;
   if (now !== undefined && (now <= 0 || short)) {
-    // Hold nothing while waiting: a node waiting on this one would wait for ever.
-    context.reserveBudget?.(0);
-    context.reserveTokens?.(0);
-    const freed = await context.budgetFreed?.(context.signal);
-    if (freed === true) return startWith(context, left, own, reserve);
+    // Let go only when a wait can happen, so nothing is freed and re-taken.
+    if (context.budgetWaitable?.() === true) {
+      // Hold nothing while waiting: a node waiting on this one would wait for ever.
+      context.reserveBudget?.(0);
+      context.reserveTokens?.(0);
+      const freed = await context.budgetFreed?.(context.signal);
+      if (freed === true) return startWith(context, left, own, reserve);
+    }
     // An aborted run sets nothing aside: the wait ended because it stopped.
     if (now <= 0 || context.signal?.aborted) return now;
   }
@@ -159,14 +163,11 @@ export const startBudgets = async (
   const waited = { done: false };
   const tokens = await tokensToStart({
     ...context,
-    // A wait lets the dollars go. One that freed something reads both again;
-    // one that did not starts with what is left, so it sets them aside again.
+    // A wait lets the dollars go, and only one that can free something
+    // happens: one that freed something reads both again.
     budgetFreed: async signal => {
       const freed = (await context.budgetFreed?.(signal)) ?? false;
       waited.done ||= freed;
-      if (!freed && usd !== undefined) {
-        context.reserveBudget?.(Math.min(ownCaps(context).usd ?? usd, usd));
-      }
       return freed;
     },
   });

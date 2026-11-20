@@ -52,6 +52,19 @@ describe("reserves", () => {
     expect(await reserves.freed("a", never)).toBe(false);
   });
 
+  it("can wait only on another worker's reserve", () => {
+    const reserves = createReserves();
+    reserves.reserve("a", 3, true);
+    reserves.reserve("lead", 3, false);
+    const before = reserves.canWait("a");
+    reserves.reserve("w", 1, true);
+    expect([before, reserves.canWait("a"), reserves.canWait("w")]).toEqual([
+      false,
+      true,
+      true,
+    ]);
+  });
+
   it.each([
     ["shrinks", 1],
     ["is let go", 0],

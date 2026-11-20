@@ -8,6 +8,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 import {
+  beginDetachedHeartbeat,
   DETACHED_ENV,
   detachResume,
   findRun,
@@ -151,6 +152,8 @@ export const resume = defineCommand({
     },
   },
   run: async ({ args, rawArgs }) => {
+    // A detached child shows it is alive until its run is recorded again.
+    beginDetachedHeartbeat();
     if (args.driver !== undefined && !isDriver(args.driver)) {
       failed(badDriver(args.driver));
       return;

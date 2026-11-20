@@ -4,7 +4,12 @@
  *   on the terminal.
  */
 
-import { type AgentRuntime, DETACHED_ENV, openStore } from "@krapht/ork-core";
+import {
+  type AgentRuntime,
+  beginDetachedHeartbeat,
+  DETACHED_ENV,
+  openStore,
+} from "@krapht/ork-core";
 import { sessionEnv } from "@krapht/ork-nodes";
 import { defineCommand } from "citty";
 
@@ -180,6 +185,8 @@ export const run = defineCommand({
     },
   },
   run: async ({ args, rawArgs }) => {
+    // A detached child shows it is alive until its run is recorded.
+    beginDetachedHeartbeat();
     if (args.driver !== undefined && !isDriver(args.driver)) {
       writeErr(badDriver(args.driver));
       process.exitCode = 1;

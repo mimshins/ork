@@ -46,17 +46,19 @@ const reserveBook = () => {
     if ((amount ?? 0) < before) for (const wake of waiters.splice(0)) wake();
   };
   const held = () => [...reserves.values()].reduce((a, b) => a + b, 0);
-  const freed = (id: string): Promise<boolean> =>
+  const waitable = (id: string): boolean =>
     [...reserves].some(
       ([other, amount]) => other !== id && amount > 0 && !leaders.has(other),
-    )
+    );
+  const freed = (id: string): Promise<boolean> =>
+    waitable(id)
       ? new Promise(resolve => {
           waiters.push(() => {
             resolve(true);
           });
         })
       : Promise.resolve(false);
-  return { reserves, leaders, reserve, held, freed };
+  return { reserves, leaders, reserve, held, freed, waitable };
 };
 
 /**
@@ -65,7 +67,7 @@ const reserveBook = () => {
  */
 const budgetBook = (budgetUsd: number) => {
   let spent = 0;
-  const { reserves, leaders, reserve, held, freed } = reserveBook();
+  const { reserves, leaders, reserve, held, freed, waitable } = reserveBook();
   const left = () => budgetUsd - spent - held();
   const hooks = (id: string): Partial<ExecuteContext> => ({
     budgetLeftUsd: left(),
@@ -74,6 +76,7 @@ const budgetBook = (budgetUsd: number) => {
       reserve(id, usd);
     },
     budgetFreed: () => freed(id),
+    budgetWaitable: () => waitable(id),
     emit: (event: RuntimeEvent) => {
       if (event.type === "session.finished")
         spent += event.outcome.usage.costUsd;
@@ -87,13 +90,14 @@ const budgetBook = (budgetUsd: number) => {
 /** A run's `limits.budgetTokens` as the scheduler keeps it. */
 const tokenBook = (budgetTokens: number) => {
   let used = 0;
-  const { reserves, leaders, reserve, held, freed } = reserveBook();
+  const { reserves, leaders, reserve, held, freed, waitable } = reserveBook();
   const hooks = (id: string): Partial<ExecuteContext> => ({
     tokensLeftNow: () => budgetTokens - used - held(),
     reserveTokens: tokens => {
       reserve(id, tokens);
     },
     budgetFreed: () => freed(id),
+    budgetWaitable: () => waitable(id),
     emit: (event: RuntimeEvent) => {
       if (event.type === "session.finished")
         used += countedTokens(event.outcome.usage);
@@ -121,6 +125,11 @@ const bothBook = (budgetUsd: number, budgetTokens: number) => {
     reserves.set(id, { ...now, [unit]: amount });
     if (amount < now[unit]) for (const wake of waiters.splice(0)) wake();
   };
+  const waitable = (id: string): boolean =>
+    [...reserves].some(
+      ([other, r]) =>
+        other !== id && !leaders.has(other) && r.usd + r.tokens > 0,
+    );
   const hooks = (id: string): Partial<ExecuteContext> => ({
     budgetLeftUsd: budgetUsd,
     budgetLeftNow: () => budgetUsd - spent.usd - held("usd"),
@@ -131,11 +140,9 @@ const bothBook = (budgetUsd: number, budgetTokens: number) => {
     reserveTokens: tokens => {
       reserve(id, "tokens", tokens);
     },
+    budgetWaitable: () => waitable(id),
     budgetFreed: () =>
-      [...reserves].some(
-        ([other, r]) =>
-          other !== id && !leaders.has(other) && r.usd + r.tokens > 0,
-      )
+      waitable(id)
         ? new Promise(resolve => {
             waiters.push(() => {
               resolve(true);
@@ -652,5 +659,45 @@ describe("a worker offered less than its own cap", () => {
     await tick();
     expect(specs.map(s => [s.budgetUsd, s.budgetTokens])).toEqual([[1, 4]]);
     expect(held).toEqual([{ usd: 1, tokens: 4 }]);
+  });
+
+  it("never lets its dollars go when no worker's reserve could free tokens", async () => {
+    // Only a leader holds tokens: no wait can happen, so the dollars it set
+    // aside are never freed for a node starting beside it to read.
+    const book = bothBook(10, 10);
+    book.leaders.add("l");
+    book.reserve("l", "tokens", 6);
+    const node: Node = {
+      type: "agent.worker",
+      prompt: "Build",
+      budgetUsd: 1,
+      budgetTokens: 6,
+    };
+    const hooks = book.hooks("a");
+    const calls: (number | undefined)[] = [];
+    const asked: (number | undefined)[][] = [];
+    const { runtime } = heldRuntime();
+    void claudeExecutor({
+      runtimeFor: () => {
+        asked.push([...calls]);
+        return Promise.resolve(runtime);
+      },
+      readyDriver: "claude-code",
+      inPlace: true,
+    })(
+      contextFor(
+        "a",
+        {
+          ...hooks,
+          reserveBudget: usd => {
+            calls.push(usd);
+            hooks.reserveBudget?.(usd);
+          },
+        },
+        node,
+      ),
+    );
+    await tick();
+    expect(asked).toEqual([[1]]);
   });
 });

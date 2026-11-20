@@ -124,6 +124,8 @@ export const createSpend = (
     },
     /** Waits until another node's reserve frees; `false` when none can. */
     freed: reserves.freed,
+    /** Whether another node holds a reserve that `freed` could wait on. */
+    canWait: reserves.canWait,
     /** What a session has spent in this activation, from its total so far. */
     ownOf: (id: string, sessionId: string, total: number): number =>
       unreported(reported, `${id}/${sessionId}`, total),

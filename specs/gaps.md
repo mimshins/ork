@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L483, and the next chore is
+closes it. Ids are never reused: the next limit is L484, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -61,6 +61,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building the `codex` driver](./gaps/codex-limits.md)
 - [Limits found building a fresh session for a builder's next task](./gaps/fresh-session-limits.md)
 - [Limits found building the `omp` driver](./gaps/omp-limits.md)
+- [Limits found fixing the detached start](./gaps/detach-limits.md)
 
 ## Gaps
 

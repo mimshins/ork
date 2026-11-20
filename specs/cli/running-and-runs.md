@@ -124,7 +124,7 @@ with the built-in node types
   `ork attach <id> · ork logs <id> -f · ork tree <id> · ork decide · ork stop <id>`
   as its hint: `ork attach <run>` follows the run and the runs it called and
   answers their questions on a terminal ([CLI](../cli.md)); `ork logs -f` only
-  reads. Works with `--node` too.
+  reads. Works with `--node` too. The start waits up to 2 min.
 - A [`workflow.call`](../scheduler/calls.md) starts its run this way, with three
   internal flags: `--called-by`, `--budget-cap` and `--base-ref`, and
   `--machine-claude` when the caller has it. The caller's transcript shows

@@ -21,6 +21,9 @@ export const createReserves = () => {
     waiters.clear();
     for (const resolve of woken) resolve();
   };
+  /** Whether another node, not a leader, holds a reserve `id` could wait on. */
+  const canWait = (id: string): boolean =>
+    [...held].some(([other, reserve]) => other !== id && reserve.waitable);
   return {
     /** All that is set aside now, in `unit`. */
     total: (unit: ReserveUnit = "usd"): number =>
@@ -46,15 +49,13 @@ export const createReserves = () => {
     drop: (id: string): void => {
       if (held.delete(id)) wake();
     },
+    canWait,
     /**
      * Waits until a reserve shrinks. `false` at once when no other node holds
-     * one worth waiting on, or when `signal` aborts.
+     * one worth waiting on (`canWait`), or when `signal` aborts.
      */
     freed: (id: string, signal: AbortSignal): Promise<boolean> => {
-      const worth = [...held].some(
-        ([other, reserve]) => other !== id && reserve.waitable,
-      );
-      if (!worth || signal.aborted) return Promise.resolve(false);
+      if (!canWait(id) || signal.aborted) return Promise.resolve(false);
       return new Promise(resolve => {
         const done = (freed: boolean) => () => {
           waiters.delete(onFree);

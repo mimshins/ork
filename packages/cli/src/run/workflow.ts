@@ -7,6 +7,7 @@
 
 import {
   createWorkspace,
+  endHeartbeat,
   endLinksOf,
   inside,
   loadProject,
@@ -159,6 +160,8 @@ const runIn = async (
     place,
     runDir,
   });
+  // Recorded: a detached start's wait is over.
+  endHeartbeat();
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
   const view = createView();

@@ -235,3 +235,10 @@ A detached run has no terminal, so its questions wait for `ork attach` or
 [`ork attach`](./attaching-to-a-run.md) also follows the runs it called. Its own
 output goes to `.ork/runs/<run>/output.log`. `ork stop` works on any running
 run, detached or not, as Ctrl-C does in its terminal.
+
+`ork run --detach` (and `ork resume --detach`) returns once the background
+process has recorded the run. A start can be slow when a driver's CLI is slow to
+answer, so the command waits up to two minutes while the process shows it is
+starting. A process that shows no sign of life for 15 seconds, or is still not
+running after two minutes, is stopped and the command fails with
+`the run did not start in time`; start it again.

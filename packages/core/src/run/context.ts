@@ -85,6 +85,7 @@ export const nodeContext = (
       );
     },
     budgetFreed: signal => deps.spend.freed(id, signal),
+    budgetWaitable: () => deps.spend.canWait(id),
     budgetSpentIn: deps.spend.spentIn,
     quota: deps.spend.quota,
     ownSpend: (sessionId, total) => deps.spend.ownOf(id, sessionId, total),
