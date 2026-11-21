@@ -134,5 +134,4 @@ limits:
   drivers. A subscription login gets notional dollars, and a model `omp` has no
   price for counts as $0, so `budgetUsd` alone does not bind it: add
   `budgetTokens`. A request in flight can pass the cap
-  ([omp](../drivers/omp.md#what-the-dollars-mean)). `omp` is not yet proven, so
-  a node on it is refused for now.
+  ([omp](../drivers/omp.md#what-the-dollars-mean)).

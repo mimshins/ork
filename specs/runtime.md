@@ -7,10 +7,11 @@ the [`open-code`](./runtime/open-code.md) and
 [`codex`](./runtime/codex.md) driver are built and proven on a real session
 ([code](../packages/runtime/src/index.ts),
 [tests](../packages/runtime/test/runtime.test.ts)); the
-[`omp`](./runtime/omp.md) and
-[`codex-app-server`](./runtime/codex-app-server.md) drivers and the
-[two-way session client](./runtime/duplex-client.md) they run on are built and
-not yet proven (the gate runs are pending, so a run refuses both); the
+[`omp`](./runtime/omp.md) driver and the
+[two-way session client](./runtime/duplex-client.md) it runs on are built and
+proven on a real `omp` (the gate run, 2026-11-21); the
+[`codex-app-server`](./runtime/codex-app-server.md) driver, on the same client,
+is built and not yet proven (its gate run is pending, so a run refuses it); the
 [write limit](./runtime/write-limit.md) is built on all but `open-code`. Drivers
 run one node at a time by
 [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
@@ -72,22 +73,23 @@ per-session hook hold the node's rules) and is `proven: true` since its gate run
 (2026-11-18). `omp` runs the user's own `omp --mode rpc` per leg
 ([its page](./runtime/omp.md); a guard extension Ork writes, `omp`'s approval
 settings and `--tools` hold the node's rules, and the guard holds a paused
-node's call) and is `proven: false`, built and awaiting its gate run.
-`codex-app-server` runs the user's own `codex app-server` per leg
-([its page](./runtime/codex-app-server.md); the same sandbox and per-session
-hook as `codex`, whose `codex exec` driver stays as it is) and is
-`proven: false` too. These two are the drivers on the
-[two-way client](./runtime/duplex-client.md): a message reaches the model before
-the turn ends (not at once: a running call finishes first), and Ork answers the
-tool's approvals. `omp` also holds a paused node's call, and a pause past the
-window ends the leg and resumes it; `codex-app-server` has no `hold` hook, so it
-never defers. `readDenies: false` (`codex`, `codex-app-server`) means a `deny`
-on a `Read`, `Glob` or `Grep` path can't hold, so `ork validate` and `ork run`
-refuse a node that has one for that driver; `omp` holds it by leaving its read
-tools out of `--tools`. A descriptor with `proven: false` is refused and never
-counts as ready. The session runner sets `PWD` to the session's folder, which
-OpenCode reads as its own. The ids `sdk` and `cli` are retired: naming one is
-refused ("use `claude-code`"); a stored run's are read as `claude-code`
+node's call) and is `proven: true` since its gate run (2026-11-21,
+[the run](./runtime/omp-gate.md)). `codex-app-server` runs the user's own
+`codex app-server` per leg ([its page](./runtime/codex-app-server.md); the same
+sandbox and per-session hook as `codex`, whose `codex exec` driver stays as it
+is) and is `proven: false`, built and awaiting its gate run. These two are the
+drivers on the [two-way client](./runtime/duplex-client.md): a message reaches
+the model before the turn ends (not at once: a running call finishes first), and
+Ork answers the tool's approvals. `omp` also holds a paused node's call, and a
+pause past the window ends the leg and resumes it; `codex-app-server` has no
+`hold` hook, so it never defers. `readDenies: false` (`codex`,
+`codex-app-server`) means a `deny` on a `Read`, `Glob` or `Grep` path can't
+hold, so `ork validate` and `ork run` refuse a node that has one for that
+driver; `omp` holds it by leaving its read tools out of `--tools`. A descriptor
+with `proven: false` is refused and never counts as ready. The session runner
+sets `PWD` to the session's folder, which OpenCode reads as its own. The ids
+`sdk` and `cli` are retired: naming one is refused ("use `claude-code`"); a
+stored run's are read as `claude-code`
 ([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
 
 | Concern               | `claude-code` ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts))                                                                                                                                                                                           |

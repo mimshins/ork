@@ -105,28 +105,31 @@ models)"; an empty list, a failing command or output that is not that JSON is a
 warning, "sign in with `omp login`". Only the count is shown; Ork runs no other
 `omp` command, never `omp auth`, `omp token` or `omp usage`, and reads no file
 of the agent folder. `models --json` can take about 15 seconds in a fresh home
-(measured), so the check may wait that long. While the descriptor is unproven
-the status is `skip` whatever the output
-([drivers](./which-driver.md#the-ready-driver)). A node's own model is not
-checked before a run: a follow-up.
+(measured), so the check may wait that long. `omp` is proven, so the status
+follows the output ([drivers](./which-driver.md#the-ready-driver)). A node's own
+exact model is checked before `ork run` and `ork resume`
+([which driver](./which-driver.md#the-ready-driver)).
 
 ## Not measured
 
-- The gate run: a paid, capped run on a real `omp` that flips `proven`. It must
-  measure the hold (a pause mid-turn, a whole window, a pause past it, a stop
-  while a call is held, a `heavy` slot taken and freed), a stop mid-turn with no
-  hold, a failed model request's lines, usage on a second provider and on a
-  subscription login, and what the user's own extensions, rules and MCP servers
-  add to a session.
-- Everything rpc: the gate run now also covers a `steer` during a call, an
-  approval, a deferral and `--resume` after an `abort` with Ork's
-  `--session-dir`, a cost cap over prompts, a chunked frame and the start-up
-  time ([L497 to L502](../gaps/omp-limits.md)).
-- The wire names above that the spike did not capture: `prompt`'s `message`
-  field, `get_state`'s `data.sessionId`, the cancel answer's `cancelled: true`,
-  an error's `message` and the chunk marker.
-- A hold of the whole 9-minute window, and whether a model makes the held call
-  again when the resume message asks it to.
-- Whether `--max-cost` on a fork counts the source's spend (assumed yes).
-- What an empty `--tools` does to Ork's host tools, and the host tool items in
-  [L534 to L537](../gaps/omp-limits.md).
+The gate run ([measured](./omp-gate.md#measured-on-the-gate-run)) settled the
+hold of a whole 9-minute window and the model making the held call again, a
+`steer` during a call, an approval, a deferral and `--resume` after an `abort`
+with Ork's `--session-dir`, a cost cap over one prompt, a large output, the
+start-up time, the wire names the spike did not capture, usage on a subscription
+login, and the host tool items of [L534 to L537](../gaps/omp-limits.md) but two.
+What is left, each in [omp's limits](../gaps/omp-limits.md):
+
+- A pause past a second window (a `heavy` slot's), a stop mid-turn with no hold,
+  a stop while a call is held, and a `heavy` slot taken and freed.
+- A failed model request's lines, and usage on a second provider (the gate used
+  one, Anthropic).
+- What the user's own extensions, rules and MCP servers add to a session.
+- A cost cap over several prompts of one process, and whether `--max-cost` on a
+  fork counts the source's spend (the fork's ledger started from it; `omp`'s own
+  count was not read).
+- A chunked frame (`omp` cut the large output it was given, so none came), and
+  how it cuts a result that is large in lines.
+- `host_tool_cancel`, `loadMode`, and what `omp` reads from a failed host
+  result.
+- What an empty `--tools` does to Ork's host tools.

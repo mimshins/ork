@@ -31,10 +31,10 @@ ork upgrade             # a newer version? upgrade the way you installed Ork
 A workflow that names no agent driver runs on the one that's ready, and
 `claude-code` comes first: your own `claude`, logged in or with
 `ANTHROPIC_API_KEY` or a cloud provider set. Your own `opencode` (`open-code`),
-Command Code's `cmd` (`command-code`) and OpenAI's `codex` (`codex`) work too:
-`--driver <id>`, or a driver per node, and one workflow can mix them.
-`codex app-server` (`codex-app-server`) and oh-my-pi's `omp` (`omp`) are built
-but not yet proven, so a run refuses them for now
+Command Code's `cmd` (`command-code`), OpenAI's `codex` (`codex`) and oh-my-pi's
+`omp` (`omp`) work too: `--driver <id>`, or a driver per node, and one workflow
+can mix them. `codex app-server` (`codex-app-server`) is built but not yet
+proven, so a run refuses it for now
 ([Drivers](https://github.com/mimshins/ork/blob/main/docs/guides/drivers.md)).
 
 Ork is built with Ork: its own workflows plan, build, review and document its

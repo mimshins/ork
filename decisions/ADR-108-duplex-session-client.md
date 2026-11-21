@@ -115,4 +115,8 @@ tool's approval request from being allowed by default.
   unfiltered event stream is not trimmed yet.
 - Follow-ups after merge: the capped gate run that sets `omp` to `proven`, the
   `codex app-server` codec (done in ADR-115), and host tools over
-  `set_host_tools`.
+  `set_host_tools`. _Update 2026-11-21:_ the gate run passed: the resume after
+  an `abort`, a steer, an approval, the cost cap, a long host call and the
+  question fork were measured on a real `omp`, and `omp` is `proven`
+  ([the gate run](../specs/runtime/omp-gate.md); what is left is in
+  [the register](../specs/gaps/omp-limits.md)).

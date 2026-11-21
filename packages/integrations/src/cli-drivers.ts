@@ -291,5 +291,5 @@ export const ompDriver = (proven: boolean): AgentDriver =>
     },
   });
 
-// Not yet proven: no run takes it until a capped gate run passes.
-export const omp = ompDriver(false);
+// Proven on the 2026-11-21 gate run (omp 18.22.2): specs/runtime/omp-gate.md.
+export const omp = ompDriver(true);

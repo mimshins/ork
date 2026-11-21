@@ -512,7 +512,7 @@ export const EDGES = [
     kind: "local",
     label: "strategies · codec · -c keys",
     detail:
-      "The `codex-app-server` adapter supplies its own strategies, with a JSON-RPC codec for the two-way session client, `-c` keys as its MCP wiring (the token in the process environment) and a per-session hook file for the node's rules. Built, not yet proven on a real session.",
+      "The `codex-app-server` adapter supplies its own strategies, with a JSON-RPC codec for the two-way session client, `-c` keys as its MCP wiring (the token in the process environment) and a per-session hook file for the node's rules. Built and proven on a real session (2026-11-21).",
     status: "built",
     docs: [DESIGN.runtime],
   },
@@ -523,7 +523,7 @@ export const EDGES = [
     kind: "local",
     label: "strategies · host tools · guard",
     detail:
-      "The `omp` adapter supplies its own strategies, with Ork's tools as host tools the runner serves over the leg's pipe (the token only in the guard's `hold.json`), a settings overlay, and a guard that holds the node's rules and asks the runner's hold endpoint before each call. Built, not yet proven on a real session.",
+      "The `omp` adapter supplies its own strategies, with Ork's tools as host tools the runner serves over the leg's pipe (the token only in the guard's `hold.json`), a settings overlay, and a guard that holds the node's rules and asks the runner's hold endpoint before each call. Built and proven on a real session (2026-11-21).",
     status: "built",
     docs: [DESIGN.runtime],
   },

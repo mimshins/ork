@@ -12,10 +12,10 @@ names one by its id.
 | `command-code`     | your own `cmd`                        | Proven on a real session                    |
 | `codex`            | your own `codex`                      | Proven on a real session                    |
 | `codex-app-server` | your own `codex` (`codex app-server`) | Built, not yet proven: a run refuses it     |
-| `omp`              | your own `omp`                        | Built, not yet proven: a run refuses it     |
+| `omp`              | your own `omp`                        | Proven on a real session                    |
 
 Each driver passes Ork's tests against a stand-in for its tool, and a proven one
-has run a real session; the first four have, `codex-app-server` and `omp` have
+has run a real session; the first four and `omp` have, `codex-app-server` has
 not. A driver that has not is refused by `ork validate` and `ork run`
 (`not yet proven on a real session`) until it has, and `ork doctor` shows it as
 `skip`, so no run takes it. `ork doctor` lists a driver whose tool it can't find
@@ -101,7 +101,7 @@ A node asks for something its driver does not do. Each refusal names both:
 - An `agent.subagent` under a leader whose driver does not run subagents.
 - A `deny` on a `Read`, `Glob` or `Grep` path, on `codex` or `codex-app-server`:
   Codex has no read tool to gate, so the deny could not hold.
-- A driver that is not yet proven (`codex-app-server` and `omp`, today).
+- A driver that is not yet proven (`codex-app-server`, today).
 
 `ork validate` checks against `--driver` if you give it, else against the driver
 a run would take. `ork run` checks again with the real driver before any session

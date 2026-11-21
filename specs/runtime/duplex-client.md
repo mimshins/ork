@@ -19,9 +19,11 @@ codecs, `omp` ([omp-rpc.ts](../../packages/runtime/src/adapters/omp-rpc.ts)) and
 on a fake `omp` that replays the spike's frames
 ([tests](../../packages/runtime/test/session-duplex-leg.test.ts)) and a fake
 `codex app-server`
-([tests](../../packages/runtime/test/fake-codex-app-server.test.ts)); nothing
-here is proven on a real tool ([`omp` limits](../gaps/omp-limits.md),
-[`codex app-server` limits](../gaps/codex-app-server-limits.md)). The
+([tests](../../packages/runtime/test/fake-codex-app-server.test.ts)). The `omp`
+codec is proven on a real `omp` (the 2026-11-21 gate run,
+[measured](./omp-gate.md#measured-on-the-gate-run); what is left is in
+[`omp` limits](../gaps/omp-limits.md)); the `codex app-server` one is not
+([`codex app-server` limits](../gaps/codex-app-server-limits.md)). The
 `codex app-server` codec was the second under the RFC, which it closes
 ([G39](../gaps.md#gaps) with it).
 
@@ -148,10 +150,10 @@ codec chains the rest of its handshake through `decode`'s `write` (a reply to
 
 ## Limits
 
-[L497 to L502 and L534 to L537](../gaps/omp-limits.md): chunked frames are not
-read, the resume after an `abort` is not measured, unmeasured wire names, cost
-cap and protocol version 2, start-up and event volume, approvals paired first
-in, first out, and what host tools leave unmeasured (call timeout, cancel,
-`loadMode`, the guard's `tool_call`, the request's and result's shapes). For
+[L497 to L502 and L534 to L537](../gaps/omp-limits.md), as the gate run left
+them: chunked frames are not read (`omp` cut the one large output it was given,
+so none came), a cost cap over several prompts and protocol version 2, event
+volume, approvals paired first in, first out, and what host tools leave
+unmeasured (cancel, `loadMode`, what `omp` reads from a failed result). For
 `codex app-server`, [L548 to L559](../gaps/codex-app-server-limits.md): shapes
 read from the schema, not a run, and the rest of its list.

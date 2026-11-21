@@ -276,5 +276,5 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
 - **`command-code`**: not passed either: `AGENTS.md`, `.commandcode/skills` and
   `.commandcode/agents` load, with the machine's own skills, memory and mods.
 
-These are [limits](../gaps/onboard-limits.md). `codex` (`omp` once proven)
-refuses the built-ins' `maxTurns` ([L454](../gaps/codex-limits.md)).
+These are [limits](../gaps/onboard-limits.md). `codex` and `omp` (no turn limit)
+refuse the built-ins' `maxTurns` ([L454](../gaps/codex-limits.md)).

@@ -107,15 +107,19 @@ tool gets the model without it. A plain model (`deepseek/x`) names no driver.
   a doctor check of `skip`, never `ok`, whatever is installed; with
   `--driver <id>` the run stops as above, and a node or model prefix naming it
   is refused by `ork validate` and `ork run` ("not yet proven on a real
-  session"). `omp` and `codex-app-server` are the drivers not yet proven (their
-  gate runs are pending, [`omp`](./omp.md),
-  [`codex-app-server`](./codex-app-server.md)), so the doctor skips them and a
-  run refuses them by name, whatever is installed. The others are proven;
+  session"). `codex-app-server` is the driver not yet proven (its gate run is
+  pending, [`codex-app-server`](./codex-app-server.md)), so the doctor skips it
+  and a run refuses it by name, whatever is installed. The others are proven;
   `codex` was, on its gate run (2026-11-18,
-  [the page](./codex.md#measured-on-the-gate-run)), and comes after the first
-  three in registry order, so a signed-in `codex` is taken only when no other
-  proven driver is ready. `codex-app-server` and then `omp` come last, so once
-  proven each is taken only when none of the ones before it is.
+  [the page](./codex.md#measured-on-the-gate-run)), and `omp` on its own
+  (2026-11-21, [the page](./omp-gate.md)). `codex` comes after the first three
+  in registry order, so a signed-in `codex` is taken only when no other proven
+  driver is ready; `codex-app-server` and then `omp` come last, so `omp` is
+  taken only when none of the ones before it is ready. Registry order is
+  unchanged by the proof: `omp` stays last and is never preferred, so a machine
+  with a ready `claude-code`, `open-code`, `command-code` or `codex` still runs
+  its unnamed nodes there, and a machine with only a signed-in `omp` runs them
+  on it, as for any other proven driver.
 - **`ork run` looks once, before anything starts**, and only when a session node
   names no driver and `--driver` isn't given
   ([ready-driver.ts](../../packages/cli/src/run/ready-driver.ts)). It says so in

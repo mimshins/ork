@@ -178,9 +178,9 @@ that maps an issue's labels to a model name. Built
 
 Agent nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
 `driver`: `claude-code`, `open-code`, `command-code`, `codex` or `omp` (`omp` is
-refused until its gate run passes; a model such as `omp.openai/gpt-5.2` names it
-too) ([which driver a session uses](../runtime.md#which-driver-a-session-uses)).
-The ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
+proven; a model such as `omp.openai/gpt-5.2` names it too)
+([which driver a session uses](../runtime.md#which-driver-a-session-uses)). The
+ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
 retired; use `claude-code`"; no `schemaVersion` changed.
 
 Agent nodes and `defaults` also take `practices` (caveman, ponytail, quiet), on

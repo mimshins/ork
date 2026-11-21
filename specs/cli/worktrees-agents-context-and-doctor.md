@@ -156,8 +156,8 @@ failing command or output that is not that JSON is a warning with "sign in with
 `ork doctor`, and any command that runs this check (`ork run --driver omp`, a
 ready-driver look), may wait that long. A driver whose descriptor is not
 `proven` is listed as `skip` with "unproven", and never counts as a ready
-driver; `omp` is the only one today (its gate run is pending,
-[its page](../runtime/omp-output.md#the-doctor-check)).
+driver; `codex-app-server` is the only one today (its gate run is pending,
+[its page](../runtime/codex-app-server.md)).
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

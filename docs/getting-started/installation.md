@@ -38,7 +38,7 @@ For the agents (Ork uses your own login, never stores it; see
   own credentials).
 - **Or another driver**, with its tool's own login: `opencode` 2.3.2+
   (`open-code`), Command Code's `cmd` (`command-code`) or OpenAI's `codex`
-  0.169.0+ (`codex`). `codex-app-server` and `omp` are built, not yet proven.
+  0.169.0+ (`codex`) or `omp` 18.22.2+ (`omp`).
 
 Ork is free. What the agents use is billed to your own key, account or plan.
 
@@ -114,7 +114,7 @@ output (`--plain`: `✓` and `-`):
  OK    opencode (open-code driver)  v2.3.2; sign in with `opencode auth login` if a session asks
  SKIP  cmd (command-code driver)    cmd CLI not found
  SKIP  codex (codex driver)         codex CLI not found
- SKIP  omp (omp driver)             omp CLI not found, unproven: not yet proven on a real session
+ SKIP  omp (omp driver)             omp CLI not found
  SKIP  gh                           optional, not installed (needed only for tool.gh nodes)
  SKIP  aws                          optional, not installed (needed only for tool.aws nodes)
  OK    git identity                 user.name and user.email are set
@@ -123,8 +123,8 @@ output (`--plain`: `✓` and `-`):
 ```
 
 The `claude-code` and `open-code` drivers are ready, and `cmd`, `codex`, `omp`
-and the optional tools are not: a working setup. An unproven driver (`omp`)
-shows `skip` even when installed ([Drivers](../guides/drivers.md)). When nothing
+and the optional tools are not: a working setup. A driver not yet proven shows
+`skip` even when installed ([Drivers](../guides/drivers.md)). When nothing
 required is missing, that is all it prints. Else it ends:
 
 ```

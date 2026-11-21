@@ -44,8 +44,7 @@ line ([the terminal](./terminal.md)).
    used; several show a list; none prints how to log in and stops, before
    anything is written: your project folder is as it was. Don't pick `codex` or
    `omp`: onboarding's workflows set a turn limit, which neither can hold, so
-   the run is refused before any session starts (and `omp` is not yet proven, so
-   it is refused anyway).
+   the run is refused before any session starts.
 3. **Sets up `.ork/`** like `ork init` when it is missing (the starter, the
    `.gitignore` entry). That `.gitignore` edit stays in your working tree,
    uncommitted: commit it with the branch. On a first visit the runs then print

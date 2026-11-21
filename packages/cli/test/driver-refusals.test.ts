@@ -131,19 +131,22 @@ describe("ork validate on the codex driver", () => {
   });
 });
 
-/** The real descriptors, with `omp` proven, to read what it can't do. */
-const ompProven = AGENT_DRIVERS.map(d =>
-  d.id === "omp" ? Object.assign({}, d, { proven: true }) : d,
-);
-
 describe("ork validate on the omp driver", () => {
-  it("refuses an omp node while the driver is not yet proven", async () => {
+  it("accepts an omp node on the real descriptor, proven on the gate run", async () => {
     const found = await driverDiagnostics(
       workflowOf(yamlOf("    model: omp.openai/gpt-5.2\n")),
       { drivers: AGENT_DRIVERS, checks: unasked },
     );
+    expect(found).toEqual([]);
+  });
+
+  it("refuses a codex-app-server node while that driver is not yet proven", async () => {
+    const found = await driverDiagnostics(
+      workflowOf(yamlOf("    model: codex-app-server.gpt-5.5-codex\n")),
+      { drivers: AGENT_DRIVERS, checks: unasked },
+    );
     expect(found.map(d => d.message)).toEqual([
-      "node `build` runs on driver `omp`, which is not yet proven on a real session",
+      "node `build` runs on driver `codex-app-server`, which is not yet proven on a real session",
     ]);
   });
 
@@ -158,23 +161,20 @@ describe("ork validate on the omp driver", () => {
       "    maxTurns: 4\n",
       "node `build` sets maxTurns, but driver `omp` has no turn limit",
     ],
-  ])(
-    "refuses a node that needs %s, once proven",
-    async (_need, extra, message) => {
-      const found = await driverDiagnostics(
-        workflowOf(yamlOf(`    driver: omp\n${extra}`)),
-        { drivers: ompProven, checks: unasked },
-      );
-      expect(found.map(d => d.message)).toEqual([message]);
-    },
-  );
+  ])("refuses a node that needs %s", async (_need, extra, message) => {
+    const found = await driverDiagnostics(
+      workflowOf(yamlOf(`    driver: omp\n${extra}`)),
+      { drivers: AGENT_DRIVERS, checks: unasked },
+    );
+    expect(found.map(d => d.message)).toEqual([message]);
+  });
 
-  it("refuses a sub-agent in an omp session, once proven", async () => {
+  it("refuses a sub-agent in an omp session", async () => {
     const found = await driverDiagnostics(
       workflowOf(
         "schemaVersion: 1\nname: notes\nnodes:\n  lead:\n    type: agent.leader\n    driver: omp\n    prompt: go\n  helper:\n    type: agent.subagent\n    parent: lead\n    description: helps\n    prompt: help\n",
       ),
-      { drivers: ompProven, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found.map(d => d.message)).toContain(
       "sub-agent `helper` runs in `lead`'s session on driver `omp`, which does not run subagents",
@@ -188,7 +188,7 @@ describe("ork validate on the omp driver", () => {
           '    driver: omp\n    budgetUsd: 1\n    tools:\n      deny: ["Read(./secrets/**)"]\n',
         ),
       ),
-      { drivers: ompProven, checks: unasked },
+      { drivers: AGENT_DRIVERS, checks: unasked },
     );
     expect(found).toEqual([]);
   });

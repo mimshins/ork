@@ -11,9 +11,9 @@ quality gates, a human in the loop, and full observability.
 
 **Agent drivers.** An agent node runs a session of the user's own coding-agent
 CLI through a driver: `claude-code`, `open-code` (OpenCode), `command-code`
-(Command Code) and `codex` (Codex) are proven on real sessions; `omp` (oh-my-pi)
-is built and not yet proven, so a node on it is refused until a gate run passes
-([Runtime](./runtime.md)).
+(Command Code), `codex` (Codex) and `omp` (oh-my-pi) are proven on real
+sessions; `codex-app-server` is built and not yet proven, so a node on it is
+refused until a gate run passes ([Runtime](./runtime.md)).
 
 **Credentials.** Ork never stores, proxies, or asks for credentials: every
 integration uses the user's own login, an API key or a cloud provider
@@ -56,7 +56,7 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
     (the Agent SDK driver, built here, was removed by
     [RFC-014](../rfcs/archived/RFC-014-cli-drivers-only.md); `claude-code` runs
     the user's own `claude`, and `open-code`, `command-code`, `codex` and `omp`
-    run theirs: `omp` is built, not yet proven).
+    run theirs, `omp` proven on its gate run, 2026-11-21).
   - `ork doctor`.
   - Run a single node end-to-end (`ork run <wf> --node <id>`).
 - **M1c: engine** (built: [scheduler](./scheduler.md),

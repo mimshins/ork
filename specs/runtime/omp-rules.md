@@ -21,8 +21,9 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   ([extract](./extract-reading-rules.md#withheld-tools)). With nothing left the
   list is `read`, denied by the overlay and the guard (an empty `--tools` was
   not measured). Ork's tools are not hidden by `--tools` (measured for the MCP
-  route they used to take; not re-measured for host tools), hence the per-tool
-  approvals, keyed `ork_<tool>` (allow, or deny when the node's rules deny it).
+  route they used to take, and for host tools on the gate run: a host tool with
+  no overlay entry asked), hence the per-tool approvals, keyed `ork_<tool>`
+  (allow, or deny when the node's rules deny it).
 - **The guard** is the node's rules per call: `guard.mjs`, a default export that
   registers a `tool_call` handler, with the matcher shared with `command-code`'s
   mod and Codex's hook
@@ -32,9 +33,10 @@ The node is deny by default ([ADR-094](../../decisions/ADR-094-yolo-runs.md) for
   `try`, in this order:
   1. Map the name: a built-in by table, a host tool `ork_<tool>` to
      `mcp__ork__<tool>`; **any other name is refused, `--yolo` included** (a
-     name that starts with `mcp__` among them). Whether `omp` fires `tool_call`
-     for a host tool is not measured ([L536](../gaps/omp-limits.md)): if it does
-     not, the overlay's per-tool `deny` is the wall.
+     name that starts with `mcp__` among them). `omp` does fire `tool_call` for
+     a host tool (measured on the gate run: the guard saw `ork_delegate`,
+     `ork_ask_user`, `ork_report` and `ork_feedback`), so every rule below and
+     the hold apply to Ork's tools.
   2. Once the `stopped` marker exists, refuse everything.
   3. Refuse an address with a scheme and a path in Ork's private folder; refuse
      an `edit` or `write` whose real path is outside the worktree, or that names
@@ -76,7 +78,9 @@ overlay names no entry for. The `omp-rpc` codec reads such a request:
   of the `tool_execution_start` before it: the request names no call, so they
   are paired **by order** ([L502](../gaps/omp-limits.md)). Allow answers an
   `extension_ui_response` with `value: "Approve"`, deny `"Deny"`. Ork never
-  sends `Approve … for this session`.
+  sends `Approve … for this session`. Measured on the gate run: the `select`'s
+  title names the tool but carries no arguments, an `Approve` let the call run
+  and a `Deny` stopped it, in order ([the gate run](./omp-gate.md)).
 - A `select` with no `Approve` or `Deny` option, or one with no call to pair, is
   answered as a cancel; a request it cannot read is never an allow.
 - A request of another method (`setWidget`, …) gets no answer and no error.
@@ -124,10 +128,13 @@ request and takes no `heavy` slot.
   retry, `ork resume`) sends the node's own prompt, as on every driver. The
   session's usage over both legs is combined as for `claude-code`; a stop while
   deferred ends it `interrupted` and never resumes. A pause costs one resume,
-  not one model request per window; the resume itself is not measured
-  ([L498](../gaps/omp-limits.md)), and no refuse-and-repeat path is left to fall
-  back on. A hold of 135 seconds, with a handler timeout of two hours, ran and
-  finished on the print path (measured); a window of nine minutes is not.
+  not one model request per window. Measured on the gate run: the deferral fired
+  at 9 minutes 0.0 seconds, `omp` answered the `abort` with a `prompt_result` of
+  status `aborted` and a `session_settled`, the process exited, the held call
+  did not run, and the `--resume` leg made it again and finished
+  ([the gate run](./omp-gate.md)). No refuse-and-repeat path is left to fall
+  back on. A hold of 135 seconds, with a handler timeout of two hours, also ran
+  on the print path.
 - **The handler's timeout.** `omp` cuts a `tool_call` handler after
   `extensionHandlers.toolCallTimeoutMs`, so the overlay sets
   `2 × OMP_HOLD_WINDOW_MS + 60 000`: one window for a pause and one for a
@@ -151,7 +158,9 @@ request and takes no `heavy` slot.
   does not run. A stop writes an `abort` frame, then closes stdin and kills the
   process if it has not exited in a bounded wait; the node ends `interrupted`,
   with no report. One SIGINT on the print path ended `omp` in about a second
-  with the command not run (measured); `abort` over rpc is not.
+  with the command not run (measured); over rpc the `abort` ended a held leg on
+  the gate run's deferral, and a user's `ork stop` of a held call is not
+  measured ([L467](../gaps/omp-limits.md)).
 - **What Ork sees meanwhile:** nothing. The lines are silent while a call is
   held: `tool_execution_start`, and the assistant `message_end` of the request
   that made the call, with its usage, arrive only after the guard answers, so

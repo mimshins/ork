@@ -413,10 +413,10 @@ const list = (out: string | null) =>
   listedOmp().models?.(() => answer(out), {});
 
 describe("the omp driver", () => {
-  it("is the sixth, not yet proven, and declares what it does itself", () => {
+  it("is the sixth, proven on the gate run, and declares what it does itself", () => {
     const omp = listedOmp();
     expect(omp.id).toBe("omp");
-    expect([omp.proven, omp.onePerCheckout]).toEqual([false, false]);
+    expect([omp.proven, omp.onePerCheckout]).toEqual([true, false]);
     expect(omp.capabilities).toEqual({
       questions: true,
       permissionPrompt: true,
@@ -431,11 +431,11 @@ describe("the omp driver", () => {
     expect(MIN_OMP_VERSION).toBe("18.22.2");
   });
 
-  it("is skipped with no hint when omp is missing, while unproven", async () => {
+  it("is skipped with an install hint when omp is missing", async () => {
     const { result } = await ompCheck(null, OMP_MODELS);
     expect(result).toMatchObject({ status: "skip" });
     expect(result.detail).toContain("omp CLI not found");
-    expect(result.hint).toBeUndefined();
+    expect(result.hint).toContain("Install omp");
   });
 
   it("warns about an omp older than the minimum, saying why", async () => {
@@ -451,28 +451,28 @@ describe("the omp driver", () => {
     ["no models", JSON.stringify({ models: [] })],
     ["a failed command", null],
     ["output that is not the JSON", "Error: no providers"],
-  ])("is not logged in on %s, and skipped while unproven", async (_, out) => {
+  ])("warns that it is not logged in on %s", async (_, out) => {
     const { result } = await ompCheck("omp/18.22.2\n", out);
-    expect(result.status).toBe("skip");
+    expect(result.status).toBe("warn");
     expect(result.detail).toContain("omp/18.22.2, not logged in");
     expect(result.detail).toContain("sign in with `omp login`");
-    expect(result.hint).toBeUndefined();
+    expect(result.hint).toBe("Sign in with `omp login`.");
   });
 
-  it("is logged in with a count of models, skipped while unproven", async () => {
+  it("is ready when logged in, with a count of models", async () => {
     const { result } = await ompCheck("omp/18.22.2\n", OMP_MODELS);
-    expect(result.status).toBe("skip");
-    expect(result.detail).toContain("omp/18.22.2, logged in (2 models)");
-  });
-
-  it("is ready once proven, so a run may take it", async () => {
-    const proven = ompDriver(true);
-    const one = JSON.stringify({ models: [ompEntry("openai", "gpt-5.2")] });
-    const { result } = await ompCheck("omp/18.22.2\n", one, proven);
     expect(result).toMatchObject({
       status: "ok",
-      detail: "omp/18.22.2, logged in (1 model)",
+      detail: "omp/18.22.2, logged in (2 models)",
     });
+  });
+
+  it("is skipped while a copy of the descriptor is unproven", async () => {
+    const unproven = ompDriver(false);
+    const { result } = await ompCheck("omp/18.22.2\n", OMP_MODELS, unproven);
+    expect(result.status).toBe("skip");
+    expect(result.detail).toContain("unproven");
+    expect(result.hint).toBeUndefined();
   });
 
   it("runs only omp --version and omp models --json", async () => {

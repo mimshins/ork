@@ -118,4 +118,7 @@ session.
   never pruned, the resolved model not recorded, errors read by text.
 - Follow-ups after merge: the gate run that sets `proven` and confirms the hold
   window, checking a node's own `omp.<provider>/<model>` before a run, and an
-  RFC for the long-lived shape.
+  RFC for the long-lived shape. _Update 2026-11-21:_ the gate run was made on
+  `omp` 18.22.2 and passed, so `proven` is `true`, and the 9-minute window held
+  as it was ([the gate run](../specs/runtime/omp-gate.md)); the model check and
+  the long-lived shape shipped earlier (ADR-108, ADR-113).

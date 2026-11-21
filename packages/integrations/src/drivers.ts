@@ -1,11 +1,10 @@
 /**
  * @file The agent drivers Ork can run a session with, as descriptors: id, label
  *   and doctor check (RFC-014: `claude-code`, `open-code` and `command-code`;
- *   RFC-024: `codex`; each proven on a real session; RFC-026: `omp` and
- *   RFC-027: `codex-app-server`, not yet proven). `@krapht/ork-runtime`
- *   registers a factory for each id, so adding a driver is one descriptor here
- *   and one factory there (ADR-022). Ork never handles the user's login
- *   (ADR-004).
+ *   RFC-024: `codex`; RFC-026: `omp`; each proven on a real session; RFC-027:
+ *   `codex-app-server`, not yet proven). `@krapht/ork-runtime` registers a
+ *   factory for each id, so adding a driver is one descriptor here and one
+ *   factory there (ADR-022). Ork never handles the user's login (ADR-004).
  */
 
 import {

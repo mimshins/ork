@@ -15,7 +15,7 @@ No model was called while it was built: every name comes from
 `codex app-server generate-json-schema` of codex-cli 0.169.0, read as data, so
 every shape is unmeasured ([limits](../gaps/codex-app-server-limits.md)). Until
 a capped gate run passes, `ork validate` and `ork run` refuse the driver by name
-and `ork doctor` shows it `skip`, as for `omp`
+and `ork doctor` shows it `skip`, as it did for `omp` before its gate run
 ([drivers](./which-driver.md#the-ready-driver)).
 
 Why: [ADR-115](../../decisions/ADR-115-codex-app-server-driver.md) (this

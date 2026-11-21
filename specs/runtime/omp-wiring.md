@@ -62,7 +62,8 @@ crash:
   at load (including a `hold.json` it expects and cannot read), each end the leg
   before any model line, exit 1, with the decisive `error:` line on stderr
   (measured). A `set_host_tools` error ends the leg failed before the first
-  `prompt` (not measured on a real `omp`).
+  `prompt` (`omp` accepted every one on the gate run, so this path is not
+  measured on a real `omp`).
 
 ## What a session loads
 

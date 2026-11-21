@@ -1044,7 +1044,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code` and `codex`, each proven on a real session, and `codex-app-server` and `omp`, built and not yet proven. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code`, `command-code`, `codex` and `omp`, each proven on a real session, and `codex-app-server`, built and not yet proven. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
@@ -1126,7 +1126,7 @@ export const NODES = [
     summary:
       "Runs a node through your installed `claude` command in headless mode, with JSON streams in and out. Uses whatever login that `claude` has, or `ANTHROPIC_API_KEY`, Bedrock, Vertex or Foundry; `ork doctor` says which.",
     facts: [
-      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it; `omp` (RFC-026) and `codex-app-server` (RFC-027) are built and wait for their gate runs.",
+      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code`, then `codex` (RFC-024), were proven on real sessions after it; `omp` (RFC-026) was proven on its gate run (2026-11-21), and `codex-app-server` (RFC-027) is built and waits for its gate run.",
       "An adapter of small strategies (command, event decoder, MCP wiring, permissions, usage, context layers, hold hook), run by the session runner every driver shares.",
       "`--input-format stream-json --output-format stream-json --verbose`.",
       "The report comes back through `--json-schema`; Ork's tools through `--mcp-config`.",
@@ -1323,7 +1323,7 @@ export const NODES = [
   {
     id: "ompDriver",
     title: "omp driver",
-    sub: "`omp --mode rpc` · guard + plugin",
+    sub: "`omp --mode rpc` · guard + host tools",
     zone: "runtime",
     x: 1720,
     y: 840,
@@ -1331,7 +1331,7 @@ export const NODES = [
     pkg: "runtime",
     src: "packages/runtime/src/adapters/omp.ts",
     summary:
-      "Built, not yet proven on a real session (RFC-026): until its gate run passes, `ork validate` and `ork run` refuse a node on it and `ork doctor` shows it `skip`. Runs a node through your `omp` (oh-my-pi), one process per leg over the two-way session client (RFC-027), with Ork's tools as host tools on that pipe and a guard Ork writes as the fence.",
+      "Built and proven on a real session (RFC-026; its gate run, 2026-11-21, omp 18.22.2): `ork doctor` shows it `ok` when `omp` is signed in, and a run takes it after `claude-code`, `open-code`, `command-code` and `codex`. Runs a node through your `omp` (oh-my-pi), one process per leg over the two-way session client (RFC-027), with Ork's tools as host tools on that pipe and a guard Ork writes as the fence.",
     facts: [
       "Each leg is `omp --mode rpc` with `omp`'s extras off, `--tools` holding only the built-ins the node's rules can allow, `--thinking` (the node's effort, else `medium`) and Ork's instructions on every leg; the brief is a `prompt` frame once `omp` says it is ready, a message is a `steer` frame that reaches the model before the turn ends (a running call finishes first), a stop is an `abort`, and a question fork is `--fork <id>`.",
       "Ork answers `omp`'s own approval asks (a `select` of `Approve` or `Deny`) through the human channel, paired first in, first out with the calls that started and are not yet paired or ended, and never sends `Approve for this session`; a session ends at `session_settled`, not at a turn's result.",
@@ -1339,7 +1339,7 @@ export const NODES = [
       "Deny by default: the guard (`--trusted-extension`, the only extension) refuses what the node's rules refuse, a tool it doesn't know, and an edit outside the worktree, `--yolo` included. It fails closed: a guard or overlay that doesn't load, or host tools `omp` refuses, ends the leg before any model call.",
       "Holds a paused node's next call by asking Ork's hold endpoint, and takes `heavy` slots the same way. A pause past the 9-minute window ends the leg with an `abort` and `ork continue` resumes it (`--resume <id>`) with a message giving the real reason (a pause, or a `heavy` slot that was not free) and asking the model to make the held call again, so a pause costs one resume; a stop writes a marker the guard checks, so a held call never runs.",
       "Dollars and tokens: `--max-cost` is what Ork's own ledger says the session spent plus `budgetUsd`, since `omp` counts the whole session. A node with `mcp` servers, sub-agents or `maxTurns` is refused; a path-scoped `Read` deny holds, as none of the read tools is offered.",
-      "Unmeasured until the gate run, on a fake `omp` that replays the spike's frames: a `steer` during a call, an approval, an `abort`, `--resume` after it, a chunked frame, the wire names guessed, and the user's own `omp` setup in a session (gaps G47 to G49, L464 to L482, L497 to L502, L534 to L540).",
+      "Measured on the gate run: a `steer` during a call (read after it), an approval allowed and denied, a 9-minute pause (`abort`, `prompt_result` aborted, `session_settled`, exit, then `--resume` finishing), a host call held open 2 minutes 29 seconds, a cost cap (`cost_cap`, `budget_limit`), a 2 MB output `omp` cut itself, the guard seeing Ork's host tools, and a question fork. Still unmeasured: a second hold window, a cap over several prompts, a chunked frame, `host_tool_cancel` and `loadMode`, and the user's own `omp` setup in a session (gaps G47 to G49, L464 to L482, L497, L499 to L500, L502, L534 to L535, L537 to L540, L560 to L562).",
     ],
     docs: [
       RUNTIME.omp,

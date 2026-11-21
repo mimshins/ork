@@ -186,14 +186,18 @@ describe("what a node needs of its driver", () => {
     ]);
   });
 
-  it("refuses an omp node while the real descriptor is unproven", () => {
-    expect(messages(workflowOf(BARE), realDriver("omp"))).toEqual([
-      "node `build` runs on driver `omp`, which is not yet proven on a real session",
+  it("refuses a codex-app-server node while the real descriptor is unproven", () => {
+    expect(messages(workflowOf(BARE), realDriver("codex-app-server"))).toEqual([
+      "node `build` runs on driver `codex-app-server`, which is not yet proven on a real session",
     ]);
   });
 
-  it("refuses what the omp descriptor does not do once proven: turns, its own MCP servers, sub-agents; not a path-scoped read deny", () => {
-    const omp = { ...realDriver("omp"), proven: true };
+  it("accepts a plain omp node on the real descriptor, proven on the gate run", () => {
+    expect(messages(workflowOf(BARE), realDriver("omp"))).toEqual([]);
+  });
+
+  it("refuses what the omp descriptor does not do: turns, its own MCP servers, sub-agents; not a path-scoped read deny", () => {
+    const omp = realDriver("omp");
     const w = workflowOf(`  lead:
     type: agent.leader
     prompt: go

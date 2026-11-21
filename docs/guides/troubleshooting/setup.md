@@ -35,10 +35,10 @@ worker waits for it, so neither would finish. Give the worker
 
 **`node … runs on driver …, which is not yet proven on a real session`.** A
 driver is refused until a real session has proven it, and `ork doctor` shows it
-as `skip` even when installed. `claude-code`, `open-code`, `command-code` and
-`codex` are proven; `codex-app-server` and `omp` are built and not yet proven,
-so name another driver, or no driver
-([Codex app-server](../drivers/codex-app-server.md), [omp](../drivers/omp.md)).
+as `skip` even when installed. `claude-code`, `open-code`, `command-code`,
+`codex` and `omp` are proven; `codex-app-server` is built and not yet proven, so
+name another driver, or no driver
+([Codex app-server](../drivers/codex-app-server.md)).
 
 **`node … denies …, but driver codex has no read tool to gate`.** Codex can read
 outside the worktree, so a deny on a `Read`, `Glob` or `Grep` path could not

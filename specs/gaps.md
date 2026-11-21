@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L560, and the next chore is
+closes it. Ids are never reused: the next limit is L563, and the next chore is
 C19 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one; `tools/decisions/renumber.ts` moves the ids a change
 adds that a fetched ref already has before the change is rebased). At a review,
@@ -267,9 +267,10 @@ command and file change. The new driver is unproven, so what it leaves is in
   that must not search the web should not run on this driver.
 
 Found building the `omp` driver (spec: [runtime/omp.md](./runtime/omp.md),
-RFC-026, 2026-11-19; the limits found with them are L464 to L482, L497 to L502
-and L534 to L540, in [their chunk](./gaps/omp-limits.md)). G45 (no message
-mid-turn, no approval) and G46 (no true deferral) were closed by
+RFC-026, 2026-11-19, proven on its gate run 2026-11-21; the limits found with
+them are L464 to L482, L497 to L502, L534 to L540 and L560 to L562, in
+[their chunk](./gaps/omp-limits.md); L498, L501 and L536 were closed). G45 (no
+message mid-turn, no approval) and G46 (no true deferral) were closed by
 [the two-way client](./runtime/duplex-client.md) (RFC-027, 2026-11-20).
 
 - **G47 · A node's own `.mcp.json` servers, sub-agents and `maxTurns` are not

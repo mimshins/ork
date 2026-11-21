@@ -2,8 +2,7 @@
 
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
-Status: **Built, not yet proven** (gate run pending): the `omp` descriptor
-(`proven: false`), the adapter
+Status: **Built and proven**: the `omp` descriptor (`proven: true`), the adapter
 ([omp.ts](../../packages/runtime/src/adapters/omp.ts)), its rpc codec
 ([omp-rpc.ts](../../packages/runtime/src/adapters/omp-rpc.ts)), its decoder
 ([omp-events.ts](../../packages/runtime/src/adapters/omp-events.ts)), guard
@@ -11,18 +10,17 @@ Status: **Built, not yet proven** (gate run pending): the `omp` descriptor
 files ([omp-config.ts](../../packages/runtime/src/adapters/omp-config.ts)) and
 spend ledger
 ([omp-ledger.ts](../../packages/runtime/src/adapters/omp-ledger.ts)) are built,
-and the contract suite passes on a fake `omp --mode rpc` that replays the frames
+the contract suite passes on a fake `omp --mode rpc` that replays the frames
 [RFC-027](../../rfcs/archived/RFC-027-long-lived-protocol-drivers.md)'s spike
-captured, and on its host-tool frames (`set_host_tools`, `host_tool_call`, whose
-shapes are partly guessed: [L534 to L537](../gaps/omp-limits.md)). Until a
-capped gate run on a real `omp` passes, `ork validate` and `ork run` refuse a
-node that names it ("not yet proven on a real session"), `ork doctor` shows it
-`skip`, and it never counts as ready
+captured, and the maintainer's capped gate run on a real `omp` proved it
+(2026-11-21, `omp` 18.22.2, [the gate run](./omp-gate.md)). `ork doctor` shows
+it `ok` when `omp` is signed in, a run may take it when no `claude-code`,
+`open-code`, `command-code` or `codex` is ready, and `ork validate` and
+`ork run` refuse only a node that needs what it can't do
 ([drivers](./which-driver.md#the-ready-driver)). The facts in these pages come
 from [RFC-026](../../rfcs/archived/RFC-026-omp-driver.md)'s spike and capture
-legs and a free hand check, all on `omp` 18.22.2 (oh-my-pi); the hand check used
-a stand-in model server and never touched a real login. What is not measured is
-[listed](./omp-output.md#not-measured) and in
+legs, a free hand check with a stand-in model server, and the gate run. What is
+still not measured is [listed](./omp-output.md#not-measured) and in
 [omp's limits](../gaps/omp-limits.md).
 
 Why: [ADR-105](../../decisions/ADR-105-omp-driver.md) (this driver),
@@ -51,12 +49,14 @@ message saying why the held call did not run (a pause, or a `heavy` slot that
 was not free) and asking the model to make it again, never the brief a second
 time (any other resume, such as a late message, a retry or `ork resume`, sends
 the node's own prompt, as on every driver); a leader's question fork is
-`--fork <id>`, and its `session` carries the fork's id (and `parentSession`).
-The user's own `omp` login decides the provider, with their `OMP_PROFILE` or
-`PI_CODING_AGENT_DIR` when set: Ork sets neither and passes no `--api-key`.
-`--model` carries the node's model exactly as written after `omp.` (a fuzzy
-name, `provider/model`, or a role the user configured), and is absent when the
-node names none, so `omp`'s own default runs.
+`--fork <id>`, and its session file's header carries the fork's id (and
+`parentSession`); the rpc stream has no `session` frame, so the id is read from
+`get_state` ([the gate run](./omp-gate.md)). The user's own `omp` login decides
+the provider, with their `OMP_PROFILE` or `PI_CODING_AGENT_DIR` when set: Ork
+sets neither and passes no `--api-key`. `--model` carries the node's model
+exactly as written after `omp.` (a fuzzy name, `provider/model`, or a role the
+user configured), and is absent when the node names none, so `omp`'s own default
+runs.
 
 The descriptor (`omp` in
 [cli-drivers.ts](../../packages/integrations/src/cli-drivers.ts)) has
@@ -65,7 +65,7 @@ The descriptor (`omp` in
 `false`: `ork validate` refuses a node that sets `maxTurns`, names `mcp` servers
 or owns an `agent.subagent` for it. The adapter's `permissions.kind` is
 `callback`: Ork answers the tool's approval asks
-([approvals](./omp-rules.md#approvals-over-rpc)). `proven` stays `false`.
+([approvals](./omp-rules.md#approvals-over-rpc)). `proven` is `true`.
 
 ## The flags of a leg
 
@@ -128,4 +128,7 @@ the set the guard and the overlay name.
   - Output, usage and ends
   - Budgets
   - The doctor check
+  - Not measured
+- [The gate run](./omp-gate.md)
+  - Measured on the gate run
   - Not measured

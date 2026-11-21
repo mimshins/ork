@@ -17,7 +17,7 @@ against your Claude plan's limits; a budget caps each run
 | Command Code     | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
 | Codex            | the `codex` driver, running your own `codex`                                                                                 | `codex login`                                                            |
 | Codex app-server | the `codex-app-server` driver, running your own `codex` as `codex app-server` (built, not yet proven)                        | `codex login`                                                            |
-| omp              | the `omp` driver, running your own `omp` (built, not yet proven)                                                             | `omp login`                                                              |
+| omp              | the `omp` driver, running your own `omp`                                                                                     | `omp login`                                                              |
 | GitHub           | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
 | AWS              | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
@@ -97,12 +97,11 @@ session has proven it ([Codex app-server](./drivers/codex-app-server.md)).
 
 ### The omp driver (`driver: omp`)
 
-Runs your own `omp` (oh-my-pi's coding agent, built against 18.22.2), headless.
-Log in with `omp login`; Ork never reads `omp`'s login files and never runs
+Runs your own `omp` (oh-my-pi's coding agent, proven on 18.22.2), headless. Log
+in with `omp login`; Ork never reads `omp`'s login files and never runs
 `omp auth`, and `ork doctor` shows only the number of models your logins reach.
-Your `OMP_PROFILE` or `PI_CODING_AGENT_DIR` decides the login. It is **built and
-not yet proven**: `ork validate` and `ork run` refuse an `omp` node until a real
-session has proven it ([omp](./drivers/omp.md)).
+Your `OMP_PROFILE` or `PI_CODING_AGENT_DIR` decides the login. It is **proven on
+a real session** ([omp](./drivers/omp.md)).
 
 ## Secrets in workflows
 

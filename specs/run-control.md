@@ -176,9 +176,10 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). Then the claude-code driver's hold never fires, and a
   node pauses only at its next activation ([L29](./scheduler/limits.md)).
-- **`omp` defers a long pause by resuming, and the resume is not measured.**
-  Like `claude-code`, it ends its leg past the hold window and resumes on
-  continue ([L464](./gaps/omp-limits.md), [L498](./gaps/omp-limits.md)).
+- **`omp` defers a long pause by resuming.** Like `claude-code`, it ends its leg
+  past the hold window and resumes on continue; measured on the gate run (the
+  deferral fired at 9 minutes, the resume made the held call again,
+  [the gate run](./runtime/omp-gate.md), [L464](./gaps/omp-limits.md)).
   `command-code` and `codex` have no hold: a pause reaches them at a leg's end.
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or
   a node's stop: `ork pause`, `ork continue`, `ork stop --node` and the API's

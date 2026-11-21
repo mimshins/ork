@@ -78,7 +78,11 @@ runner serves the tools in process, as it binds them for every other driver.
 
 - Every `omp` node depends on host tools working on a real `omp`: a timeout on a
   long `ask_user`, no `tool_call` for the guard, or a different `isError` shape
-  would affect all of them until fixed. The gate run measures these.
+  would affect all of them until fixed. The gate run measures these. _Update
+  2026-11-21:_ it did: a long `ask_user` stayed open (2 minutes 29 seconds), the
+  guard saw Ork's host tools, and the request shapes were accepted; what `omp`
+  reads from a failed result is still unmeasured
+  ([the gate run](../specs/runtime/omp-gate.md)).
 - A tool added to Ork needs an `ork_<tool>` entry in the overlay, as it needed
   its plugin name before ([L478](../specs/gaps/omp-limits.md)).
 - ADR-105's plugin decision is amended; its other decisions stand.

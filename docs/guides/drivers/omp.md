@@ -3,16 +3,15 @@
 _Part of [Drivers](../drivers.md)._
 
 The `omp` driver runs your own `omp`
-([oh-my-pi](https://github.com/can1357/oh-my-pi)'s coding agent, built against
+([oh-my-pi](https://github.com/can1357/oh-my-pi)'s coding agent, proven on
 18.22.2), headless: one long-lived `omp --mode rpc` process for each stretch of
 a session, in the node's folder, which Ork talks to in both directions. It
-reaches whatever model providers your `omp` is signed in to. It is **built and
-not yet proven**: no real session has run through it with Ork's tools, guard and
-budgets, so `ork validate` and `ork run` **refuse** a node on `omp`
-(`node … runs on driver omp, which is not yet proven on a real session`) and
-`ork doctor` shows it as `skip` even when `omp` is installed and signed in. A
-capped run on the maintainer's account will lift that; until then this page says
-what the driver is built to do.
+reaches whatever model providers your `omp` is signed in to. It is **proven on a
+real session**: the maintainer ran it on a real `omp` signed in with a Claude
+subscription, and Ork's tools, guard, approvals, pauses and budgets held.
+`ork doctor` shows it `ok` once `omp` is signed in. When `claude-code`,
+`open-code`, `command-code` or `codex` is ready too, a run that names no driver
+takes that one first; name `omp` to use it.
 
 ## Setting it up
 
@@ -114,8 +113,8 @@ make.
   long pause never resumes it. The request that made the held call is not
   counted: its usage is only printed after the call is answered.
 
-This path, resuming after an abort with Ork's session folder, has not yet run on
-a real `omp`; see [the omp limits](../../../specs/gaps/omp-limits.md).
+On the maintainer's run a pause of 9 minutes ended the stretch exactly then, the
+held call did not run, and the resumed stretch made it again and finished.
 
 ## If a node stops before it starts
 

@@ -6,26 +6,29 @@ Status: **Open**: to decide at the next review, as the register's other entries.
 The gaps found with them are G47 to G49 in [the register](../gaps.md#gaps) (G45
 and G46 are closed). L497 to L502 came with the rpc path
 ([RFC-027](../../rfcs/archived/RFC-027-long-lived-protocol-drivers.md),
-[the client](../runtime/duplex-client.md)), built and tested on a fake `omp`
-that replays the spike's frames, never run on a real `omp`. L534 to L540 came
-with host tools, the model check and the deferral reason
-([ADR-113](../../decisions/ADR-113-omp-host-tools.md)), built the same way.
+[the client](../runtime/duplex-client.md)) and L534 to L540 with host tools, the
+model check and the deferral reason
+([ADR-113](../../decisions/ADR-113-omp-host-tools.md)), both built and tested on
+a fake `omp` that replays the spike's frames. L560 to L562 came with the gate
+run.
 
 Found building the `omp` driver (spec: [runtime/omp.md](../runtime/omp.md))
 ([RFC-026](../../rfcs/archived/RFC-026-omp-driver.md)), reading `omp` 18.22.2's
 own documents and running its free hand check (no paid model call, a local
-stand-in for the model). The driver ships `proven: false`: its gate run has not
-been made, so what the run alone can measure is listed here as unmeasured. What
-was left simpler, or could not be checked:
+stand-in for the model), and on its capped gate run (2026-11-21,
+[measured](../runtime/omp-gate.md#measured-on-the-gate-run)), which proved it.
+L498, L501 and L536 were closed by the gate run and are gone. What was left
+simpler, or could not be checked:
 
 - **L464 · A pause that outlasts the hold window costs one resume.** A held call
   waits up to `OMP_HOLD_WINDOW_MS` (9 minutes, `claude-code`'s). Past it the
   runner ends the leg with an `abort` frame and, on `ork continue`, resumes the
   session with `--resume` and one message asking the model to make the held call
   again. A pause costs one resume (one cold prompt cache, one `omp` start-up,
-  L500), not one request per window, but it still rests on the resume working
-  (L498) and the model making the call again. A hold of the whole window was
-  never timed.
+  L500), not one request per window. Measured on the gate run: the deferral
+  fired 9 minutes 0.0 seconds after the call was held, and the resumed leg made
+  the call again and finished. Only one window was timed; a second one (a
+  `heavy` slot's) was not.
 - **L465 · A `heavy` slot is freed at once only after a `Bash` call that ran.**
   The guard's `tool_result` handler sends the after-call request for a `Bash`
   call. A call refused after the slot was taken emits no `tool_result`, so that
@@ -42,9 +45,11 @@ was left simpler, or could not be checked:
   guard refuses every call once it exists. On the hand check one SIGINT ended
   `omp -p` in about a second (exit 130, the call did not run, no process left).
   The rpc path writes an `abort` frame instead, then closes stdin and kills the
-  process after a bounded wait (10 seconds), which the fake `omp` proves and a
-  real one has not. If `omp` ignored the `abort` the leg would run on, every
-  call refused, until the wait ran out.
+  process after a bounded wait (10 seconds). A real `omp` answered the `abort`
+  of a deferral with `prompt_result` of status `aborted` and `session_settled`,
+  and exited, on the gate run; a user's `ork stop` of a held call was not run.
+  If `omp` ignored the `abort` the leg would run on, every call refused, until
+  the wait ran out.
 - **L468 · The user's own `omp` settings the overlay does not name apply.** The
   leg uses the user's agent folder and profile (their login stays where it is),
   with Ork's overlay and flags on top. A key the overlay does not name keeps the
@@ -63,7 +68,8 @@ was left simpler, or could not be checked:
   `budgetUsd` (`~/.ork/omp/spent/`, 0600). The ledger can be below `omp`'s
   count, so the cap errs tight, never loose. A session resumed after its entry
   was removed gets no credit for what it spent and may end at once at its cap. A
-  fork's cap assumes `omp` counts the source session's spend; not measured.
+  fork's ledger entry started from the source's spend (measured on the gate
+  run); whether `omp`'s own `--max-cost` counted it was not read.
 - **L471 · The token is in one file, and the guard's files can be rewritten.**
   Ork's token sits in `hold.json` only (0600 in a 0700 folder outside the
   checkout, gone when the session ends); the plugin's `.mcp.json` is gone with
@@ -104,27 +110,33 @@ was left simpler, or could not be checked:
 - **L477 · `omp models --json` can take about 15 seconds on a fresh home.**
   `ork doctor`, `ork validate` and `ork run` read it for the login check, so
   they can wait that long on a machine where `omp` has not cached its model
-  list, even while the driver is unproven. A cached list or a shorter wait for
-  an unproven driver would close it.
+  list. `omp` is proven now, so the check runs for every installed `omp`, not
+  only on request. The gate run took one `omp models --json` for the model
+  check. A cached list would close it.
 - **L478 · A new Ork tool needs an entry in the overlay.** With
   `tools.approvalMode: always-ask`, `omp` asks before a tool with no
-  `tools.approval` entry (measured for the MCP route Ork's tools used to take; a
-  host tool's is not re-measured), and a wildcard key did not work. On the print
-  path (`--no-ui`) that was a refusal ("requires approval but no interactive UI
-  available"); over rpc it is a `select` Ork answers through the human channel,
-  so a tool added to Ork later asks a person on `omp` until the overlay lists it
-  by its `ork_<tool>` host tool name. It still fails closed (a person, or a
-  deny, never an allow), but no longer fails loudly.
+  `tools.approval` entry, and a wildcard key did not work. Measured on the gate
+  run for a host tool: with `ork_feedback` left out of the map, `omp` asked
+  through a `select` and Ork's `Approve` let the call run and its `Deny` stopped
+  it. On the print path (`--no-ui`) the same was a refusal ("requires approval
+  but no interactive UI available"); over rpc it is a `select` Ork answers
+  through the human channel, so a tool added to Ork later asks a person on `omp`
+  until the overlay lists it by its `ork_<tool>` host tool name. It still fails
+  closed (a person, or a deny, never an allow), but no longer fails loudly. The
+  shipped overlay lists every Ork tool, so no shipped run reaches this path.
 - **L479 · The overlay's values are not checked by `omp`.** An unknown key or a
   wrong-type value gave no error and no stderr: a typo does nothing. The tests
   read effective values back with `omp config get`, not the fact that a leg ran.
   A bare `off` in YAML is a boolean, so enum values are quoted.
 - **L480 · A message sent during an `omp` call reaches the model after the
   call.** `omp` takes a `steer` frame mid-turn, but a running tool call finishes
-  first, so a message reaches the model before the turn ends, not at once. A
-  long `bash` call delays it by that long, and a message sent before `omp` says
-  it is `ready` waits for the start-up (L500). Until it arrives, `read_inbox`
-  and `wait_for_messages` still say "no message" (as L451 for Codex).
+  first, so a message reaches the model before the turn ends, not at once.
+  Measured on the gate run: a steer written about 3 seconds into a 90-second
+  `bash` call was answered at once and taken by the model 87 seconds later, when
+  the call ended. A long `bash` call delays it by that long, and a message sent
+  before `omp` says it is `ready` waits for the start-up (L500). Until it
+  arrives, `read_inbox` and `wait_for_messages` still say "no message" (as L451
+  for Codex).
 - **L481 · The driver leans on flags `omp --help` does not list.**
   `--trusted-extension` and `--fork` are in `omp`'s `cli-reference.md` and work
   on 18.22.2, but are not in `--help`. A release that drops one ends every leg
@@ -141,66 +153,60 @@ was left simpler, or could not be checked:
 - **L497 · A frame `omp` sends in chunks is not read.** `ready` reports
   `maxFrameBytes: 1048576` and says frames above it come in chunks; no chunk was
   captured, so its shape is unknown and cannot be reassembled blind. The codec
-  recognizes a chunk marker and ends the leg failed with one line naming the
-  limit. Shortcut: no reassembly; upgrade once a real chunked frame is captured.
-  A long file read or a long result could reach it.
-- **L498 · `--resume` after an `abort` was never run.** A deferral ends the leg
-  with an `abort` and resumes it with `omp --mode rpc --resume <id>` and Ork's
-  `--session-dir`. The fake `omp` proves Ork's side only; whether a real `omp`
-  resumes the aborted session and continues the held call is not measured. The
-  guard's refuse-and-repeat path is removed, so there is no fallback: if the
-  resume does not continue, deferral is what to fix.
-- **L499 · The cost cap over prompts and protocol version 2 are not measured.**
-  `--max-cost` was measured on one print-mode prompt; over rpc a `prompt_result`
-  with `error.code: "cost_cap"` ends the session `budget_limit` and the ledger
-  counts each request as before, but a cap over several prompts of one process
-  was not run. The codec speaks protocol version 1 only; version 2 is not read.
+  recognizes a chunk marker (a guess) and ends the leg failed with one line
+  naming the limit. Shortcut: no reassembly; upgrade once a real chunked frame
+  is captured. On the gate run a 2 MB single-line output did not make one: `omp`
+  cut it to 768 bytes itself (`details.meta.limits.columnTruncated`, the rest
+  kept as `artifact://0`), and the largest frame was 258,368 bytes, mostly the
+  call's `details.trace.history`. How `omp` cuts a result that is large in
+  lines, or a long file read, is not measured.
+- **L499 · A cost cap over several prompts and protocol version 2 are not
+  measured.** `--max-cost` over rpc is measured for one prompt: a node capped at
+  $0.10 ended with `prompt_result` of status `error` and `error.code`
+  `cost_cap`, `budget_limit`, with $0.1027 spent, equal to the ledger. A cap
+  over several prompts of one process was not run (Ork sends one `prompt` per
+  process, so it spans legs). `ready` lists `supportedProtocolVersions: [1, 2]`;
+  the codec speaks protocol version 1 only, and a leg ran fine on it.
 - **L500 · Every leg pays `omp`'s start-up, and its events are unfiltered.**
-  `ready` came 10 to 12 seconds after the start (25 seconds once), on every leg,
-  so a deferral's resume and a leader's question fork each pay it, and a message
-  sent before it waits. The client waits up to 45 seconds for it. One run sent
-  166 `message_update` frames, which Ork reads and drops; `set_event_filter` is
-  not used. Neither is optimized.
-- **L501 · Some wire names are guessed.** The spike measured `ready`, `steer`'s
-  `message`, `response`, the approval `select` and its `value` answer, and
-  `prompt_result`'s `status` and `sessionSettled`. Not measured, so chosen to
-  match the rest: `prompt`'s `message`, the session id at `get_state`'s
-  `data.sessionId`, the cancel answer's `cancelled: true`, an error's `message`
-  and the chunk marker (L497). The gate run reads them off a real session.
-- **L502 · An approval is paired with its call by order.** The `select` names no
-  call, so the codec pairs it first in, first out: it keeps the calls that
-  started and are not yet paired, a `select` takes the oldest, and a
-  `tool_execution_end` drops its call. A call the approval map decides up front
-  (no `select`) still sits ahead of an asking call until its end frame, so if
-  `omp` starts such a call and an asking one before either ends, a person is
-  shown the wrong tool or arguments. It cannot allow a tool the overlay lists as
-  denied; a `select` with no call to pair is cancelled, and one that offers no
-  `Approve` and `Deny` is cancelled without taking a call.
+  `ready` came 10 to 12 seconds after the start (25 seconds once; 12.7 and 12.8
+  seconds from a delegate call to the child's `ready` on the gate run), on every
+  leg, so a deferral's resume and a leader's question fork each pay it, and a
+  message sent before it waits. The client waits up to 45 seconds for it. One
+  run sent 166 `message_update` frames, which Ork reads and drops;
+  `set_event_filter` is not used. Neither is optimized.
+- **L502 · An approval is paired with its call by order.** The `select`'s title
+  names the tool (measured on the gate run) but not its arguments, so the codec
+  pairs it first in, first out: it keeps the calls that started and are not yet
+  paired, a `select` takes the oldest, and a `tool_execution_end` drops its
+  call. A call the approval map decides up front (no `select`) still sits ahead
+  of an asking call until its end frame, so if `omp` starts such a call and an
+  asking one before either ends, a person is shown the wrong tool or arguments.
+  It cannot allow a tool the overlay lists as denied; a `select` with no call to
+  pair is cancelled, and one that offers no `Approve` and `Deny` is cancelled
+  without taking a call. The gate run asked two calls in turn, never two at
+  once, and the pairing held.
 - **L534 · A host tool call has no timeout of Ork's own.** The runner waits for
   an Ork tool as long as it runs (`delegate` and `ask_user` can wait for hours),
-  and writes its `host_tool_result` when it ends. Whether `omp` cuts a
-  `host_tool_call` that waits long, and what the model then sees, was not
-  measured; the plugin route set `OMP_MCP_TIMEOUT_MS=0` for this, and host tools
-  have no such setting known. A call still running when the leg ends has its
-  answer dropped, not written.
+  and writes its `host_tool_result` when it ends. On the gate run `omp` held an
+  `ask_user` call open 2 minutes 29 seconds (the enclosing `ork_delegate` 2
+  minutes 49 seconds) and delivered the answer, with no `host_tool_cancel` and
+  no error result; whether it cuts a call that waits for hours is not known, and
+  host tools have no timeout setting known (the plugin route set
+  `OMP_MCP_TIMEOUT_MS=0`). A call still running when the leg ends has its answer
+  dropped, not written.
 - **L535 · `host_tool_cancel` and `loadMode` are not used.** `omp` can cancel a
   host tool call and sets a tool's `loadMode`; the codec answers no cancel and
   sends no `loadMode`, so a stopped call runs to its end in Ork (its answer
   dropped), and `omp` loads each Ork tool with its own default. Neither was
-  measured.
-- **L536 · Whether the guard sees a host tool's call is unmeasured.** The guard
-  maps `ork_<tool>` to `mcp__ork__<tool>` and applies the node's rules, hold and
-  stop marker as for any call, but only if `omp` fires `tool_call` for a host
-  tool. If it does not, the overlay's per-tool `deny` is the only wall for Ork's
-  tools: a node's `deny` of one still holds, an `only` or path rule on its
-  arguments and the pause hold do not. The gate run measures it.
-- **L537 · Two host tool shapes are guessed.** The spike measured
-  `set_host_tools` answering `{toolNames}`, a `host_tool_call`'s `id`,
-  `toolCallId`, `toolName` and `arguments`, and a result's `content`. Not
-  measured, so chosen to match: the request's field `tools` (an array of `name`,
-  `description`, `parameters`), the result's `isError` and how a failed call is
-  marked. A `set_host_tools` error ends the leg failed with "omp refused the
-  session's start: …"; a wrong field name would do that on every leg.
+  measured: `omp` sent no `host_tool_cancel` on the gate run, so there was no
+  case to read.
+- **L537 · What `omp` reads from a failed host result is unmeasured.** The gate
+  run measured `set_host_tools` (the request's `tools`, each with `name`,
+  `description` and `parameters`, was accepted on every leg), `host_tool_call`
+  and the result's `content`. No Ork tool call failed, so the result's `isError`
+  and how a failed call is marked were not tested against a real `omp`. A
+  `set_host_tools` error ends the leg failed with "omp refused the session's
+  start: …".
 - **L538 · The model check reads only an exact form, and costs a process.** A
   node's model is checked against the `selector` of each entry of
   `omp models --json` only when it is `provider/model` with no `{{`; a fuzzy
@@ -220,3 +226,22 @@ was left simpler, or could not be checked:
   is "Ork paused this node, so this call did not run." on both. Carrying the
   reason in the hold hook's answer, and following it in the fake's `PAUSED`
   pattern, would close it.
+- **L560 · A refused shell redirect is reported as "bash is not allowed for this
+  node".** Found on the gate run: a redirect in a command of a node's prompt was
+  refused, and the refusal the model read named the whole `bash` tool, not the
+  redirect that caused it, so the model and the person reading the log cannot
+  tell which part of the line the rules refused. Naming the redirect in the
+  refusal would close it. Not specific to `omp`: the words come from the shared
+  rules.
+- **L561 · A report cut off by a deferral is logged as a failed report and files
+  a false feedback item.** Found on the gate run: when a deferral's `abort` ends
+  a leg while an `ork_report` host call is in flight, the call's answer is
+  dropped, the log shows a failed report, and Ork files a feedback item ("hold's
+  report was not accepted") although the node went on and reported after its
+  resume. Telling a report refused by the node's schema from one lost to a
+  deferral would close it.
+- **L562 · A failed owner-fork plan falls back to a person with no log of why.**
+  Found on the gate run: when the plan of a leader's question fork fails (the
+  worktree bug that `fbd8b8fc` fixed was one cause), the question goes to a
+  person with nothing in the run's log saying a fork was tried or why it was not
+  made. An event or a log line naming the plan's failure would close it.
