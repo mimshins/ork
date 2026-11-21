@@ -1,5 +1,66 @@
 # @krapht/ork
 
+## 1.0.0-alpha.29
+
+### Minor Changes
+
+- [`ca7da46`](https://github.com/mimshins/ork/commit/ca7da46a3267a03f9e221208386c16564d9ee566) Thanks [@mimshins](https://github.com/mimshins)! - Add `codex-app-server`, the sixth agent driver: it runs your own `codex` as
+  `codex app-server` and talks to it in both directions. A message to a node
+  (`ork chat`, `ork send`) reaches the model before the turn ends, `ork stop`
+  interrupts the turn, and Codex's questions about a command or file change come
+  to you in `ork decide`, answered once and never for the session. The `codex`
+  driver is unchanged. It is built and **not yet proven**: `ork validate` and
+  `ork run` refuse a node on it, and `ork doctor` shows it as `skip`, until a
+  capped run on a real `codex` passes. Your own Codex `config.toml` and
+  execution-policy rules still load on it, Ork's hook and sandbox still hold the
+  node, and a hooks file of yours stops the node before it starts. The README, the
+  docs overview, `ork --help` and the npm description now name six drivers. Two
+  `omp` fixes ride along: a message sent while a deferral aborts the turn is no
+  longer lost, and approvals are paired by call order.
+
+- [`92ce493`](https://github.com/mimshins/ork/commit/92ce4931aa7f4686bc8e72b3c40e13f066f07417) Thanks [@mimshins](https://github.com/mimshins)! - `pnpm ork …` and `pnpm -s ork …` are no longer shipped reads, because `pnpm`
+  runs the project's own `ork` script; use the installed `ork …`. The Codex,
+  Command Code and omp guards now allow the shipped reads (`ork logs`, `jq`,
+  `head`, `ls`, …) inside the worktree on a line with no `cd`, and a call a
+  driver's guard refused three times in a node is filed as a `tool.refused`
+  feedback item on Codex, OpenCode, Command Code and omp. OpenCode still allows no
+  shipped read.
+
+- [`ff51a4f`](https://github.com/mimshins/ork/commit/ff51a4ffca5192d6b3d822bbd257d3d38676278c) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` works in a project attached with `ork register`: the writer starts
+  with the project's workflows and rules from `~/.ork/projects/<id>/`, and keep
+  copies its files back there, never into the repository.
+
+### Patch Changes
+
+- [`cf23a39`](https://github.com/mimshins/ork/commit/cf23a390026fcf474ad9fe63c0029fe20b087905) Thanks [@mimshins](https://github.com/mimshins)! - In the Builder, a field's problem is read with its control (`aria-invalid` and
+  `aria-describedby`), and a node's Effort hint points to Model's instead of
+  repeating its list of templates.
+
+- [`faa0704`](https://github.com/mimshins/ork/commit/faa0704bdb6e969a4d0fadc60554dc066516b396) Thanks [@mimshins](https://github.com/mimshins)! - `ork usage` and the Usage panel say when each plan limit was seen, mark a
+  warning older than 3 hours as stale, and Ork forgets the warnings an older
+  version stored.
+
+- [`4ffe369`](https://github.com/mimshins/ork/commit/4ffe36997fd71eb0d8d2328043cc24f3a23472d7) Thanks [@mimshins](https://github.com/mimshins)! - The npm page, the security policy and the guides name all five agent drivers
+  (Claude Code, OpenCode, Command Code, Codex, omp).
+
+- [`08e085d`](https://github.com/mimshins/ork/commit/08e085d211709c7baf3131a59e13e8861368cf16) Thanks [@mimshins](https://github.com/mimshins)! - The omp driver offers Ork's tools as host tools over the session's own pipe
+  instead of a private plugin, so no plugin folder or tool-server token is written
+  for it. `ork run` refuses a node whose exact `omp.<provider>/<model>` is not in
+  `omp models --json`, before anything is spent. A resumed omp session now tells
+  the model the real reason its call did not run: a pause, or a `heavy` slot that
+  was not free.
+
+- [`a21bf48`](https://github.com/mimshins/ork/commit/a21bf48ddc96b78228c0a5bc243142987e28a67c) Thanks [@mimshins](https://github.com/mimshins)! - `extract` accepts a `glob`, `context`, `regex`, `max` and several paths in
+  `search`, and a `path` on `count`; a missing `search` path is refused as the
+  agent's mistake, and a `files` glob without a `/` matches names at any depth.
+
+- [`5e4662f`](https://github.com/mimshins/ork/commit/5e4662f75f485be73553570fb551e958ed090e2f) Thanks [@mimshins](https://github.com/mimshins)! - A sub-agent whose rendered `model` names another driver than its leader's
+  session now fails the leader's node (`invalid_node`), in `ork run`,
+  `ork run --node` and `ork chat`, instead of losing the prefix. An empty read in
+  a sub-agent's model, in a node run alone, is a warning. `ork logs` and the live
+  stream print `starts a fresh session: driver changed from <from> to <to>` under
+  the start of a session that began fresh because its driver changed.
+
 ## 1.0.0-alpha.28
 
 ### Minor Changes
