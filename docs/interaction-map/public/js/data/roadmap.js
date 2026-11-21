@@ -1388,9 +1388,11 @@ export const MILESTONES = [
       {
         id: "omp-driver",
         title: "The `omp` driver",
-        status: "active",
+        status: "done",
         detail:
           "Built and proven on a real session (the capped gate run, 2026-11-21, omp 18.22.2). RFC-026 (closed with ADR-105): oh-my-pi's `omp` as the fifth driver, one `omp` process per leg (`--resume` and `--fork` for follow-ups; first `omp -p --mode json`, now `omp --mode rpc` on the two-way client of RFC-027), Ork's tools as host tools over the leg's own pipe (no plugin folder; the token only in the guard's `hold.json`), a settings overlay that allows only the offered built-ins and Ork's tools, and a guard Ork writes (`--trusted-extension`) that refuses what the node's rules refuse and any edit outside the worktree. Unlike `codex`, it holds a paused node's next call and takes `heavy` slots; a pause past the 9-minute window ends the leg and `ork continue` resumes it. Dollars and tokens: `--max-cost` is Ork's own ledger of the session's spend plus `budgetUsd`. RFC-027's two-way client (2026-11-20, ADR-108) moved it onto `omp --mode rpc`: a message reaches the model before the turn ends (a running call finishes first), Ork answers the tool's approvals, and a long pause is a true deferral (closes G45 and G46); the `codex app-server` codec shipped later as its own driver, `codex-app-server`. The contract suite passes on a fake `omp` that replays the spike's frames, and the gate run on a real `omp` (a Claude subscription, about $0.75) measured a steer during a running call (read after it), an approval allowed and denied, a short pause in the same process, a 9-minute pause that aborted, exited and resumed to finish, a host call held open for 2 minutes 29 seconds, a cost cap ending `budget_limit` at $0.1027, a 2 MB output that `omp` cut itself (no chunked frame), and a question fork with a `parentSession` header. Host tools replaced the plugin route, `ork run` refuses an exact `omp.<provider>/<model>` that `omp models --json` does not list, and a resume names the real reason a call was deferred. Left: the limits (G47 to G49, L464 to L482, L497, L499 to L500, L502, L534 to L535, L537 to L540, L560 to L562), a second hold window, a cap over several prompts and a chunked frame, and flipping this item to `done` with the gate commit once it is on `main`.",
+        commits: ["3b46b49"],
+        date: "2026-11-21",
         docs: [
           "specs/runtime/omp.md",
           "specs/gaps/omp-limits.md",
