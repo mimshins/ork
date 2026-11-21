@@ -116,6 +116,8 @@ const forkSpec = (
     inputs: context.inputs,
     outputs: context.outputs,
     inPlace: deps.inPlace,
+    // Its worktree exists: without this the plan fails and a person is asked.
+    checkout: { path: session.cwd, own: true, owner: owner.id },
     workflowDir: context.workflowDir,
     projectRoot: context.projectRoot,
     ...(context.orkDir === undefined ? {} : { orkDir: context.orkDir }),
@@ -174,9 +176,9 @@ const answerOf = (
  * Asks a fork of the owner's latest session; `null` when it can't answer: no
  * session yet, nothing left to spend, the node stopped, or a fork that fails,
  * runs out of time or gives no valid choice. A paused run or node starts no
- * fork until it goes on; one already started isn't paused, as it is bounded by
- * its turns and `timeoutMs`. Its events are the owner's, each marked as a fork,
- * and its spend the run's.
+ * fork until it goes on; one started isn't paused (it is bounded by its turns
+ * and `timeoutMs`). Its events are the owner's, marked as a fork; its spend the
+ * run's.
  */
 export const askFork = async (
   context: ExecuteContext,
@@ -238,10 +240,7 @@ export const passedOnContext = (
       : `${owner} passed this on: ${note}`,
   ].join("\n");
 
-/**
- * The node's channel to the person: what it asked is withdrawn when it stops,
- * so a stopped node leaves no decision open.
- */
+/** The node's channel to the person; what it asked is withdrawn when it stops. */
 export const withdrawnOnStop = (context: ExecuteContext): HumanChannel => {
   const { human } = context;
   const signalOf = (asked: AbortSignal | undefined): AbortSignal =>

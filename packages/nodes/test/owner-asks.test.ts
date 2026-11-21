@@ -53,6 +53,15 @@ const namingServers = (): Workflow => {
   return parsed.workflow;
 };
 
+/** The workflow with a leader on the default `worktree` isolation. */
+const worktreeLeader = (): Workflow => {
+  const parsed = parseWorkflow(
+    WORKFLOW.replace("isolation: shared, questions", "questions"),
+  );
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
+  return parsed.workflow;
+};
+
 /** A person who picks the first option, and what they were asked. */
 const person = () => {
   const asked: HumanQuestion[] = [];
@@ -322,6 +331,20 @@ describe("a child's question to its owner", () => {
     expect(asked).toEqual([]);
     // What the fork spent before it was cut off still counts.
     expect(charged).toEqual(["fork-1"]);
+  });
+
+  it("forks a leader that has its own worktree, with no `inPlace`", async () => {
+    const { human, asked } = person();
+    const { runtime, specs } = forking({ choice: "b" });
+    const channel = ownerFirst(
+      { ...contextOf(human), workflow: worktreeLeader() },
+      ownerPort("lead-1").port,
+      { runtimeFor: () => Promise.resolve(runtime), inPlace: false },
+    );
+
+    expect(await channel.ask(QUESTION)).toBe("b");
+    expect(specs).toHaveLength(1);
+    expect(asked).toEqual([]);
   });
 
   it("withdraws the question from the person when the node stops", async () => {
