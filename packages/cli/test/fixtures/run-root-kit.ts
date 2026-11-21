@@ -59,6 +59,11 @@ export const clone = (dirty = true) => {
   writeFileSync(path.join(root, ".gitignore"), ".env\n");
   writeFileSync(path.join(root, ".worktreeinclude"), ".env\n");
   git(root, "init", "--quiet");
+  // Ork's own commits (a node's leftovers) use the repository's identity; CI
+  // has no global one.
+  git(root, "config", "user.name", "T");
+  git(root, "config", "user.email", "t@example.com");
+  git(root, "config", "commit.gpgsign", "false");
   git(root, "add", "-A");
   commit(root, "base");
   writeFileSync(path.join(root, ".env"), "TOKEN=secret\n");
