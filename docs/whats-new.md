@@ -6,6 +6,7 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 ## Contents
 
 - [Next release](./whats-new/next-release.md)
+- [1.0.0-alpha.30](./whats-new/1.0.0-alpha.30.md)
 - [1.0.0-alpha.29](./whats-new/1.0.0-alpha.29.md)
 - [1.0.0-alpha.28](./whats-new/1.0.0-alpha.28.md)
 - [1.0.0-alpha.27](./whats-new/1.0.0-alpha.27.md)

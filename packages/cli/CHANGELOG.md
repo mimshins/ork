@@ -1,5 +1,17 @@
 # @krapht/ork
 
+## 1.0.0-alpha.30
+
+### Patch Changes
+
+- [`3b46b49`](https://github.com/mimshins/ork/commit/3b46b49d65e3460df501a85fb5008d562e528f13) Thanks [@mimshins](https://github.com/mimshins)! - The `omp` driver is proven on its capped gate run (omp 18.22.2): `ork validate`
+  and `ork run` accept an `omp` node, and `ork doctor` shows `omp` `ok` when it is
+  signed in.
+
+- [`fbd8b8f`](https://github.com/mimshins/ork/commit/fbd8b8fc9124e7e2cec0d24f86142bc52b88724b) Thanks [@mimshins](https://github.com/mimshins)! - A leader with its own worktree is forked to answer its children's questions
+  (`questions: owner`); the fork's plan used to fail on the default `worktree`
+  isolation, so the question went to the person with no fork.
+
 ## 1.0.0-alpha.29
 
 ### Minor Changes
